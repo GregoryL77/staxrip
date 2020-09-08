@@ -294,7 +294,7 @@ Public Class AV1Params
             If p.Script.Engine = ScriptEngine.VapourSynth Then
                 sb.Append(Package.vspipe.Path.Escape + " " + script.Path.Escape + " - --y4m | " + Package.aomenc.Path.Escape + " -")
             Else
-                sb.Append(Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -loglevel fatal -hide_banner - | " + Package.aomenc.Path.Escape + " -")
+                sb.Append(Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " + Package.aomenc.Path.Escape + " -")
             End If
         End If
 

@@ -342,6 +342,8 @@ Public Class EventCommandEditor
         Me.Controls.Add(Me.tlpMain)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Margin = New System.Windows.Forms.Padding(9)
         Me.Name = "EventCommandEditor"
         Me.Text = "Event Command Editor"

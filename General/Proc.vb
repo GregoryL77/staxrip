@@ -135,6 +135,10 @@ Public Class Proc
             Return {"process: ", "analyze: "}
         ElseIf commands.Contains("ffmpeg") Then
             Return {"frame=", "size="}
+        ElseIf commands.Contains("wavpack") Then
+            Return {"done..."}
+        ElseIf commands.Contains("opusenc") Then
+            Return {"]"}
         Else
             Return {" [ETA ", ", eta ", "frames: ", "Maximum Gain Found",
                 "transcoding ...", "process: ", "analyze: "}

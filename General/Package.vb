@@ -54,6 +54,32 @@ Public Class Package
                             g.Execute(D2VWitch.Path)
                         End Sub})
 
+    'DGIndexNV back
+    Shared Property DGIndexNV As Package = Add(New Package With {
+        .Name = "DGIndexNV",
+        .Filename = "DGIndexNV.exe",
+        .Description = "Shareware indexer and demuxer.",
+        .IsIncluded = False,
+        .HintDirFunc = Function() DGDecodeNV.GetStoredPath.Dir,
+        .RequiredFunc = Function() CommandLineDemuxer.IsActive("DGIndexNV"),
+        .LaunchAction = Sub()
+                            g.AddToPath(Package.DGIndexNV.Directory)
+                            g.Execute(DGIndexNV.Path)
+                        End Sub})
+
+    Shared Property DGDecodeNV As Package = Add(New PluginPackage With {
+        .Name = "DGDecodeNV",
+        .Filename = "DGDecodeNV.dll",
+        .Description = "Shareware source filter.",
+        .IsIncluded = False,
+        .HintDirFunc = Function() DGIndexNV.GetStoredPath.Dir,
+        .RequiredFunc = Function() p.Script.Filters(0).Script.Contains("DGSource("),
+        .AvsFilterNames = {"DGSource"},
+        .VSFilterNames = {"DGSource"},
+        .AvsFiltersFunc = Function() {New VideoFilter("Source", "DGSource", "DGSource(""%source_file%"")")},
+        .VSFiltersFunc = Function() {New VideoFilter("Source", "DGSource", "clip = core.dgdecodenv.DGSource(r""%source_file%"")")}})
+    'DGIndexNV back
+
     Shared Property Haali As Package = Add(New Package With {
         .Name = "Haali Splitter",
         .Filename = "splitter.ax",
@@ -78,6 +104,28 @@ Public Class Package
         .HelpSwitch = "-h",
         .RequiredFunc = Function() TypeOf p.Audio0 Is GUIAudioProfile AndAlso DirectCast(p.Audio0, GUIAudioProfile).Params.Encoder = GuiAudioEncoder.qaac OrElse TypeOf p.Audio1 Is GUIAudioProfile AndAlso DirectCast(p.Audio1, GUIAudioProfile).Params.Encoder = GuiAudioEncoder.qaac,
         .Description = "Console AAC encoder based on the Apple AAC encoder."})
+
+    Shared Property WavPack As Package = Add(New Package With {
+        .Name = "WavPack",
+        .Filename = "wavpack.exe",
+        .Description = "WavPack lossless audio console codec",
+        .WebURL = "http://www.wavpack.com/index.html",
+        .DownloadURL = "http://www.wavpack.com/downloads.html",
+        .Location = "Audio\wavpack",
+        .HelpSwitch = "--help",
+        .HelpFilename = "wavpack_doc.html",
+        .RequiredFunc = Function() TypeOf p.Audio0 Is GUIAudioProfile AndAlso DirectCast(p.Audio0, GUIAudioProfile).Params.Encoder = GuiAudioEncoder.WavPack OrElse TypeOf p.Audio1 Is GUIAudioProfile AndAlso DirectCast(p.Audio1, GUIAudioProfile).Params.Encoder = GuiAudioEncoder.WavPack})
+
+    Shared Property OpusEnc As Package = Add(New Package With {
+        .Name = "OpusEnc",
+        .Filename = "opusenc.exe",
+        .Description = "OpusEnc part of Opus-Tools. Reference CLI for LibOpus",
+        .WebURL = "https://opus-codec.org/",
+        .DownloadURL = "https://opus-codec.org/downloads/",
+        .Location = "Audio\opus",
+        .HelpSwitch = "--help",
+        .HelpFilename = "opusenc.html",
+        .RequiredFunc = Function() TypeOf p.Audio0 Is GUIAudioProfile AndAlso DirectCast(p.Audio0, GUIAudioProfile).Params.Encoder = GuiAudioEncoder.OpusEnc OrElse TypeOf p.Audio1 Is GUIAudioProfile AndAlso DirectCast(p.Audio1, GUIAudioProfile).Params.Encoder = GuiAudioEncoder.OpusEnc})
 
     Shared Property UnDot As Package = Add(New PluginPackage With {
         .Name = "UnDot",
@@ -813,8 +861,8 @@ Public Class Package
             .Description = "KNLMeansCL is an optimized pixelwise OpenCL implementation of the Non-local means denoising algorithm. Every pixel is restored by the weighted average of all pixels in its search window. The level of averaging is determined by the filtering parameter h.",
             .VSFilterNames = {"knlm.KNLMeansCL"},
             .AvsFilterNames = {"KNLMeansCL"},
-            .AvsFiltersFunc = Function() {New VideoFilter("Noise", "NLMeans | KNLMeansCL", "KNLMeansCL(D=1, A=1, h=$select:msg:Select Strength;Light|2;Medium|4;Strong|4$, device_type=""auto"")")},
-            .VSFiltersFunc = Function() {New VideoFilter("Noise", "KNLMeansCL", "clip = core.knlm.KNLMeansCL(clip, d=1, a=1, h=$select:msg:Select Strength;Light|2;Medium|4;Strong|4$, device_type='auto')")}})
+            .AvsFiltersFunc = Function() {New VideoFilter("Noise", "NLMeans | KNLMeansCL", "KNLMeansCL(D=1, A=2, h=$select:msg:Select Strength;Light|0.6;Medium|1.2;Strong|4$, device_type=""auto"")")},
+            .VSFiltersFunc = Function() {New VideoFilter("Noise", "KNLMeansCL", "clip = core.knlm.KNLMeansCL(clip, d=1, a=2, h=$select:msg:Select Strength;Light|0.6;Medium|1.2;Strong|4$, device_type='auto')")}})
 
         Add(New PluginPackage With {
             .Name = "DSS2mod",
@@ -1437,8 +1485,8 @@ Public Class Package
             .Location = "Plugins\VS\Scripts",
             .WebURL = "https://gist.github.com/4re/b5399b1801072458fc80#file-mcdegrainsharp-py",
             .Description = "TemporalMedian is a temporal denoising filter. It replaces every pixel with the median of its temporal neighbourhood.",
-            .VSFilterNames = {"resamplehq.resamplehq"},
-            .VSFiltersFunc = Function() {New VideoFilter("Resize", "ReSampleHQ", "clip = resamplehq.resamplehq(clip, %target_width%, %target_height%, kernel='$select:Point;Rect;Linear;Cubic;Lanczos;Blackman;Blackmanminlobe;Spline16;Spline36;Spline64;Gauss;Sinc$')")}})
+            .VSFilterNames = {"resamplehq.resample_hq"},
+            .VSFiltersFunc = Function() {New VideoFilter("Resize", "ReSampleHQ", "clip = resamplehq.resample_hq(clip, %target_width%, %target_height%, kernel='$select:Point;Rect;Linear;Cubic;Lanczos;Blackman;Blackmanminlobe;Spline16;Spline36;Spline64;Gauss;Sinc$')")}})
 
         Add(New PluginPackage With {
             .Name = "mcdegrainsharp",
@@ -1716,7 +1764,15 @@ Public Class Package
             .Description = "VapourSynth port of TTempSmooth.",
             .WebURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TTempSmooth",
             .VSFilterNames = {"ttmpsm.TTempSmooth"},
-            .VSFiltersFunc = Function() {New VideoFilter("Noise", "TTempSmooth", "clip =  core.ttmpsm.TTempSmooth(clip)")}})
+            .VSFiltersFunc = Function() {New VideoFilter("Noise", "TTempSmooth", "clip =  core.ttmpsm.TTempSmooth(clip, maxr=3)")}})
+
+        Add(New PluginPackage With {
+            .Name = "TTempSmooth",
+            .Filename = "TTempSmooth.dll",
+            .Description = "Avisynth TTempSmooth by Tritical",
+            .WebURL = "http://avisynth.nl/index.php/TTempSmooth",
+            .AvsFilterNames = {"TTempSmooth"},
+            .AvsFiltersFunc = Function() {New VideoFilter("Noise", "TTempSmooth", "TTempSmooth(maxr=3)")}})
 
         Add(New PluginPackage With {
             .Name = "TimeCube",
@@ -2264,11 +2320,11 @@ Public Class Package
             End If
 
             If Find Then
-                ret = FindEverywhere(Filename, IgnorePath)
+            ret = FindEverywhere(Filename, IgnorePath)
 
-                If ret <> "" Then
-                    Return ret
-                End If
+            If ret <> "" Then
+                Return ret
+            End If
             End If
         End Get
     End Property

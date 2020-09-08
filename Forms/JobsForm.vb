@@ -169,6 +169,8 @@ Friend Class JobsForm
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(0, 2, 0, 2)
         Me.MinimumSize = New System.Drawing.Size(323, 204)
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Name = "JobsForm"
         Me.Text = "Jobs"
         Me.tlpMain.ResumeLayout(False)

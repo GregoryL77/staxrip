@@ -558,9 +558,11 @@ Public Class eac3toForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(1301, 1033)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.HelpButton = False
         Me.KeyPreview = True
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Margin = New System.Windows.Forms.Padding(10)
         Me.Name = "eac3toForm"
         Me.Text = "eac3to Demuxing"

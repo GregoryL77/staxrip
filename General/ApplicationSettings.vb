@@ -35,6 +35,7 @@ Public Class ApplicationSettings
     Public EnableTooltips As Boolean
     Public EventCommands As List(Of EventCommand)
     Public FilterSetupProfiles As List(Of TargetVideoScript)
+    Public FfmpegLogLevel As ffLogLevel = ffLogLevel.error
     Public HidePreviewButtons As Boolean
     Public IconFile As String
     Public LastPosition As Integer
@@ -150,6 +151,7 @@ Public Class ApplicationSettings
             AviSynthFilterPreferences.Add("264 h264 avc", "LWLibavVideoSource")
             AviSynthFilterPreferences.Add("265 h265 hevc hvc", "LWLibavVideoSource")
             AviSynthFilterPreferences.Add("d2v", "MPEG2Source")
+            AviSynthFilterPreferences.Add("dgi", "DGSource")
             AviSynthFilterPreferences.Add("mp4 m4v mov", "LSMASHVideoSource")
             AviSynthFilterPreferences.Add("ts m2ts mts m2t", "LWLibavVideoSource")
             AviSynthFilterPreferences.Add("wmv", "DSS2")
@@ -165,6 +167,7 @@ Public Class ApplicationSettings
             VapourSynthFilterPreferences.Add("mp4 m4v mov", "LibavSMASHSource")
             VapourSynthFilterPreferences.Add("ts m2ts mts m2t", "LWLibavSource")
             VapourSynthFilterPreferences.Add("d2v", "d2vsource")
+            VapourSynthFilterPreferences.Add("dgi", "DGSource")
         End If
 
         If Check(ToolStripRenderModeEx, "menu style", 1) Then

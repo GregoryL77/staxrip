@@ -206,6 +206,8 @@ Public Class CommandLineVideoEncoderForm
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(6)
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Name = "CommandLineVideoEncoderForm"
         Me.Text = "Command Line Video Encoder"
         Me.tlpMain.ResumeLayout(False)

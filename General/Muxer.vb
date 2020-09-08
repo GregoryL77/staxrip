@@ -432,7 +432,7 @@ Public Class MP4Muxer
                     "mp4", "m4a", "aac", "mov",
                     "264", "h264", "avc",
                     "265", "h265", "hevc", "hvc",
-                    "mp2", "mpa", "mp3"}
+                    "mp2", "mpa", "mp3", "wv"}
         End Get
     End Property
 End Class
@@ -643,7 +643,7 @@ Public Class MkvMuxer
         Dim args = "-o " + p.TargetFile.LongPathPrefix.Escape
 
         Dim stdout = ProcessHelp.GetConsoleOutput(Package.mkvmerge.Path, "--identify " +
-            p.VideoEncoder.OutputPath.LongPathPrefix.Escape)
+                p.VideoEncoder.OutputPath.LongPathPrefix.Escape)
 
         Dim id = Regex.Match(stdout, "Track ID (\d+): video").Groups(1).Value.ToInt
 
@@ -890,7 +890,7 @@ Public Class MkvMuxer
                     "dts", "dtsma", "dtshr", "dtshd",
                     "mpg", "m2v", "mpv", "vob", "mpeg",
                     "ts", "m2ts",
-                    "opus", "flac"}
+                    "opus", "flac", "wv"}
         End Get
     End Property
 End Class
@@ -935,7 +935,7 @@ Public Class ffmpegMuxer
     Shared ReadOnly Property SupportedFormats As String()
         Get
             Return {"ASF", "AVI", "FLV", "ISMV", "IVF", "MKV", "MOV",
-                    "MP4", "MPG", "MXF", "NUT", "OGG", "TS", "WEBM", "WMV"}
+                    "MP4", "MPG", "MXF", "NUT", "OGG", "TS", "WEBM", "WMV", "WV"}
         End Get
     End Property
 

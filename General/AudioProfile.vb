@@ -150,30 +150,24 @@ Public MustInherit Class AudioProfile
             Dim ret As String
 
             Select Case DecodingMode
-                Case AudioDecodingMode.WavPack
-                    ret = "wv"
-                Case AudioDecodingMode.FLAC
-                    ret = "flac"
+                Case AudioDecodingMode.WAVE
+                    ret = "wav"
                 Case AudioDecodingMode.W64
                     ret = "w64"
                 Case Else
-                    ret = "wav"
+                    ret = "flac"
             End Select
-
-            If Not SupportedInput.Contains(ret) Then
-                ret = "w64"
-            End If
 
             If Not SupportedInput.Contains(ret) Then
                 ret = "flac"
             End If
 
             If Not SupportedInput.Contains(ret) Then
-                ret = "wav"
+                ret = "w64"
             End If
 
             If Not SupportedInput.Contains(ret) Then
-                ret = "wv"
+                ret = "wav"
             End If
 
             Return ret
@@ -339,15 +333,14 @@ Public MustInherit Class AudioProfile
     Shared Function GetDefaults() As List(Of AudioProfile)
         Dim ret As New List(Of AudioProfile)
 
-        ret.Add(New GUIAudioProfile(AudioCodec.AAC, 54))
+        ret.Add(New GUIAudioProfile(AudioCodec.AAC, 50))
         ret.Add(New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 250})
         ret.Add(New GUIAudioProfile(AudioCodec.FLAC, 0.3))
-        ret.Add(New GUIAudioProfile(AudioCodec.WavPack, 1))
         ret.Add(New GUIAudioProfile(AudioCodec.Vorbis, 1))
         ret.Add(New GUIAudioProfile(AudioCodec.MP3, 4))
         ret.Add(New GUIAudioProfile(AudioCodec.AC3, 1.0) With {.Channels = 6, .Bitrate = 640})
         ret.Add(New GUIAudioProfile(AudioCodec.EAC3, 1.0) With {.Channels = 6, .Bitrate = 640})
-        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -i ""%input%"" -b:a %bitrate%k -y -loglevel " & s.FfmpegLogLevel & " -hide_banner ""%output%"""))
+        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -i ""%input%"" -b:a %bitrate%k -y -hide_banner ""%output%"""))
         ret.Add(New MuxAudioProfile())
         ret.Add(New NullAudioProfile())
 
@@ -423,11 +416,10 @@ Public Class BatchAudioProfile
             Else
                 Log.Write("Error", "no output found")
 
-                'TO Do: Test this Wavpack as default instead
-                If Not File.Ext = "wv" Then
+                If Not File.Ext = "wav" Then
                     Audio.Convert(Me)
 
-                    If File.Ext = "wv" Then
+                    If File.Ext = "wav" Then
                         Encode()
                     End If
                 End If
@@ -711,8 +703,6 @@ Public Class GUIAudioProfile
         Select Case Params.Codec
             Case AudioCodec.FLAC
                 Return CInt(((TargetSamplingRate * Depth * Channels) / 1000) * 0.55)
-            Case AudioCodec.WavPack
-                Return CInt(((TargetSamplingRate * Depth * Channels) / 1000) * 0.54)
             Case AudioCodec.W64, AudioCodec.WAV
                 Return CInt((TargetSamplingRate * Depth * Channels) / 1000)
         End Select
@@ -756,12 +746,6 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"frame=", "size="}
                     proc.Encoding = Encoding.UTF8
                     proc.Duration = GetDuration()
-                ElseIf cl.Contains("wavpack") Then
-                    proc.Package = Package.WavPack
-                    proc.SkipStrings = {"done..."}
-                ElseIf cl.Contains("opusenc") Then
-                    proc.Package = Package.OpusEnc
-                    proc.SkipStrings = {"]"}
                 End If
 
                 proc.Start()
@@ -788,8 +772,7 @@ Public Class GUIAudioProfile
 
     Sub NormalizeFF()
         If Not Params.Normalize OrElse ExtractCore OrElse
-                (SupportsNormalize() AndAlso Params.ffNormalizeMode = ffNormalizeMode.peaknorm AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
-                Not {ffNormalizeMode.loudnorm, ffNormalizeMode.peaknorm}.Contains(Params.ffNormalizeMode) Then
+            Not {ffNormalizeMode.loudnorm, ffNormalizeMode.volumedetect}.Contains(Params.ffNormalizeMode) Then
 
             Exit Sub
         End If
@@ -800,17 +783,15 @@ Public Class GUIAudioProfile
             args += " -map 0:a:" & Stream.Index
         End If
 
-        args += " -sn -vn -dn -loglevel " & s.FfmpegLogLevel & " -hide_banner"
+        args += " -sn -vn -hide_banner"
 
-        'maybe add SOX Resampler: not worthy:
-        'args += " -resampler=soxr -precision=20 -output_sample_bits=0 "
-
-        'args Then += " -c:a pcm_f32le -af volumedetect"
-        'ElseIf Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
-
-        args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
+        If Params.ffNormalizeMode = ffNormalizeMode.volumedetect Then
+            args += " -af volumedetect"
+        ElseIf Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
+            args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
                 ":TP=" & Params.ffmpegLoudnormTruePeak.ToInvariantString + ":LRA=" &
                 Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary"
+        End If
 
         args += " -f null NUL"
 
@@ -822,27 +803,20 @@ Public Class GUIAudioProfile
             proc.Arguments = args
             proc.Start()
 
-            'Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
-            'If match.Success Then Gain += match.Groups(1).Value.ToSingle()
+            Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
+            If match.Success Then Gain += match.Groups(1).Value.ToSingle()
 
-            Dim Match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(Match.Groups(1).Value.ToDouble < 0, Match.Groups(1).Value.ToDouble, 0)
+            match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = match.Groups(1).Value.ToDouble
 
-            Match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
-            If Match.Success Then
-                Params.ffmpegLoudnormTruePeakMeasured = Match.Groups(1).Value.ToDouble
-                If Params.ffNormalizeMode = ffNormalizeMode.peaknorm Then Gain -= Match.Groups(1).Value.ToSingle
-            End If
+            match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
 
-            Match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormLraMeasured = Match.Groups(1).Value.ToDouble
+            match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormLraMeasured = match.Groups(1).Value.ToDouble
 
-            Match = Regex.Match(proc.Log.ToString, "Input Threshold:\s*([-\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormThresholdMeasured = Match.Groups(1).Value.ToDouble
-
-            Match = Regex.Match(proc.Log.ToString, "Target Offset:\s*([-+\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormOffset = Match.Groups(1).Value.ToDouble
-
+            match = Regex.Match(proc.Log.ToString, "Input Threshold:\s*([-\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormThresholdMeasured = match.Groups(1).Value.ToDouble
         End Using
     End Sub
 
@@ -870,8 +844,6 @@ Public Class GUIAudioProfile
                     Return "m4a"
                 Case AudioCodec.Vorbis
                     Return "ogg"
-                Case AudioCodec.WavPack
-                    Return "wv"
                 Case Else
                     Return Params.Codec.ToString.ToLower
             End Select
@@ -908,7 +880,7 @@ Public Class GUIAudioProfile
                     ret += " -" & Bitrate
             End Select
 
-            If Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.peaknorm Then
+            If Params.Normalize Then
                 ret += " -normalize"
             End If
 
@@ -916,12 +888,8 @@ Public Class GUIAudioProfile
                 ret += " -down16"
             End If
 
-            If DecodingMode = AudioDecodingMode.Pipe Then
-                If Params.SamplingRate <> 0 Then
-                    ret += " -resampleTo" & Params.SamplingRate
-                ElseIf Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
-                    ret += " -resampleTo" & SourceSamplingRate
-                End If
+            If Params.SamplingRate <> 0 Then
+                ret += " -resampleTo" & Params.SamplingRate
             End If
 
             If Params.FrameRateMode = AudioFrameRateMode.Speedup Then
@@ -978,7 +946,6 @@ Public Class GUIAudioProfile
         includePaths = includePaths And File <> ""
 
         If DecodingMode = AudioDecodingMode.Pipe Then
-            Params.BDepth = 32
             ret = GetPipeCommandLine(includePaths)
         End If
 
@@ -1024,7 +991,6 @@ Public Class GUIAudioProfile
         includePaths = includePaths And File <> ""
 
         If DecodingMode = AudioDecodingMode.Pipe Then
-            Params.BDepth = 32
             ret = GetPipeCommandLine(includePaths)
         End If
 
@@ -1049,16 +1015,11 @@ Public Class GUIAudioProfile
             ret += " --he"
         End If
 
-        Select Case DecodingMode
-            Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
-                ret += " --ignorelength"
-        End Select
-
         If Delay <> 0 Then
             ret += " --delay " + (Delay / 1000).ToInvariantString
         End If
 
-        If Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.peaknorm Then
+        If Params.Normalize Then
             ret += " --normalize"
         End If
 
@@ -1066,13 +1027,8 @@ Public Class GUIAudioProfile
             ret += " --quality " & Params.qaacQuality
         End If
 
-
-        If DecodingMode = AudioDecodingMode.Pipe Then
-            If Params.SamplingRate <> 0 Then
-                ret += " --rate " & Params.SamplingRate
-            ElseIf Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
-                ret += " --rate " & SourceSamplingRate
-            End If
+        If Params.SamplingRate <> 0 Then
+            ret += " --rate " & Params.SamplingRate
         End If
 
         If Params.qaacLowpass <> 0 Then
@@ -1113,17 +1069,8 @@ Public Class GUIAudioProfile
             ret += " -map 0:a:" & Stream.Index
         End If
 
-        If Params.ChannelsMode <> ChannelsMode.Original AndAlso
-           Not (GetEncoder() = GuiAudioEncoder.eac3to AndAlso (Channels = 2 OrElse Channels = 6)) Then
+        If Params.ChannelsMode <> ChannelsMode.Original Then
             ret += " -ac " & Channels
-            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
-                ret += " -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString
-            End If
-        End If
-
-        If Gain <> 0 AndAlso {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) AndAlso
-            Not ({ffNormalizeMode.loudnorm, ffNormalizeMode.dynaudnorm}.Contains(Params.ffNormalizeMode) AndAlso  Params.Normalize) Then
-            ret += " -af volume=" + Gain.ToInvariantString + "dB"
         End If
 
         If Params.Normalize Then
@@ -1134,26 +1081,8 @@ Public Class GUIAudioProfile
             End If
         End If
 
-        If {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) Then
-            If Params.SamplingRate <> 0 Then
-                ret += " -ar " & Params.SamplingRate
-            ElseIf Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
-                ret += " -ar " & SourceSamplingRate
-            End If
-        End If
-
-        If Params.BDepth = 16 Then
-            ret += " -c:a pcm_s16le"
-        ElseIf Params.BDepth = 24 Then
-            ret += " -c:a pcm_s24le"
-        ElseIf Params.BDepth = 0 Then
-
-        Else
-            ret += " -c:a pcm_f32le"
-        End If
-
         If includePaths AndAlso File <> "" Then
-            ret += " -loglevel " & s.FfmpegLogLevel & " -hide_banner -f wav - | "
+            ret += " -loglevel fatal -hide_banner -f wav - | "
         End If
 
         Return ret
@@ -1221,9 +1150,6 @@ Public Class GUIAudioProfile
                 Else
                     ret += " -vbr off"
                 End If
-                If Params.ffmpegMappingFamily <> -1 Then
-                    ret += " -mapping_family " & Params.ffmpegMappingFamily
-                End If
 
                 ret += " -b:a " & CInt(Bitrate) & "k"
             Case AudioCodec.AAC
@@ -1233,62 +1159,32 @@ Public Class GUIAudioProfile
                     ret += " -c:a libfdk_aac -b:a " & CInt(Bitrate) & "k"
                 End If
             Case AudioCodec.W64, AudioCodec.WAV
-                If Params.BDepth = 24 Then
+                If Depth = 24 Then
                     ret += " -c:a pcm_s24le"
-                ElseIf Params.BDepth = 32 Then
-                    ret += " -c:a pcm_f32le"
-                ElseIf Params.BDepth = 16 Then
+                Else
                     ret += " -c:a pcm_s16le"
                 End If
-            Case AudioCodec.FLAC
-                If Params.ffCompressionLevel <> 5 Then
-                    ret += " -compression_level " & Params.ffCompressionLevel
-                End If
-                If Params.BDepth = 16 Then
-                    ret += " -sample_fmt s16"
-                ElseIf Params.BDepth >= 24 Then
-                    ret += " -sample_fmt s32"
-                End If
-            Case AudioCodec.WavPack
-                If Params.ffCompressionLevel <> 0 Then
-                    ret += " -compression_level " & Params.ffCompressionLevel
-                End If
-                If Params.BDepth = 24 Then
-                    ret += " -sample_fmt s32p"
-                ElseIf Params.BDepth = 32 Then
-                    ret += " -sample_fmt fltp"
-                ElseIf Params.BDepth = 16 Then
-                    ret += " -sample_fmt s16p"
-                End If
         End Select
-
-        If Params.Normalize Then
-            If Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
-                ret += " " + Audio.GetLoudNormArgs(Params)
-                Gain = 0
-            ElseIf Params.ffNormalizeMode = ffNormalizeMode.dynaudnorm Then
-                ret += " " + Audio.GetDynAudNormArgs(Params)
-                Gain = 0
-            End If
-        End If
 
         If Gain <> 0 Then
             ret += " -af volume=" + Gain.ToInvariantString + "dB"
         End If
 
-        'opus fails if -ac is missing, mapping_family related To DO Check:
-
-        If Params.ChannelsMode <> ChannelsMode.Original OrElse (Params.Codec = AudioCodec.Opus AndAlso Params.ffmpegMappingFamily = -1) Then
-            ret += " -ac " & Channels
-            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
-                ret += " -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString
+        If Params.Normalize Then
+            If Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
+                ret += " " + Audio.GetLoudNormArgs(Params)
+            ElseIf Params.ffNormalizeMode = ffNormalizeMode.dynaudnorm Then
+                ret += " " + Audio.GetDynAudNormArgs(Params)
             End If
+        End If
+
+        'opus fails if -ac is missing
+        If Params.ChannelsMode <> ChannelsMode.Original OrElse Params.Codec = AudioCodec.Opus Then
+            ret += " -ac " & Channels
         End If
 
         If Params.SamplingRate <> 0 Then
             ret += " -ar " & Params.SamplingRate
-        ElseIf Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then    'Loudnorm auto x4 upsample
-            ret += " -ar " & SourceSamplingRate
         End If
 
         If Params.CustomSwitches <> "" Then
@@ -1296,129 +1192,14 @@ Public Class GUIAudioProfile
         End If
 
         If includePaths AndAlso File <> "" Then
-            ret += " -y -hide_banner -loglevel " & s.FfmpegLogLevel
+            ret += " -y -hide_banner"
             ret += " " + GetOutputFile.LongPathPrefix.Escape
         End If
 
         Return ret
     End Function
 
-
-
-    Function GetWavPackCommandLine(includePaths As Boolean) As String
-        Dim ret As String
-        includePaths = includePaths And File <> ""
-
-        If DecodingMode = AudioDecodingMode.Pipe Then
-            'Params.BDepth = 32
-            ret = GetPipeCommandLine(includePaths)
-        End If
-
-        If includePaths Then
-            ret += Package.WavPack.Path.Escape
-        Else
-            ret = "wavpack"
-        End If
-
-        Select Case Params.WavPackCompression
-            Case 0
-                ret += " -f"
-            Case 2
-                ret += " -h"
-            Case 3
-                ret += " -hh"
-        End Select
-
-        Select Case DecodingMode
-            Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
-                ret += " -i"
-        End Select
-
-        If Params.WavPackExtraCompression > 0 Then
-            ret += " -x" & Params.WavPackExtraCompression
-        End If
-
-        'TO DO: add lossy mode:
-
-
-        If Params.WavPackPreQuant > 0 Then
-            ret += " --pre-quantize=" & Params.WavPackPreQuant
-        End If
-
-        If Params.CustomSwitches <> "" Then
-            ret += " " + Params.CustomSwitches
-        End If
-
-        ret += " -l -m -y -z0 -w Settings -w Encoder"
-
-        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
-
-        If includePaths Then
-            ret += " " + input + " " + GetOutputFile.Escape
-        End If
-
-        Return ret
-    End Function
-
-    Function GetOpusEncCommandLine(includePaths As Boolean) As String
-        Dim ret As String
-        includePaths = includePaths And File <> ""
-
-        If DecodingMode = AudioDecodingMode.Pipe Then
-            Params.BDepth = 32
-            ret = GetPipeCommandLine(includePaths)
-        End If
-
-        If includePaths Then
-            ret += Package.OpusEnc.Path.Escape
-        Else
-            ret = "opusenc"
-        End If
-
-        Select Case Params.opusencMode
-            Case 0
-                ret += " --vbr --bitrate " & CInt(Bitrate)
-            Case 1
-                ret += " --cvbr --bitrate " & CInt(Bitrate)
-            Case 2
-                ret += " --hard-cbr --bitrate " & CInt(Bitrate)
-        End Select
-
-        If Params.opusencComplexity < 10 Then
-            ret += " --comp " & Params.opusencComplexity
-        End If
-
-        If Params.opusencFramesize <> 20 Then
-            ret += " --framesize " & Params.opusencFramesize
-        End If
-
-        If Params.OpusEncNoPhaseInv Then
-            ret += " --no-phase-inv"
-        End If
-
-        Select Case DecodingMode
-            Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
-                ret += " --ignorelength"
-        End Select
-
-        If Params.CustomSwitches <> "" Then
-            ret += " " + Params.CustomSwitches
-        End If
-
-        'ret += " --serial 1 --save-range """ & GetOutputFile.Dir.Escape.TrimEnd(""""c) & "Opus.txt"" "
-
-        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
-        If includePaths Then
-            ret += " " + input + " " + GetOutputFile.Escape
-        End If
-
-        Return ret
-    End Function
-
-
-
     Function SupportsNormalize() As Boolean
-        'Return GetEncoder() = GuiAudioEncoder.qaac
         Return GetEncoder() = GuiAudioEncoder.eac3to OrElse GetEncoder() = GuiAudioEncoder.qaac
     End Function
 
@@ -1443,7 +1224,7 @@ Public Class GUIAudioProfile
                     ch += " Mono"
             End Select
 
-            Dim circa = If(Params.RateMode = AudioRateMode.VBR OrElse {AudioCodec.FLAC, AudioCodec.WavPack}.Contains(Params.Codec), "~", "")
+            Dim circa = If(Params.RateMode = AudioRateMode.VBR OrElse Params.Codec = AudioCodec.FLAC, "~", "")
             Dim bitrate = If(Params.RateMode = AudioRateMode.VBR, GetBitrate(), Me.Bitrate)
 
             If ExtractCore Then
@@ -1502,26 +1283,10 @@ Public Class GUIAudioProfile
                 If Params.Codec = AudioCodec.AAC Then
                     Return GuiAudioEncoder.fdkaac
                 End If
-            Case GuiAudioEncoder.WavPack
-                If Params.Codec = AudioCodec.WavPack Then
-                    Return GuiAudioEncoder.WavPack
-                End If
-            Case GuiAudioEncoder.OpusEnc
-                If Params.Codec = AudioCodec.Opus Then
-                    Return GuiAudioEncoder.OpusEnc
-                End If
         End Select
 
         If Params.Codec = AudioCodec.AAC Then
             Return GuiAudioEncoder.qaac
-        End If
-
-        If Params.Codec = AudioCodec.Opus Then
-            Return GuiAudioEncoder.OpusEnc
-        End If
-
-        If Params.Codec = AudioCodec.WavPack Then
-            Return GuiAudioEncoder.WavPack
         End If
 
         Return GuiAudioEncoder.ffmpeg
@@ -1535,10 +1300,6 @@ Public Class GUIAudioProfile
                 Return GetQaacCommandLine(includePaths)
             Case GuiAudioEncoder.fdkaac
                 Return GetfdkaacCommandLine(includePaths)
-            Case GuiAudioEncoder.WavPack
-                Return GetWavPackCommandLine(includePaths)
-            Case GuiAudioEncoder.OpusEnc
-                Return GetOpusEncCommandLine(includePaths)
             Case Else
                 Return GetffmpegCommandLine(includePaths)
         End Select
@@ -1552,34 +1313,14 @@ Public Class GUIAudioProfile
                 Case GuiAudioEncoder.qaac
                     If DecodingMode <> AudioDecodingMode.Pipe Then
                         If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav", "w64"}
+                            Return {"wav", "w64"}
                         Else
-                            Return {"wv", "wav", "flac", "w64"}
+                            Return {"wav", "flac", "w64"}
                         End If
                     End If
                 Case GuiAudioEncoder.fdkaac
                     If DecodingMode <> AudioDecodingMode.Pipe Then
-                        If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav"}
-                        Else
-                            Return {"wav"}
-                        End If
-                    End If
-                Case GuiAudioEncoder.WavPack
-                    If DecodingMode <> AudioDecodingMode.Pipe Then
-                        If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav"}
-                        Else
-                            Return {"wv", "wav"}
-                        End If
-                    End If
-                Case GuiAudioEncoder.OpusEnc
-                    If DecodingMode <> AudioDecodingMode.Pipe Then
-                        If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav"}
-                        Else
-                            Return {"wav", "flac"}
-                        End If
+                        Return {"wav"}
                     End If
             End Select
 
@@ -1608,14 +1349,12 @@ Public Class GUIAudioProfile
         Property qaacLowpass As Integer
         Property qaacNoDither As Boolean
         Property qaacQuality As Integer = 2
-        Property qaacRateMode As Integer = 0
+        Property qaacRateMode As Integer
 
-        Property opusencMode As Integer = 0
+        Property opusencMode As Integer = 2
         Property opusencComplexity As Integer = 10
         Property opusencFramesize As Double = 20
-        Property OpusEncNoPhaseInv As Boolean = False
         Property opusencMigrateVersion As Integer = 1
-
 
         Property fdkaacProfile As Integer = 2
         Property fdkaacBandwidth As Integer
@@ -1628,11 +1367,12 @@ Public Class GUIAudioProfile
         Property fdkaacHeaderPeriod As Boolean
         Property fdkaacIncludeSbrDelay As Boolean
         Property fdkaacMoovBeforeMdat As Boolean
+
         Property ffNormalizeMode As ffNormalizeMode
+
         Property ffmpegLoudnormIntegrated As Double = -24
         Property ffmpegLoudnormLRA As Double = 7
         Property ffmpegLoudnormTruePeak As Double = -2
-        Property ffmpegLoudnormOffset As Double = 0
 
         Property ffmpegLoudnormIntegratedMeasured As Double
         Property ffmpegLoudnormLraMeasured As Double
@@ -1648,16 +1388,6 @@ Public Class GUIAudioProfile
         Property ffmpegDynaudnormC As Boolean
         Property ffmpegDynaudnormB As Boolean
         Property ffmpegDynaudnormS As Double
-
-        Property ffCompressionLevel As Integer = 1
-        Property ffmpegMappingFamily As Integer = -1
-        Property ffmpegLFEMixLevel As Double = 0
-        Property BDepth As Integer = 32
-
-        Property WavPackCompression As Integer = 1
-        Property WavPackExtraCompression As Integer = 0
-        Property WavPackPreQuant As Integer = 0
-
 
         Property SimpleRateMode As SimpleAudioRateMode
             Get
@@ -1680,7 +1410,7 @@ Public Class GUIAudioProfile
             If opusencMigrateVersion <> 1 Then
                 opusencFramesize = 20
                 opusencComplexity = 10
-                opusencMode = 0
+                opusencMode = 2
                 opusencMigrateVersion = 1
             End If
 
@@ -1696,15 +1426,12 @@ Public Class GUIAudioProfile
                 ffmpegLoudnormIntegrated = -24
                 ffmpegLoudnormLRA = 7
                 ffmpegLoudnormTruePeak = -2
-                ffmpegLoudnormOffset = 0
 
                 ffmpegDynaudnormF = 500
                 ffmpegDynaudnormG = 31
                 ffmpegDynaudnormP = 0.95
                 ffmpegDynaudnormM = 10
                 ffmpegDynaudnormN = True
-
-                ffmpegLFEMixLevel = 0
 
                 Migrate1 = True
             End If
@@ -1723,7 +1450,6 @@ Public Enum AudioCodec
     W64
     WAV
     EAC3
-    WavPack
 End Enum
 
 Public Enum AudioRateMode
@@ -1746,13 +1472,10 @@ End Enum
 
 Public Enum GuiAudioEncoder
     Automatic
-    qaac
-    ffmpeg
     eac3to
+    ffmpeg
+    qaac
     fdkaac
-    WavPack
-    OpusEnc
-
 End Enum
 
 Public Enum AudioFrameRateMode

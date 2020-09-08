@@ -1001,13 +1001,12 @@ Public Class MainForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(2049, 1134)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
         Me.HelpButton = True
         Me.KeyPreview = True
         Me.MainMenuStrip = Me.MenuStrip
         Me.Margin = New System.Windows.Forms.Padding(9, 12, 9, 12)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
+        Me.MaximizeBox = False
         Me.Name = "MainForm"
         Me.Text = "StaxRip"
         Me.gbAssistant.ResumeLayout(False)
@@ -1778,10 +1777,6 @@ Public Class MainForm
     Function ShowSourceFilterSelectionDialog(inputFile As String) As VideoFilter
         Dim filters As New List(Of VideoFilter)
 
-        'DGIndexNV Back
-        If inputFile.Ext = "dgi" OrElse FileTypes.DGDecNVInput.Contains(inputFile.Ext) Then AddSourceFilters({"DGSource"}, filters)
-        If inputFile.Ext = "dgim" OrElse FileTypes.DGDecNVInput.Contains(inputFile.Ext) Then AddSourceFilters({"DGSourceIM"}, filters)
-
         If inputFile.Ext.EqualsAny("mp4", "m4v", "mov") Then
             AddSourceFilters({"LSMASHVideoSource", "LibavSMASHSource"}, filters)
         End If
@@ -2150,11 +2145,6 @@ Public Class MainForm
             ElseIf p.SourceFile.Ext = "vpy" Then
                 p.Script.Engine = ScriptEngine.VapourSynth
                 p.Script.Filters.Clear()
-    'VPY script open problem:
-'                Dim code = "import os, sys" + BR + "import vapoursynth as vs" + BR + "core = vs.core" + BR + "from importlib.machinery import SourceFileLoader" + BR +
-'                           $"SourceFileLoader('clip', r""{p.SourceFile}"").load_module()" + BR +
-'                           "clip = vs.get_output()"
-
                 Dim code = "from importlib.machinery import SourceFileLoader" + BR +
                            $"SourceFileLoader('clip', r""{p.SourceFile}"").load_module()" + BR +
                            "clip = vs.get_output()"
@@ -3291,27 +3281,6 @@ Public Class MainForm
                 tbSourceFile.Text = p.SourceFile
                 BlockSourceTextBoxTextChanged = False
             End If
-
-            'DGIndexNV Back
-        ElseIf codeLower.Contains("dgsource(") AndAlso Not p.SourceFile.Ext = "dgi" Then
-            If FileTypes.VideoIndex.Contains(p.SourceFile.Ext) Then
-                p.SourceFile = p.LastOriginalSourceFile
-            End If
-
-            Dim dgIndexNV = Demuxer.GetDefaults.Find(Function(demuxer) demuxer.Name = "DGIndexNV: Index, No Demux")
-            Dim outFile = p.TempDir + p.SourceFile.Base + ".dgi"
-
-            If Not File.Exists(outFile) Then
-                dgIndexNV.Run(p)
-            End If
-
-            If File.Exists(outFile) Then
-                p.SourceFile = outFile
-                BlockSourceTextBoxTextChanged = True
-                tbSourceFile.Text = outFile
-                BlockSourceTextBoxTextChanged = False
-            End If
-
         End If
     End Sub
 
@@ -3567,11 +3536,6 @@ Public Class MainForm
             n.Help = "Windows does not have usable long path support."
             n.Config = {20, 200, 10}
             n.Field = NameOf(s.CharacterLimitFilename)
-    'ffMpeg LogLevel
-            Dim mFFLog = ui.AddMenu(Of ffLogLevel)
-            mFFLog.Text = "ffMpeg logging level"
-            mFFLog.Field = NameOf(s.FfmpegLogLevel)
-
 
             ui.SelectLast("last settings page")
 
@@ -4686,8 +4650,6 @@ Public Class MainForm
         ret.Add("Apps|Players|MPC-BE", NameOf(g.DefaultCommands.StartTool), {"MPC-BE"})
         ret.Add("Apps|Players|MPC-HC", NameOf(g.DefaultCommands.StartTool), {"MPC-HC"})
         ret.Add("Apps|Indexing|D2V Witch", NameOf(g.DefaultCommands.StartTool), {"D2V Witch"})
-   'DGIndex Back
-        ret.Add("Apps|Indexing|DGIndexNV", NameOf(g.DefaultCommands.StartTool), {"DGIndexNV"})
         ret.Add("Apps|Indexing|DGIndex", NameOf(g.DefaultCommands.StartTool), {"DGIndex"})
         ret.Add("Apps|Thumbnails|MTN Thumbnailer", NameOf(g.DefaultCommands.SaveMTN))
         ret.Add("Apps|Thumbnails|StaxRip Thumbnailer", NameOf(g.DefaultCommands.ShowBatchGenerateThumbnailsDialog))
@@ -5592,10 +5554,6 @@ Public Class MainForm
 
     Sub AviSynthListView_ScriptChanged() Handles FiltersListView.Changed
         If Not IsLoading AndAlso Not FiltersListView.IsLoading Then
-
-            'DGIndexNV Back
-            Package.DGDecodeNV.VerifyOK()
-
             If g.IsValidSource(False) Then
                 UpdateSourceParameters()
                 UpdateTargetParameters(p.Script.GetSeconds, p.Script.GetFramerate)

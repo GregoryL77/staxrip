@@ -18,8 +18,8 @@ Public Class Audio
 
         If TypeOf ap Is GUIAudioProfile Then
             Dim gap = DirectCast(ap, GUIAudioProfile)
-            ' Normalize after Cut order fix
-            If gap.ContainsCommand("ffmpeg") AndAlso p.Ranges.Count = 0 Then
+
+            If gap.ContainsCommand("ffmpeg") Then
                 gap.NormalizeFF()
             End If
         End If
@@ -62,14 +62,6 @@ Public Class Audio
         End If
 
         Cut(ap)
-
-        ' Normalize after Cut order fix , this is propably reduntand
-        If TypeOf ap Is GUIAudioProfile Then
-            Dim gap = DirectCast(ap, GUIAudioProfile)
-            If gap.ContainsCommand("ffmpeg") AndAlso p.Ranges.Count > 0 Then
-                gap.NormalizeFF()
-            End If
-        End If
 
         If Not TypeOf ap Is MuxAudioProfile AndAlso Not ap.IsInputSupported Then
             Convert(ap)
@@ -132,7 +124,7 @@ Public Class Audio
             Case AudioDecoderMode.FFAudioSource
                 ConvertFFAudioSource(ap)
             Case AudioDecoderMode.eac3to
-                Converteac3to(ap)
+                ConvertEac3to(ap)
             Case AudioDecoderMode.NicAudio
                 ConvertNicAudio(ap)
             Case AudioDecoderMode.DirectShow
@@ -144,7 +136,7 @@ Public Class Audio
         End If
 
         ConvertFF(ap)
-        Converteac3to(ap)
+        ConvertEac3to(ap)
         ConvertDirectShowSource(ap)
     End Sub
 
@@ -281,7 +273,7 @@ Public Class Audio
         End Select
     End Function
 
-    Shared Sub Converteac3to(ap As AudioProfile)
+    Shared Sub ConvertEac3to(ap As AudioProfile)
         If ap.File.Ext = ap.ConvertExt Then
             Exit Sub
         End If
@@ -335,10 +327,9 @@ Public Class Audio
 
         Dim gap = TryCast(ap, GUIAudioProfile)
 
-        'Cut fail fix, normalize after cut which failed
-        If Not (gap Is Nothing OrElse (p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_"))) Then
+        If Not gap Is Nothing Then
             gap.NormalizeFF()
-            'gap.Params.Normalize = False
+            gap.Params.Normalize = False
         End If
 
         Dim outPath = (p.TempDir + ap.File.Base + "." + ap.ConvertExt).ToShortFilePath
@@ -353,44 +344,22 @@ Public Class Audio
             args += " -map 0:" & ap.Stream.StreamOrder
         End If
 
-        If gap?.Params.Normalize Then
-            If gap.Params.ffNormalizeMode = ffNormalizeMode.dynaudnorm Then
-                args += " " + Audio.GetDynAudNormArgs(gap.Params)
-                ap.Gain = 0
-            ElseIf gap.Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
-                args += " " + Audio.GetLoudNormArgs(gap.Params)
-                ap.Gain = 0
-                'Loudnorm auto x4 upsample
-                If gap.Params.SamplingRate = 0 Then
-                    args += " -ar " & gap.SourceSamplingRate
-                End If
-            End If
-            If p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_") Then
-            Else
-                gap.Params.Normalize = False
-            End If
-        End If
-
         If ap.Gain <> 0 Then
             args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
         End If
 
-        If gap.Params.SamplingRate <> 0 Then
-            args += " -ar " & gap.Params.SamplingRate
+        If gap?.Params.Normalize Then
+            If gap.Params.ffNormalizeMode = ffNormalizeMode.dynaudnorm Then
+                args += " " + Audio.GetDynAudNormArgs(gap.Params)
+            ElseIf gap.Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
+                args += " " + Audio.GetLoudNormArgs(gap.Params)
+            End If
         End If
 
-        If gap.Params.ffmpegLFEMixLevel <> 0 AndAlso gap.Params.ChannelsMode < 3 Then
-            args += " -lfe_mix_level " & gap.Params.ffmpegLFEMixLevel.ToInvariantString
-        End If
+        args += " -y -hide_banner -ac " & ap.Channels
 
-        args += " -y -hide_banner -loglevel " & s.FfmpegLogLevel & " -ac " & ap.Channels
-
-        If ap.ConvertExt.EqualsAny("wav") Then
-            args += " -c:a pcm_f32le"
-        ElseIf ap.ConvertExt.EqualsAny("w64") Then
+        If ap.ConvertExt.EqualsAny("wav", "w64") Then
             args += " -c:a pcm_s24le"
-        ElseIf ap.ConvertExt.EqualsAny("wv") Then
-            args += " -compression_level 1"
         End If
 
         args += " " + outPath.Escape
@@ -419,7 +388,6 @@ Public Class Audio
             "I=" + params.ffmpegLoudnormIntegrated.ToInvariantString +
             ":TP=" + params.ffmpegLoudnormTruePeak.ToInvariantString +
             ":LRA=" + params.ffmpegLoudnormLRA.ToInvariantString +
-            ":offset=" + params.ffmpegLoudnormOffset.ToInvariantString +
             ":measured_I=" + params.ffmpegLoudnormIntegratedMeasured.ToInvariantString +
             ":measured_TP=" + params.ffmpegLoudnormTruePeakMeasured.ToInvariantString +
             ":measured_LRA=" + params.ffmpegLoudnormLraMeasured.ToInvariantString +
@@ -682,13 +650,11 @@ Public Class Audio
             fail = True
         End If
 
-
-        'TO Do: Cut fail fix Test this Wavpack as default instead
-        If fail AndAlso TypeOf ap Is GUIAudioProfile AndAlso Not (ap.File.Ext = "wv") Then
+        If fail AndAlso TypeOf ap Is GUIAudioProfile AndAlso Not ap.File.Ext = "wav" Then
             Log.Write("Error", "no output found")
             Convert(ap)
 
-            If ap.File.Ext = "wv" Then
+            If ap.File.Ext = "wav" Then
                 Cut(ap)
             End If
         End If
@@ -734,11 +700,10 @@ Public Enum AudioDecoderMode
 End Enum
 
 Public Enum AudioDecodingMode
-    Pipe
-    WavPack
-    WAVE
     FLAC
     W64
+    WAVE
+    Pipe
 End Enum
 
 Public Enum CuttingMode
@@ -748,7 +713,7 @@ Public Enum CuttingMode
 End Enum
 
 Public Enum ffNormalizeMode
-    peaknorm
+    volumedetect
     loudnorm
     dynaudnorm
 End Enum

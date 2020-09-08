@@ -1215,10 +1215,6 @@ Public Class SimpleUI
                     parent = parent.Parent
                 End While
 
-                If value.StartsWith("http") Then
-                    value = $"[{value} {value}]"
-                End If
-
                 DirectCast(parent, IPage).TipProvider.SetTip(value, Label, Button)
             End Set
         End Property

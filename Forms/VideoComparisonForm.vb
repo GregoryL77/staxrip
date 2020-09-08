@@ -172,8 +172,8 @@ Public Class VideoComparisonForm
 
     Sub CropZoom()
         Using form As New SimpleSettingsForm("Crop and Zoom")
-            form.Height = CInt(form.Height * 0.9)
-            form.Width = CInt(form.Width * 0.9)
+            form.Height = CInt(form.Height * 0.6)
+            form.Width = CInt(form.Width * 0.6)
             Dim ui = form.SimpleUI
             Dim page = ui.CreateFlowPage("main page")
             page.SuspendLayout()

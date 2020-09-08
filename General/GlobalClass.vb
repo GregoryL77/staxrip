@@ -1046,13 +1046,12 @@ Public Class GlobalClass
     Sub ShowCommandLineHelp(package As Package, switch As String)
         Dim content = package.CreateHelpfile
 
-        'to do: This prevents displaying help for x264 presets:
         If package Is StaxRip.Package.x264 Then
             Dim match = Regex.Match(content, "Presets:.+Frame-type options:", RegexOptions.Singleline)
 
-            'If match.Success Then
-                'content = content.Replace(match.Value, BR)
-            'End If
+            If match.Success Then
+                content = content.Replace(match.Value, BR)
+            End If
         End If
 
         Dim find As String

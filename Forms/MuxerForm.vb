@@ -620,8 +620,6 @@ Public Class MuxerForm
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(11, 10, 11, 10)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "MuxerForm"
         Me.Text = "Container"
         Me.tcMain.ResumeLayout(False)

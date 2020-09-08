@@ -136,8 +136,6 @@ Public Class CropForm
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
         Me.MinimumSize = New System.Drawing.Size(200, 200)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "CropForm"
         Me.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show
         Me.Text = "Crop"
@@ -371,20 +369,20 @@ Public Class CropForm
     End Function
 
     Sub UpdateAll()
-        If p.CropLeft > p.SourceWidth * 1 Then
-            p.CropLeft = FixMod(CInt(p.SourceWidth * 1))
+        If p.CropLeft > p.SourceWidth * 0.4 Then
+            p.CropLeft = FixMod(CInt(p.SourceWidth * 0.4))
         End If
 
-        If p.CropTop > p.SourceHeight * 1 Then
-            p.CropTop = FixMod(CInt(p.SourceHeight * 1))
+        If p.CropTop > p.SourceHeight * 0.4 Then
+            p.CropTop = FixMod(CInt(p.SourceHeight * 0.4))
         End If
 
-        If p.CropRight > p.SourceWidth * 1 Then
-            p.CropRight = FixMod(CInt(p.SourceWidth * 1))
+        If p.CropRight > p.SourceWidth * 0.4 Then
+            p.CropRight = FixMod(CInt(p.SourceWidth * 0.4))
         End If
 
-        If p.CropBottom > p.SourceHeight * 1 Then
-            p.CropBottom = FixMod(CInt(p.SourceHeight * 1))
+        If p.CropBottom > p.SourceHeight * 0.4 Then
+            p.CropBottom = FixMod(CInt(p.SourceHeight * 0.4))
         End If
 
         Renderer.CropLeft = p.CropLeft
@@ -598,8 +596,8 @@ Public Class CropForm
         Dim zoom = 0.0
         Dim workingArea = Screen.FromControl(Me).WorkingArea
 
-        While p.SourceWidth * zoom < 0.9 * workingArea.Width AndAlso
-            p.SourceHeight * zoom < 0.9 * workingArea.Height
+        While p.SourceWidth * zoom < 0.7 * workingArea.Width AndAlso
+            p.SourceHeight * zoom < 0.7 * workingArea.Height
 
             zoom += 0.01
         End While

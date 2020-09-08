@@ -102,11 +102,8 @@ Public Class SimpleSettingsForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(1191, 797)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(0)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "SimpleSettingsForm"
         Me.tlpMain.ResumeLayout(False)
         Me.tlpMain.PerformLayout()

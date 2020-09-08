@@ -291,7 +291,7 @@ Public Class CodeEditor
 
         ReadOnly Property MaxTextWidth As Integer
             Get
-                Return Font.Height * 40
+                Return Font.Height * 108
             End Get
         End Property
 

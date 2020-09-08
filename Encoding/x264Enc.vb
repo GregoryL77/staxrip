@@ -365,6 +365,7 @@ Public Class x264Params
         .Text = "Quant Matrice Preset"}
 
     Property Mbtree As New BoolParam With {
+        .Switch = "--mbtree",
         .NoSwitch = "--no-mbtree",
         .Text = "MB Tree"}
 
@@ -430,6 +431,7 @@ Public Class x264Params
         .Options = {"Diamond Search, Radius 1 (fast)", "Hexagonal Search, Radius 2", "Uneven Multi-Hexagon Search", "Exhaustive Search", "Hadamard Exhaustive Search (slow)"}}
 
     Property Weightb As New BoolParam With {
+        .Switch = "--weightb",
         .NoSwitch = "--no-weightb",
         .Text = "Weighted prediction for B-frames"}
 
@@ -487,6 +489,7 @@ Public Class x264Params
         .Config = {0, 0, 0.1, 1}}
 
     Property DctDecimate As New BoolParam With {
+        .Switch = "--dct-decimate",
         .NoSwitch = "--no-dct-decimate",
         .Text = "DCT Decimate"}
 
@@ -501,6 +504,7 @@ Public Class x264Params
         .Config = {0, 32}}
 
     Property MixedRefs As New BoolParam With {
+        .Switch = "--mixed-refs",
         .NoSwitch = "--no-mixed-refs",
         .Text = "Mixed References"}
 
@@ -541,13 +545,13 @@ Public Class x264Params
         .Text = "Pipe",
         .Name = "PipingToolAVS",
         .VisibleFunc = Function() p.Script.Engine = ScriptEngine.AviSynth,
-        .Options = {"Automatic", "None", "avs2pipemod y4m", "avs2pipemod raw", "ffmpeg y4m", "ffmpeg raw"}}
+        .Options = {"Automatic", "None", "avs2pipemod y4m", "avs2pipemod raw", "ffmpeg y4m", "ffmpeg raw", "ffmpegcuda y4m"}}
 
     Property PipingToolVS As New OptionParam With {
         .Text = "Pipe",
         .Name = "PipingToolVS",
         .VisibleFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
-        .Options = {"Automatic", "None", "vspipe y4m", "vspipe raw", "ffmpeg y4m", "ffmpeg raw"}}
+        .Options = {"Automatic", "None", "vspipe y4m", "vspipe raw", "ffmpeg y4m", "ffmpeg raw", "ffmpegcuda y4m"}}
 
     Sub ApplyValues(isDefault As Boolean)
         Dim setVal = Sub(param As CommandLineParam, value As Object)
@@ -625,6 +629,11 @@ Public Class x264Params
                 setVal(MixedRefs, False)
                 setVal(RcLookahead, 0)
                 setVal(Ref, 1)
+                setVal(I4x4, False)
+                setVal(P4x4, False)
+                setVal(B8x8, False)
+                setVal(I8x8, False)
+                setVal(P8x8, False)
                 setVal(Scenecut, 0)
                 setVal(Subme, 0)
                 setVal(Trellis, 0)
@@ -671,6 +680,11 @@ Public Class x264Params
                 setVal(Me_, 2)
                 setVal(RcLookahead, 60)
                 setVal(Ref, 8)
+                setVal(I4x4, True)
+                setVal(P4x4, True)
+                setVal(B8x8, True)
+                setVal(I8x8, True)
+                setVal(P8x8, True)
                 setVal(Subme, 9)
                 setVal(Trellis, 2)
                 setVal(Direct, 3)
@@ -679,8 +693,12 @@ Public Class x264Params
                 setVal(BAdapt, 2)
                 setVal(Me_, 2)
                 setVal(RcLookahead, 60)
-                setVal(RcLookahead, 60)
                 setVal(Ref, 16)
+                setVal(I4x4, True)
+                setVal(P4x4, True)
+                setVal(B8x8, True)
+                setVal(I8x8, True)
+                setVal(P8x8, True)
                 setVal(Subme, 10)
                 setVal(Trellis, 2)
                 setVal(Direct, 3)
@@ -691,6 +709,11 @@ Public Class x264Params
                 setVal(Me_, 4)
                 setVal(RcLookahead, 60)
                 setVal(Ref, 16)
+                setVal(I4x4, True)
+                setVal(P4x4, True)
+                setVal(B8x8, True)
+                setVal(I8x8, True)
+                setVal(P8x8, True)
                 setVal(Subme, 11)
                 setVal(Trellis, 2)
                 setVal(Direct, 3)
@@ -1031,9 +1054,22 @@ Public Class x264Params
 
                     pipeCmd = Package.avs2pipemod.Path.Escape + dll + " -rawvideo " + script.Path.Escape + " | "
                 Case "ffmpeg y4m"
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -strict -1 -loglevel fatal -hide_banner - | "
+                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
                 Case "ffmpeg raw"
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f rawvideo -strict -1 -loglevel fatal -hide_banner - | "
+                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f rawvideo -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
+
+                Case "ffmpegcuda y4m"
+
+                    'To DO Check Vsync: 0 - passthrough Each frame Is passed with its timestamp from the demuxer to the muxer, 
+                    '1, cfr Frames will be duplicated And dropped to achieve exactly the requested constant frame rate.
+                    '2, vfr Frames are passed through with their timestamp Or dropped so as to prevent 2 frames from having the same timestamp.
+                    '3? drop As passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
+                    '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
+
+                    'pipeCmd = Package.ffmpeg.Path.Escape + " -vsync 0 -hwaccel cuda -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p -loglevel fatal -hide_banner - | "
+                    Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
+                    pipeCmd = Package.ffmpeg.Path.Escape + " -vsync 1 -hwaccel cuda -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
+
             End Select
 
             args += pipeCmd + Package.x264.Path.Escape
@@ -1123,8 +1159,8 @@ Public Class x264Params
 
     Function GetPartitionsArg() As String
         If I4x4.Value = I4x4.DefaultValue AndAlso I8x8.Value = I8x8.DefaultValue AndAlso
-            P4x4.Value = P4x4.DefaultValue AndAlso P8x8.Value = P8x8.DefaultValue AndAlso
-            B8x8.Value = B8x8.DefaultValue Then
+                P4x4.Value = P4x4.DefaultValue AndAlso P8x8.Value = P8x8.DefaultValue AndAlso
+                B8x8.Value = B8x8.DefaultValue Then
 
             Return Nothing
         End If

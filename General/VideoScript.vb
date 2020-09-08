@@ -222,7 +222,7 @@ else:
     else:
         _matrix_in_s = '470bg'
 
-clipname = clipname.resize.Bicubic(matrix_in_s = _matrix_in_s, format = vs.COMPATBGR32)
+clipname = clipname.resize.Bicubic(matrix_in_s = _matrix_in_s, format = vs.COMPATBGR32, dither_type='error_diffusion')
 clipname.set_output()
 "
                 vsCode = vsCode.Replace("clipname", clipname)
@@ -239,8 +239,8 @@ clipname.set_output()
                 End If
 
                 If Not Package.AviSynth.VerifyOK OrElse
-                    Not Package.VapourSynth.VerifyOK OrElse
-                    Not Package.vspipe.VerifyOK Then
+                        Not Package.VapourSynth.VerifyOK OrElse
+                        Not Package.vspipe.VerifyOK Then
 
                     Throw New AbortException
                 End If
@@ -301,7 +301,7 @@ clipname.set_output()
         If Not script.Contains("import vapoursynth") Then
             code =
                 "import os, sys" + BR +
-                "import vapoursynth as vs" + BR + "core = vs.get_core()" + BR +
+                "import vapoursynth as vs" + BR + "core = vs.core" + BR +
                 GetVsPortableAutoLoadPluginCode() + BR +
                 "sys.path.append(r""" + Folder.Startup + "Apps\Plugins\VS\Scripts"")" + BR + code
         End If
@@ -510,7 +510,7 @@ clipname.set_output()
         script.Filters.Add(New VideoFilter("Source", "Automatic", "# can be configured at: Tools > Settings > Source Filters"))
         script.Filters.Add(New VideoFilter("Crop", "Crop", "Crop(%crop_left%, %crop_top%, -%crop_right%, -%crop_bottom%)", False))
         script.Filters.Add(New VideoFilter("Field", "QTGMC Medium", "QTGMC(preset=""Medium"")", False))
-        script.Filters.Add(New VideoFilter("Noise", "DFTTest", "DFTTest(sigma=6, tbsize=1)", False))
+        script.Filters.Add(New VideoFilter("Noise", "DFTTest", "DFTTest(sigma=6, tbsize=3)", False))
         script.Filters.Add(New VideoFilter("Resize", "BicubicResize", "BicubicResize(%target_width%, %target_height%)", False))
         ret.Add(script)
 
@@ -520,8 +520,8 @@ clipname.set_output()
         script.Filters.Add(New VideoFilter("Crop", "Crop", "clip = core.std.Crop(clip, %crop_left%, %crop_right%, %crop_top%, %crop_bottom%)", False))
         script.Filters.Add(New VideoFilter("Noise", "DFTTest", "clip = core.dfttest.DFTTest(clip, sigma=6, tbsize=3, opt=3)", False))
         script.Filters.Add(New VideoFilter("Field", "QTGMC Medium", $"clip = core.std.SetFieldBased(clip, 2) # 1=BFF, 2=TFF{BR}clip = havsfunc.QTGMC(clip, TFF=True, Preset='Medium')", False))
-        'script.Filters.Add(New VideoFilter("FrameRate", "SVPFlow", "crop_string = """"" + BR + "resize_string = """"" + BR + "super_params = ""{pel:1,scale:{up:0},gpu:1,full:false,rc:true}""" + BR + "analyse_params = ""{block:{w:16},main:{search:{coarse:{type:4,distance:-6,bad:{sad:2000,range:24}},type:4}},refine:[{thsad:250}]}""" + BR + "smoothfps_params = ""{gpuid:11,linear:true,rate:{num:60000,den:1001,abs:true},algo:23,mask:{area:200},scene:{}}""" + BR + "def interpolate(clip):" + BR + "    input = clip" + BR + "    if crop_string!='':" + BR + "        input = eval(crop_string)" + BR + "    if resize_string!='':" + BR + "        input = eval(resize_string)" + BR + "    super   = core.svp1.Super(input,super_params)" + BR + "    vectors = core.svp1.Analyse(super[""clip""],super[""data""],input,analyse_params)" + BR + "    smooth  = core.svp2.SmoothFps(input,super[""clip""],super[""data""],vectors[""clip""],vectors[""data""],smoothfps_params,src=clip)" + BR + "    smooth  = core.std.AssumeFPS(smooth,fpsnum=smooth.fps_num,fpsden=smooth.fps_den)" + BR + "    return smooth" + BR + "clip =  interpolate(clip)", False))
-        'script.Filters.Add(New VideoFilter("Color", "Respec", "clip = core.fmtc.resample(clip, css='444')" + BR + "clip = core.fmtc.matrix(clip, mats='709', matd='709')" + BR + "clip = core.fmtc.resample(clip, css='420')" + BR + "clip = core.fmtc.bitdepth(clip, bits=10, fulls=False, fulld=False)", False))
+        script.Filters.Add(New VideoFilter("FrameRate", "SVPFlow", "crop_string = """"" + BR + "resize_string = """"" + BR + "super_params = ""{pel:1,scale:{up:0},gpu:1,full:false,rc:true}""" + BR + "analyse_params = ""{block:{w:16},main:{search:{coarse:{type:4,distance:-6,bad:{sad:2000,range:24}},type:4}},refine:[{thsad:250}]}""" + BR + "smoothfps_params = ""{gpuid:11,linear:true,rate:{num:60000,den:1001,abs:true},algo:23,mask:{area:200},scene:{}}""" + BR + "def interpolate(clip):" + BR + "    input = clip" + BR + "    if crop_string!='':" + BR + "        input = eval(crop_string)" + BR + "    if resize_string!='':" + BR + "        input = eval(resize_string)" + BR + "    super   = core.svp1.Super(input,super_params)" + BR + "    vectors = core.svp1.Analyse(super[""clip""],super[""data""],input,analyse_params)" + BR + "    smooth  = core.svp2.SmoothFps(input,super[""clip""],super[""data""],vectors[""clip""],vectors[""data""],smoothfps_params,src=clip)" + BR + "    smooth  = core.std.AssumeFPS(smooth,fpsnum=smooth.fps_num,fpsden=smooth.fps_den)" + BR + "    return smooth" + BR + "clip =  interpolate(clip)", False))
+        script.Filters.Add(New VideoFilter("Color", "Respec", "clip = core.fmtc.resample(clip, css='444')" + BR + "clip = core.fmtc.matrix(clip, mats='709', matd='709')" + BR + "clip = core.fmtc.resample(clip, css='420')" + BR + "clip = core.fmtc.bitdepth(clip, bits=10, fulls=False, fulld=False)", False))
         script.Filters.Add(New VideoFilter("Resize", "BicubicResize", "clip = core.resize.Bicubic(clip, %target_width%, %target_height%)", False))
         ret.Add(script)
 
@@ -955,6 +955,29 @@ Public Class FilterParameters
                                Next
                            End Sub
 
+                'DGIndexNV Back
+                add({"DGSource"}, "Hardware Resizing", {
+                    New FilterParameter("rw", "%target_width%"),
+                    New FilterParameter("rh", "%target_height%")})
+
+                add({"DGSource"}, "Deliver i420 instead of YV12", {
+                    New FilterParameter("i420", "True")})
+
+                add({"DGSource"}, "Show Info", {
+                    New FilterParameter("show", "True")})
+
+                add({"DGSource"}, "Hardware Cropping", {
+                    New FilterParameter("cl", "%crop_left%"),
+                    New FilterParameter("ct", "%crop_top%"),
+                    New FilterParameter("cr", "%crop_right%"),
+                    New FilterParameter("cb", "%crop_bottom%")})
+
+                add2({"DGSource"}, "deinterlace", "0", "deinterlace | 0 (no deinterlacing)")
+                add2({"DGSource"}, "deinterlace", "1", "deinterlace | 1 (single rate deinterlacing)")
+                add2({"DGSource"}, "deinterlace", "2", "deinterlace | 2 (double rate deinterlacing)")
+                add2({"DGSource"}, "fulldepth", "true", "fulldepth = true")
+
+
                 add({"FFVideoSource",
                      "LWLibavVideoSource",
                      "LSMASHVideoSource",
@@ -1021,6 +1044,54 @@ Public Class FilterParameters
                 add2({"ffms2.Source", "FFVideoSource"}, "rffmode", "0", "rffmode | 0 (ignore all flags (default))")
                 add2({"ffms2.Source", "FFVideoSource"}, "rffmode", "1", "rffmode | 1 (honor all pulldown flags)")
                 add2({"ffms2.Source", "FFVideoSource"}, "rffmode", "2", "rffmode | 2 (force film)")
+
+                'All Vapoursynth color spaces, Format Constants:
+                add2({"ffms2.Source"}, "format", "vs.GRAY8", "format | GRAY8")
+                add2({"ffms2.Source"}, "format", "vs.GRAY16", "format | GRAY16")
+                add2({"ffms2.Source"}, "format", "vs.GRAYH", "format | GRAYH")
+                add2({"ffms2.Source"}, "format", "vs.GRAYS", "format | GRAYS")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV420P8", "format | YUV420P8")
+                add2({"ffms2.Source"}, "format", "vs.YUV422P8", "format | YUV422P8")
+                add2({"ffms2.Source"}, "format", "vs.YUV444P8", "format | YUV444P8")
+                add2({"ffms2.Source"}, "format", "vs.YUV410P8", "format | YUV410P8")
+                add2({"ffms2.Source"}, "format", "vs.YUV411P8", "format | YUV411P8")
+                add2({"ffms2.Source"}, "format", "vs.YUV440P8", "format | YUV440P8")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV420P9", "format | YUV420P9")
+                add2({"ffms2.Source"}, "format", "vs.YUV422P9", "format | YUV422P9")
+                add2({"ffms2.Source"}, "format", "vs.YUV444P9", "format | YUV444P9")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV420P10", "format | YUV420P10")
+                add2({"ffms2.Source"}, "format", "vs.YUV422P10", "format | YUV422P10")
+                add2({"ffms2.Source"}, "format", "vs.YUV444P10", "format | YUV444P10")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV420P12", "format | YUV420P12")
+                add2({"ffms2.Source"}, "format", "vs.YUV422P12", "format | YUV422P12")
+                add2({"ffms2.Source"}, "format", "vs.YUV444P12", "format | YUV444P12")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV420P14", "format | YUV420P14")
+                add2({"ffms2.Source"}, "format", "vs.YUV422P14", "format | YUV422P14")
+                add2({"ffms2.Source"}, "format", "vs.YUV444P14", "format | YUV444P14")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV420P16", "format | YUV420P16")
+                add2({"ffms2.Source"}, "format", "vs.YUV422P16", "format | YUV422P16")
+                add2({"ffms2.Source"}, "format", "vs.YUV444P16", "format | YUV444P16")
+
+                add2({"ffms2.Source"}, "format", "vs.YUV444PH", "format | YUV444PH")
+                add2({"ffms2.Source"}, "format", "vs.YUV444PS", "format | YUV444PS")
+
+                add2({"ffms2.Source"}, "format", "vs.RGB24", "format | RGB24")
+                add2({"ffms2.Source"}, "format", "vs.RGB27", "format | RGB27")
+                add2({"ffms2.Source"}, "format", "vs.RGB30", "format | RGB30")
+                add2({"ffms2.Source"}, "format", "vs.RGB48", "format | RGB48")
+                add2({"ffms2.Source"}, "format", "vs.RGB32", "format | RGB32")
+                add2({"ffms2.Source"}, "format", "vs.RGBH", "format | RGBH")
+                add2({"ffms2.Source"}, "format", "vs.RGBS", "format | RGBS")
+
+                add2({"ffms2.Source"}, "format", "vs.COMPATBGR32", "format | COMPATBGR32")
+                add2({"ffms2.Source"}, "format", "vs.COMPATYUY2", "format | COMPATYUY2")
+
 
                 add2({"FFVideoSource"}, "colorspace", """YUV420P8""", "colorspace | YUV420P8")
                 add2({"FFVideoSource"}, "colorspace", """YUV422P8""", "colorspace | YUV422P8")

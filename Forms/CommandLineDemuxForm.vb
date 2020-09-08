@@ -317,8 +317,11 @@ Public Class CommandLineDemuxForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(1664, 697)
         Me.Controls.Add(Me.tlpMain)
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(11, 10, 11, 10)
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Name = "CommandLineDemuxForm"
         Me.Padding = New System.Windows.Forms.Padding(15)
         Me.Text = "Demux Configuration"

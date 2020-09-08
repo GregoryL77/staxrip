@@ -105,9 +105,16 @@ Public MustInherit Class VideoEncoder
 
         Select Case color_range
             Case "Limited"
+                cl += " --colorrange limited"
+                cl += " --range tv"
+                cl += " --input-range tv"
                 cl += " --range limited"
             Case "Full"
+                cl += " --colorrange full"
+                cl += " --range pc"
+                cl += " --input-range pc"
                 cl += " --range full"
+
         End Select
 
         Dim MasteringDisplay_ColorPrimaries = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_ColorPrimaries")

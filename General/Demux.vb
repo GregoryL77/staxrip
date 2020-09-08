@@ -100,6 +100,30 @@ Public MustInherit Class Demuxer
         dgIndex.SourceFilters = {"MPEG2Source", "d2v.Source"}
         ret.Add(dgIndex)
 
+        'DgindexNV Back
+        Dim dgnvNoDemux As New CommandLineDemuxer
+        dgnvNoDemux.Name = "DGIndexNV: Index, No Demux"
+        dgnvNoDemux.InputExtensions = {"mkv", "mp4", "h264", "h265", "avc", "hevc", "hvc", "264", "265"}
+        dgnvNoDemux.OutputExtensions = {"dgi"}
+        dgnvNoDemux.InputFormats = {"hevc", "avc", "vc1", "mpeg2"}
+        dgnvNoDemux.Command = "%app:DGIndexNV%"
+        dgnvNoDemux.Arguments = "-i %source_files_comma% -o ""%source_temp_file%.dgi"" -h"
+        dgnvNoDemux.SourceFilters = {"DGSource"}
+        dgnvNoDemux.Active = False
+        ret.Add(dgnvNoDemux)
+
+        Dim dgnvDemux As New CommandLineDemuxer
+        dgnvDemux.Name = "DGIndexNV: Demux & Index"
+        dgnvDemux.InputExtensions = {"mpg", "vob", "ts", "m2ts", "mts", "m2t"}
+        dgnvDemux.OutputExtensions = {"dgi"}
+        dgnvDemux.InputFormats = {"hevc", "avc", "vc1", "mpeg2"}
+        dgnvDemux.Command = "%app:DGIndexNV%"
+        dgnvDemux.Arguments = "-i %source_files_comma% -o ""%source_temp_file%.dgi"" -a -h"
+        dgnvDemux.SourceFilters = {"DGSource"}
+        dgnvDemux.Active = False
+        ret.Add(dgnvDemux)
+        'DgindexNV Back
+
         Dim d2vWitch As New CommandLineDemuxer
         d2vWitch.Name = "D2V Witch: Demux & Index MPEG-2"
         d2vWitch.InputExtensions = {"mpg", "vob", "m2ts", "mts", "m2t"}
@@ -138,7 +162,12 @@ Public Class CommandLineDemuxer
         Using proc As New Proc
             Dim test = Macro.Expand(Command + Arguments).ToLowerEx.RemoveChars(" ")
 
-            If test.Contains("dgindex") AndAlso Not test.Contains("dgindexnv") Then
+            'DGIndexNV Back Back
+            If Command?.Contains("DGIndexNV") OrElse Arguments?.Contains("DGIndexNV") Then
+                proc.Package = Package.DGIndexNV
+                proc.IntegerPercentOutput = True
+
+            ElseIf test.Contains("dgindex") AndAlso Not test.Contains("dgindexnv") Then
                 proc.Package = Package.DGIndex
                 proc.IntegerPercentOutput = True
             ElseIf test.Contains("d2vwitch") Then
@@ -328,7 +357,7 @@ Public Class ffmpegDemuxer
         args += " -vn -sn -y -hide_banner"
 
         If outPath.Ext = "wav" Then
-            args += " -c:a pcm_s16le"
+            args += " -c:a pcm_f32le"
         Else
             args += " -c:a copy"
         End If

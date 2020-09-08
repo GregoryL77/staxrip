@@ -158,6 +158,8 @@ Public Class SourceFilesForm
         Me.HelpButton = False
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(13, 14, 13, 14)
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Name = "SourceFilesForm"
         Me.Text = "Source Files"
         Me.tlpMain.ResumeLayout(False)

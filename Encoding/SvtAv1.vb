@@ -164,7 +164,7 @@ Public Class SVTAV1
                 ret = Package.ffmpeg.Path.Escape +
                     If(p.Script.Engine = ScriptEngine.VapourSynth, " -f vapoursynth", "") +
                     " -i " + p.Script.Path.Escape +
-                    " -f yuv4mpegpipe -strict -1 -loglevel fatal -hide_banner - | " +
+                    " -f yuv4mpegpipe -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " +
                     Package.SVTAV1.Path.Escape
             End If
 

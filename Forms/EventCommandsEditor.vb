@@ -205,6 +205,8 @@ Public Class EventCommandsEditor
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(7)
         Me.MinimumSize = New System.Drawing.Size(405, 302)
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.Name = "EventCommandsEditor"
         Me.Text = "Event Command"
         Me.flpButtons.ResumeLayout(False)

@@ -189,7 +189,7 @@ Public Class ffmpegEnc
         Property Decoder As New OptionParam With {
             .Text = "Decoder",
             .Options = {"AviSynth/VapourSynth", "Software", "Intel", "DXVA2", "Nvidia"},
-            .Values = {"-", "sw", "qsv", "dxva2", "cuvid"}}
+            .Values = {"-", "sw", "qsv", "dxva2", "cuda"}}
 
         Property Custom As New StringParam With {
             .Text = "Custom",
@@ -213,7 +213,7 @@ Public Class ffmpegEnc
                         New OptionParam With {.Name = "h264_nvenc level", .Switch = "-level", .Text = "Level", .Options = {"Auto", "1", "1.0", "1b", "1.0b", "1.1", "1.2", "1.3", "2", "2.0", "2.1", "2.2", "3", "3.0", "3.1", "3.2", "4", "4.0", "4.1", "4.2", "5", "5.0", "5.1"}, .VisibleFunc = Function() Codec.ValueText = "h264_nvenc"},
                         New OptionParam With {.Name = "h264_nvenc rc", .Switch = "-rc", .Text = "Rate Control", .Options = {"Preset", "Constqp", "VBR", "CBR", "VBR_MinQP", "LL_2Pass_Quality", "LL_2Pass_Size", "VBR_2Pass"}, .VisibleFunc = Function() Codec.ValueText = "h264_nvenc"},
                         New OptionParam With {.Name = "utVideoPred", .Switch = "-pred", .Text = "Prediction", .Init = 3, .Options = {"None", "Left", "Gradient", "Median"}, .VisibleFunc = Function() Codec.ValueText = "utvideo"},
-                        New OptionParam With {.Name = "utVideoPixFmt", .Switch = "-pix_fmt", .Text = "Pixel Format", .Options = {"YUV420P", "YUV422P", "YUV444P", "RGB24", "RGBA"}, .VisibleFunc = Function() Codec.ValueText = "utvideo"},
+                        New OptionParam With {.Name = "utVideoPixFmt", .Switch = "-pix_fmt", .Text = "Pixel Format", .Options = {"YUV420P", "YUV422P", "YUV444P", "yuv420p10le", "yuv422p10le", "yuv444p10le", "yuv420p12le", "yuv422p12le", "yuv444p12le", "RGB24", "RGBA"}},
                         New NumParam With {.Name = "Quality", .Text = "Quality", .Init = -1, .VisibleFunc = Function() Mode.Value = EncodingMode.Quality AndAlso Not Codec.ValueText.EqualsAny("prores", "utvideo", "ffv1"), .ArgsFunc = AddressOf GetQualityArgs, .Config = {-1, 63}},
                         New NumParam With {.Switch = "-threads", .Text = "Threads", .Config = {0, 64}},
                         New NumParam With {.Switch = "-tile-columns", .Text = "Tile Columns", .VisibleFunc = Function() Codec.OptionText = "VP9", .Value = 6, .DefaultValue = -1},
@@ -241,6 +241,16 @@ Public Class ffmpegEnc
                 ret = Package.ffmpeg.Path.Escape
             End If
 
+            'To DO Check Vsync: 0 - passthrough(int values are depreciated) Each frame Is passed with its timestamp from the demuxer to the muxer, 
+            '1, cfr Frames will be duplicated And dropped to achieve exactly the requested constant frame rate.
+            '2, vfr Frames are passed through with their timestamp Or dropped so as to prevent 2 frames from having the same timestamp.
+            '3? drop As passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
+            '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
+            If Not p.ExtractTimestamps Then
+                ret += " -vsync 1 -strict -1"
+            End If
+
+
             Select Case Decoder.ValueText
                 Case "sw"
                     sourcePath = p.LastOriginalSourceFile
@@ -250,9 +260,9 @@ Public Class ffmpegEnc
                 Case "dxva2"
                     sourcePath = p.LastOriginalSourceFile
                     ret += " -hwaccel dxva2"
-                Case "cuvid"
+                Case "cuda"
                     sourcePath = p.LastOriginalSourceFile
-                    ret += " -hwaccel cuvid"
+                    ret += " -hwaccel cuda"
             End Select
 
             If sourcePath.Ext = "vpy" Then
@@ -301,7 +311,7 @@ Public Class ffmpegEnc
             End If
 
             If includePaths Then
-                ret += " -an -y -hide_banner " + targetPath
+                ret += " -an -y -hide_banner -loglevel " + CStr(s.FfmpegLogLevel) + targetPath
             End If
 
             Return ret.Trim

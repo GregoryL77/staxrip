@@ -801,9 +801,16 @@ Public Class AudioForm
         If TempProfile.ExtractCore Then
             numQuality.Enabled = False
             numBitrate.Enabled = False
+        ElseIf TempProfile.Params.Codec = AudioCodec.WavPack Then
+            numQuality.Enabled = False
+            If TempProfile.Params.WavPackMode = 1 Then
+                numBitrate.Enabled = True
+            Else
+                numBitrate.Enabled = False
+            End If
         Else
             Select Case TempProfile.Params.Codec
-                Case AudioCodec.Opus, AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.DTS, AudioCodec.WavPack
+                Case AudioCodec.Opus, AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.DTS
                     numQuality.Enabled = False
                 Case Else
                     numQuality.Enabled = TempProfile.Params.RateMode = AudioRateMode.VBR
@@ -811,12 +818,6 @@ Public Class AudioForm
 
             If TempProfile.Params.Codec = AudioCodec.FLAC Then
                 numBitrate.Enabled = False
-
-
-                'To DO : WavePack has lossy mode 
-                ' ElseIf TempProfile.Params.Codec = AudioCodec.WavPack andalso temprofile.params.WavPackLossy Then
-                '     numBitrate.Enabled = False
-
             Else
                 numBitrate.Enabled = Not numQuality.Enabled
             End If
@@ -870,6 +871,8 @@ Public Class AudioForm
                 TempProfile.Params.RateMode = AudioRateMode.CBR
 
             Case AudioCodec.WavPack
+                TempProfile.Params.WavPackMode = 0
+                TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffCompressionLevel = 0
                 TempProfile.Params.BDepth = 32
                 numBitrate.Value = TempProfile.GetBitrate
@@ -1110,6 +1113,19 @@ Public Class AudioForm
                 Select Case TempProfile.Params.Codec
 
                     Case AudioCodec.FLAC, AudioCodec.WavPack
+                        If TempProfile.Params.Codec = AudioCodec.WavPack Then
+                            Dim mbMode = ui.AddMenu(Of Integer)
+                            mbMode.Text = "Mode:"
+                            mbMode.Expandet = True
+                            mbMode.Add("Lossless", 0)
+                            mbMode.Add("Lossy CBR", 1)
+                            mbMode.Button.Value = TempProfile.Params.WavPackMode
+                            mbMode.Button.SaveAction = Sub(value)
+                                                           TempProfile.Params.WavPackMode = value
+                                                           UpdateBitrate()
+                                                       End Sub
+                        End If
+
                         Dim mCompressionLevel = ui.AddNum(page)
                         mCompressionLevel.Text = "Compression Level:"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
@@ -1303,6 +1319,17 @@ Public Class AudioForm
                 cb.SaveAction = Sub(value) TempProfile.Params.qaacNoDither = value
 
             Case GuiAudioEncoder.WavPack
+                Dim mbMode = ui.AddMenu(Of Integer)
+                mbMode.Text = "Mode:"
+                mbMode.Expandet = True
+                mbMode.Add("Lossless", 0)
+                mbMode.Add("Lossy CBR", 1)
+                mbMode.Button.Value = TempProfile.Params.WavPackMode
+                mbMode.Button.SaveAction = Sub(value)
+                                               TempProfile.Params.WavPackMode = value
+                                               UpdateBitrate()
+                                           End Sub
+
                 Dim mCompression = ui.AddMenu(Of Integer)
                 mCompression.Text = "Comp/Decomp Mode:"
                 mCompression.Expandet = True
@@ -1332,7 +1359,11 @@ Public Class AudioForm
                                                        UpdateControls()
                                                    End If
                                                End Sub
-                'To do Add WavPack lossy mode
+                cb = ui.AddBool(page)
+                cb.Text = "Create correction file"
+                cb.Checked = TempProfile.Params.WavPackCreateCorrection
+                cb.SaveAction = Sub(value) TempProfile.Params.WavPackCreateCorrection = value
+
 
             Case GuiAudioEncoder.OpusEnc
                 Dim mbMode = ui.AddMenu(Of Integer)

@@ -1250,6 +1250,9 @@ Public Class GUIAudioProfile
                     ret += " -sample_fmt s32"
                 End If
             Case AudioCodec.WavPack
+                If Params.WavPackMode = 1 Then
+                    ret += " -b:a " & CInt(Bitrate) & "k"
+                End If
                 If Params.ffCompressionLevel <> 0 Then
                     ret += " -compression_level " & Params.ffCompressionLevel
                 End If
@@ -1338,8 +1341,13 @@ Public Class GUIAudioProfile
             ret += " -x" & Params.WavPackExtraCompression
         End If
 
-        'TO DO: add lossy mode:
+        If Params.WavPackMode = 1 Then
+            ret += " -b" & CInt(Bitrate)
+        End If
 
+        If Params.WavPackCreateCorrection Then
+            ret += " -c"
+        End If
 
         If Params.WavPackPreQuant > 0 Then
             ret += " --pre-quantize=" & Params.WavPackPreQuant
@@ -1657,7 +1665,8 @@ Public Class GUIAudioProfile
         Property WavPackCompression As Integer = 1
         Property WavPackExtraCompression As Integer = 0
         Property WavPackPreQuant As Integer = 0
-
+        Property WavPackMode As Integer = 0 'lossless
+        Property WavPackCreateCorrection As Boolean
 
         Property SimpleRateMode As SimpleAudioRateMode
             Get

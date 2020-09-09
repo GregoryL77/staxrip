@@ -803,11 +803,7 @@ Public Class AudioForm
             numBitrate.Enabled = False
         ElseIf TempProfile.Params.Codec = AudioCodec.WavPack Then
             numQuality.Enabled = False
-            If TempProfile.Params.WavPackMode = 1 Then
-                numBitrate.Enabled = True
-            Else
-                numBitrate.Enabled = False
-            End If
+            numBitrate.Enabled = TempProfile.Params.WavPackMode = 1
         Else
             Select Case TempProfile.Params.Codec
                 Case AudioCodec.Opus, AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.DTS
@@ -872,6 +868,7 @@ Public Class AudioForm
 
             Case AudioCodec.WavPack
                 TempProfile.Params.WavPackMode = 0
+                numBitrate.Value = If(TempProfile.Params.ChannelsMode > 2 OrElse TempProfile.Params.ChannelsMode = 0, 960, 384)
                 TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffCompressionLevel = 0
                 TempProfile.Params.BDepth = 32
@@ -1359,11 +1356,13 @@ Public Class AudioForm
                                                        UpdateControls()
                                                    End If
                                                End Sub
-                cb = ui.AddBool(page)
-                cb.Text = "Create correction file"
-                cb.Checked = TempProfile.Params.WavPackCreateCorrection
-                cb.SaveAction = Sub(value) TempProfile.Params.WavPackCreateCorrection = value
 
+                If TempProfile.Params.WavPackMode = 1 Then
+                    cb = ui.AddBool(page)
+                    cb.Text = "Create correction file"
+                    cb.Checked = TempProfile.Params.WavPackCreateCorrection
+                    cb.SaveAction = Sub(value) TempProfile.Params.WavPackCreateCorrection = value
+                End If
 
             Case GuiAudioEncoder.OpusEnc
                 Dim mbMode = ui.AddMenu(Of Integer)
@@ -1397,7 +1396,7 @@ Public Class AudioForm
                 mComplexity.NumEdit.SaveAction = Sub(value) TempProfile.Params.opusencComplexity = CInt(value)
 
                 cb = ui.AddBool(page)
-                cb.Text = "No use of phase inversion for intensity stereo"
+                cb.Text = "No phase inversion for intensity stereo"
                 cb.Checked = TempProfile.Params.OpusEncNoPhaseInv
                 cb.SaveAction = Sub(value) TempProfile.Params.OpusEncNoPhaseInv = value
 

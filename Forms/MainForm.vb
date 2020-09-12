@@ -1445,9 +1445,7 @@ Public Class MainForm
                     iMenuItem.DropDownItems.ClearAndDisplose
 
                     For Each pack In Package.Items.Values
-                        If pack.HelpFileOrURL <> "" Then
-                            ActionMenuItem.Add(iMenuItem.DropDownItems, pack.Name.Substring(0, 1).Upper + " | " + pack.Name, Sub() pack.ShowHelp())
-                        End If
+                        ActionMenuItem.Add(iMenuItem.DropDownItems, pack.Name.Substring(0, 1).Upper + " | " + pack.Name, Sub() pack.ShowHelp())
                     Next
                 End If
             End If
@@ -6055,7 +6053,7 @@ Public Class MainForm
         Refresh()
         ProcessCommandLine(Environment.GetCommandLineArgs)
         StaxRip.Update.ShowUpdateQuestion()
-        StaxRip.Update.CheckForUpdate(False, s.CheckForUpdatesBeta)
+        StaxRip.Update.CheckForUpdate(False, s.CheckForUpdatesBeta, Environment.Is64BitProcess)
         g.RunTask(AddressOf g.LoadPowerShellScripts)
         g.RunTask(AddressOf FrameServerHelp.VerifyAviSynthLinks)
     End Sub

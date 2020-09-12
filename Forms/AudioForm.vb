@@ -761,6 +761,7 @@ Public Class AudioForm
         gap.Decoder = TempProfile.Decoder
         gap.DecodingMode = TempProfile.DecodingMode
         gap.ExtractDTSCore = TempProfile.ExtractDTSCore
+        gap.Depth = TempProfile.Depth
     End Sub
 
     Sub UpdateBitrate()
@@ -801,9 +802,15 @@ Public Class AudioForm
         If TempProfile.ExtractCore Then
             numQuality.Enabled = False
             numBitrate.Enabled = False
+            If Not numFFLFEMixLevel Is Nothing Then
+                numFFLFEMixLevel.Enabled = False
+            End If
         ElseIf TempProfile.Params.Codec = AudioCodec.WavPack Then
             numQuality.Enabled = False
             numBitrate.Enabled = TempProfile.Params.WavPackMode = 1
+            If Not numFFLFEMixLevel Is Nothing Then
+                numFFLFEMixLevel.Enabled = True
+            End If
         Else
             Select Case TempProfile.Params.Codec
                 Case AudioCodec.Opus, AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.DTS
@@ -816,6 +823,9 @@ Public Class AudioForm
                 numBitrate.Enabled = False
             Else
                 numBitrate.Enabled = Not numQuality.Enabled
+            End If
+            If Not numFFLFEMixLevel Is Nothing Then
+                numFFLFEMixLevel.Enabled = True
             End If
         End If
 
@@ -862,27 +872,26 @@ Public Class AudioForm
 
             Case AudioCodec.FLAC
                 TempProfile.Params.ffCompressionLevel = 5
-                TempProfile.Params.BDepth = 0
+                TempProfile.Depth = 0
                 numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.RateMode = AudioRateMode.CBR
 
             Case AudioCodec.WavPack
                 TempProfile.Params.WavPackMode = 0
-                numBitrate.Value = If(TempProfile.Params.ChannelsMode > 2 OrElse TempProfile.Params.ChannelsMode = 0, 960, 384)
+                numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffCompressionLevel = 0
-                TempProfile.Params.BDepth = 32
-                numBitrate.Value = TempProfile.GetBitrate
-                TempProfile.Params.RateMode = AudioRateMode.CBR
+                TempProfile.Depth = 32
+                'TempProfile.Params.RateMode = AudioRateMode.CBR
                 TempProfile.Params.WavPackCompression = 1
                 TempProfile.Params.WavPackExtraCompression = 0
                 TempProfile.Params.WavPackPreQuant = 0
 
             Case AudioCodec.W64
-                TempProfile.Params.BDepth = 24
+                TempProfile.Depth = 0
 
             Case AudioCodec.WAV
-                TempProfile.Params.BDepth = 32
+                TempProfile.Depth = 0
 
             Case AudioCodec.DTS
                 If TempProfile.Channels = 6 Then
@@ -899,10 +908,11 @@ Public Class AudioForm
                 SetQuality(1)
                 TempProfile.Params.RateMode = AudioRateMode.VBR
             Case AudioCodec.Opus
-                numBitrate.Value = If(TempProfile.Params.ChannelsMode > 2 OrElse TempProfile.Params.ChannelsMode = 0, 256, 96)
+                'numBitrate.Value = TempProfile.Channels * 96 / 2
+                numBitrate.Value = If(TempProfile.Channels = 6, 256, TempProfile.Channels * 96 / 2)
                 TempProfile.Params.RateMode = AudioRateMode.VBR
                 TempProfile.Params.opusencMode = 0
-                TempProfile.Params.ffmpegMappingFamily = -1
+                'TempProfile.Params.ffmpegMappingFamily = -1
                 TempProfile.Params.opusencComplexity = 10
                 TempProfile.Params.opusencFramesize = 20
                 TempProfile.Params.OpusEncNoPhaseInv = False
@@ -1027,6 +1037,8 @@ Public Class AudioForm
         numBitrate.Value = v
     End Sub
 
+    Private numFFLFEMixLevel As SimpleUI.NumBlock
+
     Sub LoadAdvanced()
         RemoveHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
 
@@ -1041,20 +1053,17 @@ Public Class AudioForm
         Dim page = ui.CreateFlowPage()
         page.SuspendLayout()
 
-        ' To DO: Test this:
         If TempProfile.Params.ChannelsMode <> ChannelsMode.Original AndAlso TempProfile.Params.ChannelsMode < 3 AndAlso
            Not ({GuiAudioEncoder.eac3to}.Contains(TempProfile.GetEncoder()) AndAlso TempProfile.DecodingMode = TempProfile.DecodingMode.Pipe) Then
-            Dim mFFLFEMixLevel = ui.AddNum
-            mFFLFEMixLevel.Text = "FF LFE Downmix"
-            mFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
-            mFFLFEMixLevel.Help = "Value 1.0 sets equal to other channels matrix coef. (0.707107, -3dB floating point source) for LFE stereo downmix, ffmpeg default 0 means no LFE in 1C/2C downmix"
-            mFFLFEMixLevel.NumEdit.Value = (Math.Round(TempProfile.Params.ffmpegLFEMixLevel, 3))
-            mFFLFEMixLevel.NumEdit.SaveAction = Sub(value)
-                                                    TempProfile.Params.ffmpegLFEMixLevel = (Math.Round(value, 3))
-                                                    UpdateControls()
-                                                End Sub
+            numFFLFEMixLevel = ui.AddNum
+            numFFLFEMixLevel.Text = "FF LFE Downmix"
+            numFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
+            numFFLFEMixLevel.Help = "Value 1.0 sets equal to other channels matrix coef. (0.707107, -3dB floating point source) for LFE stereo downmix, ffmpeg default 0 means no LFE in 1C/2C downmix"
+            numFFLFEMixLevel.NumEdit.Value = (Math.Round(TempProfile.Params.ffmpegLFEMixLevel, 3))
+            numFFLFEMixLevel.NumEdit.SaveAction = Sub(value)
+                                                      TempProfile.Params.ffmpegLFEMixLevel = (Math.Round(value, 3))
+                                                  End Sub
         End If
-
 
         If {AudioCodec.W64, AudioCodec.WAV, AudioCodec.FLAC, AudioCodec.WavPack}.Contains(TempProfile.Params.Codec) Then
             Dim mDepth = ui.AddMenu(Of Integer)
@@ -1064,19 +1073,20 @@ Public Class AudioForm
             mDepth.Add("16", 16)
             mDepth.Add("24", 24)
             If {AudioCodec.WAV, AudioCodec.WavPack, AudioCodec.W64}.Contains(TempProfile.Params.Codec) Then
-                mDepth.Add("32", 32)
+                mDepth.Add("32 fp", 32)
             End If
-            mDepth.Button.Value = TempProfile.Params.BDepth
-            mDepth.Button.SaveAction = Sub(val)
-                                           TempProfile.Params.BDepth = (val)
-                                           TempProfile.Depth = TempProfile.Params.BDepth
-                                           If TempProfile.Depth = 0 Then TempProfile.Depth = 24
-                                           UpdateBitrate()
-                                           UpdateControls()
-                                       End Sub
+            mDepth.Button.Value = TempProfile.Depth
+            mDepth.Button.SaveAction =
+                Sub(val)
+                    TempProfile.Depth = (val)
+                    'If TempProfile.Depth = 0 Then TempProfile.Depth = If({AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec), 16, 24)
+                    UpdateBitrate()
+                End Sub
         End If
 
         Dim cb As SimpleUI.SimpleUICheckBox
+
+        Dim cbCreateCorrectionWVC As SimpleUI.SimpleUICheckBox
 
         Select Case TempProfile.GetEncoder
             Case GuiAudioEncoder.eac3to
@@ -1111,16 +1121,21 @@ Public Class AudioForm
 
                     Case AudioCodec.FLAC, AudioCodec.WavPack
                         If TempProfile.Params.Codec = AudioCodec.WavPack Then
-                            Dim mbMode = ui.AddMenu(Of Integer)
-                            mbMode.Text = "Mode:"
-                            mbMode.Expandet = True
-                            mbMode.Add("Lossless", 0)
-                            mbMode.Add("Lossy CBR", 1)
-                            mbMode.Button.Value = TempProfile.Params.WavPackMode
-                            mbMode.Button.SaveAction = Sub(value)
-                                                           TempProfile.Params.WavPackMode = value
-                                                           UpdateBitrate()
-                                                       End Sub
+                            Dim mbFWavPackFMode = ui.AddMenu(Of Integer)
+                            mbFWavPackFMode.Text = "Mode:"
+                            mbFWavPackFMode.Expandet = True
+                            mbFWavPackFMode.Add("Lossless", 0)
+                            mbFWavPackFMode.Add("Lossy CBR", 1)
+                            mbFWavPackFMode.Button.Value = TempProfile.Params.WavPackMode
+                            mbFWavPackFMode.Button.SaveAction = Sub(value)
+                                                                    TempProfile.Params.WavPackMode = value
+                                                                    If TempProfile.Params.WavPackMode = 1 Then
+                                                                        TempProfile.Params.RateMode = AudioRateMode.CBR
+                                                                        numBitrate.Value = TempProfile.Channels * 384 / 2
+                                                                    Else
+                                                                        UpdateBitrate()
+                                                                    End If
+                                                                End Sub
                         End If
 
                         Dim mCompressionLevel = ui.AddNum(page)
@@ -1133,10 +1148,10 @@ Public Class AudioForm
                         mCompressionLevel.NumEdit.Value = TempProfile.Params.ffCompressionLevel
                         mCompressionLevel.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffCompressionLevel = CInt(value)
 
-
                     Case AudioCodec.DTS, AudioCodec.AC3, AudioCodec.EAC3
+
                     Case Else
-                        If Not {AudioCodec.WAV, AudioCodec.W64, AudioCodec.FLAC, AudioCodec.WavPack}.Contains(TempProfile.Params.Codec) Then
+                        If Not {AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec) Then
                             Dim mbRateMode = ui.AddMenu(Of AudioRateMode)
                             mbRateMode.Text = "Rate Mode:"
                             mbRateMode.Expandet = True
@@ -1146,8 +1161,6 @@ Public Class AudioForm
                 End Select
 
                 If TempProfile.Params.Codec = AudioCodec.Opus Then
-
-                    'to do: Check This
                     Dim mMappingFamily = ui.AddMenu(Of Integer)(page)
                     mMappingFamily.Text = "MapFamily:"
                     mMappingFamily.Expandet = True
@@ -1165,7 +1178,6 @@ Public Class AudioForm
                     mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegMappingFamily)
                     mMappingFamily.Button.Value = TempProfile.Params.ffmpegMappingFamily
                     mMappingFamily.Button.SaveAction = Sub(value) TempProfile.Params.ffmpegMappingFamily = CInt(value)
-
                 End If
 
                 If (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
@@ -1303,12 +1315,15 @@ Public Class AudioForm
                 num.NumEdit.Value = TempProfile.Params.qaacLowpass
                 num.NumEdit.SaveAction = Sub(value) TempProfile.Params.qaacLowpass = CInt(value)
 
-                cb = ui.AddBool(page)
-                cb.Text = "High Efficiency"
-                cb.Checked = TempProfile.Params.qaacHE
-                cb.SaveAction = Sub(value) TempProfile.Params.qaacHE = value
-                AddHandler cb.CheckedChanged, Sub() If cb.Checked Then mbMode.Button.Value = 1
-                AddHandler mbMode.Button.ValueChangedUser, Sub() If mbMode.Button.Value = 0 Then cb.Checked = False
+                Dim cbqaacHE = ui.AddBool(page)
+                cbqaacHE.Text = "High Efficiency"
+                cbqaacHE.Checked = TempProfile.Params.qaacHE
+                cbqaacHE.SaveAction = Sub(value) TempProfile.Params.qaacHE = value
+                AddHandler cbqaacHE.CheckedChanged, Sub() If cbqaacHE.Checked Then If mbMode.Button.Value = 0 Then mbMode.Button.Value = 1
+                AddHandler mbMode.Button.ValueChangedUser, Sub()
+                                                               'cbqaacHE.Enabled = mbMode.Button.Value <> 0
+                                                               If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
+                                                           End Sub
 
                 cb = ui.AddBool(page)
                 cb.Text = "No dither when quantizing to lower bit depth"
@@ -1316,16 +1331,25 @@ Public Class AudioForm
                 cb.SaveAction = Sub(value) TempProfile.Params.qaacNoDither = value
 
             Case GuiAudioEncoder.WavPack
-                Dim mbMode = ui.AddMenu(Of Integer)
-                mbMode.Text = "Mode:"
-                mbMode.Expandet = True
-                mbMode.Add("Lossless", 0)
-                mbMode.Add("Lossy CBR", 1)
-                mbMode.Button.Value = TempProfile.Params.WavPackMode
-                mbMode.Button.SaveAction = Sub(value)
-                                               TempProfile.Params.WavPackMode = value
-                                               UpdateBitrate()
-                                           End Sub
+                Dim mbWavPackMode = ui.AddMenu(Of Integer)(page)
+                mbWavPackMode.Text = "Mode:"
+                mbWavPackMode.Expandet = True
+                mbWavPackMode.Add("Lossless", 0)
+                mbWavPackMode.Add("Lossy CBR", 1)
+                mbWavPackMode.Button.Value = TempProfile.Params.WavPackMode
+                mbWavPackMode.Button.SaveAction = Sub(value)
+                                                      TempProfile.Params.WavPackMode = value
+                                                      If TempProfile.Params.WavPackMode = 1 Then
+                                                          TempProfile.Params.RateMode = AudioRateMode.CBR
+                                                          numBitrate.Value = TempProfile.Channels * 384 / 2
+                                                          cbCreateCorrectionWVC.Enabled = True
+                                                      Else
+                                                          cbCreateCorrectionWVC.Enabled = False
+                                                          TempProfile.Params.WavPackCreateCorrection = False
+                                                          UpdateBitrate()
+                                                      End If
+                                                  End Sub
+                If TempProfile.Params.WavPackMode = 0 Then TempProfile.Params.WavPackCreateCorrection = False
 
                 Dim mCompression = ui.AddMenu(Of Integer)
                 mCompression.Text = "Comp/Decomp Mode:"
@@ -1337,46 +1361,41 @@ Public Class AudioForm
                 mCompression.Button.Value = TempProfile.Params.WavPackCompression
                 mCompression.Button.SaveAction = Sub(value) TempProfile.Params.WavPackCompression = value
 
-                Dim mExtraCompression = ui.AddNum(page)
+                Dim mExtraCompression = ui.AddNum
                 mExtraCompression.Text = "Extra Compression:"
                 mExtraCompression.Config = {0, 6}
                 mExtraCompression.NumEdit.Value = TempProfile.Params.WavPackExtraCompression
                 mExtraCompression.NumEdit.SaveAction = Sub(value) TempProfile.Params.WavPackExtraCompression = CInt(value)
 
-                Dim mPreQuant = ui.AddNum(page)
+                Dim mPreQuant = ui.AddNum
                 mPreQuant.Text = "Pre-Quantitize bits:"
                 mPreQuant.Config = {0, 24}
                 mPreQuant.NumEdit.Value = TempProfile.Params.WavPackPreQuant
                 mPreQuant.NumEdit.SaveAction = Sub(value)
                                                    TempProfile.Params.WavPackPreQuant = CInt(value)
-                                                   If TempProfile.Depth = 0 Then TempProfile.Depth = 24
-                                                   If TempProfile.Params.WavPackPreQuant <> 0 Then
-                                                       TempProfile.Depth = TempProfile.Params.WavPackPreQuant
-                                                       UpdateBitrate()
-                                                       UpdateControls()
-                                                   End If
+                                                   UpdateBitrate()
                                                End Sub
 
-                If TempProfile.Params.WavPackMode = 1 Then
-                    cb = ui.AddBool(page)
-                    cb.Text = "Create correction file"
-                    cb.Checked = TempProfile.Params.WavPackCreateCorrection
-                    cb.SaveAction = Sub(value) TempProfile.Params.WavPackCreateCorrection = value
-                End If
+                cbCreateCorrectionWVC = ui.AddBool(page)
+                cbCreateCorrectionWVC.Text = "Create correction file"
+                cbCreateCorrectionWVC.Checked = TempProfile.Params.WavPackCreateCorrection
+                cbCreateCorrectionWVC.SaveAction = Sub(value) TempProfile.Params.WavPackCreateCorrection = value
+                cbCreateCorrectionWVC.Enabled = TempProfile.Params.WavPackMode = 1
 
             Case GuiAudioEncoder.OpusEnc
-                Dim mbMode = ui.AddMenu(Of Integer)
-                mbMode.Text = "Mode:"
-                mbMode.Expandet = True
-                mbMode.Add("VBR", 0)
-                mbMode.Add("Constrained VBR", 1)
-                mbMode.Add("Hard CBR", 2)
-                mbMode.Button.Value = TempProfile.Params.opusencMode
-                mbMode.Button.SaveAction = Sub(value)
-                                               TempProfile.Params.opusencMode = value
-                                               TempProfile.Params.RateMode = If(TempProfile.Params.opusencMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
-                                               UpdateBitrate()
-                                           End Sub
+                Dim mbOpusMode = ui.AddMenu(Of Integer)
+                mbOpusMode.Text = "Mode:"
+                mbOpusMode.Expandet = True
+                mbOpusMode.Add("VBR", 0)
+                mbOpusMode.Add("Constrained VBR", 1)
+                mbOpusMode.Add("Hard CBR", 2)
+                mbOpusMode.Button.Value = TempProfile.Params.opusencMode
+                mbOpusMode.Button.SaveAction =
+                    Sub(value)
+                        TempProfile.Params.opusencMode = value
+                        TempProfile.Params.RateMode = If(TempProfile.Params.opusencMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
+                    End Sub
+
                 Dim mFrameSize = ui.AddMenu(Of Double)(page)
                 mFrameSize.Text = "Frame Size:"
                 mFrameSize.Expandet = True

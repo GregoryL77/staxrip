@@ -1017,9 +1017,9 @@ Public Class x265Params
                     MasterDisplay,
                     New StringParam With {.Switch = "--dhdr10-info", .Text = "HDR10 Info File", .BrowseFile = True},
                     New OptionParam With {.Switch = "--hdr10", .NoSwitch = "--no-hdr10", .Text = "HDR10", .Options = {"Undefined", "Yes", "No"}, .Values = {"", "--hdr10", "--no-hdr10"}},
-                    New OptionParam With {.Switch = "--colorprim", .Text = "Colorprim", .Options = {"Undefined", "BT 2020", "BT 470 BG", "BT 470 M", "BT 709", "Film", "SMPTE 170 M", "SMPTE 240 M", "SMPTE 428", "SMPTE 431", "SMPTE 432"}},
-                    New OptionParam With {.Switch = "--colormatrix", .Text = "Colormatrix", .Options = {"Undefined", "BT 2020 C", "BT 2020 NC", "BT 470 BG", "BT 709", "Chroma-Derived-C", "Chroma-Derived-NC", "FCC", "GBR", "ICTCP", "SMPTE 170 M", "SMPTE 2085", "SMPTE 240 M", "YCgCo"}},
-                    New OptionParam With {.Switch = "--transfer", .Text = "Transfer", .Options = {"Undefined", "ARIB-STD-B67", "BT 1361 E", "BT 2020-10", "BT 2020-12", "BT 470 BG", "BT 470 M", "BT 709", "IEC 61966-2-1", "IEC 61966-2-4", "Linear", "Log 100", "Log 316", "SMPTE 170 M", "SMPTE 2084", "SMPTE 240 M", "SMPTE 428"}},
+                    New OptionParam With {.Switch = "--colorprim", .Text = "Colorprim", .Options = {"Unknown", "BT 2020", "BT 470 BG", "BT 470 M", "BT 709", "Film", "SMPTE 170 M", "SMPTE 240 M", "SMPTE 428", "SMPTE 431", "SMPTE 432"}},
+                    New OptionParam With {.Switch = "--colormatrix", .Text = "Colormatrix", .Options = {"Unknown", "BT 2020 C", "BT 2020 NC", "BT 470 BG", "BT 709", "Chroma-Derived-C", "Chroma-Derived-NC", "FCC", "GBR", "ICTCP", "SMPTE 170 M", "SMPTE 2085", "SMPTE 240 M", "YCgCo"}},
+                    New OptionParam With {.Switch = "--transfer", .Text = "Transfer", .Options = {"Unknown", "ARIB-STD-B67", "BT 1361 E", "BT 2020-10", "BT 2020-12", "BT 470 BG", "BT 470 M", "BT 709", "IEC 61966-2-1", "IEC 61966-2-4", "Linear", "Log 100", "Log 316", "SMPTE 170 M", "SMPTE 2084", "SMPTE 240 M", "SMPTE 428"}},
                     New OptionParam With {.Switch = "--range", .Text = "Range", .Options = {"Undefined", "Limited", "Full"}},
                     minLuma, maxLuma, MaxCLL, MaxFALL,
                     New BoolParam With {.Switch = "--hdr10-opt", .NoSwitch = "--no-hdr10-opt", .Text = "Block-level luma and chroma QP optimization for HDR10 content"},
@@ -1030,8 +1030,8 @@ Public Class x265Params
                 Add("VUI 2",
                     New StringParam With {.Switch = "--nalu-file", .Text = "Nalu File", .BrowseFile = True},
                     New StringParam With {.Switch = "--sar", .Text = "Sample Aspect Ratio", .Init = "auto", .Menu = s.ParMenu, .ArgsFunc = AddressOf GetSAR},
-                    New OptionParam With {.Switch = "--videoformat", .Text = "Videoformat", .Options = {"Undefined", "Component", "PAL", "NTSC", "SECAM", "MAC"}},
-                    New OptionParam With {.Switch = "--overscan", .Text = "Overscan", .Options = {"Undefined", "Show", "Crop"}},
+                    New OptionParam With {.Switch = "--videoformat", .Text = "Videoformat", .Options = {"Unknown", "Component", "PAL", "NTSC", "SECAM", "MAC"}},
+                    New OptionParam With {.Switch = "--overscan", .Text = "Overscan", .Options = {"Unknown", "Show", "Crop"}},
                     New OptionParam With {.Switch = "--display-window", .Text = "Display Window", .Options = {"Undefined", "Left", "Top", "Right", "Top"}},
                     Chromaloc)
                 Add("Bitstream",
@@ -1541,7 +1541,7 @@ Public Class x265Params
                 LimitModes.Value = True
                 LimitRefs.Value = 1
                 LimitTU.Value = 4
-                LookaheadSlices.Value = 1
+                LookaheadSlices.Value = 0
                 MaxMerge.Value = 4
                 MErange.Value = 57
                 PsyRDOQ.Value = 1
@@ -1567,7 +1567,7 @@ Public Class x265Params
                 EarlySkip.Value = False
                 FastIntra.Value = False
                 LimitRefs.Value = 0
-                LookaheadSlices.Value = 1
+                LookaheadSlices.Value = 0
                 MaxMerge.Value = 5
                 MErange.Value = 57
                 PsyRDOQ.Value = 1
@@ -1593,7 +1593,7 @@ Public Class x265Params
                 EarlySkip.Value = False
                 FastIntra.Value = False
                 LimitRefs.Value = 0
-                LookaheadSlices.Value = 1
+                LookaheadSlices.Value = 0
                 MaxMerge.Value = 5
                 MErange.Value = 92
                 RCLookahead.Value = 60
@@ -1820,7 +1820,7 @@ Public Class x265Params
                 LimitModes.DefaultValue = True
                 LimitRefs.DefaultValue = 1
                 LimitTU.DefaultValue = 4
-                LookaheadSlices.DefaultValue = 1
+                LookaheadSlices.DefaultValue = 0
                 MaxMerge.DefaultValue = 4
                 MErange.DefaultValue = 57
                 PsyRDOQ.DefaultValue = 1
@@ -1846,7 +1846,7 @@ Public Class x265Params
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = False
                 LimitRefs.DefaultValue = 0
-                LookaheadSlices.DefaultValue = 1
+                LookaheadSlices.DefaultValue = 0
                 MaxMerge.DefaultValue = 5
                 MErange.DefaultValue = 57
                 PsyRDOQ.DefaultValue = 1
@@ -1872,7 +1872,7 @@ Public Class x265Params
                 EarlySkip.DefaultValue = False
                 FastIntra.DefaultValue = False
                 LimitRefs.DefaultValue = 0
-                LookaheadSlices.DefaultValue = 1
+                LookaheadSlices.DefaultValue = 0
                 MaxMerge.DefaultValue = 5
                 MErange.DefaultValue = 92
                 RCLookahead.DefaultValue = 60

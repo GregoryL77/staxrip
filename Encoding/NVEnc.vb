@@ -159,7 +159,11 @@ Public Class NVEnc
             .Text = "Mode",
             .Expand = True,
             .Switches = {"--cqp", "--cbr", "--cbrhq", "--vbr", "--vbrhq"},
-            .Options = {"CQP - Constant QP", "CBR - Constant Bitrate", "CBR HQ (= CBR + 2pass-full)", "VBR - Variable Bitrate", "VBR HQ (= VBR + 2pass-full)"},
+            .Options = {"CQP - Constant QP",
+            "CBR - Constant Bitrate",
+            "CBR HQ (= CBR + 2pass-full)",
+            "VBR - Variable Bitrate",
+            "VBR HQ (= VBR + 2pass-full)"},
             .VisibleFunc = Function() Not Lossless.Value,
             .ArgsFunc = AddressOf GetModeArgs,
             .ImportAction = Sub(param, arg)
@@ -519,8 +523,7 @@ Public Class NVEnc
                     Add("VPP | Misc 3",
                         TransformFlipX,
                         TransformFlipY,
-                        TransformTranspose
-                        )
+                        TransformTranspose)
 
                     Add("VPP | Color Space",
                         ColorSpace,

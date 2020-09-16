@@ -46,16 +46,16 @@ Public Class Audio
 
                 Select Case ap.File.ExtFull
                     Case ".mkv", ".webm"
-                        mkvDemuxer.Demux(ap.File, {ap.Stream}, Nothing, ap, p, False, False)
+                        mkvDemuxer.Demux(ap.File, {ap.Stream}, Nothing, ap, p, False, False, True)
                     Case ".mp4"
-                        MP4BoxDemuxer.Demux(ap.File, ap.Stream, ap, p)
+                        MP4BoxDemuxer.DemuxAudio(ap.File, ap.Stream, ap, p, True)
                     Case Else
                         If p.Script.GetFilter("Source").Script.ToLower.Contains("directshowsource") AndAlso
                             Not TypeOf ap Is MuxAudioProfile Then
 
                             ConvertDirectShowSource(ap)
                         ElseIf Not ap.File.Ext = "m2ts" Then
-                            ffmpegDemuxer.DemuxAudio(ap.File, ap.Stream, ap, p)
+                            ffmpegDemuxer.DemuxAudio(ap.File, ap.Stream, ap, p, True)
                         End If
                 End Select
             End If
@@ -132,7 +132,7 @@ Public Class Audio
             Case AudioDecoderMode.FFAudioSource
                 ConvertFFAudioSource(ap)
             Case AudioDecoderMode.eac3to
-                Converteac3to(ap)
+                ConvertEac3to(ap)
             Case AudioDecoderMode.NicAudio
                 ConvertNicAudio(ap)
             Case AudioDecoderMode.DirectShow
@@ -144,7 +144,7 @@ Public Class Audio
         End If
 
         ConvertFF(ap)
-        Converteac3to(ap)
+        ConvertEac3to(ap)
         ConvertDirectShowSource(ap)
     End Sub
 
@@ -281,7 +281,7 @@ Public Class Audio
         End Select
     End Function
 
-    Shared Sub Converteac3to(ap As AudioProfile)
+    Shared Sub ConvertEac3to(ap As AudioProfile)
         If ap.File.Ext = ap.ConvertExt Then
             Exit Sub
         End If
@@ -354,10 +354,10 @@ Public Class Audio
         End If
 
         If gap?.Params.Normalize Then
-            If gap.Params.ffNormalizeMode = ffNormalizeMode.dynaudnorm Then
+            If gap.Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
                 args += " " + Audio.GetDynAudNormArgs(gap.Params)
                 ap.Gain = 0
-            ElseIf gap.Params.ffNormalizeMode = ffNormalizeMode.loudnorm Then
+            ElseIf gap.Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
                 args += " " + Audio.GetLoudNormArgs(gap.Params)
                 ap.Gain = 0
                 'Loudnorm auto x4 upsample
@@ -674,7 +674,7 @@ Public Class Audio
             Dim streams = MediaInfo.GetAudioStreams(mkvPath)
 
             If streams.Count > 0 Then
-                mkvDemuxer.Demux(mkvPath, {streams(0)}, Nothing, ap, p, False, False)
+                mkvDemuxer.Demux(mkvPath, {streams(0)}, Nothing, ap, p, False, False, True)
             Else
                 fail = True
             End If
@@ -748,6 +748,12 @@ Public Enum CuttingMode
 End Enum
 
 Public Enum ffNormalizeMode
+    peaknorm
+    loudnorm
+    dynaudnorm
+End Enum
+
+Public Enum ffmpegNormalizeMode
     peaknorm
     loudnorm
     dynaudnorm

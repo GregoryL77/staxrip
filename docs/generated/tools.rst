@@ -25,7 +25,7 @@ Tools
     "EEDI2","AviSynth Plugin","EEDI2.dll","0.9.2.0","2019-01-01"
     "EEDI3","AviSynth Plugin","EEDI3.dll","0.9.2.3","2019-01-01"
     "f3kdb Neo","AviSynth Plugin","neo-f3kdb.dll","r6","2020-05-30"
-    "ffms2","AviSynth Plugin","ffms2.dll","2.40-RC1","2020-08-22"
+    "ffms2","AviSynth Plugin","ffms2.dll","0055b2d StvG","2020-08-19"
     "FFT3DFilter","AviSynth Plugin","fft3dfilter.dll","2.6","2019-01-31"
     "FFT3DGPU","AviSynth Plugin","FFT3dGPU.dll","0.8.2.0","2018-11-21"
     "flash3kyuu_deband","AviSynth Plugin","flash3kyuu_deband.dll","5.0","2018-05-02"
@@ -105,7 +105,7 @@ Tools
     "avs2pipemod","Console App","avs2pipemod64.exe","1.1.1","2016-08-14"
     "AVSMeter","Console App","AVSMeter64.exe","3.0.2.0","2020-06-23"
     "eac3to","Console App","eac3to.exe","3.34","2017-11-19"
-    "fdkaac","Console App","fdkaac.exe","1.0.0","2019-02-13"
+    "fdkaac","Console App","fdkaac.exe","1.0.0",""
     "ffmpeg","Console App","ffmpeg.exe","N-98647-gffa6072fc7-x64-gcc10.2.0 Patman","2020-08-04"
     "ffmpeg non-free","Console App","ffmpeg.exe","","2020-08-30"
     "mkvextract","Console App","mkvextract.exe","50","2020-09-06"
@@ -136,7 +136,7 @@ Tools
     "Subtitle Edit","GUI App","SubtitleEdit.exe","3.5.15","2020-05-01"
     "VSRip","GUI App","VSRip.exe","1.0.0.7","2011-07-14"
     "AviSynth","Library","AviSynth.dll","3.6.2 test 2","2020-08-31"
-    "DirectX 9","Library","d3d9.dll","","2020-08-29"
+    "DirectX 9","Library","d3d9.dll","","2020-09-13"
     "FFTW","Library","libfftw3-3.dll","3.3.8","2018-12-20"
     "MediaInfo","Library","MediaInfo.dll","20.03","2020-04-03"
     "VapourSynth","Library","vapoursynth.dll","r52","2020-08-20"
@@ -144,7 +144,7 @@ Tools
     "Visual C++ 2013","Library","msvcp120.dll","","2016-02-10"
     "Visual C++ 2019","Library","msvcp140.dll","","2020-06-16"
     "Get-MediaInfo","Misc","Get-MediaInfo.ps1","3.3","2020-05-04"
-    "Haali Splitter","Misc","splitter.ax","","2013-04-14"
+    "Haali Splitter","Misc","splitter.ax",,""
     "AWarpSharp2","VapourSynth Plugin","libawarpsharp2.dll","2018-06-18","2019-01-01"
     "BM3D","VapourSynth Plugin","BM3D.dll","r8","2019-01-03"
     "Bwdif","VapourSynth Plugin","Bwdif.dll","r2","2020-06-19"
@@ -251,7 +251,7 @@ http://forum.doom9.org/showthread.php?t=125966
 fdkaac
 ~~~~~~
 
-AAC console encoder based on libfdk-aac.
+Non-free AAC console encoder based on libfdk-aac. Opus is recommended as free alternative.
 
 http://github.com/nu774/fdkaac
 

@@ -871,7 +871,7 @@ Public Class AudioForm
                 TempProfile.Params.RateMode = AudioRateMode.CBR
 
             Case AudioCodec.FLAC
-                TempProfile.Params.ffCompressionLevel = 5
+                TempProfile.Params.ffmpegCompressionLevel = 5
                 TempProfile.Depth = 0
                 numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.RateMode = AudioRateMode.CBR
@@ -880,7 +880,7 @@ Public Class AudioForm
                 TempProfile.Params.WavPackMode = 0
                 numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.WavPackCreateCorrection = False
-                TempProfile.Params.ffCompressionLevel = 0
+                TempProfile.Params.ffmpegCompressionLevel = 0
                 TempProfile.Depth = 32
                 'TempProfile.Params.RateMode = AudioRateMode.CBR
                 TempProfile.Params.WavPackCompression = 1
@@ -915,7 +915,7 @@ Public Class AudioForm
                 'TempProfile.Params.ffmpegMappingFamily = -1
                 TempProfile.Params.opusencComplexity = 10
                 TempProfile.Params.opusencFramesize = 20
-                TempProfile.Params.OpusEncNoPhaseInv = False
+                TempProfile.Params.opusEncNoPhaseInv = False
 
         End Select
 
@@ -1081,6 +1081,7 @@ Public Class AudioForm
                     TempProfile.Depth = (val)
                     'If TempProfile.Depth = 0 Then TempProfile.Depth = If({AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec), 16, 24)
                     UpdateBitrate()
+                    UpdateControls()
                 End Sub
         End If
 
@@ -1145,11 +1146,14 @@ Public Class AudioForm
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
                         End If
-                        mCompressionLevel.NumEdit.Value = TempProfile.Params.ffCompressionLevel
-                        mCompressionLevel.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffCompressionLevel = CInt(value)
+                        mCompressionLevel.NumEdit.Value = TempProfile.Params.ffmpegCompressionLevel
+                        mCompressionLevel.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffmpegCompressionLevel = CInt(value)
 
                     Case AudioCodec.DTS, AudioCodec.AC3, AudioCodec.EAC3
-
+                    Case AudioCodec.AAC
+                        cb = ui.AddBool
+                        cb.Text = "Use fdk-aac"
+                        cb.Property = NameOf(TempProfile.Params.ffmpegLibFdkAAC)
                     Case Else
                         If Not {AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec) Then
                             Dim mbRateMode = ui.AddMenu(Of AudioRateMode)
@@ -1517,9 +1521,9 @@ Public Class AudioForm
 
             ui.CreateFlowPage("ffmpeg", True)
 
-            Dim ffmpegNormalize = ui.AddMenu(Of ffNormalizeMode)
+            Dim ffmpegNormalize = ui.AddMenu(Of ffmpegNormalizeMode)
             ffmpegNormalize.Text = "Normalize Method:"
-            ffmpegNormalize.Property = NameOf(TempProfile.Params.ffNormalizeMode)
+            ffmpegNormalize.Property = NameOf(TempProfile.Params.ffmpegNormalizeMode)
 
             ui.CreateFlowPage("ffmpeg | loudnorm", True)
 
@@ -1566,7 +1570,7 @@ Public Class AudioForm
             n = ui.AddNum()
             n.Text = "Target Peak"
             n.Help = helpUrl
-            n.Config = {0, 1, 0.01, 2}
+            n.Config = {0, 1, 0.05, 2}
             n.Property = NameOf(TempProfile.Params.ffmpegDynaudnormP)
 
             n = ui.AddNum()

@@ -1,5 +1,19 @@
 
-2.1.4.5 Beta (2020-09-??)
+2.1.4.7 Beta (2020-09-??)
+============
+
+2.1.4.6 Beta (2020-09-13)
+============
+
+- Fix eac3to AAC quality mode incorrect bitrate estimation (stax76)
+- Fix error at: Main Menu > Tools > Settings > Source Filters (stax76, #322)
+- ffmpeg fdk-aac has a option and is disabled by default (stax76, #337)
+- Main window focus is supressed after processing in case the last
+  window activation is older than 60 seconds (stax76, #333, #298)
+- fdkaac removed due to non-free license (stax76, [#292](/../../issues/292))
+
+
+2.1.4.5 Beta (2020-09-13)
 ============
 
 - New configuration section in log files, displaying template, profile, muxer, ... - can be extended anytime (Dendraspis, #331)
@@ -9,6 +23,12 @@
 - MKVToolNix 50 long path support (stax76, #226)
 - The wiki was integrated into the tool help. Anybody can add
   detailed tool info and access it from StaxRip (stax76, #292, #320)
+- The automatic source filter detection supports detection by format,
+  the defaults were reset and use now L-Smash-Works for VP9 (stax76, #312)
+- Demuxing is skipped if output files already exist, the old recreate behaviour can be restored
+  in the preprocessing settings. If demuxing is canceled then unfinished files are deleted (stax76)
+- Fix L-Smash-Works indexing happening multiple times (stax76)
+- ffms2 0055b2d StvG
 
 
 2.1.4.4 Beta (2020-09-06)

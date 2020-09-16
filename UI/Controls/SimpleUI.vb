@@ -344,7 +344,6 @@ Public Class SimpleUI
 
     Function CreateDataPage(path As String) As DataPage
         Dim ret = New DataPage
-        ret.EditMode = DataGridViewEditMode.EditOnEnter
         ret.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
         ret.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
         ret.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
@@ -1215,6 +1214,7 @@ Public Class SimpleUI
                     parent = parent.Parent
                 End While
 
+        'Help for audio form menu, opus mapping family
                 If value.StartsWith("http") Then
                     value = $"[{value} {value}]"
                 End If

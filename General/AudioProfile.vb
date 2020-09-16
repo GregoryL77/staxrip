@@ -1123,7 +1123,6 @@ Public Class GUIAudioProfile
     End Function
 
     Function GetPipeCommandLine(includePaths As Boolean) As String
-        'Dim sb As StringBuilder
         Dim sb As New StringBuilder
 
         If includePaths AndAlso File <> "" Then
@@ -1257,6 +1256,8 @@ Public Class GUIAudioProfile
             Case AudioCodec.AAC
                 If Params.ffmpegLibFdkAAC Then
                     sb.Append(" -c:a libfdk_aac")
+                Else
+                    sb.Append(" -c:a aac")
                 End If
 
                 If Params.RateMode = AudioRateMode.VBR Then

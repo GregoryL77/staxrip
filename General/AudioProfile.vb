@@ -815,7 +815,7 @@ Public Class GUIAudioProfile
             Exit Sub
         End If
 
-        Dim args = "-i " + File.ToShortFilePath.Escape
+        Dim args = "-sn -vn -dn -i " + File.ToShortFilePath.Escape
 
         If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
             args += " -map 0:a:" & Stream.Index
@@ -823,15 +823,27 @@ Public Class GUIAudioProfile
 
         args += " -sn -vn -dn -loglevel " & s.FfmpegLogLevel & " -hide_banner"
 
-        'maybe add SOX Resampler: not worthy:
-        'args += " -resampler=soxr -precision=20 -output_sample_bits=0 "
+        'TO do: check Loudnorm & LFEMixLevel , include channels in normalize + pcm_f64le
+        'TO DO: Add -rmvol Set rematrix volume. Default value Is 1.0
+        '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
 
-        'args Then += " -c:a pcm_f32le -af volumedetect"
+        'args Then += " -c:a pcm_s16le -af volumedetect"
         'ElseIf Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
 
-        args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
+        If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
+            args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
                 ":TP=" & Params.ffmpegLoudnormTruePeak.ToInvariantString + ":LRA=" &
                 Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary"
+        Else
+            If Params.ChannelsMode <> ChannelsMode.Original Then
+                args += " -rematrix_maxval 1 -ac " & Channels
+                If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
+                    args += " -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString
+                End If
+            End If
+            args += " -af loudnorm=print_format=summary -c:a pcm_f64le"
+
+        End If
 
         args += " -f null NUL"
 
@@ -938,12 +950,8 @@ Public Class GUIAudioProfile
                 sb.Append(" -down16")
             End If
 
-            If DecodingMode = AudioDecodingMode.Pipe Then
-                If Params.SamplingRate <> 0 Then
-                    sb.Append(" -resampleTo" & Params.SamplingRate)
-                ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
-                    sb.Append(" -resampleTo" & SourceSamplingRate)
-                End If
+            If Params.SamplingRate <> 0 Then
+                sb.Append(" -resampleTo" & Params.SamplingRate)
             End If
 
             If Params.FrameRateMode = AudioFrameRateMode.Speedup Then
@@ -984,8 +992,8 @@ Public Class GUIAudioProfile
             If Params.CustomSwitches <> "" Then
                 sb.Append(" " + Params.CustomSwitches)
             End If
-        ElseIf ExtractDTSCore Then
-            sb.Append(" -core")
+            ElseIf ExtractDTSCore Then
+                sb.Append(" -core")
         End If
 
         If includePaths Then
@@ -1126,18 +1134,17 @@ Public Class GUIAudioProfile
         Dim sb As New StringBuilder
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(Package.ffmpeg.Path.Escape + " -i " + File.Escape)
+            sb.Append(Package.ffmpeg.Path.Escape + " -sn -vn -dn -i " + File.Escape)
         Else
             sb.Append("ffmpeg")
         End If
 
         If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
-            sb.Append(" -map 0:a:" & Stream.Index)
+            sb.Append(" -sn -vn -dn -map 0:a:" & Stream.Index)
         End If
 
-        If Params.ChannelsMode <> ChannelsMode.Original AndAlso
-           Not (GetEncoder() = GuiAudioEncoder.eac3to AndAlso (Channels = 2 OrElse Channels = 6)) Then
-            sb.Append(" -ac " & Channels)
+        If Params.ChannelsMode <> ChannelsMode.Original Then
+            sb.Append(" -rematrix_maxval 1 -ac " & Channels)
             If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
             End If
@@ -1154,9 +1161,13 @@ Public Class GUIAudioProfile
             ElseIf Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
                 sb.Append(" " + Audio.GetLoudNormArgs(Params))
             End If
+            If {ffmpegNormalizeMode.dynaudnorm, ffmpegNormalizeMode.loudnorm}.Contains(Params.ffmpegNormalizeMode) AndAlso
+                Gain <> 0 AndAlso {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) Then
+                sb.Append(",volume=" + Gain.ToInvariantString + "dB")
+            End If
         End If
 
-        If {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) Then
+            If {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) Then
             If Params.SamplingRate <> 0 Then
                 sb.Append(" -ar " & Params.SamplingRate)
             ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
@@ -1191,13 +1202,13 @@ Public Class GUIAudioProfile
             Package.ffmpeg_non_free, Package.ffmpeg)
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(pack.Path.Escape + " -i " + File.LongPathPrefix.Escape)
+            sb.Append(pack.Path.Escape + " -sn -vn -dn -i " + File.LongPathPrefix.Escape)
         Else
             sb.Append("ffmpeg")
         End If
 
         If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
-            sb.Append(" -map 0:a:" & Stream.Index)
+            sb.Append(" -sn -vn -dn -map 0:a:" & Stream.Index)
         End If
 
         Select Case Params.Codec
@@ -1302,16 +1313,17 @@ Public Class GUIAudioProfile
             If Params.Normalize Then
                 If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
                     sb.Append(" " + Audio.GetLoudNormArgs(Params))
-                    Gain = 0
                 ElseIf Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
                     sb.Append(" " + Audio.GetDynAudNormArgs(Params))
-                    Gain = 0
+                End If
+                If Gain <> 0 AndAlso {ffmpegNormalizeMode.dynaudnorm, ffmpegNormalizeMode.loudnorm}.Contains(Params.ffmpegNormalizeMode) Then
+                    sb.Append(",volume=" + Gain.ToInvariantString + "dB")
                 End If
             End If
         End If
 
         If Not ExtractCore Then
-            If Gain <> 0 Then
+            If Gain <> 0 AndAlso Not sb.ToString.ContainsAny("-af loudnorm=", "-af dynaudnorm") Then
                 sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
             End If
         End If
@@ -1319,7 +1331,7 @@ Public Class GUIAudioProfile
         'opus fails if -ac is missing, mapping_family related To DO Check:
         If Not ExtractCore AndAlso
             (Params.ChannelsMode <> ChannelsMode.Original OrElse (Params.Codec = AudioCodec.Opus AndAlso Params.ffmpegMappingFamily = -1)) Then
-            sb.Append(" -ac " & Channels)
+            sb.Append(" -rematrix_maxval 1 -ac " & Channels)
             If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
             End If

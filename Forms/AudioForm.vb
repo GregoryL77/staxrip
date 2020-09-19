@@ -882,7 +882,7 @@ Public Class AudioForm
                 TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffmpegCompressionLevel = 0
                 TempProfile.Depth = 32
-                'TempProfile.Params.RateMode = AudioRateMode.CBR
+                TempProfile.Params.RateMode = AudioRateMode.CBR
                 TempProfile.Params.WavPackCompression = 1
                 TempProfile.Params.WavPackExtraCompression = 0
                 TempProfile.Params.WavPackPreQuant = 0
@@ -912,7 +912,7 @@ Public Class AudioForm
                 numBitrate.Value = If(TempProfile.Channels = 6, 256, TempProfile.Channels * 96 / 2)
                 TempProfile.Params.RateMode = AudioRateMode.VBR
                 TempProfile.Params.opusencMode = 0
-                'TempProfile.Params.ffmpegMappingFamily = -1
+                TempProfile.Params.ffmpegMappingFamily = -1
                 TempProfile.Params.opusencComplexity = 10
                 TempProfile.Params.opusencFramesize = 20
                 TempProfile.Params.opusEncNoPhaseInv = False

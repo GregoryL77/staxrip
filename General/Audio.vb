@@ -347,43 +347,58 @@ Public Class Audio
             outPath += "." + ap.ConvertExt
         End If
 
-        Dim args = "-i " + ap.File.ToShortFilePath.Escape
+        Dim args = "-sn -vn -dn -i " + ap.File.ToShortFilePath.Escape
 
         If Not ap.Stream Is Nothing Then
-            args += " -map 0:" & ap.Stream.StreamOrder
+            args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
         End If
 
         If gap?.Params.Normalize Then
             If gap.Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
+
                 args += " " + Audio.GetDynAudNormArgs(gap.Params)
-                ap.Gain = 0
+                If ap.Gain <> 0 Then
+                    args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                End If
+
             ElseIf gap.Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
+
                 args += " " + Audio.GetLoudNormArgs(gap.Params)
-                ap.Gain = 0
-                'Loudnorm auto x4 upsample
-                If gap.Params.SamplingRate = 0 Then
+                If ap.Gain <> 0 Then
+                    args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                End If
+
+                If gap.Params.SamplingRate = 0 Then 'Loudnorm auto x4 upsample
                     args += " -ar " & gap.SourceSamplingRate
                 End If
+
             End If
+
             If p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_") Then
             Else
                 gap.Params.Normalize = False
             End If
         End If
 
+        'To DO: Test this
         If ap.Gain <> 0 Then
-            args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+            If Not args.ContainsAny("-af loudnorm=", "-af dynaudnorm") Then
+                args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+            End If
         End If
 
-        If gap.Params.SamplingRate <> 0 Then
+        If gap?.Params.SamplingRate <> 0 Then
             args += " -ar " & gap.Params.SamplingRate
         End If
 
-        If gap.Params.ffmpegLFEMixLevel <> 0 AndAlso gap.Params.ChannelsMode < 3 Then
-            args += " -lfe_mix_level " & gap.Params.ffmpegLFEMixLevel.ToInvariantString
+        If gap?.Params.ChannelsMode <> ChannelsMode.Original Then
+            args += " -rematrix_maxval 1 -ac " & ap.Channels
+            If gap.Params.ffmpegLFEMixLevel <> 0 AndAlso gap.Params.ChannelsMode < 3 Then
+                args += " -lfe_mix_level " & gap.Params.ffmpegLFEMixLevel.ToInvariantString
+            End If
         End If
 
-        args += " -y -hide_banner -loglevel " & s.FfmpegLogLevel & " -ac " & ap.Channels
+        args += " -y -hide_banner -loglevel " & s.FfmpegLogLevel
 
         If ap.ConvertExt.EqualsAny("wav") Then
             args += " -c:a pcm_f32le"

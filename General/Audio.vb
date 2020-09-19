@@ -382,7 +382,7 @@ Public Class Audio
 
         'To DO: Test this
         If ap.Gain <> 0 Then
-            If Not args.ContainsAny("-af loudnorm=", "-af dynaudnorm") Then
+            If Not args.ContainsAny(" -af loudnorm=", " -af dynaudnorm") Then
                 args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
             End If
         End If

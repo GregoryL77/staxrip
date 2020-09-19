@@ -1323,7 +1323,7 @@ Public Class GUIAudioProfile
         End If
 
         If Not ExtractCore Then
-            If Gain <> 0 AndAlso Not sb.ToString.ContainsAny("-af loudnorm=", "-af dynaudnorm") Then
+            If Gain <> 0 AndAlso Not sb.ToString.ContainsAny(" -af loudnorm=", " -af dynaudnorm") Then
                 sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
             End If
         End If

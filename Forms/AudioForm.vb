@@ -916,7 +916,8 @@ Public Class AudioForm
                 TempProfile.Params.opusencComplexity = 10
                 TempProfile.Params.opusencFramesize = 20
                 TempProfile.Params.opusEncNoPhaseInv = False
-
+                TempProfile.Params.opuscompress = 10
+                TempProfile.Params.opusRateMode = OpusRateMode.VBR
         End Select
 
         UpdateBitrate()
@@ -1053,12 +1054,13 @@ Public Class AudioForm
         Dim page = ui.CreateFlowPage()
         page.SuspendLayout()
 
+        'To DO : add handler:
         If TempProfile.Params.ChannelsMode <> ChannelsMode.Original AndAlso TempProfile.Params.ChannelsMode < 3 AndAlso
            Not ({GuiAudioEncoder.eac3to}.Contains(TempProfile.GetEncoder()) AndAlso TempProfile.DecodingMode = TempProfile.DecodingMode.Pipe) Then
             numFFLFEMixLevel = ui.AddNum
             numFFLFEMixLevel.Text = "FF LFE Downmix"
             numFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
-            numFFLFEMixLevel.Help = "Value 1.0 sets equal to other channels matrix coef. (0.707107, -3dB floating point source) for LFE stereo downmix, ffmpeg default 0 means no LFE in 1C/2C downmix"
+            numFFLFEMixLevel.Help = "Value 1.0 sets matrix coef. for LFE equal to other channels, ffmpeg default 0 means no LFE in 1C/2C downmix"
             numFFLFEMixLevel.NumEdit.Value = (Math.Round(TempProfile.Params.ffmpegLFEMixLevel, 3))
             numFFLFEMixLevel.NumEdit.SaveAction = Sub(value)
                                                       TempProfile.Params.ffmpegLFEMixLevel = (Math.Round(value, 3))
@@ -1151,9 +1153,54 @@ Public Class AudioForm
 
                     Case AudioCodec.DTS, AudioCodec.AC3, AudioCodec.EAC3
                     Case AudioCodec.AAC
+                        Dim mbRateMode = ui.AddMenu(Of SimpleAudioRateMode)
+                        mbRateMode.Text = "Rate Mode"
+                        mbRateMode.Expandet = True
+                        mbRateMode.Button.Value = TempProfile.Params.SimpleRateMode
+                        mbRateMode.Button.SaveAction = Sub(value) TempProfile.Params.SimpleRateMode = value
+
                         cb = ui.AddBool
                         cb.Text = "Use fdk-aac"
                         cb.Property = NameOf(TempProfile.Params.ffmpegLibFdkAAC)
+                    Case AudioCodec.Opus
+                        Dim mbRateMode = ui.AddMenu(Of OpusRateMode)
+                        mbRateMode.Text = "Rate Mode"
+                        mbRateMode.Expandet = True
+                        mbRateMode.Button.Value = TempProfile.Params.opusRateMode
+                        mbRateMode.Button.SaveAction = Sub(value)
+                                                           TempProfile.Params.opusRateMode = value
+                                                           TempProfile.Params.RateMode = If(TempProfile.Params.opusRateMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
+                                                       End Sub
+
+                        Dim mMappingFamily = ui.AddMenu(Of Integer)(page)
+                        mMappingFamily.Text = "MapFamily:"
+                        mMappingFamily.Expandet = True
+                        mMappingFamily.Add("FFmpeg default, No masking and opt.", -1)
+                        mMappingFamily.Add("Mono or Stereo 2 channels", 0)
+                        mMappingFamily.Add("Up to 8Ch surr. masking and LFE opt.", 1)
+                        mMappingFamily.Add("Ambisonics as individual channels", 2)
+                        mMappingFamily.Add("Ambisonics with demixing matrix", 3)
+                        mMappingFamily.Add("Discrete channels, up to 255 ", 255)
+                        ui.AddLabel("Mapping Family 1 is the best for multichannel,")
+                        ui.AddLabel("however in FFmpeg this may fail")
+                        'mMappingFamily.Help = "https://ffmpeg.org/ffmpeg-codecs.html#Option-Mapping"
+                        mMappingFamily.Help = "https://tools.ietf.org/html/draft-ietf-codec-ambisonics-10#section-8"
+
+                        mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegMappingFamily)
+                        mMappingFamily.Button.Value = TempProfile.Params.ffmpegMappingFamily
+                        mMappingFamily.Button.SaveAction = Sub(value) TempProfile.Params.ffmpegMappingFamily = CInt(value)
+
+                        Dim mbOpusApp = ui.AddMenu(Of OpusApp)
+                        mbOpusApp.Text = "Application Type"
+                        mbOpusApp.Expandet = True
+                        mbOpusApp.Button.Value = TempProfile.Params.opusApp
+                        mbOpusApp.Button.SaveAction = Sub(value) TempProfile.Params.opusApp = value
+
+                        Dim num = ui.AddNum(page)
+                        num.Text = "Compression Level"
+                        num.Config = {0, 10, 1}
+                        num.NumEdit.Value = TempProfile.Params.opuscompress
+                        num.NumEdit.SaveAction = Sub(value) TempProfile.Params.opuscompress = CInt(value)
                     Case Else
                         If Not {AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec) Then
                             Dim mbRateMode = ui.AddMenu(Of AudioRateMode)
@@ -1163,26 +1210,6 @@ Public Class AudioForm
                             mbRateMode.Button.SaveAction = Sub(value) TempProfile.Params.RateMode = value
                         End If
                 End Select
-
-                If TempProfile.Params.Codec = AudioCodec.Opus Then
-                    Dim mMappingFamily = ui.AddMenu(Of Integer)(page)
-                    mMappingFamily.Text = "MapFamily:"
-                    mMappingFamily.Expandet = True
-                    mMappingFamily.Add("FFmpeg default, No masking and opt.", -1)
-                    mMappingFamily.Add("Mono or Stereo 2 channels", 0)
-                    mMappingFamily.Add("Up to 8Ch surr. masking and LFE opt.", 1)
-                    mMappingFamily.Add("Ambisonics as individual channels", 2)
-                    mMappingFamily.Add("Ambisonics with demixing matrix", 3)
-                    mMappingFamily.Add("Discrete channels, up to 255 ", 255)
-                    ui.AddLabel("Mapping Family 1 is the best for multichannel,")
-                    ui.AddLabel("however in FFMpeg this may fail")
-                    'mMappingFamily.Help = "https://ffmpeg.org/ffmpeg-codecs.html#Option-Mapping"
-                    mMappingFamily.Help = "https://tools.ietf.org/html/draft-ietf-codec-ambisonics-10#section-8"
-
-                    mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegMappingFamily)
-                    mMappingFamily.Button.Value = TempProfile.Params.ffmpegMappingFamily
-                    mMappingFamily.Button.SaveAction = Sub(value) TempProfile.Params.ffmpegMappingFamily = CInt(value)
-                End If
 
                 If (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
                         (Not TempProfile.Stream Is Nothing AndAlso

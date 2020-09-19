@@ -728,14 +728,12 @@ Public Class GUIAudioProfile
         End If
 
         Select Case Params.Codec
-
             Case AudioCodec.FLAC
                 Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.55)
             Case AudioCodec.WavPack
                 If Params.WavPackMode = 0 Then Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.54)
             Case AudioCodec.W64, AudioCodec.WAV
                 Return CInt((TargetSamplingRate * GetCalcDepth() * Channels) / 1000)
-
         End Select
 
         Return CInt(Bitrate)
@@ -992,8 +990,8 @@ Public Class GUIAudioProfile
             If Params.CustomSwitches <> "" Then
                 sb.Append(" " + Params.CustomSwitches)
             End If
-            ElseIf ExtractDTSCore Then
-                sb.Append(" -core")
+        ElseIf ExtractDTSCore Then
+            sb.Append(" -core")
         End If
 
         If includePaths Then
@@ -1226,12 +1224,20 @@ Public Class GUIAudioProfile
                         sb.Append(" -q:a " & CInt(Params.Quality))
                 End Select
             Case AudioCodec.AC3
+                If Not Params.CustomSwitches.Contains("-c:a ") Then
+                    sb.Append(" -c:a ac3")
+                End If
+
                 If Not {192, 224, 384, 448, 640}.Contains(CInt(Bitrate)) Then
                     Return "Invalid bitrate, select 192, 224, 384, 448 or 640"
                 End If
 
                 sb.Append(" -b:a " & CInt(Bitrate) & "k")
             Case AudioCodec.EAC3
+                If Not Params.CustomSwitches.Contains("-c:a ") Then
+                    sb.Append(" -c:a eac3")
+                End If
+
                 sb.Append(" -b:a " & CInt(Bitrate) & "k")
             Case AudioCodec.DTS
                 If ExtractDTSCore Then
@@ -1254,27 +1260,51 @@ Public Class GUIAudioProfile
                     sb.Append(" -c:a libopus")
                 End If
 
-                If Params.RateMode = AudioRateMode.VBR Then
-                    sb.Append(" -vbr on")
-                Else
-                    sb.Append(" -vbr off")
+                Select Case Params.opusRateMode
+                    Case OpusRateMode.VBR
+                        sb.Append(" -vbr on")
+                    Case OpusRateMode.CVBR
+                        sb.Append(" -vbr constrained")
+                    Case OpusRateMode.CBR
+                        sb.Append(" -vbr off")
+                End Select
+
+                sb.Append(" -b:a " & CInt(Bitrate) & "k")
+
+                If Params.opuscompress <> 10 Then
+                    sb.Append(" -compression_level " & CInt(Params.opuscompress))
                 End If
+
+                Select Case Params.opusApp
+                    Case OpusApp.voip
+                        sb.Append(" -application voip ")
+                    Case OpusApp.audio
+                        sb.Append(" -application audio ")
+                    Case OpusApp.lowdelay
+                        sb.Append(" -application lowdelay ")
+                End Select
+
                 If Params.ffmpegMappingFamily <> -1 Then
                     sb.Append(" -mapping_family " & Params.ffmpegMappingFamily)
                 End If
 
-                sb.Append(" -b:a " & CInt(Bitrate) & "k")
             Case AudioCodec.AAC
                 If Params.ffmpegLibFdkAAC Then
                     sb.Append(" -c:a libfdk_aac")
+
+                    If Params.RateMode = SimpleAudioRateMode.CBR Then
+                        sb.Append(" -b:a " & CInt(Bitrate) & "k")
+                    Else
+                        sb.Append(" -vbr " & CInt(Params.Quality))
+                    End If
                 Else
                     sb.Append(" -c:a aac")
-                End If
 
-                If Params.RateMode = AudioRateMode.VBR Then
-                    sb.Append(" -vbr " & Params.Quality)
-                Else
-                    sb.Append(" -b:a " & CInt(Bitrate) & "k")
+                    If Params.RateMode = SimpleAudioRateMode.CBR Then
+                        sb.Append(" -b:a " & CInt(Bitrate) & "k")
+                    Else
+                        sb.Append(" -q:a " & CInt(Params.Quality))
+                    End If
                 End If
             Case AudioCodec.W64, AudioCodec.WAV
                 If Depth = 24 Then
@@ -1356,8 +1386,6 @@ Public Class GUIAudioProfile
 
         Return sb.ToString
     End Function
-
-
 
     Function GetWavPackCommandLine(includePaths As Boolean) As String
         Dim sb As New StringBuilder
@@ -1473,8 +1501,6 @@ Public Class GUIAudioProfile
 
         Return sb.ToString
     End Function
-
-
 
     Function SupportsNormalize() As Boolean
         Return GetEncoder() = GuiAudioEncoder.eac3to OrElse GetEncoder() = GuiAudioEncoder.qaac
@@ -1674,7 +1700,9 @@ Public Class GUIAudioProfile
         Property opusencFramesize As Double = 20
         Property opusEncNoPhaseInv As Boolean = False
         Property opusencMigrateVersion As Integer = 1
-
+        Property opusRateMode As OpusRateMode
+        Property opuscompress As Integer = 10
+        Property opusApp As OpusApp
 
         Property fdkaacProfile As Integer = 2
         Property fdkaacBandwidth As Integer
@@ -1800,6 +1828,19 @@ Public Enum AudioRateMode
     CBR
     ABR
     VBR
+End Enum
+
+Public Enum OpusRateMode
+    VBR
+    CVBR
+    CBR
+End Enum
+
+Public Enum OpusApp
+    auto
+    voip
+    audio
+    lowdelay
 End Enum
 
 Public Enum SimpleAudioRateMode

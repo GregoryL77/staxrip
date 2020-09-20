@@ -963,6 +963,8 @@ Public Class x265Params
                     New NumParam With {.Switch = "--vbv-init", .Text = "VBV Init", .Config = {0.5, 1.0, 0.1, 1}, .Init = 0.9},
                     New NumParam With {.Switch = "--vbv-end", .Text = "VBV End", .Config = {0, 1.0, 0.1, 1}},
                     New NumParam With {.Switch = "--vbv-end-fr-adj", .Text = "VBV Adjust", .Config = {0, 1, 0.1, 1}},
+                    New NumParam With {.Switch = "--min-vbv-fullness", .Text = "Min VBV fullness", .Config = {0, 100, 5}, .Init = 50},
+                    New NumParam With {.Switch = "--max-vbv-fullness", .Text = "Max VBV fullness", .Config = {0, 100, 5}, .Init = 80},
                     IPRatio, PBRatio,
                     New NumParam With {.Switch = "--cplxblur", .Text = "Blur Complexity", .Config = {0, 0, 0.05, 2}, .Init = 20},
                     New NumParam With {.Switch = "--qblur", .Text = "Q Blur", .Config = {0, 0, 0.05, 2}, .Init = 0.5},
@@ -976,7 +978,8 @@ Public Class x265Params
                     MultiPassOptDistortion,
                     ConstVBV,
                     New BoolParam() With {.Switch = "--aq-motion", .Text = "AQ Motion"},
-                    New BoolParam() With {.Switch = "--scenecut-aware-qp", .NoSwitch = "--no-scenecut-aware-qp", .Text = "Scenecut Aware QP"})
+                    New BoolParam() With {.Switch = "--scenecut-aware-qp", .NoSwitch = "--no-scenecut-aware-qp", .Text = "Scenecut Aware QP"},
+                    New BoolParam() With {.Switch = "--vbv-live-multi-pass", .NoSwitch = "--no-vbv-live-multi-pass", .Text = "Realtime VBV in rate control 2 pass"})
                 Add("Motion Search",
                     New StringParam With {.Switch = "--hme-search", .Text = "HME Search"},
                     New StringParam With {.Switch = "--hme-range", .Text = "HME Range", .Init = "16,32,48", .Quotes = QuotesMode.Never, .RemoveSpace = True},

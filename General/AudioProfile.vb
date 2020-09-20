@@ -190,6 +190,10 @@ Public MustInherit Class AudioProfile
         Return CommandLines.ContainsEx(value)
     End Function
 
+    Function IsUsedAndContainsCommand(value As String) As Boolean
+        Return File <> "" AndAlso CommandLines.ContainsEx(value)
+    End Function
+
     Function GetDuration() As TimeSpan
         If IO.File.Exists(File) Then
             If Stream Is Nothing Then
@@ -856,23 +860,23 @@ Public Class GUIAudioProfile
             'Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
             'If match.Success Then Gain += match.Groups(1).Value.ToSingle()
 
-            Dim Match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(Match.Groups(1).Value.ToDouble < 0, Match.Groups(1).Value.ToDouble, 0)
+            Dim match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(match.Groups(1).Value.ToDouble < 0, match.Groups(1).Value.ToDouble, 0)
 
-            Match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
-            If Match.Success Then
-                Params.ffmpegLoudnormTruePeakMeasured = Match.Groups(1).Value.ToDouble
-                If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then Gain -= Match.Groups(1).Value.ToSingle
+            match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
+            If match.Success Then
+                Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
+                If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then Gain -= match.Groups(1).Value.ToSingle
             End If
 
-            Match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormLraMeasured = Match.Groups(1).Value.ToDouble
+            match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormLraMeasured = match.Groups(1).Value.ToDouble
 
-            Match = Regex.Match(proc.Log.ToString, "Input Threshold:\s*([-\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormThresholdMeasured = Match.Groups(1).Value.ToDouble
+            match = Regex.Match(proc.Log.ToString, "Input Threshold:\s*([-\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormThresholdMeasured = match.Groups(1).Value.ToDouble
 
-            Match = Regex.Match(proc.Log.ToString, "Target Offset:\s*([-+\.0-9]+)")
-            If Match.Success Then Params.ffmpegLoudnormOffset = Match.Groups(1).Value.ToDouble
+            match = Regex.Match(proc.Log.ToString, "Target Offset:\s*([-+\.0-9]+)")
+            If match.Success Then Params.ffmpegLoudnormOffset = match.Groups(1).Value.ToDouble
 
         End Using
     End Sub
@@ -1260,34 +1264,39 @@ Public Class GUIAudioProfile
                     sb.Append(" -c:a libopus")
                 End If
 
-                Select Case Params.opusRateMode
-                    Case OpusRateMode.VBR
-                        sb.Append(" -vbr on")
-                    Case OpusRateMode.CVBR
-                        sb.Append(" -vbr constrained")
+                Select Case Params.ffmpegOpusRateMode
                     Case OpusRateMode.CBR
                         sb.Append(" -vbr off")
+                    Case OpusRateMode.CVBR
+                        sb.Append(" -vbr constrained")
                 End Select
 
                 sb.Append(" -b:a " & CInt(Bitrate) & "k")
 
-                If Params.opuscompress <> 10 Then
-                    sb.Append(" -compression_level " & CInt(Params.opuscompress))
-                End If
-
-                Select Case Params.opusApp
+                Select Case Params.ffmpegOpusApp
                     Case OpusApp.voip
-                        sb.Append(" -application voip ")
-                    Case OpusApp.audio
-                        sb.Append(" -application audio ")
+                        sb.Append(" -application voip")
                     Case OpusApp.lowdelay
-                        sb.Append(" -application lowdelay ")
+                        sb.Append(" -application lowdelay")
                 End Select
 
-                If Params.ffmpegMappingFamily <> -1 Then
-                    sb.Append(" -mapping_family " & Params.ffmpegMappingFamily)
+                If Params.ffmpegOpusFrame <> 20 Then
+                    sb.Append(" -frame_duration " & Params.ffmpegOpusFrame.ToInvariantString)
                 End If
 
+                'Some reads: https://hydrogenaud.io/index.php?topic=117698.0, https://trac.ffmpeg.org/ticket/5718 , https://trac.ffmpeg.org/ticket/5759
+                'seems with defaults mapping_family=-1 we are stuck years in the past with opusEnc v1.0, lost 20% of compression for 5.1
+                If Params.ffmpegMappingFamily <> -1 Then
+                    sb.Append(" -mapping_family " & CInt(Params.ffmpegMappingFamily))
+                End If
+
+                If Params.ffmpegOpusCompress <> 10 Then
+                    sb.Append(" -compression_level " & CInt(Params.ffmpegOpusCompress))
+                End If
+
+                If Params.ffmpegOpusPacket <> 0 Then
+                    sb.Append(" -packet_loss " & CInt(Params.ffmpegOpusPacket))
+                End If
             Case AudioCodec.AAC
                 If Params.ffmpegLibFdkAAC Then
                     sb.Append(" -c:a libfdk_aac")
@@ -1306,14 +1315,17 @@ Public Class GUIAudioProfile
                         sb.Append(" -q:a " & CInt(Params.Quality))
                     End If
                 End If
+
             Case AudioCodec.W64, AudioCodec.WAV
-                If Depth = 24 Then
-                    sb.Append(" -c:a pcm_s24le")
-                ElseIf Depth = 32 Then
-                    sb.Append(" -c:a pcm_f32le")
-                ElseIf Depth = 16 Then
-                    sb.Append(" -c:a pcm_s16le")
-                End If
+                Select Case Depth
+                    Case 24
+                        sb.Append(" -c:a pcm_s24le")
+                    Case 32
+                        sb.Append(" -c:a pcm_f32le")
+                    Case 16
+                        sb.Append(" -c:a pcm_s16le")
+                End Select
+
             Case AudioCodec.FLAC
                 If Params.ffmpegCompressionLevel <> 5 Then
                     sb.Append(" -compression_level " & Params.ffmpegCompressionLevel)
@@ -1323,6 +1335,7 @@ Public Class GUIAudioProfile
                 ElseIf Depth >= 24 Then
                     sb.Append(" -sample_fmt s32")
                 End If
+
             Case AudioCodec.WavPack
                 If Params.WavPackMode = 1 Then
                     sb.Append(" -b:a " & CInt(Bitrate) & "k")
@@ -1330,16 +1343,17 @@ Public Class GUIAudioProfile
                 If Params.ffmpegCompressionLevel <> 0 Then
                     sb.Append(" -compression_level " & Params.ffmpegCompressionLevel)
                 End If
-                If Depth = 24 Then
-                    sb.Append(" -sample_fmt s32p")
-                ElseIf Depth = 32 Then
-                    sb.Append(" -sample_fmt fltp")
-                ElseIf Depth = 16 Then
-                    sb.Append(" -sample_fmt s16p")
-                End If
+                Select Case Depth
+                    Case 24
+                        sb.Append(" -sample_fmt s32p")
+                    Case 32
+                        sb.Append(" -sample_fmt fltp")
+                    Case 16
+                        sb.Append(" -sample_fmt s16p")
+                End Select
         End Select
 
-        If Not ExtractCore Then
+                If Not ExtractCore Then
             If Params.Normalize Then
                 If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
                     sb.Append(" " + Audio.GetLoudNormArgs(Params))
@@ -1358,9 +1372,7 @@ Public Class GUIAudioProfile
             End If
         End If
 
-        'opus fails if -ac is missing, mapping_family related To DO Check:
-        If Not ExtractCore AndAlso
-            (Params.ChannelsMode <> ChannelsMode.Original OrElse (Params.Codec = AudioCodec.Opus AndAlso Params.ffmpegMappingFamily = -1)) Then
+        If Not ExtractCore AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
             sb.Append(" -rematrix_maxval 1 -ac " & Channels)
             If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
@@ -1462,21 +1474,21 @@ Public Class GUIAudioProfile
             sb.Append("opusenc")
         End If
 
-        Select Case Params.opusencMode
-            Case 0
+        Select Case Params.opusEncMode
+            Case OpusEncMode.VBR
                 sb.Append(" --vbr --bitrate " & CInt(Bitrate))
-            Case 1
+            Case OpusEncMode.CVBR
                 sb.Append(" --cvbr --bitrate " & CInt(Bitrate))
-            Case 2
+            Case OpusEncMode.CBR
                 sb.Append(" --hard-cbr --bitrate " & CInt(Bitrate))
         End Select
 
-        If Params.opusencComplexity < 10 Then
-            sb.Append(" --comp " & Params.opusencComplexity)
+        If Params.opusEncComplexity < 10 Then
+            sb.Append(" --comp " & Params.opusEncComplexity)
         End If
 
-        If Params.opusencFramesize <> 20 Then
-            sb.Append(" --framesize " & Params.opusencFramesize)
+        If Params.opusEncFramesize <> 20 Then
+            sb.Append(" --framesize " & Params.opusEncFramesize)
         End If
 
         If Params.opusEncNoPhaseInv Then
@@ -1573,11 +1585,11 @@ Public Class GUIAudioProfile
     Function GetEncoder() As GuiAudioEncoder
         Select Case Params.Encoder
             Case GuiAudioEncoder.eac3to
-                If {AudioCodec.AAC, AudioCodec.AC3, AudioCodec.FLAC, AudioCodec.DTS, AudioCodec.W64, AudioCodec.WAV}.Contains(Params.Codec) Then
+                If {AudioCodec.AAC, AudioCodec.AC3, AudioCodec.FLAC, AudioCodec.DTS,
+                    AudioCodec.W64, AudioCodec.WAV}.Contains(Params.Codec) Then
+
                     Return GuiAudioEncoder.eac3to
                 End If
-            Case GuiAudioEncoder.ffmpeg
-                Return GuiAudioEncoder.ffmpeg
             Case GuiAudioEncoder.qaac
                 If Params.Codec = AudioCodec.AAC Then
                     Return GuiAudioEncoder.qaac
@@ -1585,6 +1597,16 @@ Public Class GUIAudioProfile
             Case GuiAudioEncoder.fdkaac
                 If Params.Codec = AudioCodec.AAC Then
                     Return GuiAudioEncoder.fdkaac
+                End If
+            Case GuiAudioEncoder.Automatic
+                If Params.Codec = AudioCodec.AAC Then
+                    Return GuiAudioEncoder.qaac
+                End If
+                If Params.Codec = AudioCodec.WavPack Then
+                    Return GuiAudioEncoder.WavPack
+                End If
+                If Params.Codec = AudioCodec.Opus Then
+                    Return GuiAudioEncoder.OpusEnc
                 End If
             Case GuiAudioEncoder.WavPack
                 If Params.Codec = AudioCodec.WavPack Then
@@ -1594,8 +1616,12 @@ Public Class GUIAudioProfile
                 If Params.Codec = AudioCodec.Opus Then
                     Return GuiAudioEncoder.OpusEnc
                 End If
+            Case GuiAudioEncoder.ffmpeg
+                Return GuiAudioEncoder.ffmpeg
+
         End Select
 
+        'Defaults to dedicated encoders:
         If Params.Codec = AudioCodec.AAC Then
             Return GuiAudioEncoder.qaac
         End If
@@ -1693,16 +1719,21 @@ Public Class GUIAudioProfile
         Property qaacLowpass As Integer
         Property qaacNoDither As Boolean
         Property qaacQuality As Integer = 2
-        Property qaacRateMode As Integer = 0
+        Property qaacRateMode As Integer
 
-        Property opusencMode As Integer = 0
-        Property opusencComplexity As Integer = 10
-        Property opusencFramesize As Double = 20
+        Property ffmpegOpusApp As OpusApp = OpusApp.audio
+        Property ffmpegOpusCompress As Integer = 10
+        Property ffmpegOpusFrame As Double = 20
+        Property ffmpegOpusMap As Integer = -1
+        Property ffmpegOpusPacket As Integer
+        Property ffmpegOpusRateMode As OpusRateMode = OpusRateMode.VBR
+        Property ffmpegOpusMigrate As Integer = 1
+
+        Property opusEncMode As OpusEncMode
+        Property opusEncComplexity As Integer = 10
+        Property opusEncFramesize As Double = 20
         Property opusEncNoPhaseInv As Boolean = False
-        Property opusencMigrateVersion As Integer = 1
-        Property opusRateMode As OpusRateMode
-        Property opuscompress As Integer = 10
-        Property opusApp As OpusApp
+        'Property opusEncMigrateVersion As Integer = 1
 
         Property fdkaacProfile As Integer = 2
         Property fdkaacBandwidth As Integer
@@ -1770,14 +1801,6 @@ Public Class GUIAudioProfile
         'legacy/obsolete
         Sub Migrate()
             '2019
-            If opusencMigrateVersion <> 1 Then
-                opusencFramesize = 20
-                opusencComplexity = 10
-                opusencMode = 2
-                opusencMigrateVersion = 1
-            End If
-
-            '2019
             If fdkaacProfile = 0 Then
                 fdkaacProfile = 2
                 SimpleRateMode = SimpleAudioRateMode.VBR
@@ -1805,6 +1828,21 @@ Public Class GUIAudioProfile
             If Not MigrateffNormalizeMode Then
                 ffmpegNormalizeMode = CType(ffNormalizeMode, ffmpegNormalizeMode)
                 MigrateffNormalizeMode = True
+            End If
+
+            '2020
+            If ffmpegOpusMigrate <> 1 Then
+                ffmpegOpusMigrate = 1
+                ffmpegOpusApp = OpusApp.audio
+                ffmpegOpusCompress = 10
+                ffmpegOpusFrame = 20
+                ffmpegOpusMap = -1
+                ffmpegOpusRateMode = OpusRateMode.VBR
+                ffmpegMappingFamily = -1
+                'opusEncFramesize = 20
+                'opusEncComplexity = 10
+                'opusEncMode = OpusEncMode.VBR
+                'opusEncNoPhaseInv = False
             End If
         End Sub
     End Class
@@ -1837,10 +1875,14 @@ Public Enum OpusRateMode
 End Enum
 
 Public Enum OpusApp
-    auto
-    voip
     audio
+    voip
     lowdelay
+End Enum
+Public Enum OpusEncMode
+    VBR
+    CVBR
+    CBR
 End Enum
 
 Public Enum SimpleAudioRateMode
@@ -1857,9 +1899,9 @@ End Enum
 
 Public Enum GuiAudioEncoder
     Automatic
-    qaac
-    ffmpeg
     eac3to
+    ffmpeg
+    qaac
     fdkaac
     WavPack
     OpusEnc

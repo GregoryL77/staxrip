@@ -41,6 +41,9 @@ Public MustInherit Class VideoEncoder
         End Get
     End Property
 
+    Overridable Function GetCommandLine() As String
+    End Function
+
     Overridable Function GetMenu() As MenuList
     End Function
 
@@ -441,6 +444,10 @@ Public MustInherit Class BasicVideoEncoder
         ImportCommandLine(commandLine, CommandLineParams)
     End Sub
 
+    Overrides Function GetCommandLine() As String
+        Return CommandLineParams.GetCommandLine(True, True)
+    End Function
+
     Overloads Shared Sub ImportCommandLine(commandLine As String, params As CommandLineParams)
         Try
             If commandLine = "" Then
@@ -574,6 +581,10 @@ Public Class BatchEncoder
             End If
         End Using
     End Sub
+
+    Overrides Function GetCommandLine() As String
+        Return CommandLines
+    End Function
 
     Overrides Function GetMenu() As MenuList
         Dim ret As New MenuList

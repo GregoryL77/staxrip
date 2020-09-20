@@ -846,21 +846,18 @@ Public Class AudioForm
         Select Case TempProfile.Params.Codec
             Case AudioCodec.AAC
                 Select Case TempProfile.Params.Encoder
-                    Case GuiAudioEncoder.qaac
+                    Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
                         SetQuality(54)
                         TempProfile.Params.qaacQuality = 2
                         TempProfile.Params.qaacLowpass = 0
                         TempProfile.Params.qaacRateMode = 0
                     Case GuiAudioEncoder.eac3to
                         SetQuality(0.5)
-                    Case GuiAudioEncoder.fdkaac
-                        SetQuality(3)
                     Case Else
-                        SetQuality(54)
+                        SetQuality(3)
                 End Select
 
                 TempProfile.Params.RateMode = AudioRateMode.VBR
-
             Case AudioCodec.AC3, AudioCodec.EAC3
                 If TempProfile.Channels = 6 Then
                     numBitrate.Value = 448
@@ -869,7 +866,6 @@ Public Class AudioForm
                 End If
 
                 TempProfile.Params.RateMode = AudioRateMode.CBR
-
             Case AudioCodec.FLAC
                 TempProfile.Params.ffmpegCompressionLevel = 5
                 TempProfile.Depth = 0
@@ -911,13 +907,17 @@ Public Class AudioForm
                 'numBitrate.Value = TempProfile.Channels * 96 / 2
                 numBitrate.Value = If(TempProfile.Channels = 6, 256, TempProfile.Channels * 96 / 2)
                 TempProfile.Params.RateMode = AudioRateMode.VBR
-                TempProfile.Params.opusencMode = 0
+                TempProfile.Params.opusEncMode = OpusEncMode.VBR
                 TempProfile.Params.ffmpegMappingFamily = -1
-                TempProfile.Params.opusencComplexity = 10
-                TempProfile.Params.opusencFramesize = 20
+                TempProfile.Params.opusEncComplexity = 10
+                TempProfile.Params.opusEncFramesize = 20
                 TempProfile.Params.opusEncNoPhaseInv = False
-                TempProfile.Params.opuscompress = 10
-                TempProfile.Params.opusRateMode = OpusRateMode.VBR
+                TempProfile.Params.ffmpegOpusCompress = 10
+                TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR
+                TempProfile.Params.ffmpegOpusApp = OpusApp.audio
+                TempProfile.Params.ffmpegOpusFrame = 20
+                TempProfile.Params.ffmpegOpusPacket = 0
+                TempProfile.Params.ffmpegOpusMap = -1
         End Select
 
         UpdateBitrate()
@@ -1057,7 +1057,7 @@ Public Class AudioForm
         'To DO : add handler:
         If TempProfile.Params.ChannelsMode <> ChannelsMode.Original AndAlso TempProfile.Params.ChannelsMode < 3 AndAlso
            Not ({GuiAudioEncoder.eac3to}.Contains(TempProfile.GetEncoder()) AndAlso TempProfile.DecodingMode = TempProfile.DecodingMode.Pipe) Then
-            numFFLFEMixLevel = ui.AddNum
+            numFFLFEMixLevel = ui.AddNum(page)
             numFFLFEMixLevel.Text = "FF LFE Downmix"
             numFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
             numFFLFEMixLevel.Help = "Value 1.0 sets matrix coef. for LFE equal to other channels, ffmpeg default 0 means no LFE in 1C/2C downmix"
@@ -1078,13 +1078,12 @@ Public Class AudioForm
                 mDepth.Add("32 fp", 32)
             End If
             mDepth.Button.Value = TempProfile.Depth
-            mDepth.Button.SaveAction =
-                Sub(val)
-                    TempProfile.Depth = (val)
-                    'If TempProfile.Depth = 0 Then TempProfile.Depth = If({AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec), 16, 24)
-                    UpdateBitrate()
-                    UpdateControls()
-                End Sub
+            mDepth.Button.SaveAction = Sub(val)
+                                           TempProfile.Depth = val
+                                           UpdateBitrate()
+                                           UpdateControls()
+                                       End Sub
+
         End If
 
         Dim cb As SimpleUI.SimpleUICheckBox
@@ -1125,7 +1124,7 @@ Public Class AudioForm
                     Case AudioCodec.FLAC, AudioCodec.WavPack
                         If TempProfile.Params.Codec = AudioCodec.WavPack Then
                             Dim mbFWavPackFMode = ui.AddMenu(Of Integer)
-                            mbFWavPackFMode.Text = "Mode:"
+                            mbFWavPackFMode.Text = "Mode"
                             mbFWavPackFMode.Expandet = True
                             mbFWavPackFMode.Add("Lossless", 0)
                             mbFWavPackFMode.Add("Lossy CBR", 1)
@@ -1142,9 +1141,10 @@ Public Class AudioForm
                         End If
 
                         Dim mCompressionLevel = ui.AddNum(page)
-                        mCompressionLevel.Text = "Compression Level:"
+                        mCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
                             mCompressionLevel.NumEdit.Config = {0, 12}
+                            'Over 10 are non-subset FLAC!!! addlabel?
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
                         End If
@@ -1166,41 +1166,57 @@ Public Class AudioForm
                         Dim mbRateMode = ui.AddMenu(Of OpusRateMode)
                         mbRateMode.Text = "Rate Mode"
                         mbRateMode.Expandet = True
-                        mbRateMode.Button.Value = TempProfile.Params.opusRateMode
-                        mbRateMode.Button.SaveAction = Sub(value)
-                                                           TempProfile.Params.opusRateMode = value
-                                                           TempProfile.Params.RateMode = If(TempProfile.Params.opusRateMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
-                                                       End Sub
+                        mbRateMode.Button.Value = TempProfile.Params.ffmpegOpusRateMode
+                        mbRateMode.Button.SaveAction =
+                            Sub(value)
+                                TempProfile.Params.ffmpegOpusRateMode = value
+                                TempProfile.Params.RateMode = If(TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR, AudioRateMode.VBR, AudioRateMode.CBR)
+                            End Sub
 
-                        Dim mMappingFamily = ui.AddMenu(Of Integer)(page)
-                        mMappingFamily.Text = "MapFamily:"
+                        'If this is the same as in reference encoder it overrides auto-detection, can be usefull only for extremally low bitrates:
+                        Dim mbOpusApp = ui.AddMenu(Of OpusApp)
+                        mbOpusApp.Text = "Application Type"
+                        mbOpusApp.Expandet = True
+                        mbOpusApp.Button.Value = TempProfile.Params.ffmpegOpusApp
+                        mbOpusApp.Button.SaveAction = Sub(value) TempProfile.Params.ffmpegOpusApp = value
+
+                        Dim frame = ui.AddMenu(Of Double)
+                        frame.Text = "Frame Duration"
+                        frame.Expandet = True
+                        frame.Add("2.5", 2.5)
+                        frame.Add("5", 5)
+                        frame.Add("10", 10)
+                        frame.Add("20", 20)
+                        frame.Add("40", 40)
+                        frame.Add("60", 60)
+                        frame.Property = NameOf(TempProfile.Params.ffmpegOpusFrame)
+
+                        Dim mMappingFamily = ui.AddMenu(Of Integer)
+                        mMappingFamily.Text = "MapFamily"
                         mMappingFamily.Expandet = True
-                        mMappingFamily.Add("FFmpeg default, No masking and opt.", -1)
-                        mMappingFamily.Add("Mono or Stereo 2 channels", 0)
-                        mMappingFamily.Add("Up to 8Ch surr. masking and LFE opt.", 1)
-                        mMappingFamily.Add("Ambisonics as individual channels", 2)
-                        mMappingFamily.Add("Ambisonics with demixing matrix", 3)
-                        mMappingFamily.Add("Discrete channels, up to 255 ", 255)
+                        mMappingFamily.Add("No surr.masking and LFE opt.", -1)
+                        mMappingFamily.Add("Mono/Stereo 2 channels", 0)
+                        mMappingFamily.Add("Masking and LFE opt.Up to 8C", 1)
+                        mMappingFamily.Add("Ambisonics as individual ch.", 2)
+                        mMappingFamily.Add("Ambisonics with demixing", 3)
+                        mMappingFamily.Add("Discrete channels, 255 max", 255)
                         ui.AddLabel("Mapping Family 1 is the best for multichannel,")
                         ui.AddLabel("however in FFmpeg this may fail")
                         'mMappingFamily.Help = "https://ffmpeg.org/ffmpeg-codecs.html#Option-Mapping"
                         mMappingFamily.Help = "https://tools.ietf.org/html/draft-ietf-codec-ambisonics-10#section-8"
-
                         mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegMappingFamily)
-                        mMappingFamily.Button.Value = TempProfile.Params.ffmpegMappingFamily
-                        mMappingFamily.Button.SaveAction = Sub(value) TempProfile.Params.ffmpegMappingFamily = CInt(value)
 
-                        Dim mbOpusApp = ui.AddMenu(Of OpusApp)
-                        mbOpusApp.Text = "Application Type"
-                        mbOpusApp.Expandet = True
-                        mbOpusApp.Button.Value = TempProfile.Params.opusApp
-                        mbOpusApp.Button.SaveAction = Sub(value) TempProfile.Params.opusApp = value
+                        Dim comp = ui.AddNum(page)
+                        comp.Text = "Compression Level"
+                        comp.Config = {0, 10, 1}
+                        comp.NumEdit.Value = TempProfile.Params.ffmpegOpusCompress
+                        comp.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffmpegOpusCompress = CInt(value)
 
-                        Dim num = ui.AddNum(page)
-                        num.Text = "Compression Level"
-                        num.Config = {0, 10, 1}
-                        num.NumEdit.Value = TempProfile.Params.opuscompress
-                        num.NumEdit.SaveAction = Sub(value) TempProfile.Params.opuscompress = CInt(value)
+                        Dim packet = ui.AddNum(page)
+                        packet.Text = "Packet Loss"
+                        packet.Config = {0, 100, 1}
+                        packet.NumEdit.Value = TempProfile.Params.ffmpegOpusPacket
+                        packet.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffmpegOpusPacket = CInt(value)
                     Case Else
                         If Not {AudioCodec.WAV, AudioCodec.W64}.Contains(TempProfile.Params.Codec) Then
                             Dim mbRateMode = ui.AddMenu(Of AudioRateMode)
@@ -1318,7 +1334,7 @@ Public Class AudioForm
                 cb.Property = NameOf(TempProfile.Params.fdkaacMoovBeforeMdat)
             Case GuiAudioEncoder.qaac
                 Dim mbMode = ui.AddMenu(Of Integer)
-                mbMode.Text = "Mode:"
+                mbMode.Text = "Mode"
                 mbMode.Expandet = True
                 mbMode.Add("True VBR", 0)
                 mbMode.Add("Constrained VBR", 1)
@@ -1332,7 +1348,7 @@ Public Class AudioForm
                                            End Sub
 
                 Dim mbQuality = ui.AddMenu(Of Integer)(page)
-                mbQuality.Label.Text = "Quality:"
+                mbQuality.Label.Text = "Quality"
                 mbQuality.Button.Expand = True
                 mbQuality.Button.Add("Low", 0)
                 mbQuality.Button.Add("Medium", 1)
@@ -1341,7 +1357,7 @@ Public Class AudioForm
                 mbQuality.Button.SaveAction = Sub(value) TempProfile.Params.qaacQuality = value
 
                 Dim num = ui.AddNum(page)
-                num.Text = "Lowpass:"
+                num.Text = "Lowpass"
                 num.Config = {0, 48000, 100}
                 num.NumEdit.Value = TempProfile.Params.qaacLowpass
                 num.NumEdit.SaveAction = Sub(value) TempProfile.Params.qaacLowpass = CInt(value)
@@ -1362,8 +1378,8 @@ Public Class AudioForm
                 cb.SaveAction = Sub(value) TempProfile.Params.qaacNoDither = value
 
             Case GuiAudioEncoder.WavPack
-                Dim mbWavPackMode = ui.AddMenu(Of Integer)(page)
-                mbWavPackMode.Text = "Mode:"
+                Dim mbWavPackMode = ui.AddMenu(Of Integer)
+                mbWavPackMode.Text = "Mode"
                 mbWavPackMode.Expandet = True
                 mbWavPackMode.Add("Lossless", 0)
                 mbWavPackMode.Add("Lossy CBR", 1)
@@ -1383,7 +1399,7 @@ Public Class AudioForm
                 If TempProfile.Params.WavPackMode = 0 Then TempProfile.Params.WavPackCreateCorrection = False
 
                 Dim mCompression = ui.AddMenu(Of Integer)
-                mCompression.Text = "Comp/Decomp Mode:"
+                mCompression.Text = "Comp/Decomp Mode"
                 mCompression.Expandet = True
                 mCompression.Add("Fast", 0)
                 mCompression.Add("Normal", 1)
@@ -1392,14 +1408,14 @@ Public Class AudioForm
                 mCompression.Button.Value = TempProfile.Params.WavPackCompression
                 mCompression.Button.SaveAction = Sub(value) TempProfile.Params.WavPackCompression = value
 
-                Dim mExtraCompression = ui.AddNum
-                mExtraCompression.Text = "Extra Compression:"
+                Dim mExtraCompression = ui.AddNum(page)
+                mExtraCompression.Text = "Extra Compression"
                 mExtraCompression.Config = {0, 6}
                 mExtraCompression.NumEdit.Value = TempProfile.Params.WavPackExtraCompression
                 mExtraCompression.NumEdit.SaveAction = Sub(value) TempProfile.Params.WavPackExtraCompression = CInt(value)
 
-                Dim mPreQuant = ui.AddNum
-                mPreQuant.Text = "Pre-Quantitize bits:"
+                Dim mPreQuant = ui.AddNum(page)
+                mPreQuant.Text = "Pre-Quantitize bits"
                 mPreQuant.Config = {0, 24}
                 mPreQuant.NumEdit.Value = TempProfile.Params.WavPackPreQuant
                 mPreQuant.NumEdit.SaveAction = Sub(value)
@@ -1414,21 +1430,18 @@ Public Class AudioForm
                 cbCreateCorrectionWVC.Enabled = TempProfile.Params.WavPackMode = 1
 
             Case GuiAudioEncoder.OpusEnc
-                Dim mbOpusMode = ui.AddMenu(Of Integer)
-                mbOpusMode.Text = "Mode:"
+                Dim mbOpusMode = ui.AddMenu(Of OpusEncMode)
+                mbOpusMode.Text = "Mode"
                 mbOpusMode.Expandet = True
-                mbOpusMode.Add("VBR", 0)
-                mbOpusMode.Add("Constrained VBR", 1)
-                mbOpusMode.Add("Hard CBR", 2)
-                mbOpusMode.Button.Value = TempProfile.Params.opusencMode
+                mbOpusMode.Button.Value = TempProfile.Params.opusEncMode
                 mbOpusMode.Button.SaveAction =
                     Sub(value)
-                        TempProfile.Params.opusencMode = value
-                        TempProfile.Params.RateMode = If(TempProfile.Params.opusencMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
+                        TempProfile.Params.opusEncMode = value
+                        TempProfile.Params.RateMode = If(TempProfile.Params.opusEncMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
                     End Sub
 
                 Dim mFrameSize = ui.AddMenu(Of Double)(page)
-                mFrameSize.Text = "Frame Size:"
+                mFrameSize.Text = "Frame Size"
                 mFrameSize.Expandet = True
                 mFrameSize.Add("2.5 ms", 2.5)
                 mFrameSize.Add("5 ms", 5)
@@ -1436,19 +1449,21 @@ Public Class AudioForm
                 mFrameSize.Add("20 ms", 20)
                 mFrameSize.Add("40 ms", 40)
                 mFrameSize.Add("60 ms", 60)
-                mFrameSize.Button.Value = TempProfile.Params.opusencFramesize
-                mFrameSize.Button.SaveAction = Sub(value) TempProfile.Params.opusencFramesize = value
+                mFrameSize.Button.Value = TempProfile.Params.opusEncFramesize
+                mFrameSize.Button.SaveAction = Sub(value) TempProfile.Params.opusEncFramesize = value
 
                 Dim mComplexity = ui.AddNum(page)
-                mComplexity.Text = "Complexity:"
+                mComplexity.Text = "Complexity"
                 mComplexity.Config = {0, 10}
-                mComplexity.NumEdit.Value = TempProfile.Params.opusencComplexity
-                mComplexity.NumEdit.SaveAction = Sub(value) TempProfile.Params.opusencComplexity = CInt(value)
+                mComplexity.NumEdit.Value = TempProfile.Params.opusEncComplexity
+                mComplexity.NumEdit.SaveAction = Sub(value) TempProfile.Params.opusEncComplexity = CInt(value)
 
                 cb = ui.AddBool(page)
                 cb.Text = "No phase inversion for intensity stereo"
-                cb.Checked = TempProfile.Params.OpusEncNoPhaseInv
-                cb.SaveAction = Sub(value) TempProfile.Params.OpusEncNoPhaseInv = value
+                cb.Checked = TempProfile.Params.opusEncNoPhaseInv
+                cb.SaveAction = Sub(value) TempProfile.Params.opusEncNoPhaseInv = value
+
+                'More options(like in ffmpeg wrapper) are propably not worthy exposing
 
         End Select
 

@@ -1766,7 +1766,7 @@ Public Class Package
             .WebURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TTempSmooth",
             .VSFilterNames = {"ttmpsm.TTempSmooth"},
             .VSFiltersFunc = Function() {New VideoFilter("Noise", "TTempSmooth", "clip =  core.ttmpsm.TTempSmooth(clip, maxr=3)")}})
-
+        'TTempSmooth for Vapoursynth
         Add(New PluginPackage With {
             .Name = "TTempSmooth",
             .Filename = "TTempSmooth.dll",

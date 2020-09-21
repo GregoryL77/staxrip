@@ -535,8 +535,9 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Height = CInt(Font.Height * 1.4)
-            Width = CInt(Font.Height * 4.8)
+    'dialog size
+            Height = CInt(Font.Height * 1.3)
+            Width = CInt(Font.Height * 4.5)
             MyBase.OnLayout(levent)
         End Sub
 

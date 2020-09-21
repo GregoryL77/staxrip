@@ -341,13 +341,13 @@ Public Class Audio
             'gap.Params.Normalize = False
         End If
 
-        Dim outPath = (p.TempDir + ap.File.Base + "." + ap.ConvertExt).ToShortFilePath
+        Dim outPath = (p.TempDir + ap.File.Base + "." + ap.ConvertExt).LongPathPrefix
 
         If ap.File = outPath Then
             outPath += "." + ap.ConvertExt
         End If
 
-        Dim args = "-sn -vn -dn -i " + ap.File.ToShortFilePath.Escape
+        Dim args = "-sn -vn -dn -i " + ap.File.LongPathPrefix.Escape
 
         If Not ap.Stream Is Nothing Then
             args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
@@ -380,7 +380,7 @@ Public Class Audio
             End If
         End If
 
-        'To DO: Test this
+        'To DO: Test this, sth less crude needed maybe
         If ap.Gain <> 0 Then
             If Not args.ContainsAny(" -af loudnorm=", " -af dynaudnorm") Then
                 args += " -af volume=" + ap.Gain.ToInvariantString + "dB"

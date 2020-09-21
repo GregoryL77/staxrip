@@ -853,8 +853,13 @@ Public Class AudioForm
                         TempProfile.Params.qaacRateMode = 0
                     Case GuiAudioEncoder.eac3to
                         SetQuality(0.5)
-                    Case Else
+                    Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
                         SetQuality(3)
+                    Case Else
+                        SetQuality(54)
+                        TempProfile.Params.qaacQuality = 2
+                        TempProfile.Params.qaacLowpass = 0
+                        TempProfile.Params.qaacRateMode = 0
                 End Select
 
                 TempProfile.Params.RateMode = AudioRateMode.VBR
@@ -877,7 +882,7 @@ Public Class AudioForm
                 numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffmpegCompressionLevel = 0
-                TempProfile.Depth = 32
+                TempProfile.Depth = If(TempProfile.GetEncoder() = GuiAudioEncoder.WavPack, 32, 0)
                 TempProfile.Params.RateMode = AudioRateMode.CBR
                 TempProfile.Params.WavPackCompression = 1
                 TempProfile.Params.WavPackExtraCompression = 0
@@ -927,16 +932,13 @@ Public Class AudioForm
     End Sub
 
     Sub SetQuality(value As Single)
-        If TempProfile.Params.Codec = AudioCodec.AAC AndAlso
-            TempProfile.Params.Encoder = GuiAudioEncoder.qaac OrElse
-            TempProfile.Params.Encoder = GuiAudioEncoder.Automatic Then
-
-            numQuality.Minimum = 0
-            numQuality.Maximum = 127
-            numQuality.Increment = 9
-            numQuality.DecimalPlaces = 0
-        ElseIf TempProfile.Params.Codec = AudioCodec.AAC Then
+        If TempProfile.Params.Codec = AudioCodec.AAC Then
             Select Case TempProfile.Params.Encoder
+                Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
+                    numQuality.Minimum = 0
+                    numQuality.Maximum = 127
+                    numQuality.Increment = 9
+                    numQuality.DecimalPlaces = 0
                 Case GuiAudioEncoder.eac3to
                     numQuality.Minimum = 0
                     numQuality.Maximum = 1
@@ -948,6 +950,10 @@ Public Class AudioForm
                     numQuality.Increment = 1
                     numQuality.DecimalPlaces = 0
                 Case Else
+                    numQuality.Minimum = 0
+                    numQuality.Maximum = 127
+                    numQuality.Increment = 9
+                    numQuality.DecimalPlaces = 0
             End Select
         ElseIf TempProfile.Params.Codec = AudioCodec.MP3 Then
             numQuality.Minimum = 0

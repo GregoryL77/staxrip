@@ -715,8 +715,10 @@ Public Class GUIAudioProfile
                             Return Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality)
                         Case GuiAudioEncoder.eac3to
                             Return Calc.GetYFromTwoPointForm(0.01, CInt(50 / 8 * Channels), 1, CInt(1000 / 8 * Channels), Params.Quality)
-                        Case Else
+                        Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
                             Return Calc.GetYFromTwoPointForm(1, CInt(50 / 8 * Channels), 5, CInt(900 / 8 * Channels), Params.Quality)
+                        Case Else
+                            Return Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality)
                     End Select
                 Case AudioCodec.MP3
                     Return Calc.GetYFromTwoPointForm(9, 65, 0, 245, Params.Quality)
@@ -817,7 +819,7 @@ Public Class GUIAudioProfile
             Exit Sub
         End If
 
-        Dim args = "-sn -vn -dn -i " + File.ToShortFilePath.Escape
+        Dim args = "-sn -vn -dn -i " + File.LongPathPrefix.Escape
 
         If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
             args += " -map 0:a:" & Stream.Index
@@ -924,8 +926,8 @@ Public Class GUIAudioProfile
         End If
 
         If includePaths Then
-            sb.Append(Package.eac3to.Path.Escape + " " + id + File.ToShortFilePath.Escape +
-                " " + GetOutputFile.ToShortFilePath.Escape)
+            sb.Append(Package.eac3to.Path.Escape + " " + id + File.LongPathPrefix.Escape +
+                " " + GetOutputFile.LongPathPrefix.Escape)
         Else
             sb.Append("eac3to")
         End If
@@ -1042,10 +1044,10 @@ Public Class GUIAudioProfile
         If Params.fdkaacTransportFormat <> 0 Then sb.Append(" --transport-format " & Params.fdkaacTransportFormat)
         If Params.CustomSwitches <> "" Then sb.Append(" " + Params.CustomSwitches)
 
-        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.ToShortFilePath.Escape)
+        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.LongPathPrefix.Escape)
 
         If includePaths Then
-            sb.Append(" --ignorelength -o " + GetOutputFile.ToShortFilePath.Escape + " " + input)
+            sb.Append(" --ignorelength -o " + GetOutputFile.LongPathPrefix.Escape + " " + input)
         End If
 
         Return sb.ToString
@@ -1621,7 +1623,7 @@ Public Class GUIAudioProfile
 
         End Select
 
-        'Defaults to dedicated encoders:
+        'dedicated encoders priority:
         If Params.Codec = AudioCodec.AAC Then
             Return GuiAudioEncoder.qaac
         End If

@@ -168,9 +168,9 @@ Public MustInherit Class AudioProfile
                 ret = "wav"
             End If
 
-            If Not SupportedInput.Contains(ret) Then
-                ret = "flac"
-            End If
+            'If Not SupportedInput.Contains(ret) Then
+            'ret = "flac"
+            'End If
 
             'If Not SupportedInput.Contains(ret) Then
             'ret = "w64"

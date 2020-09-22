@@ -1157,7 +1157,7 @@ Public Class GUIAudioProfile
         End If
 
         If Gain <> 0 AndAlso {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) AndAlso
-            Not ({ffmpegNormalizeMode.loudnorm, ffmpegNormalizeMode.dynaudnorm}.Contains(Params.ffmpegNormalizeMode) AndAlso  Params.Normalize) Then
+                Not ({ffmpegNormalizeMode.loudnorm, ffmpegNormalizeMode.dynaudnorm}.Contains(Params.ffmpegNormalizeMode) AndAlso Params.Normalize) Then
             sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
         End If
 
@@ -1669,11 +1669,7 @@ Public Class GUIAudioProfile
                     End If
                 Case GuiAudioEncoder.fdkaac
                     If DecodingMode <> AudioDecodingMode.Pipe Then
-                        If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav"}
-                        Else
-                            Return {"wav"}
-                        End If
+                        Return {"wav"}
                     End If
                 Case GuiAudioEncoder.WavPack
                     If DecodingMode <> AudioDecodingMode.Pipe Then
@@ -1686,7 +1682,7 @@ Public Class GUIAudioProfile
                 Case GuiAudioEncoder.OpusEnc
                     If DecodingMode <> AudioDecodingMode.Pipe Then
                         If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav"}
+                            Return {"wav"}
                         Else
                             Return {"wav", "flac"}
                         End If

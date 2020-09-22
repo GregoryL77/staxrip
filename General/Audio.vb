@@ -404,8 +404,8 @@ Public Class Audio
 
         If ap.ConvertExt.EqualsAny("wav") Then
             args += " -c:a pcm_f32le"
-        ElseIf ap.ConvertExt.EqualsAny("w64") Then
-            args += " -c:a pcm_s24le"
+            'ElseIf ap.ConvertExt.EqualsAny("w64") Then
+            'args += " -c:a pcm_s24le"
         ElseIf ap.ConvertExt.EqualsAny("wv") Then
             args += " -compression_level 1"
         End If

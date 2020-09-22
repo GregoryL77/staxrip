@@ -1150,7 +1150,7 @@ Public Class AudioForm
                         mCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
                             mCompressionLevel.NumEdit.Config = {0, 12}
-                            'Over 10 are non-subset FLAC!!! addlabel?
+                            'Over 10 are non-subset FLAC!!! addlabel,color?
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
                         End If
@@ -1394,7 +1394,7 @@ Public Class AudioForm
                                                       TempProfile.Params.WavPackMode = value
                                                       If TempProfile.Params.WavPackMode = 1 Then
                                                           TempProfile.Params.RateMode = AudioRateMode.CBR
-                                                          numBitrate.Value = If(TempProfile.Channels > 2, TempProfile.Channels * 320 / 2, TempProfile.Channels * 384 / 2)
+                                                          numBitrate.Value = If(TempProfile.Channels = 2, TempProfile.Channels * 320 / 2, TempProfile.Channels * 384 / 2)
                                                           cbCreateCorrectionWVC.Enabled = True
                                                       Else
                                                           cbCreateCorrectionWVC.Enabled = False

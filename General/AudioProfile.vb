@@ -154,8 +154,8 @@ Public MustInherit Class AudioProfile
                     ret = "wv"
                 Case AudioDecodingMode.FLAC
                     ret = "flac"
-                Case AudioDecodingMode.W64
-                    ret = "w64"
+                    'Case AudioDecodingMode.W64
+                    'ret = "w64"
                 Case Else
                     ret = "wav"
             End Select
@@ -172,9 +172,9 @@ Public MustInherit Class AudioProfile
                 ret = "flac"
             End If
 
-            If Not SupportedInput.Contains(ret) Then
-                ret = "w64"
-            End If
+            'If Not SupportedInput.Contains(ret) Then
+            'ret = "w64"
+            'End If
 
             Return ret
         End Get
@@ -1662,9 +1662,9 @@ Public Class GUIAudioProfile
                 Case GuiAudioEncoder.qaac
                     If DecodingMode <> AudioDecodingMode.Pipe Then
                         If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav", "w64"}
+                            Return {"wv", "wav"}
                         Else
-                            Return {"wv", "wav", "flac", "w64"}
+                            Return {"wv", "wav", "flac"}
                         End If
                     End If
                 Case GuiAudioEncoder.fdkaac

@@ -79,8 +79,10 @@ Public Class Audio
     Shared Function GetBaseNameForStream(path As String, stream As AudioStream) As String
         Dim base As String
 
+        'To Do: empty pipe temp files
         If p.TempDir.EndsWithEx("_temp\") AndAlso path.Base.StartsWithEx(p.SourceFile.Base) Then
-            base = path.Base.Substring(p.SourceFile.Base.Length)
+            base = path.Base.Substring(p.SourceFile.Base.Length).TrimStart
+            If base = "" Then base = path.Base
         Else
             base = path.Base
         End If
@@ -791,9 +793,8 @@ Public Enum AudioDecodingMode
     WavPack
     WAVE
     FLAC
-    W64
 End Enum
-
+'W64
 Public Enum CuttingMode
     mkvmerge
     DirectShow

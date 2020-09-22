@@ -161,11 +161,7 @@ Public MustInherit Class AudioProfile
             End Select
 
             If Not SupportedInput.Contains(ret) Then
-                ret = "w64"
-            End If
-
-            If Not SupportedInput.Contains(ret) Then
-                ret = "flac"
+                ret = "wv"
             End If
 
             If Not SupportedInput.Contains(ret) Then
@@ -173,7 +169,11 @@ Public MustInherit Class AudioProfile
             End If
 
             If Not SupportedInput.Contains(ret) Then
-                ret = "wv"
+                ret = "flac"
+            End If
+
+            If Not SupportedInput.Contains(ret) Then
+                ret = "w64"
             End If
 
             Return ret
@@ -288,8 +288,10 @@ Public MustInherit Class AudioProfile
     Function GetOutputFile() As String
         Dim base As String
 
+        'To Do: empty pipe temp files
         If p.TempDir.EndsWithEx("_temp\") AndAlso File.Base.StartsWithEx(p.SourceFile.Base) Then
-            base = File.Base.Substring(p.SourceFile.Base.Length)
+            base = File.Base.Substring(p.SourceFile.Base.Length).TrimStart
+            If base = "" Then base = File.Base
         Else
             base = File.Base
         End If
@@ -1450,7 +1452,7 @@ Public Class GUIAudioProfile
             sb.Append(" " + Params.CustomSwitches)
         End If
 
-        sb.Append(" -l -m -y -z0 -w Settings -w Encoder")
+        sb.Append(" -l -m -y -z0")
 
         Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
 
@@ -1620,21 +1622,17 @@ Public Class GUIAudioProfile
                 End If
             Case GuiAudioEncoder.ffmpeg
                 Return GuiAudioEncoder.ffmpeg
-
         End Select
 
         'dedicated encoders priority:
-        If Params.Codec = AudioCodec.AAC Then
-            Return GuiAudioEncoder.qaac
-        End If
-
-        If Params.Codec = AudioCodec.Opus Then
-            Return GuiAudioEncoder.OpusEnc
-        End If
-
-        If Params.Codec = AudioCodec.WavPack Then
-            Return GuiAudioEncoder.WavPack
-        End If
+        Select Case Params.Codec
+            Case AudioCodec.AAC
+                Return GuiAudioEncoder.qaac
+            Case AudioCodec.Opus
+                Return GuiAudioEncoder.OpusEnc
+            Case AudioCodec.WavPack
+                Return GuiAudioEncoder.WavPack
+        End Select
 
         Return GuiAudioEncoder.ffmpeg
     End Function

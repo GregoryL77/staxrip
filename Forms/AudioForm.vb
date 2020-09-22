@@ -913,7 +913,7 @@ Public Class AudioForm
                 numBitrate.Value = If(TempProfile.Channels = 6, 256, TempProfile.Channels * 96 / 2)
                 TempProfile.Params.RateMode = AudioRateMode.VBR
                 TempProfile.Params.opusEncMode = OpusEncMode.VBR
-                TempProfile.Params.ffmpegMappingFamily = -1
+                TempProfile.Params.ffmpegMappingFamily = If(TempProfile.Channels > 5, 1, 0)
                 TempProfile.Params.opusEncComplexity = 10
                 TempProfile.Params.opusEncFramesize = 20
                 TempProfile.Params.opusEncNoPhaseInv = False
@@ -1198,16 +1198,16 @@ Public Class AudioForm
                         frame.Property = NameOf(TempProfile.Params.ffmpegOpusFrame)
 
                         Dim mMappingFamily = ui.AddMenu(Of Integer)
-                        mMappingFamily.Text = "MapFamily"
+                        mMappingFamily.Text = "MappingFamily"
                         mMappingFamily.Expandet = True
                         mMappingFamily.Add("No surr.masking and LFE opt.", -1)
                         mMappingFamily.Add("Mono/Stereo 2 channels", 0)
-                        mMappingFamily.Add("Masking and LFE opt.Up to 8C", 1)
+                        mMappingFamily.Add("Masking and LFE opt.8Ch max", 1)
                         mMappingFamily.Add("Ambisonics as individual ch.", 2)
                         mMappingFamily.Add("Ambisonics with demixing", 3)
-                        mMappingFamily.Add("Discrete channels, 255 max", 255)
+                        mMappingFamily.Add("Discrete channels 255Ch max", 255)
                         ui.AddLabel("Mapping Family 1 is the best for multichannel,")
-                        ui.AddLabel("however in FFmpeg this may fail")
+                        ui.AddLabel("however in FFmpeg this may fail, try with forced no. of ch.")
                         'mMappingFamily.Help = "https://ffmpeg.org/ffmpeg-codecs.html#Option-Mapping"
                         mMappingFamily.Help = "https://tools.ietf.org/html/draft-ietf-codec-ambisonics-10#section-8"
                         mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegMappingFamily)
@@ -1394,7 +1394,7 @@ Public Class AudioForm
                                                       TempProfile.Params.WavPackMode = value
                                                       If TempProfile.Params.WavPackMode = 1 Then
                                                           TempProfile.Params.RateMode = AudioRateMode.CBR
-                                                          numBitrate.Value = TempProfile.Channels * 384 / 2
+                                                          numBitrate.Value = If(TempProfile.Channels > 2, TempProfile.Channels * 320 / 2, TempProfile.Channels * 384 / 2)
                                                           cbCreateCorrectionWVC.Enabled = True
                                                       Else
                                                           cbCreateCorrectionWVC.Enabled = False

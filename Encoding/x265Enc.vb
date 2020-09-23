@@ -419,7 +419,7 @@ Public Class x265Params
 
     Property SAOnonDeblock As New BoolParam With {
         .Switch = "--sao-non-deblock",
-        .Text = "Specify how to handle depencency between SAO and deblocking filter"}
+        .Text = "Use non-deblocked pixels for SAO (Dependency SAO && deblocking filter)"}
 
     Property SAO As New BoolParam With {
         .Switch = "--sao",
@@ -911,6 +911,19 @@ Public Class x265Params
         .Init = 1}
     '"3 - RD Level 0-6 CU edge denstiy with forceful skip for lower levels of CTU"
 
+    Property SelectiveSAO As New OptionParam With {
+        .Switch = "--selective-sao",
+        .Text = "Selective SAO",
+        .IntegerValue = True,
+        .Expand = True,
+        .Options = {"0 - Disable SAO for all slices",
+                    "1 - Enable SAO only for I-slices",
+                    "2 - Enable SAO for I & P slices",
+                    "3 - Enable SAO for all ref slices",
+                    "4 - Enable SAO for all slices"}}
+
+
+
     Overrides ReadOnly Property Items As List(Of CommandLineParam)
         Get
             If ItemsValue Is Nothing Then
@@ -1067,8 +1080,7 @@ Public Class x265Params
                     New BoolParam With {.Switch = "--field", .NoSwitch = "--no-field", .Text = "Field Coding"},
                     New BoolParam With {.Switch = "--frame-dup", .Text = "Adaptive frame duplication"})
                 Add("Loop Filter", Deblock, DeblockA, DeblockB,
-                    New NumParam With {.Switch = "--selective-sao", .Text = "Selective SAO at slice level", .Init = 0, .Config = {0, 4}},
-                    SAO,
+                    SelectiveSAO, SAO,
                     New BoolParam With {.Switch = "--limit-sao", .Text = "Limit Sample Adaptive Offset"},
                     SAOnonDeblock)
                 Add("Other",

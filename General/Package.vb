@@ -156,7 +156,7 @@ Public Class Package
     Shared Property WavPack As Package = Add(New Package With {
         .Name = "WavPack",
         .Filename = "wavpack.exe",
-        .Description = "WavPack lossless audio console codec",
+        .Description = "WavPack lossless/lossy/hybrid audio console codec, supports floating point audio data",
         .WebURL = "http://www.wavpack.com/index.html",
         .DownloadURL = "http://www.wavpack.com/downloads.html",
         .Location = "Audio\wavpack",
@@ -167,7 +167,7 @@ Public Class Package
     Shared Property OpusEnc As Package = Add(New Package With {
         .Name = "OpusEnc",
         .Filename = "opusenc.exe",
-        .Description = "OpusEnc part of Opus-Tools. Reference CLI for LibOpus",
+        .Description = "OpusEnc part of Opus-Tools. Reference CLI encoder for LibOpus",
         .WebURL = "https://opus-codec.org/",
         .DownloadURL = "https://opus-codec.org/downloads/",
         .Location = "Audio\opus",

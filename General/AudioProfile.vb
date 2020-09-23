@@ -353,7 +353,7 @@ Public MustInherit Class AudioProfile
         ret.Add(New GUIAudioProfile(AudioCodec.MP3, 4))
         ret.Add(New GUIAudioProfile(AudioCodec.AC3, 1.0) With {.Channels = 6, .Bitrate = 640})
         ret.Add(New GUIAudioProfile(AudioCodec.EAC3, 1.0) With {.Channels = 6, .Bitrate = 640})
-        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -i ""%input%"" -b:a %bitrate%k -y -loglevel " & s.FfmpegLogLevel & " -hide_banner ""%output%"""))
+        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -sn -vn -dn -i ""%input%"" -b:a %bitrate%k -y -loglevel " & s.FfmpegLogLevel & " -hide_banner ""%output%"""))
         ret.Add(New MuxAudioProfile())
         ret.Add(New NullAudioProfile())
 
@@ -829,7 +829,6 @@ Public Class GUIAudioProfile
 
         args += " -sn -vn -dn -loglevel " & s.FfmpegLogLevel & " -hide_banner"
 
-        'TO do: check Loudnorm & LFEMixLevel , include channels in normalize + pcm_f64le
         'TO DO: Add -rmvol Set rematrix volume. Default value Is 1.0
         '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
 
@@ -1181,19 +1180,7 @@ Public Class GUIAudioProfile
             End If
         End If
 
-        If Params.Codec = AudioCodec.WavPack Then
-            Select Case Depth
-                Case 16
-                    sb.Append(" -c:a pcm_s16le")
-                Case 24
-                    sb.Append(" -c:a pcm_s24le")
-                Case 0
-                Case Else
-                    sb.Append(" -c:a pcm_f32le")
-            End Select
-        Else
-            sb.Append(" -c:a pcm_f32le")
-        End If
+        sb.Append(" -c:a pcm_f32le")
 
         If includePaths AndAlso File <> "" Then
             sb.Append(" -loglevel " & s.FfmpegLogLevel & " -hide_banner -f wav - | ")
@@ -1293,7 +1280,7 @@ Public Class GUIAudioProfile
                 End If
 
                 'Some reads: https://hydrogenaud.io/index.php?topic=117698.0, https://trac.ffmpeg.org/ticket/5718 , https://trac.ffmpeg.org/ticket/5759
-                'seems with defaults mapping_family=-1 we are stuck years in the past with opusEnc v1.0, lost 20% of compression for 5.1
+                'default mapping_family=-1 - lost 20% of compression for 5.1
                 If Params.ffmpegOpusMap <> -1 Then
                     sb.Append(" -mapping_family " & CInt(Params.ffmpegOpusMap))
                 End If
@@ -1348,9 +1335,11 @@ Public Class GUIAudioProfile
                 End If
 
             Case AudioCodec.WavPack
-                If Params.WavPackMode = 1 Then
-                    sb.Append(" -b:a " & CInt(Bitrate) & "k")
+
+                If Not Params.CustomSwitches.Contains("-c:a ") Then 'not really needed
+                    sb.Append(" -c:a wavpack")
                 End If
+
                 If Params.ffmpegCompressionLevel <> 0 Then
                     sb.Append(" -compression_level " & Params.ffmpegCompressionLevel)
                 End If

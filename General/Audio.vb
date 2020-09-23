@@ -63,7 +63,7 @@ Public Class Audio
 
         Cut(ap)
 
-        ' Normalize after Cut order fix , this is propably reduntand
+        ' Normalize after Cut order fix , this is propably redundand
         If TypeOf ap Is GUIAudioProfile Then
             Dim gap = DirectCast(ap, GUIAudioProfile)
             If gap.ContainsCommand("ffmpeg") AndAlso p.Ranges.Count > 0 Then
@@ -404,8 +404,6 @@ Public Class Audio
 
         If ap.ConvertExt.EqualsAny("wav") Then
             args += " -c:a pcm_f32le"
-            'ElseIf ap.ConvertExt.EqualsAny("w64") Then
-            'args += " -c:a pcm_s24le"
         ElseIf ap.ConvertExt.EqualsAny("wv") Then
             args += " -compression_level 1"
         End If

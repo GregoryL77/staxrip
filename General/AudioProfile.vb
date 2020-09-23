@@ -1231,6 +1231,10 @@ Public Class GUIAudioProfile
                     Case AudioRateMode.VBR
                         sb.Append(" -q:a " & CInt(Params.Quality))
                 End Select
+
+                If Params.ffmpegMp3Cutoff <> 0 Then
+                    sb.Append(" -cutoff " & Params.ffmpegMp3Cutoff)
+                End If
             Case AudioCodec.AC3
                 If Not Params.CustomSwitches.Contains("-c:a ") Then
                     sb.Append(" -c:a ac3")
@@ -1290,8 +1294,8 @@ Public Class GUIAudioProfile
 
                 'Some reads: https://hydrogenaud.io/index.php?topic=117698.0, https://trac.ffmpeg.org/ticket/5718 , https://trac.ffmpeg.org/ticket/5759
                 'seems with defaults mapping_family=-1 we are stuck years in the past with opusEnc v1.0, lost 20% of compression for 5.1
-                If Params.ffmpegMappingFamily <> -1 Then
-                    sb.Append(" -mapping_family " & CInt(Params.ffmpegMappingFamily))
+                If Params.ffmpegOpusMap <> -1 Then
+                    sb.Append(" -mapping_family " & CInt(Params.ffmpegOpusMap))
                 End If
 
                 If Params.ffmpegOpusCompress <> 10 Then
@@ -1300,6 +1304,9 @@ Public Class GUIAudioProfile
 
                 If Params.ffmpegOpusPacket <> 0 Then
                     sb.Append(" -packet_loss " & CInt(Params.ffmpegOpusPacket))
+                End If
+                If Params.opusEncNoPhaseInv Then
+                    sb.Append(" -apply_phase_inv 0")
                 End If
             Case AudioCodec.AAC
                 If Params.ffmpegLibFdkAAC Then
@@ -1724,6 +1731,7 @@ Public Class GUIAudioProfile
         Property ffmpegOpusPacket As Integer
         Property ffmpegOpusRateMode As OpusRateMode = OpusRateMode.VBR
         Property ffmpegOpusMigrate As Integer = 1
+        Property ffmpegMp3Cutoff As Integer
 
         Property opusEncMode As OpusEncMode
         Property opusEncComplexity As Integer = 10
@@ -1768,7 +1776,6 @@ Public Class GUIAudioProfile
         Property ffmpegDynaudnormS As Double
 
         Property ffmpegCompressionLevel As Integer = 1
-        Property ffmpegMappingFamily As Integer = -1
         Property ffmpegLFEMixLevel As Double = 0
 
         Property WavPackCompression As Integer = 1
@@ -1834,7 +1841,6 @@ Public Class GUIAudioProfile
                 ffmpegOpusFrame = 20
                 ffmpegOpusMap = -1
                 ffmpegOpusRateMode = OpusRateMode.VBR
-                ffmpegMappingFamily = -1
                 'opusEncFramesize = 20
                 'opusEncComplexity = 10
                 'opusEncMode = OpusEncMode.VBR

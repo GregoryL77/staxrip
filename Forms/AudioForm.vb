@@ -652,7 +652,7 @@ Public Class AudioForm
         Me.ClientSize = New System.Drawing.Size(1866, 1206)
         Me.Controls.Add(Me.tlpMain)
         Me.Controls.Add(Me.FlowLayoutPanel1)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow 
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(7)
         Me.MaximizeBox = True
@@ -882,7 +882,7 @@ Public Class AudioForm
                 numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffmpegCompressionLevel = 1
-                TempProfile.Depth = 32
+                TempProfile.Depth = If(TempProfile.GetEncoder() = GuiAudioEncoder.ffmpeg, 0, 32)
                 TempProfile.Params.RateMode = AudioRateMode.CBR
                 TempProfile.Params.WavPackCompression = 1
                 TempProfile.Params.WavPackExtraCompression = 0
@@ -922,6 +922,8 @@ Public Class AudioForm
                 TempProfile.Params.ffmpegOpusFrame = 20
                 TempProfile.Params.ffmpegOpusPacket = 0
                 TempProfile.Params.ffmpegOpusMap = If(TempProfile.Channels > 5, 1, 0)
+                'Opus workaround for side channels
+                If TempProfile.GetEncoder() = GuiAudioEncoder.ffmpeg Then ChannelsModeToChannel = TempProfile.Channels
         End Select
 
         UpdateBitrate()
@@ -1131,7 +1133,7 @@ Public Class AudioForm
                         mCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
                             mCompressionLevel.NumEdit.Config = {0, 12}
-                            ui.AddLabel("Over 10 is non-subset, could be incompatible")
+                            ui.AddLabel("Over 10 is non-subset, could be unplayable")
                             'Over 10 are non-subset FLAC!!! addlabel,color?
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
@@ -1670,4 +1672,12 @@ Public Class AudioForm
     Sub AudioForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
         ShowHelp()
     End Sub
+
+    Private WriteOnly Property ChannelsModeToChannel As Integer
+        Set(value As Integer)
+            Dim channV = [Enum].Parse(GetType(ChannelsMode), "_" & value)
+            TempProfile.Params.ChannelsMode = CType(channV, ChannelsMode)
+            mbChannels.Value = channV
+        End Set
+    End Property
 End Class

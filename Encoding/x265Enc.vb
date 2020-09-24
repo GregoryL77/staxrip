@@ -419,7 +419,7 @@ Public Class x265Params
 
     Property SAOnonDeblock As New BoolParam With {
         .Switch = "--sao-non-deblock",
-        .Text = "Use non-deblocked pixels for SAO (Dependency SAO && deblocking filter)"}
+        .Text = "Use non-deblocked pixels for SAO (SAO && deblocking filter dependency)"}
 
     Property SAO As New BoolParam With {
         .Switch = "--sao",
@@ -918,7 +918,7 @@ Public Class x265Params
         .Expand = True,
         .Options = {"0 - Disable SAO for all slices",
                     "1 - Enable SAO only for I-slices",
-                    "2 - Enable SAO for I & P slices",
+                    "2 - Enable SAO for I && P slices",
                     "3 - Enable SAO for all ref slices",
                     "4 - Enable SAO for all slices"}}
 

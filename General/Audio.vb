@@ -356,37 +356,27 @@ Public Class Audio
         End If
 
         If gap?.Params.Normalize Then
-            If gap.Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
-
-                args += " " + Audio.GetDynAudNormArgs(gap.Params)
-                If ap.Gain <> 0 Then
-                    args += ",volume=" + ap.Gain.ToInvariantString + "dB"
-                End If
-
-            ElseIf gap.Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
-
-                args += " " + Audio.GetLoudNormArgs(gap.Params)
-                If ap.Gain <> 0 Then
-                    args += ",volume=" + ap.Gain.ToInvariantString + "dB"
-                End If
-
-                If gap.Params.SamplingRate = 0 Then 'Loudnorm auto x4 upsample
-                    args += " -ar " & gap.SourceSamplingRate
-                End If
-
-            End If
-
-            If p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_") Then
-            Else
-                gap.Params.Normalize = False
-            End If
-        End If
-
-        'To DO: Test this, sth less crude needed maybe
-        If ap.Gain <> 0 Then
-            If Not args.ContainsAny(" -af loudnorm=", " -af dynaudnorm") Then
-                args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
-            End If
+            Select Case gap.Params.ffmpegNormalizeMode
+                Case ffmpegNormalizeMode.dynaudnorm
+                    args += " " + Audio.GetDynAudNormArgs(gap.Params)
+                    If ap.Gain <> 0 Then
+                        args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                    End If
+                Case ffmpegNormalizeMode.loudnorm
+                    args += " " + Audio.GetLoudNormArgs(gap.Params)
+                    If ap.Gain <> 0 Then
+                        args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                    End If
+                    If gap.Params.SamplingRate = 0 Then     'Loudnorm auto x4 upsample
+                        args += " -ar " & gap.SourceSamplingRate
+                    End If
+                Case ffmpegNormalizeMode.peaknorm
+                    If ap.Gain <> 0 Then
+                        args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+                    End If
+            End Select
+        ElseIf ap.Gain <> 0 Then
+            args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
         End If
 
         If gap?.Params.SamplingRate <> 0 Then
@@ -421,11 +411,20 @@ Public Class Audio
         End Using
 
         If g.FileExists(outPath) Then
-            ap.Gain = 0
+
+            'normalize, Gain eac3to duplication
+            If gap?.GetEncoder() = GuiAudioEncoder.eac3to Then
+                ap.Gain = 0
+                'If p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_") Then
+                'Else
+                gap.Params.Normalize = False
+                'End If
+            End If
+
             ap.File = outPath
             Log.WriteLine(MediaInfo.GetSummary(outPath))
-        Else
-            Log.Write("Error", "no output found")
+            Else
+                Log.Write("Error", "no output found")
         End If
     End Sub
 
@@ -697,13 +696,12 @@ Public Class Audio
             fail = True
         End If
 
-
         'TO Do: Cut fail fix Test this Wavpack as default instead
-        If fail AndAlso TypeOf ap Is GUIAudioProfile AndAlso Not (ap.File.Ext = "wv") Then
+        If fail AndAlso TypeOf ap Is GUIAudioProfile AndAlso Not ap.File.Ext.EqualsAny("wv", "wav") Then
             Log.Write("Error", "no output found")
             Convert(ap)
 
-            If ap.File.Ext = "wv" Then
+            If ap.File.Ext.EqualsAny("wv", "wav") Then
                 Cut(ap)
             End If
         End If

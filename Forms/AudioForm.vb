@@ -851,6 +851,7 @@ Public Class AudioForm
                         TempProfile.Params.qaacQuality = 2
                         TempProfile.Params.qaacLowpass = 0
                         TempProfile.Params.qaacRateMode = 0
+                        TempProfile.Params.qaacHE = False
                     Case GuiAudioEncoder.eac3to
                         SetQuality(0.5)
                     Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
@@ -1497,7 +1498,7 @@ Public Class AudioForm
     Sub Execute()
         If TempProfile.File <> "" Then
             If Not TempProfile.IsInputSupported AndAlso Not TempProfile.DecodingMode = AudioDecodingMode.Pipe Then
-                MsgWarn("The input format isn't supported by the current encoder," + BR + "convert to WAV or FLAC first or enable piping in the options.")
+                MsgWarn("The input format isn't supported by the current encoder," + BR + "convert to WAV or WV first or enable piping in the options.")
             Else
                 Dim pr As New Process
                 pr.StartInfo.FileName = "cmd.exe"
@@ -1675,9 +1676,12 @@ Public Class AudioForm
 
     Private WriteOnly Property ChannelsModeToChannel As Integer
         Set(value As Integer)
-            Dim channV = [Enum].Parse(GetType(ChannelsMode), "_" & value)
-            TempProfile.Params.ChannelsMode = CType(channV, ChannelsMode)
-            mbChannels.Value = channV
+            Select Case value
+                Case 1, 2, 6, 7, 8
+                    Dim channV = [Enum].Parse(GetType(ChannelsMode), "_" & value)
+                    TempProfile.Params.ChannelsMode = CType(channV, ChannelsMode)
+                    mbChannels.Value = channV
+            End Select
         End Set
     End Property
 End Class

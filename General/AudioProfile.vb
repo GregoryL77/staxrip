@@ -13,6 +13,7 @@ Public MustInherit Class AudioProfile
     Property Depth As Integer = 0
     Property StreamName As String = ""
     Property Gain As Single
+    Property GainNormalize As Single
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
     Property [Default] As Boolean
     Property Forced As Boolean
@@ -154,10 +155,10 @@ Public MustInherit Class AudioProfile
                     ret = "wv"
                 Case AudioDecodingMode.FLAC
                     ret = "flac"
-                    'Case AudioDecodingMode.W64
-                    'ret = "w64"
-                Case Else
+                Case AudioDecodingMode.WAVE
                     ret = "wav"
+                Case Else
+                    ret = "wv"
             End Select
 
             If Not SupportedInput.Contains(ret) Then
@@ -430,10 +431,10 @@ Public Class BatchAudioProfile
                 Log.Write("Error", "no output found")
 
                 'TO Do: Test this Wavpack as default instead
-                If Not File.Ext = "wv" Then
+                If Not File.Ext.EqualsAny("wv", "wav") Then
                     Audio.Convert(Me)
 
-                    If File.Ext = "wv" Then
+                    If File.Ext.EqualsAny("wv", "wav") Then
                         Encode()
                     End If
                 End If
@@ -769,6 +770,12 @@ Public Class GUIAudioProfile
                 ElseIf cl.Contains("fdkaac") Then
                     proc.Package = Package.fdkaac
                     proc.SkipStrings = {"%]", "x)"}
+                ElseIf cl.Contains("wavpack") Then
+                    proc.Package = Package.WavPack
+                    proc.SkipStrings = {"done."}
+                ElseIf cl.Contains("opusenc") Then
+                    proc.Package = Package.OpusEnc
+                    proc.SkipStrings = {"[-]", "[|]", "[\]", "{/]"}
                 ElseIf cl.Contains("eac3to") Then
                     proc.Package = Package.eac3to
                     proc.SkipStrings = {"process: ", "analyze: "}
@@ -783,12 +790,6 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"frame=", "size="}
                     proc.Encoding = Encoding.UTF8
                     proc.Duration = GetDuration()
-                ElseIf cl.Contains("wavpack") Then
-                    proc.Package = Package.WavPack
-                    proc.SkipStrings = {"done..."}
-                ElseIf cl.Contains("opusenc") Then
-                    proc.Package = Package.OpusEnc
-                    proc.SkipStrings = {"]"}
                 End If
 
                 proc.Start()
@@ -815,9 +816,8 @@ Public Class GUIAudioProfile
 
     Sub NormalizeFF()
         If Not Params.Normalize OrElse ExtractCore OrElse
-                (SupportsNormalize() AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
-                Not {ffmpegNormalizeMode.loudnorm, ffmpegNormalizeMode.peaknorm}.Contains(Params.ffmpegNormalizeMode) Then
-
+                (SupportsNormGainSampR() AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
+                Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
             Exit Sub
         End If
 
@@ -1093,10 +1093,6 @@ Public Class GUIAudioProfile
             sb.Append(" --delay " + (Delay / 1000).ToInvariantString)
         End If
 
-        If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
-            sb.Append(" --normalize")
-        End If
-
         If Params.qaacQuality <> 2 Then
             sb.Append(" --quality " & Params.qaacQuality)
         End If
@@ -1108,6 +1104,12 @@ Public Class GUIAudioProfile
             ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
                 sb.Append(" --rate " & SourceSamplingRate)
             End If
+            If Gain <> 0 Then
+                sb.Append(" --gain " & Gain.ToInvariantString)
+            End If
+            If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
+                sb.Append(" --normalize")
+            End If
         End If
 
         If Params.qaacLowpass <> 0 Then
@@ -1116,10 +1118,6 @@ Public Class GUIAudioProfile
 
         If Params.qaacNoDither Then
             sb.Append(" --no-dither")
-        End If
-
-        If Gain <> 0 Then
-            sb.Append(" --gain " & Gain.ToInvariantString)
         End If
 
         If Params.CustomSwitches <> "" Then
@@ -1155,29 +1153,32 @@ Public Class GUIAudioProfile
             End If
         End If
 
-        If Gain <> 0 AndAlso {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) AndAlso
-                Not ({ffmpegNormalizeMode.loudnorm, ffmpegNormalizeMode.dynaudnorm}.Contains(Params.ffmpegNormalizeMode) AndAlso Params.Normalize) Then
+        If Params.Normalize Then
+            Select Case Params.ffmpegNormalizeMode
+                Case ffmpegNormalizeMode.dynaudnorm
+                    sb.Append(" " + Audio.GetDynAudNormArgs(Params))
+                    If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+                        sb.Append(",volume=" + Gain.ToInvariantString + "dB")
+                    End If
+                Case ffmpegNormalizeMode.loudnorm
+                    sb.Append(" " + Audio.GetLoudNormArgs(Params))
+                    If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+                        sb.Append(",volume=" + Gain.ToInvariantString + "dB")
+                    End If
+                    If Params.SamplingRate = 0 Then     'Loudnorm auto x4 upsample
+                        sb.Append(" -ar " & SourceSamplingRate)
+                    End If
+                Case ffmpegNormalizeMode.peaknorm
+                    If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+                        sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
+                    End If
+            End Select
+        ElseIf Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
             sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
         End If
 
-        If Params.Normalize Then
-            If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
-                sb.Append(" " + Audio.GetDynAudNormArgs(Params))
-            ElseIf Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
-                sb.Append(" " + Audio.GetLoudNormArgs(Params))
-            End If
-            If {ffmpegNormalizeMode.dynaudnorm, ffmpegNormalizeMode.loudnorm}.Contains(Params.ffmpegNormalizeMode) AndAlso
-                Gain <> 0 AndAlso {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) Then
-                sb.Append(",volume=" + Gain.ToInvariantString + "dB")
-            End If
-        End If
-
-            If {GuiAudioEncoder.fdkaac, GuiAudioEncoder.WavPack, GuiAudioEncoder.OpusEnc}.Contains(GetEncoder()) Then
-            If Params.SamplingRate <> 0 Then
-                sb.Append(" -ar " & Params.SamplingRate)
-            ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
-                sb.Append(" -ar " & SourceSamplingRate)
-            End If
+        If Params.SamplingRate <> 0 AndAlso Not SupportsNormGainSampR() Then
+            sb.Append(" -ar " & Params.SamplingRate)
         End If
 
         sb.Append(" -c:a pcm_f32le")
@@ -1353,28 +1354,36 @@ Public Class GUIAudioProfile
                 End Select
         End Select
 
-                If Not ExtractCore Then
-            If Params.Normalize Then
-                If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
-                    sb.Append(" " + Audio.GetLoudNormArgs(Params))
-                ElseIf Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
-                    sb.Append(" " + Audio.GetDynAudNormArgs(Params))
-                End If
-                If Gain <> 0 AndAlso {ffmpegNormalizeMode.dynaudnorm, ffmpegNormalizeMode.loudnorm}.Contains(Params.ffmpegNormalizeMode) Then
-                    sb.Append(",volume=" + Gain.ToInvariantString + "dB")
-                End If
-            End If
-        End If
-
         If Not ExtractCore Then
-            If Gain <> 0 AndAlso Not sb.ToString.ContainsAny(" -af loudnorm=", " -af dynaudnorm") Then
+            If Params.Normalize Then
+                Select Case Params.ffmpegNormalizeMode
+                    Case ffmpegNormalizeMode.dynaudnorm
+                        sb.Append(" " + Audio.GetDynAudNormArgs(Params))
+                        If Gain <> 0 Then
+                            sb.Append(",volume=" + Gain.ToInvariantString + "dB")
+                        End If
+                    Case ffmpegNormalizeMode.loudnorm
+                        sb.Append(" " + Audio.GetLoudNormArgs(Params))
+                        If Gain <> 0 Then
+                            sb.Append(",volume=" + Gain.ToInvariantString + "dB")
+                        End If
+                        If Params.SamplingRate = 0 Then
+                            sb.Append(" -ar " & SourceSamplingRate)     'Loudnorm auto x4 upsample
+                        End If
+                    Case ffmpegNormalizeMode.peaknorm
+                        If Gain <> 0 Then
+                            sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
+                        End If
+                End Select
+
+            ElseIf Gain <> 0 Then
                 sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
             End If
         End If
 
         If Not ExtractCore AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
             sb.Append(" -rematrix_maxval 1 -ac " & Channels)
-            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
+            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode <3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
             End If
         End If
@@ -1382,8 +1391,6 @@ Public Class GUIAudioProfile
         If Not ExtractCore Then
             If Params.SamplingRate <> 0 Then
                 sb.Append(" -ar " & Params.SamplingRate)
-            ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then    'Loudnorm auto x4 upsample
-                sb.Append(" -ar " & SourceSamplingRate)
             End If
         End If
 
@@ -1483,7 +1490,7 @@ Public Class GUIAudioProfile
                 sb.Append(" --hard-cbr --bitrate " & CInt(Bitrate))
         End Select
 
-        If Params.opusEncComplexity < 10 Then
+        If Params.opusEncComplexity <10 Then
             sb.Append(" --comp " & Params.opusEncComplexity)
         End If
 
@@ -1514,7 +1521,7 @@ Public Class GUIAudioProfile
         Return sb.ToString
     End Function
 
-    Function SupportsNormalize() As Boolean
+    Function SupportsNormGainSampR() As Boolean
         Return GetEncoder() = GuiAudioEncoder.eac3to OrElse GetEncoder() = GuiAudioEncoder.qaac
     End Function
 
@@ -1669,11 +1676,7 @@ Public Class GUIAudioProfile
                     End If
                 Case GuiAudioEncoder.WavPack
                     If DecodingMode <> AudioDecodingMode.Pipe Then
-                        If p.Ranges.Count > 0 Then
-                            Return {"wv", "wav"}
-                        Else
-                            Return {"wv", "wav"}
-                        End If
+                        Return {"wv", "wav"}
                     End If
                 Case GuiAudioEncoder.OpusEnc
                     If DecodingMode <> AudioDecodingMode.Pipe Then

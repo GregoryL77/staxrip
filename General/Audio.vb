@@ -18,8 +18,8 @@ Public Class Audio
 
         If TypeOf ap Is GUIAudioProfile Then
             Dim gap = DirectCast(ap, GUIAudioProfile)
-            ' Normalize after Cut order fix
-            If gap.ContainsCommand("ffmpeg") AndAlso p.Ranges.Count = 0 Then
+            'To Do:   Normalize after Cut order fix
+            If gap.ContainsCommand("ffmpeg") AndAlso (p.Ranges.Count = 0 OrElse gap.DecodingMode <> AudioDecodingMode.Pipe) Then
                 gap.NormalizeFF()
             End If
         End If
@@ -63,10 +63,10 @@ Public Class Audio
 
         Cut(ap)
 
-        ' Normalize after Cut order fix , this is propably redundand
+        'To Do:   Normalize after Cut order fix
         If TypeOf ap Is GUIAudioProfile Then
             Dim gap = DirectCast(ap, GUIAudioProfile)
-            If gap.ContainsCommand("ffmpeg") AndAlso p.Ranges.Count > 0 Then
+            If gap.ContainsCommand("ffmpeg") AndAlso p.Ranges.Count > 0 AndAlso gap.DecodingMode = AudioDecodingMode.Pipe Then
                 gap.NormalizeFF()
             End If
         End If
@@ -371,7 +371,7 @@ Public Class Audio
                         args += " -ar " & gap.SourceSamplingRate
                     End If
                 Case ffmpegNormalizeMode.peaknorm
-                    If ap.Gain <> 0 Then
+                    If ap.GainWasNormalized Then
                         args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
                     End If
             End Select

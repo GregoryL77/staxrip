@@ -90,7 +90,7 @@ Public MustInherit Class Demuxer
         tsToMkv.OutputExtensions = {"mkv"}
         tsToMkv.InputFormats = {"hevc", "avc"}
         tsToMkv.Command = "%app:ffmpeg%"
-        tsToMkv.Arguments = "-i ""%source_file%"" -c copy -ignore_unknown -sn -y -hide_banner ""%temp_file%.mkv"""
+        tsToMkv.Arguments = "-sn -i ""%source_file%"" -c copy -ignore_unknown -sn -y -hide_banner ""%temp_file%.mkv"""
         ret.Add(tsToMkv)
 
         ret.Add(New mkvDemuxer)
@@ -332,7 +332,7 @@ Public Class ffmpegDemuxer
             Exit Sub
         End If
 
-        Dim args = "-i " + proj.SourceFile.Escape
+        Dim args = "-an -sn -i " + proj.SourceFile.Escape
         args += " -c:v copy -an -sn -y -hide_banner"
         args += " " + outPath.Escape
 
@@ -368,13 +368,13 @@ Public Class ffmpegDemuxer
         End If
 
         Dim streamIndex = stream.StreamOrder
-        Dim args = "-i " + sourcefile.ToShortFilePath.Escape
+        Dim args = "-vn -sn -dn -i " + sourcefile.ToShortFilePath.Escape
 
         If MediaInfo.GetAudioCount(sourcefile) > 1 Then
             args += " -map 0:a:" & stream.Index
         End If
 
-        args += " -vn -sn -y -hide_banner"
+        args += " -vn -sn -dn -y -hide_banner"
 
         If outPath.Ext = "wav" Then
             args += " -c:a pcm_f32le"
@@ -416,14 +416,14 @@ Public Class ffmpegDemuxer
                 Continue For
             End If
 
-            Dim args = "-i " + proj.SourceFile.ToShortFilePath.Escape
+            Dim args = "-vn -an -dn -i " + proj.SourceFile.ToShortFilePath.Escape
             Dim outpath = (proj.TempDir + subtitle.Filename + subtitle.ExtFull).ToShortFilePath
 
             If MediaInfo.GetSubtitleCount(proj.SourceFile) > 1 Then
                 args += " -map 0:s:" & subtitle.Index
             End If
 
-            args += " -c:s copy -vn -an -y -hide_banner " + outpath.Escape
+            args += " -c:s copy -vn -an -dn -y -hide_banner " + outpath.Escape
 
             Using proc As New Proc
                 proc.Project = proj

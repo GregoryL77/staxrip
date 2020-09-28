@@ -270,7 +270,7 @@ Public Class ffmpegEnc
             End If
 
             If includePaths Then
-                ret += " -i " + sourcePath.LongPathPrefix.Escape
+                ret += " -an -i " + sourcePath.LongPathPrefix.Escape
             End If
 
             Dim items = From i In Me.Items Where i.GetArgs <> "" AndAlso Not IsCustom(i.Switch)

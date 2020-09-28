@@ -419,7 +419,7 @@ Public Class x265Params
 
     Property SAOnonDeblock As New BoolParam With {
         .Switch = "--sao-non-deblock",
-        .Text = "Use non-deblocked pixels for SAO (SAO && deblocking filter dependency)"}
+        .Text = "Use non-deblocked pixels for SAO (SAO && deblock filter dependency)"}
 
     Property SAO As New BoolParam With {
         .Switch = "--sao",

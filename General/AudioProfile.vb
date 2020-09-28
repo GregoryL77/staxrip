@@ -13,7 +13,7 @@ Public MustInherit Class AudioProfile
     Property Depth As Integer = 0
     Property StreamName As String = ""
     Property Gain As Single
-    Property GainNormalize As Single
+    Property GainWasNormalized As Boolean
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
     Property [Default] As Boolean
     Property Forced As Boolean
@@ -167,6 +167,10 @@ Public MustInherit Class AudioProfile
 
             If Not SupportedInput.Contains(ret) Then
                 ret = "wav"
+            End If
+
+            If DecodingMode = AudioDecodingMode.Pipe Then
+                ret = "wv"
             End If
 
             'If Not SupportedInput.Contains(ret) Then
@@ -780,6 +784,7 @@ Public Class GUIAudioProfile
                     proc.Package = Package.eac3to
                     proc.SkipStrings = {"process: ", "analyze: "}
                     proc.TrimChars = {"-"c, " "c}
+                    g.AddToPath(Package.NeroAAC.Directory)
                 ElseIf cl.Contains("ffmpeg") Then
                     If cl.Contains("libfdk_aac") Then
                         proc.Package = Package.ffmpeg_non_free
@@ -829,11 +834,10 @@ Public Class GUIAudioProfile
 
         args += " -sn -vn -dn -loglevel " & s.FfmpegLogLevel & " -hide_banner"
 
-        'TO DO: Add -rmvol Set rematrix volume. Default value Is 1.0
         '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
+        'Without this ffmpeg tends to use different matrixes for FP and Int audio formats, also 1 is consistent with LibAV
 
         'args Then += " -c:a pcm_s16le -af volumedetect"
-        'ElseIf Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
 
         If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
             args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
@@ -869,7 +873,12 @@ Public Class GUIAudioProfile
             match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
             If match.Success Then
                 Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
-                If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then Gain -= match.Groups(1).Value.ToSingle
+                If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
+                    Gain -= match.Groups(1).Value.ToSingle
+                    GainWasNormalized = True
+                End If
+            Else
+                GainWasNormalized = False
             End If
 
             match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
@@ -1104,11 +1113,25 @@ Public Class GUIAudioProfile
             ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
                 sb.Append(" --rate " & SourceSamplingRate)
             End If
-            If Gain <> 0 Then
+             If Gain <> 0 Then
                 sb.Append(" --gain " & Gain.ToInvariantString)
             End If
             If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
                 sb.Append(" --normalize")
+            End If
+        Else
+            If Params.Normalize AndAlso Not GainWasNormalized AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
+                sb.Append(" --normalize")
+                If Gain <> 0 Then
+                    sb.Append(" --gain " & Gain.ToInvariantString)
+                End If
+
+                'To Do: Check this
+            ElseIf Gain <> 0 AndAlso Not Params.Normalize Then
+                sb.Append(" --gain " & Gain.ToInvariantString)
+            End If
+            If Params.SamplingRate <> 0 Then
+                sb.Append(" --rate " & Params.SamplingRate)
             End If
         End If
 
@@ -1148,7 +1171,7 @@ Public Class GUIAudioProfile
 
         If Params.ChannelsMode <> ChannelsMode.Original Then
             sb.Append(" -rematrix_maxval 1 -ac " & Channels)
-            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
+            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode <3 Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
             End If
         End If
@@ -1165,11 +1188,11 @@ Public Class GUIAudioProfile
                     If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
                         sb.Append(",volume=" + Gain.ToInvariantString + "dB")
                     End If
-                    If Params.SamplingRate = 0 Then     'Loudnorm auto x4 upsample
+                    If Params.SamplingRate = 0 AndAlso Not SupportsNormGainSampR() Then     'Loudnorm auto x4 upsample
                         sb.Append(" -ar " & SourceSamplingRate)
                     End If
                 Case ffmpegNormalizeMode.peaknorm
-                    If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+                    If GainWasNormalized AndAlso Not SupportsNormGainSampR() Then
                         sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
                     End If
             End Select
@@ -1371,7 +1394,7 @@ Public Class GUIAudioProfile
                             sb.Append(" -ar " & SourceSamplingRate)     'Loudnorm auto x4 upsample
                         End If
                     Case ffmpegNormalizeMode.peaknorm
-                        If Gain <> 0 Then
+                        If GainWasNormalized Then
                             sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
                         End If
                 End Select
@@ -1688,7 +1711,8 @@ Public Class GUIAudioProfile
                     End If
             End Select
 
-            Return {}
+            Return {""}
+
         End Get
         Set(value As String())
         End Set

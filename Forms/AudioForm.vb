@@ -861,6 +861,7 @@ Public Class AudioForm
                         TempProfile.Params.qaacQuality = 2
                         TempProfile.Params.qaacLowpass = 0
                         TempProfile.Params.qaacRateMode = 0
+                        TempProfile.Params.qaacHE = False
                 End Select
 
                 TempProfile.Params.RateMode = AudioRateMode.VBR
@@ -1134,7 +1135,7 @@ Public Class AudioForm
                         mCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
                             mCompressionLevel.NumEdit.Config = {0, 12}
-                            ui.AddLabel("Over 10 is non-subset, could be unplayable")
+                            'ui.AddLabel("Over 10 is non-subset, could be unplayable")
                             'Over 10 are non-subset FLAC!!! addlabel,color?
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}

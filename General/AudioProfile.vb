@@ -169,7 +169,8 @@ Public MustInherit Class AudioProfile
                 ret = "wav"
             End If
 
-            If DecodingMode = AudioDecodingMode.Pipe Then
+            'To Do: Check this VW to save temp size for cuts,  -> only p.ranges >0 ???
+            If DecodingMode = AudioDecodingMode.Pipe andal p.ranges > 0 Then
                 ret = "wv"
             End If
 
@@ -293,10 +294,15 @@ Public MustInherit Class AudioProfile
     Function GetOutputFile() As String
         Dim base As String
 
+
         'To Do: empty pipe temp files
+
         If p.TempDir.EndsWithEx("_temp\") AndAlso File.Base.StartsWithEx(p.SourceFile.Base) Then
-            base = File.Base.Substring(p.SourceFile.Base.Length).TrimStart
-            If base = "" Then base = File.Base
+            base = File.Base.Substring(p.SourceFile.Base.Length)    '.TrimStart
+
+           ' If base = "" Then base = File.Base
+
+
         Else
             base = File.Base
         End If
@@ -319,10 +325,10 @@ Public MustInherit Class AudioProfile
 
         Dim tracks = g.GetAudioProfiles.Where(Function(track) track.File <> "")
         Dim trackID = If(tracks.Count > 1, "_a" & GetTrackID(), "")
-        Dim outfile = p.TempDir + base + trackID & "." + OutputFileType
+        Dim outfile = p.TempDir + base + trackID & "." + OutputFileType.ToLower
 
         If File.IsEqualIgnoreCase(outfile) Then
-            Return p.TempDir + base + trackID & "_new." + OutputFileType
+            Return p.TempDir + base + trackID & "_new." + OutputFileType.ToLower
         End If
 
         Return outfile
@@ -874,7 +880,7 @@ Public Class GUIAudioProfile
             If match.Success Then
                 Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
                 If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
-                    Gain -= match.Groups(1).Value.ToSingle
+                    Gain -= match.Groups(1).Value.ToSingle - 0.05F
                     GainWasNormalized = True
                 End If
             Else
@@ -956,7 +962,7 @@ Public Class GUIAudioProfile
                     sb.Append(" -" & Bitrate)
             End Select
 
-            If Params.Normalize AndAlso Params.ffNormalizeMode = ffNormalizeMode.peaknorm Then
+            If Params.Normalize Then
                 sb.Append(" -normalize")
             End If
 
@@ -1147,10 +1153,10 @@ Public Class GUIAudioProfile
             sb.Append(" " + Params.CustomSwitches)
         End If
 
-        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
+        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.ToShortFilePath.Escape)
 
         If includePaths Then
-            sb.Append(" " + input + " -o " + GetOutputFile.Escape)
+            sb.Append(" " + input + " -o " + GetOutputFile.ToShortFilePath.Escape)
         End If
 
         Return sb.ToString
@@ -1513,7 +1519,7 @@ Public Class GUIAudioProfile
                 sb.Append(" --hard-cbr --bitrate " & CInt(Bitrate))
         End Select
 
-        If Params.opusEncComplexity <10 Then
+        If Params.opusEncComplexity < 10 Then
             sb.Append(" --comp " & Params.opusEncComplexity)
         End If
 

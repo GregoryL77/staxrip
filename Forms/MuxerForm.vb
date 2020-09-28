@@ -661,7 +661,8 @@ Public Class MuxerForm
     Sub New(muxer As Muxer)
         MyBase.New()
         InitializeComponent()
-        RestoreClientSize(45, 20)
+        SetMinimumSize(30, 21)
+        RestoreClientSize(45, 22)
         Text += " - " + muxer.Name
         Me.Muxer = muxer
         AddSubtitles(muxer.Subtitles)
@@ -899,6 +900,10 @@ Public Class MuxerForm
             ml.Text = "Video Track Language"
             ml.Help = "Optional language of the video stream."
             ml.Property = NameOf(MkvMuxer.VideoTrackLanguage)
+
+            Dim compression = UI.AddMenu(Of CompressionMode)()
+            compression.Text = "Subtitle Compression"
+            compression.Property = NameOf(MkvMuxer.Compression)
 
             lastAction = Sub()
                              For Each i In Language.Languages

@@ -180,7 +180,7 @@ Public Class Package
         .Filename = "opusenc.exe",
         .Description = "OpusEnc part of Opus-Tools. Reference CLI encoder for LibOpus",
         .WebURL = "https://opus-codec.org/",
-        .DownloadURL = "https://opus-codec.org/downloads/",
+        .DownloadURL = "https://opus-codec.org/development/",
         .Location = "Audio\opus",
         .HelpSwitch = "--help",
         .HelpFilename = "opusenc.html",

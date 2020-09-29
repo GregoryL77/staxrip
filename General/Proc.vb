@@ -136,7 +136,7 @@ Public Class Proc
         ElseIf commands.Contains("wavpack") Then
             Return {"done."}
         ElseIf commands.Contains("opusenc") Then
-            Return {"[-]", "[|]", "[\]", "{/]"}
+            Return {"[-]", "[|]", "[\]", "[/]"}
         ElseIf commands.Contains("eac3to") Then
             Return {"process: ", "analyze: "}
         ElseIf commands.Contains("ffmpeg") Then

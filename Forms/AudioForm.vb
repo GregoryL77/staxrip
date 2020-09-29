@@ -843,6 +843,7 @@ Public Class AudioForm
     Sub mbCodec_ValueChangedUser() Handles mbCodec.ValueChangedUser
         TempProfile.Params.Codec = mbCodec.GetValue(Of AudioCodec)()
 
+        TempProfile.Depth = 0
         Select Case TempProfile.Params.Codec
             Case AudioCodec.AAC
                 Select Case TempProfile.Params.Encoder

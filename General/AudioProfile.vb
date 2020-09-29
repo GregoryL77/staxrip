@@ -169,8 +169,8 @@ Public MustInherit Class AudioProfile
                 ret = "wav"
             End If
 
-            'To Do: Check this VW to save temp size for cuts,  -> only p.ranges >0 ???
-            If DecodingMode = AudioDecodingMode.Pipe andal p.ranges > 0 Then
+            'To Do: Check this VW to save temp size for cuts,  -> only AndAlso p.Ranges.Count > 0 ???
+            If DecodingMode = AudioDecodingMode.Pipe Then
                 ret = "wv"
             End If
 
@@ -294,14 +294,11 @@ Public MustInherit Class AudioProfile
     Function GetOutputFile() As String
         Dim base As String
 
-
-        'To Do: empty pipe temp files
-
         If p.TempDir.EndsWithEx("_temp\") AndAlso File.Base.StartsWithEx(p.SourceFile.Base) Then
-            base = File.Base.Substring(p.SourceFile.Base.Length)    '.TrimStart
+            base = File.Base.Substring(p.SourceFile.Base.Length)
 
-           ' If base = "" Then base = File.Base
-
+            'To Do: empty pipe streams temp files
+            If base = "" Then ShortBegEnd(File.Base)
 
         Else
             base = File.Base
@@ -782,10 +779,10 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"%]", "x)"}
                 ElseIf cl.Contains("wavpack") Then
                     proc.Package = Package.WavPack
-                    proc.SkipStrings = {"done."}
+                    'proc.SkipStrings = {"done."}
                 ElseIf cl.Contains("opusenc") Then
                     proc.Package = Package.OpusEnc
-                    proc.SkipStrings = {"[-]", "[|]", "[\]", "{/]"}
+                    'proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
                 ElseIf cl.Contains("eac3to") Then
                     proc.Package = Package.eac3to
                     proc.SkipStrings = {"process: ", "analyze: "}
@@ -1034,7 +1031,7 @@ Public Class GUIAudioProfile
         If includePaths Then
             sb.Append(Package.fdkaac.Path.Escape)
         Else
-            sb.Clear()
+            'sb.Clear()
             sb.Append("fdkaac")
         End If
 
@@ -1080,7 +1077,7 @@ Public Class GUIAudioProfile
         If includePaths Then
             sb.Append(Package.qaac.Path.Escape)
         Else
-            sb.Clear()
+            'sb.Clear()
             sb.Append("qaac")
         End If
 
@@ -1099,11 +1096,6 @@ Public Class GUIAudioProfile
             sb.Append(" --he")
         End If
 
-        Select Case DecodingMode
-            Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
-                sb.Append(" --ignorelength")
-        End Select
-
         If Delay <> 0 Then
             sb.Append(" --delay " + (Delay / 1000).ToInvariantString)
         End If
@@ -1119,7 +1111,7 @@ Public Class GUIAudioProfile
             ElseIf Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then 'Loudnorm auto x4 upsample
                 sb.Append(" --rate " & SourceSamplingRate)
             End If
-             If Gain <> 0 Then
+            If Gain <> 0 Then
                 sb.Append(" --gain " & Gain.ToInvariantString)
             End If
             If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
@@ -1140,6 +1132,11 @@ Public Class GUIAudioProfile
                 sb.Append(" --rate " & Params.SamplingRate)
             End If
         End If
+
+        Select Case DecodingMode
+            Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
+                sb.Append(" --ignorelength")
+        End Select
 
         If Params.qaacLowpass <> 0 Then
             sb.Append(" --lowpass " & Params.qaacLowpass)
@@ -1210,7 +1207,16 @@ Public Class GUIAudioProfile
             sb.Append(" -ar " & Params.SamplingRate)
         End If
 
-        sb.Append(" -c:a pcm_f32le")
+        Select Case Depth
+            Case 24
+                sb.Append(" -c:a pcm_s24le")
+            Case 32
+                sb.Append(" -c:a pcm_f32le")
+            Case 16
+                sb.Append(" -c:a pcm_s16le")
+            Case Else
+                sb.Append(" -c:a pcm_f32le")
+        End Select
 
         If includePaths AndAlso File <> "" Then
             sb.Append(" -loglevel " & s.FfmpegLogLevel & " -hide_banner -f wav - | ")
@@ -1446,7 +1452,7 @@ Public Class GUIAudioProfile
         If includePaths Then
             sb.Append(Package.WavPack.Path.Escape)
         Else
-            sb.Clear()
+            'sb.Clear()
             sb.Append("wavpack")
         End If
 
@@ -1506,7 +1512,7 @@ Public Class GUIAudioProfile
         If includePaths Then
             sb.Append(Package.OpusEnc.Path.Escape)
         Else
-            sb.Clear()
+            'sb.Clear()
             sb.Append("opusenc")
         End If
 

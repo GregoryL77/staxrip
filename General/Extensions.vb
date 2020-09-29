@@ -281,6 +281,15 @@ Module StringExtensions
         Return ret
     End Function
 
+    Function ShortBegEnd(instance As String) As String
+
+        Dim slen As Integer = 24
+        Dim eidx As Integer = 8
+        Dim sval = instance.Substring(0, slen) & instance.Substring(instance.Length - eidx)
+        Return If(instance.Length <= slen + eidx, instance, sval)
+
+    End Function
+
     <Extension()>
     Function Dir(instance As String) As String
         If instance = "" Then

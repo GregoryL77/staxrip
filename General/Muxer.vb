@@ -433,7 +433,7 @@ Public Class MP4Muxer
                     "mp4", "m4a", "aac", "mov",
                     "264", "h264", "avc",
                     "265", "h265", "hevc", "hvc",
-                    "mp2", "mpa", "mp3", "wv"}
+                    "mp2", "mpa", "mp3"}
         End Get
     End Property
 End Class
@@ -940,7 +940,7 @@ Public Class ffmpegMuxer
     Shared ReadOnly Property SupportedFormats As String()
         Get
             Return {"ASF", "AVI", "FLV", "ISMV", "IVF", "MKV", "MOV",
-                    "MP4", "MPG", "MXF", "NUT", "OGG", "TS", "WEBM", "WMV", "WV"}
+                    "MP4", "MPG", "MXF", "NUT", "OGG", "TS", "WEBM", "WMV"}
         End Get
     End Property
 

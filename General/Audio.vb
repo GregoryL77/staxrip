@@ -79,10 +79,11 @@ Public Class Audio
     Shared Function GetBaseNameForStream(path As String, stream As AudioStream) As String
         Dim base As String
 
-        'To Do: empty pipe temp files
         If p.TempDir.EndsWithEx("_temp\") AndAlso path.Base.StartsWithEx(p.SourceFile.Base) Then
             base = path.Base.Substring(p.SourceFile.Base.Length).TrimStart
-            If base = "" Then base = path.Base
+
+            'To Do: empty pipe streams temp files
+            'If base = "" Then base = ShortBegEnd(path.Base)
         Else
             base = path.Base
         End If
@@ -393,9 +394,30 @@ Public Class Audio
         args += " -y -hide_banner -loglevel " & s.FfmpegLogLevel
 
         If ap.ConvertExt.EqualsAny("wav") Then
-            args += " -c:a pcm_f32le"
+            Select Case gap?.Depth
+                Case 24
+                    args += " -c:a pcm_s24le"
+                Case 32
+                    args += " -c:a pcm_f32le"
+                Case 16
+                    args += " -c:a pcm_s16le"
+                Case Else
+                    args += " -c:a pcm_f32le"
+            End Select
         ElseIf ap.ConvertExt.EqualsAny("wv") Then
             args += " -compression_level 1"
+
+            Select Case gap?.Depth
+                Case 24
+                    args += " -sample_fmt s32p"
+                Case 32
+                    args += " -sample_fmt fltp"
+                Case 16
+                    args += " -sample_fmt s16p"
+                Case Else
+                    args += " -sample_fmt fltp"
+            End Select
+
         End If
 
         args += " " + outPath.Escape

@@ -132,6 +132,8 @@ Public Class Package
         .Location = "Audio\qaac",
         .WebURL = "http://github.com/nu774/qaac",
         .HelpSwitch = "-h",
+        .HelpFilename = "formats.txt",
+        .HelpURL = "https://github.com/nu774/qaac/wiki",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.qaac),
         .Description = "Console AAC encoder using the non-free Apple AAC encoder. " + Strings.Opus})
 

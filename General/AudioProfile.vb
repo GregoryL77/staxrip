@@ -298,7 +298,7 @@ Public MustInherit Class AudioProfile
             base = File.Base.Substring(p.SourceFile.Base.Length)
 
             'To Do: empty pipe streams temp files
-            If base = "" Then ShortBegEnd(File.Base)
+            'If base = "" Then ShortBegEnd(File.Base)
 
         Else
             base = File.Base
@@ -777,12 +777,6 @@ Public Class GUIAudioProfile
                 ElseIf cl.Contains("fdkaac") Then
                     proc.Package = Package.fdkaac
                     proc.SkipStrings = {"%]", "x)"}
-                ElseIf cl.Contains("wavpack") Then
-                    proc.Package = Package.WavPack
-                    'proc.SkipStrings = {"done."}
-                ElseIf cl.Contains("opusenc") Then
-                    proc.Package = Package.OpusEnc
-                    'proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
                 ElseIf cl.Contains("eac3to") Then
                     proc.Package = Package.eac3to
                     proc.SkipStrings = {"process: ", "analyze: "}
@@ -798,6 +792,13 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"frame=", "size="}
                     proc.Encoding = Encoding.UTF8
                     proc.Duration = GetDuration()
+                ElseIf cl.Contains("wavpack") Then
+                    proc.Package = Package.WavPack
+                    'proc.SkipStrings = {"done."}
+                ElseIf cl.Contains("opusenc") Then
+                    proc.Package = Package.OpusEnc
+                    'proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
+
                 End If
 
                 proc.Start()
@@ -877,7 +878,7 @@ Public Class GUIAudioProfile
             If match.Success Then
                 Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
                 If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
-                    Gain -= match.Groups(1).Value.ToSingle - 0.05F
+                    Gain -= match.Groups(1).Value.ToSingle + 0.05F 'Rounding error?
                     GainWasNormalized = True
                 End If
             Else
@@ -1144,6 +1145,12 @@ Public Class GUIAudioProfile
 
         If Params.qaacNoDither Then
             sb.Append(" --no-dither")
+        End If
+
+        If s.FfmpegLogLevel < 16 Then
+            sb.Append(" -s")
+        ElseIf s.FfmpegLogLevel > 32 Then
+            sb.Append(" --verbose")
         End If
 
         If Params.CustomSwitches <> "" Then

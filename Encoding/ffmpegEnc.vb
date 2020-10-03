@@ -311,7 +311,7 @@ Public Class ffmpegEnc
             End If
 
             If includePaths Then
-                ret += " -an -y -hide_banner -loglevel " + CStr(s.FfmpegLogLevel) + targetPath
+                ret += " -an -y" + s.GetFFLogLevel(FfLogLevel.info) + " -hide_banner " + targetPath
             End If
 
             Return ret.Trim

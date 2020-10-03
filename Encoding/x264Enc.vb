@@ -545,13 +545,13 @@ Public Class x264Params
         .Text = "Pipe",
         .Name = "PipingToolAVS",
         .VisibleFunc = Function() p.Script.Engine = ScriptEngine.AviSynth,
-        .Options = {"Automatic", "None", "avs2pipemod y4m", "avs2pipemod raw", "ffmpeg y4m", "ffmpeg raw", "ffmpegcuda y4m"}}
+        .Options = {"Automatic", "None", "avs2pipemod y4m", "avs2pipemod raw", "ffmpeg y4m", "ffmpeg raw", "ffmpeg CUDA y4m"}}
 
     Property PipingToolVS As New OptionParam With {
         .Text = "Pipe",
         .Name = "PipingToolVS",
         .VisibleFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
-        .Options = {"Automatic", "None", "vspipe y4m", "vspipe raw", "ffmpeg y4m", "ffmpeg raw", "ffmpegcuda y4m"}}
+        .Options = {"Automatic", "None", "vspipe y4m", "vspipe raw", "ffmpeg y4m", "ffmpeg raw", "ffmpeg CUDA y4m"}}
 
     Sub ApplyValues(isDefault As Boolean)
         Dim setVal = Sub(param As CommandLineParam, value As Object)
@@ -1054,9 +1054,9 @@ Public Class x264Params
 
                     pipeCmd = Package.avs2pipemod.Path.Escape + dll + " -rawvideo " + script.Path.Escape + " | "
                 Case "ffmpeg y4m"
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
+                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
                 Case "ffmpeg raw"
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f rawvideo -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
+                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f rawvideo -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
 
                 Case "ffmpegcuda y4m"
 
@@ -1065,10 +1065,9 @@ Public Class x264Params
                     '2, vfr Frames are passed through with their timestamp Or dropped so as to prevent 2 frames from having the same timestamp.
                     '3? drop As passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
                     '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
-
-                    'pipeCmd = Package.ffmpeg.Path.Escape + " -vsync 0 -hwaccel cuda -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p -loglevel fatal -hide_banner - | "
+                    ' -vsync 0 -hwaccel cuda      ( -threads 1 )
                     Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -vsync 1 -hwaccel cuda -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
+                    pipeCmd = Package.ffmpeg.Path.Escape + " -vsync 1 -hwaccel cuda -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
 
             End Select
 

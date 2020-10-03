@@ -296,8 +296,8 @@ Public Class x265Params
 
     Property Decoder As New OptionParam With {
         .Text = "Decoder",
-        .Options = {"AviSynth/VapourSynth", "QSVEnc (Intel)", "ffmpeg (Intel)", "ffmpeg (cuda)"},
-        .Values = {"script", "qs", "ffqsv", "ffcuda"}}
+        .Options = {"AviSynth/VapourSynth", "QSVEnc (Intel)", "ffmpeg (Intel)", "ffmpeg (DXVA2)", "ffmpeg (CUDA)"},
+        .Values = {"script", "qs", "ffqsv", "ffdxva", "ffcuda"}}
 
     Property Preset As New OptionParam With {
         .Switch = "--preset",
@@ -1221,7 +1221,7 @@ Public Class x265Params
 
                             pipeString = Package.vspipe.Path.Escape + " " + script.Path.Escape + " - --y4m" + chunk + " | "
                         Case "ffmpeg"
-                            pipeString = Package.ffmpeg.Path.Escape + " -i " + script.Path.LongPathPrefix.Escape + " -f yuv4mpegpipe -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | "
+                            pipeString = Package.ffmpeg.Path.Escape + " -i " + script.Path.LongPathPrefix.Escape + " -f yuv4mpegpipe -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
                     End Select
 
                     sb.Append(pipeString + Package.x265.Path.Escape)
@@ -1230,9 +1230,14 @@ Public Class x265Params
                     sb.Append(Package.QSVEnc.Path.Escape + " -o - -c raw" + crop + " -i " + p.SourceFile.Escape + " | " + Package.x265.Path.Escape)
                 Case "ffqsv"
                     Dim crop = If(isCropped, $" -vf ""crop={p.SourceWidth - p.CropLeft - p.CropRight}:{p.SourceHeight - p.CropTop - p.CropBottom}:{p.CropLeft}:{p.CropTop}""", "")
-                    sb.Append(Package.ffmpeg.Path.Escape + " -threads 1 -hwaccel qsv -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -strict -1" + crop + " -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " + Package.x265.Path.Escape)
-                Case "ffcuda"
+                    sb.Append(Package.ffmpeg.Path.Escape + " -threads 1 -hwaccel qsv -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -strict -1" + crop & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + Package.x265.Path.Escape)
+                Case "ffdxva"
                     Dim crop = If(isCropped, $" -vf ""crop={p.SourceWidth - p.CropLeft - p.CropRight}:{p.SourceHeight - p.CropTop - p.CropBottom}:{p.CropLeft}:{p.CropTop}""", "")
+                    Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
+                    sb.Append(Package.ffmpeg.Path.Escape + " -threads 1 -hwaccel dxva2 -i " + p.SourceFile.Escape +
+                              " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" + crop &
+                              s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + Package.x265.Path.Escape)
+                Case "ffcuda"
 
                     'To DO Check Vsync: 0 - passthrough Each frame Is passed with its timestamp from the demuxer to the muxer, 
                     '1, cfr Frames will be duplicated And dropped to achieve exactly the requested constant frame rate.
@@ -1240,11 +1245,11 @@ Public Class x265Params
                     '3? dropAs passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
                     '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
 
+                    Dim crop = If(isCropped, $" -vf ""crop={p.SourceWidth - p.CropLeft - p.CropRight}:{p.SourceHeight - p.CropTop - p.CropBottom}:{p.CropLeft}:{p.CropTop}""", "")
                     Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
                     sb.Append(Package.ffmpeg.Path.Escape + " -vsync 1 -hwaccel cuda -i " + p.SourceFile.Escape +
-                              " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" + crop +
-                              " -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " + Package.x265.Path.Escape)
-
+                              " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" + crop &
+                              s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + Package.x265.Path.Escape)
 
             End Select
         End If

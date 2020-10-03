@@ -361,7 +361,7 @@ Public MustInherit Class AudioProfile
         ret.Add(New GUIAudioProfile(AudioCodec.MP3, 4))
         ret.Add(New GUIAudioProfile(AudioCodec.AC3, 1.0) With {.Channels = 6, .Bitrate = 640})
         ret.Add(New GUIAudioProfile(AudioCodec.EAC3, 1.0) With {.Channels = 6, .Bitrate = 640})
-        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -sn -vn -dn -i ""%input%"" -b:a %bitrate%k -y -loglevel " & s.FfmpegLogLevel & " -hide_banner ""%output%"""))
+        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -sn -vn -dn -i ""%input%"" -b:a %bitrate%k -y" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner ""%output%"""))
         ret.Add(New MuxAudioProfile())
         ret.Add(New NullAudioProfile())
 
@@ -836,7 +836,7 @@ Public Class GUIAudioProfile
             args += " -map 0:a:" & Stream.Index
         End If
 
-        args += " -sn -vn -dn -loglevel " & s.FfmpegLogLevel & " -hide_banner"
+        args += " -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner"
 
         '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
         'Without this ffmpeg tends to use different matrixes for FP and Int audio formats, also 1 is consistent with LibAV
@@ -870,6 +870,12 @@ Public Class GUIAudioProfile
 
             'Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
             'If match.Success Then Gain += match.Groups(1).Value.ToSingle()
+
+            'QAAC faster ~x20 --peak RegEx dB : "Peak:\s*[.0-9]+\s*[(]([-.0-9]+)"
+            ' "qaac64.exe  --rate 192000 --peak --verbose - "
+            ' samplerate * 4 ; 
+            'Dim GainNormalizedDB As Double
+            'GainNormalizedDB = 20 * Math.Log10(Gain)
 
             Dim match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
             If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(match.Groups(1).Value.ToDouble < 0, match.Groups(1).Value.ToDouble, 0)
@@ -1134,7 +1140,7 @@ Public Class GUIAudioProfile
             End If
         End If
 
-        Select Case DecodingMode
+        Select Case DecodingMode 'is this needed?
             Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
                 sb.Append(" --ignorelength")
         End Select
@@ -1144,22 +1150,23 @@ Public Class GUIAudioProfile
         End If
 
         If Params.qaacNoDither Then
-            sb.Append(" --no-dither")
-        End If
-
-        If s.FfmpegLogLevel < 16 Then
-            sb.Append(" -s")
-        ElseIf s.FfmpegLogLevel > 32 Then
-            sb.Append(" --verbose")
+            sb.Append(" --limiter")
         End If
 
         If Params.CustomSwitches <> "" Then
             sb.Append(" " + Params.CustomSwitches)
         End If
 
+        '   sb.Append(" -n") lower priority
+
         Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.ToShortFilePath.Escape)
 
         If includePaths Then
+            If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
+                sb.Append(" -s")
+            ElseIf s.FfmpegLogLevel > 24 Then
+                sb.Append(" --verbose")
+            End If
             sb.Append(" " + input + " -o " + GetOutputFile.ToShortFilePath.Escape)
         End If
 
@@ -1181,7 +1188,7 @@ Public Class GUIAudioProfile
 
         If Params.ChannelsMode <> ChannelsMode.Original Then
             sb.Append(" -rematrix_maxval 1 -ac " & Channels)
-            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode <3 Then
+            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
             End If
         End If
@@ -1226,7 +1233,7 @@ Public Class GUIAudioProfile
         End Select
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(" -loglevel " & s.FfmpegLogLevel & " -hide_banner -f wav - | ")
+            sb.Append(" -hide_banner" & s.GetFFLogLevel(FfLogLevel.fatal) & " -f wav - | ")
         End If
 
         Return sb.ToString
@@ -1425,7 +1432,7 @@ Public Class GUIAudioProfile
 
         If Not ExtractCore AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
             sb.Append(" -rematrix_maxval 1 -ac " & Channels)
-            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode <3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
+            If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 AndAlso Params.ChannelsMode <> ChannelsMode.Original Then
                 sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
             End If
         End If
@@ -1441,7 +1448,7 @@ Public Class GUIAudioProfile
         End If
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(" -y -hide_banner -loglevel " & s.FfmpegLogLevel)
+            sb.Append(" -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info))
             sb.Append(" " + GetOutputFile.LongPathPrefix.Escape)
         End If
 
@@ -1472,7 +1479,7 @@ Public Class GUIAudioProfile
                 sb.Append(" -hh")
         End Select
 
-        Select Case DecodingMode
+        Select Case DecodingMode 'is this needed?
             Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
                 sb.Append(" -i")
         End Select
@@ -1497,12 +1504,13 @@ Public Class GUIAudioProfile
             sb.Append(" " + Params.CustomSwitches)
         End If
 
-        sb.Append(" -l -m -y -z0")
-
         Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
 
         If includePaths Then
-            sb.Append(" " + input + " " + GetOutputFile.Escape)
+            If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
+                sb.Append(" -q -z0")
+            End If
+            sb.Append(" -l -m -y " + input + " " + GetOutputFile.Escape)
         End If
 
         Return sb.ToString
@@ -1532,7 +1540,7 @@ Public Class GUIAudioProfile
                 sb.Append(" --hard-cbr --bitrate " & CInt(Bitrate))
         End Select
 
-        If Params.opusEncComplexity < 10 Then
+        If Params.opusEncComplexity <10 Then
             sb.Append(" --comp " & Params.opusEncComplexity)
         End If
 
@@ -1544,7 +1552,7 @@ Public Class GUIAudioProfile
             sb.Append(" --no-phase-inv")
         End If
 
-        Select Case DecodingMode
+        Select Case DecodingMode 'is this needed?
             Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
                 sb.Append(" --ignorelength")
         End Select
@@ -1553,10 +1561,13 @@ Public Class GUIAudioProfile
             sb.Append(" " + Params.CustomSwitches)
         End If
 
-        'sb.Append(" --serial 1 --save-range """ & GetOutputFile.Dir.Escape.TrimEnd(""""c) & "Opus.txt"" ")
+        'sb.Append(" --serial 4321 --save-range """ & GetOutputFile.Dir.Escape.TrimEnd(""""c) & "Opus.txt"" ")
 
         Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
         If includePaths Then
+            If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
+                sb.Append(" --quiet")
+            End If
             sb.Append(" " + input + " " + GetOutputFile.Escape)
         End If
 

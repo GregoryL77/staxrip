@@ -3854,13 +3854,13 @@ Public Enum ApplicationEvent
     <DispName("Before Processing")> BeforeProcessing
 End Enum
 
-Public Enum ffLogLevel
+Public Enum FfLogLevel
+    <DispName("Default")> panic = 0 'unused according to ffmpgeg manual
     quiet = -8
-    panic = 0
     fatal = 8
     error$ = 16
     warning = 24
-    info = 32
+    info = 32       'ff default
     verbose = 40
     debug = 48
     trace = 56

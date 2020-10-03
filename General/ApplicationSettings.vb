@@ -35,7 +35,7 @@ Public Class ApplicationSettings
     Public EnableTooltips As Boolean
     Public EventCommands As List(Of EventCommand)
     Public FilterSetupProfiles As List(Of TargetVideoScript)
-    Public FfmpegLogLevel As ffLogLevel = ffLogLevel.error
+    Public FfmpegLogLevel As FfLogLevel = FfLogLevel.panic 'panic as placeholder for default
     Public HidePreviewButtons As Boolean
     Public IconFile As String
     Public LastPosition As Integer
@@ -170,7 +170,7 @@ Public Class ApplicationSettings
             VapourSynthFilterPreferences.Add("mp4 m4v mov", "LibavSMASHSource")
             VapourSynthFilterPreferences.Add("ts m2ts mts m2t m2v", "LWLibavSource")
 
-     'DGIndex Back:
+            'DGIndex Back:
             VapourSynthFilterPreferences.Add("dgi", "DGSource")
         End If
 
@@ -464,4 +464,15 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
 
         s.RecentProjects = list
     End Sub
+
+    Public Function GetFFLogLevel(DefaultVal As FfLogLevel) As String
+
+        If FfmpegLogLevel = FfLogLevel.panic Then 'panic as placeholder for default
+            Return If(DefaultVal = FfLogLevel.info, "", " -loglevel " & DefaultVal.ToString)
+        Else
+            Return If(s.FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & FfmpegLogLevel.ToString)
+        End If
+
+    End Function
+
 End Class

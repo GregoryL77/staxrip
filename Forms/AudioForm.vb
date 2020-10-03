@@ -718,6 +718,8 @@ Public Class AudioForm
         cms.Add("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to"))
         cms.Add("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp())
         cms.Add("qaac Help", Sub() Package.qaac.ShowHelp())
+        cms.Add("qaac Formats", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.qaac.Path, "--formats")))
+        cms.Add("Opus Help", Sub() Package.OpusEnc.ShowHelp())
 
         TipProvider.SetTip("Defines which decoder to use and forces decoding even if not necessary.", laDecoder, mbDecoder)
         TipProvider.SetTip("Profile name that is auto generated when undefined.", laProfileName)
@@ -1192,7 +1194,8 @@ Public Class AudioForm
                         mMappingFamily.Add("Ambisonics with demixing", 3)
                         mMappingFamily.Add("Discrete channels 255Ch max", 255)
                         ui.AddLabel("Mapping Family 1 is the best for multichannel,")
-                        ui.AddLabel("however in FFmpeg this may fail. Forcing channels can help   ")
+                        ui.AddLabel("however in FFmpeg this may fail. Forcing channels can help")
+                        ui.AddLabel("Using OpusEnc is recommended                                   ")
                         'mMappingFamily.Help = "https://ffmpeg.org/ffmpeg-codecs.html#Option-Mapping"
                         mMappingFamily.Help = "https://tools.ietf.org/html/draft-ietf-codec-ambisonics-10#section-8"
                         mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegOpusMap)
@@ -1371,18 +1374,29 @@ Public Class AudioForm
                 cbqaacHE.Text = "High Efficiency"
                 cbqaacHE.Checked = TempProfile.Params.qaacHE
                 cbqaacHE.SaveAction = Sub(value) TempProfile.Params.qaacHE = value
-                AddHandler cbqaacHE.CheckedChanged, Sub() If cbqaacHE.Checked Then If mbMode.Button.Value = 0 Then mbMode.Button.Value = 1
+                AddHandler cbqaacHE.CheckedChanged, Sub()
+                                                        If cbqaacHE.Checked AndAlso mbMode.Button.Value = 0 Then
+                                                            mbMode.Button.Value = 1
+                                                            'To DO: Problems Save SimpleUI related
+                                                            Dim c21 As Double = If(TempProfile.Channels <> 0, TempProfile.Channels * 64 / 2, 64)
+                                                            numBitrate.Value = If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)
+                                                        End If
+                                                    End Sub
                 AddHandler mbMode.Button.ValueChangedUser, Sub()
                                                                'cbqaacHE.Enabled = mbMode.Button.Value <> 0
                                                                If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
                                                            End Sub
 
-                cb = ui.AddBool(page) 'AFAIK this is intended for ALAC, with AAC it's placebo effect:
-                cb.Text = "No dither when quantizing to lower bit depth"
+                'AFAIK this is intended only for wav/ALAC out and depth (-b) param - no effect in Staxrip: 
+                'limiter is quite usefull btw
+                cb = ui.AddBool(page)
+                cb.Text = "Smart Soft Limiter"
+                cb.Help = "https://github.com/nu774/qaac/wiki/Sample-format-or-bit-depth-conversion%2C-and-limiter"
                 cb.Checked = TempProfile.Params.qaacNoDither
                 cb.SaveAction = Sub(value) TempProfile.Params.qaacNoDither = value
 
             Case GuiAudioEncoder.WavPack
+                Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.WavPack, switch)
                 Dim mbWavPackMode = ui.AddMenu(Of Integer)
                 mbWavPackMode.Text = "Mode"
                 mbWavPackMode.Expandet = True
@@ -1419,6 +1433,7 @@ Public Class AudioForm
                 Dim mPreQuant = ui.AddNum(page)
                 mPreQuant.Text = "Pre-Quantitize bits"
                 mPreQuant.Config = {0, 24}
+                mPreQuant.HelpAction = getHelpAction("--pre-quantize=bits")
                 mPreQuant.NumEdit.Value = TempProfile.Params.WavPackPreQuant
                 mPreQuant.NumEdit.SaveAction = Sub(value)
                                                    TempProfile.Params.WavPackPreQuant = CInt(value)
@@ -1427,6 +1442,7 @@ Public Class AudioForm
 
                 cbCreateCorrectionWVC = ui.AddBool(page)
                 cbCreateCorrectionWVC.Text = "Create correction file"
+                cbCreateCorrectionWVC.HelpAction = getHelpAction("create correction file")
                 cbCreateCorrectionWVC.Checked = TempProfile.Params.WavPackCreateCorrection
                 cbCreateCorrectionWVC.SaveAction = Sub(value) TempProfile.Params.WavPackCreateCorrection = value
                 cbCreateCorrectionWVC.Enabled = mbWavPackMode.Button.Value = 1

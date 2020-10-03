@@ -391,7 +391,7 @@ Public Class Audio
             End If
         End If
 
-        args += " -y -hide_banner -loglevel " & s.FfmpegLogLevel
+        args += " -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info)
 
         If ap.ConvertExt.EqualsAny("wav") Then
             Select Case gap?.Depth
@@ -415,7 +415,10 @@ Public Class Audio
                 Case 16
                     args += " -sample_fmt s16p"
                 Case Else
-                    args += " -sample_fmt fltp"
+                    'ffmpeg should auto choose ???
+                    If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
+                        args += " -sample_fmt fltp"
+                    End If
             End Select
 
         End If

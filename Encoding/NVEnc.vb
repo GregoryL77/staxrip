@@ -1263,7 +1263,7 @@ Public Class NVEnc
                         Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
                         ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") +
                             " -vsync 1 -hwaccel cuda -i " + If(includePaths, p.SourceFile.Escape, "path") +
-                            " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " +
+                            " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
                             If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
 
 
@@ -1272,7 +1272,7 @@ Public Class NVEnc
                     sourcePath = "-"
 
                     If includePaths Then
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.SourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
+                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.SourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
                     End If
             End Select
 

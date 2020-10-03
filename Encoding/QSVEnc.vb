@@ -409,14 +409,14 @@ Public Class QSVEnc
                         Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
                         ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel dxva2 -i " +
                             If(includePaths, p.LastOriginalSourceFile.Escape, "path") + " -f yuv4mpegpipe -pix_fmt " +
-                            pix_fmt + " -strict -1 -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " +
+                            pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
                             If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")
                     End If
                 Case "ffqsv"
                     sourcePath = "-"
 
                     If includePaths Then
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.LastOriginalSourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p -loglevel " & s.FfmpegLogLevel & " -hide_banner - | " + If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")
+                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.LastOriginalSourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")
                     End If
             End Select
 

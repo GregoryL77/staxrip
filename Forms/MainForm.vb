@@ -3579,9 +3579,9 @@ Public Class MainForm
             n.Config = {20, 200, 10}
             n.Field = NameOf(s.CharacterLimitFilename)
 
-    'ffMpeg LogLevel
-            Dim mFFLog = ui.AddMenu(Of ffLogLevel)
-            mFFLog.Text = "ffMpeg logging level"
+            'ffMpeg LogLevel
+            Dim mFFLog = ui.AddMenu(Of FfLogLevel)
+            mFFLog.Text = "Apps logging level"
             mFFLog.Field = NameOf(s.FfmpegLogLevel)
 
             ui.SelectLast("last settings page")

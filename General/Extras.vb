@@ -30,7 +30,7 @@ Public Class Animation
             Proc.SkipStrings = {"frame=", "size="}
             Proc.Encoding = Encoding.UTF8
             Proc.Package = Package.ffmpeg
-            Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -vf " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline,palettegen=stats_mode=" & Mode & """ -loglevel " & s.FfmpegLogLevel & " -an -y " + cachePath
+            Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -vf " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline,palettegen=stats_mode=" & Mode & """ -an" + s.GetFFLogLevel(FfLogLevel.quiet) + " -y " + cachePath
             Proc.Start()
         End Using
 
@@ -41,7 +41,7 @@ Public Class Animation
                 Proc.SkipStrings = {"frame=", "size="}
                 Proc.Encoding = Encoding.UTF8
                 Proc.Package = Package.ffmpeg
-                Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -an -i " + cachePath + " -lavfi " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline [x]; [x][1:v] paletteuse=" & Dither & ":diff_mode=" & SecondMode & """ -loglevel " & s.FfmpegLogLevel & " -an -y " + """" + Export + """"
+                Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -an -i " + cachePath + " -lavfi " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline [x]; [x][1:v] paletteuse=" & Dither & ":diff_mode=" & SecondMode & """ -an" + s.GetFFLogLevel(FfLogLevel.quiet) + " -y " + """" + Export + """"
                 Proc.Start()
             End Using
 
@@ -52,7 +52,7 @@ Public Class Animation
                 Proc.SkipStrings = {"frame=", "size="}
                 Proc.Encoding = Encoding.UTF8
                 Proc.Package = Package.ffmpeg
-                Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -an -i " + cachePath + " -lavfi " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline [x]; [x][1:v] paletteuse=" & Dither & ":diff_mode=" & SecondMode & """ -loglevel " & s.FfmpegLogLevel & " -an -y " + """" + OutPutPath + """"
+                Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -an -i " + cachePath + " -lavfi " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline [x]; [x][1:v] paletteuse=" & Dither & ":diff_mode=" & SecondMode & """ -an" + s.GetFFLogLevel(FfLogLevel.quiet) + " -y " + """" + OutPutPath + """"
                 Proc.Start()
             End Using
 
@@ -93,7 +93,7 @@ Public Class Animation
             Proc.SkipStrings = {"frame=", "size="}
             Proc.Encoding = Encoding.UTF8
             Proc.Package = Package.ffmpeg
-            Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -lavfi " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline" + """ -plays 0 -loglevel " & s.FfmpegLogLevel & " -an -y " + """" + Path + """"
+            Proc.Arguments = " -ss " & Seek & " -t " & Duration & " -an -i " + """" + inputFile + """" + " -lavfi " + """" + "fps=" & Rate & ",scale=" & Size & ":-1:flags=spline" + """ -plays 0" & s.GetFFLogLevel(FfLogLevel.quiet) & " -an -y " + """" + Path + """"
             Proc.Start()
         End Using
 

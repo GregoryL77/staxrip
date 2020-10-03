@@ -132,7 +132,6 @@ Public Class Package
         .Location = "Audio\qaac",
         .WebURL = "http://github.com/nu774/qaac",
         .HelpSwitch = "-h",
-        .HelpFilename = "formats.txt",
         .HelpURL = "https://github.com/nu774/qaac/wiki",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.qaac),
         .Description = "Console AAC encoder using the non-free Apple AAC encoder. " + Strings.Opus})
@@ -169,9 +168,10 @@ Public Class Package
     Shared Property WavPack As Package = Add(New Package With {
         .Name = "WavPack",
         .Filename = "wavpack.exe",
-        .Description = "WavPack lossless/lossy/hybrid audio console codec, supports floating point audio data",
+        .Description = "WavPack is a completely free and open source audio compression format providing lossless, high-quality lossy, and a unique hybrid compression mode. Also supports floating point and DSD audio data",
         .WebURL = "http://www.wavpack.com/index.html",
         .DownloadURL = "http://www.wavpack.com/downloads.html",
+        .HelpURL = "http://www.wavpack.com/wavpack_doc.html",
         .Location = "Audio\wavpack",
         .HelpSwitch = "--help",
         .HelpFilename = "wavpack_doc.html",
@@ -180,9 +180,10 @@ Public Class Package
     Shared Property OpusEnc As Package = Add(New Package With {
         .Name = "OpusEnc",
         .Filename = "opusenc.exe",
-        .Description = "OpusEnc part of Opus-Tools. Reference CLI encoder for LibOpus",
+        .Description = "OpusEnc part of Opus-Tools. Reference CLI encoder for LibOpus." + Strings.Opus,
         .WebURL = "https://opus-codec.org/",
         .DownloadURL = "https://opus-codec.org/development/",
+        .HelpURL = "https://wiki.xiph.org/Opus_Recommended_Settings",
         .Location = "Audio\opus",
         .HelpSwitch = "--help",
         .HelpFilename = "opusenc.html",

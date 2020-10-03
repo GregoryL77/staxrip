@@ -1195,7 +1195,7 @@ Public Class AudioForm
                         mMappingFamily.Add("Discrete channels 255Ch max", 255)
                         ui.AddLabel("Mapping Family 1 is the best for multichannel,")
                         ui.AddLabel("however in FFmpeg this may fail. Forcing channels can help")
-                        ui.AddLabel("Using OpusEnc is recommended                                   ")
+                        ui.AddLabel("Using OpusEnc is recommended                                          ")
                         'mMappingFamily.Help = "https://ffmpeg.org/ffmpeg-codecs.html#Option-Mapping"
                         mMappingFamily.Help = "https://tools.ietf.org/html/draft-ietf-codec-ambisonics-10#section-8"
                         mMappingFamily.Property = NameOf(TempProfile.Params.ffmpegOpusMap)

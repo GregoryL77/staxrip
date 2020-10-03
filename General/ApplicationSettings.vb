@@ -470,7 +470,7 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
         If FfmpegLogLevel = FfLogLevel.panic Then 'panic as placeholder for default
             Return If(DefaultVal = FfLogLevel.info, "", " -loglevel " & DefaultVal.ToString)
         Else
-            Return If(s.FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & FfmpegLogLevel.ToString)
+            Return If(FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & FfmpegLogLevel.ToString)
         End If
 
     End Function

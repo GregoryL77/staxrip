@@ -792,6 +792,8 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"frame=", "size="}
                     proc.Encoding = Encoding.UTF8
                     proc.Duration = GetDuration()
+
+                    'To Do:
                 ElseIf cl.Contains("wavpack") Then
                     proc.Package = Package.WavPack
                     'proc.SkipStrings = {"done."}
@@ -825,82 +827,104 @@ Public Class GUIAudioProfile
 
     Sub NormalizeFF()
         If Not Params.Normalize OrElse ExtractCore OrElse
-                (SupportsNormGainSampR() AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
-                Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
+                (SupportsNormGainSampR() AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
+                Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
             Exit Sub
         End If
 
-        Dim args = "-sn -vn -dn -i " + File.LongPathPrefix.Escape
-
-        If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
-            args += " -map 0:a:" & Stream.Index
-        End If
-
-        args += " -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner"
-
-        '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
-        'Without this ffmpeg tends to use different matrixes for FP and Int audio formats, also 1 is consistent with LibAV
-
-        'args Then += " -c:a pcm_s16le -af volumedetect"
-
         If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
+
+            Dim args = "-sn -vn -dn -i " + File.LongPathPrefix.Escape
+
+            If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
+                args += " -map 0:a:" & Stream.Index
+            End If
+
+            args += " -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner"
+
+            'args Then += " -c:a pcm_s16le -af volumedetect"
+
             args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
                 ":TP=" & Params.ffmpegLoudnormTruePeak.ToInvariantString + ":LRA=" &
-                Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary"
-        Else
+                Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary -c:a pcm_f64le -f null NUL"
+
+            Using proc As New Proc
+                proc.Header = "Find Gain " & GetTrackID()
+                proc.SkipStrings = {"frame=", "size="}
+                proc.Encoding = Encoding.UTF8
+                proc.Package = Package.ffmpeg
+                proc.Arguments = args
+                proc.Start()
+
+                'Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
+                'If match.Success Then Gain += match.Groups(1).Value.ToSingle()
+
+                Dim match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
+                If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(match.Groups(1).Value.ToDouble < 0, match.Groups(1).Value.ToDouble, 0)
+
+                match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
+                If match.Success Then
+                    Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
+                End If
+
+                match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
+                If match.Success Then Params.ffmpegLoudnormLraMeasured = match.Groups(1).Value.ToDouble
+
+                match = Regex.Match(proc.Log.ToString, "Input Threshold:\s*([-\.0-9]+)")
+                If match.Success Then Params.ffmpegLoudnormThresholdMeasured = match.Groups(1).Value.ToDouble
+
+                match = Regex.Match(proc.Log.ToString, "Target Offset:\s*([-+\.0-9]+)")
+                If match.Success Then Params.ffmpegLoudnormOffset = match.Groups(1).Value.ToDouble
+
+            End Using
+
+        Else 'QAAC is ~x20 faster than ffmpeg
+
+            Dim sb As New StringBuilder
+            sb.Append(Package.ffmpeg.Path.Escape + " -sn -vn -dn -i " + File.LongPathPrefix.Escape)
+
+            If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
+                sb.Append(" -map 0:a:" & Stream.Index)
+            End If
+
+            sb.Append(" -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.warning) & " -hide_banner")
+
+            '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
+            'Without this ffmpeg tends to use different matrixes for FP and Int audio formats, also 1 is consistent with LibAV
             If Params.ChannelsMode <> ChannelsMode.Original Then
-                args += " -rematrix_maxval 1 -ac " & Channels
+                sb.Append(" -rematrix_maxval 1 -ac " & Channels)
                 If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
-                    args += " -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString
+                    sb.Append(" -lfe_mix_level " & Params.ffmpegLFEMixLevel.ToInvariantString)
                 End If
             End If
-            args += " -af loudnorm=print_format=summary -c:a pcm_f64le"
 
-        End If
+            Dim UpSampleFactor As Integer = 4   'upsample true peak
+            Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
+            If SRate < 176400 Then SRate = 48000 * UpSampleFactor
+            Dim QLogL As String = If(s.FfmpegLogLevel > 24, " --verbose", "")
 
-        args += " -f null NUL"
+            sb.Append(" -c:a pcm_f32le -f wav - | " & Package.qaac.Path.Escape & " --rate " & SRate & " --peak" & QLogL & " - ")
 
-        Using proc As New Proc
-            proc.Header = "Find Gain " & GetTrackID()
-            proc.SkipStrings = {"frame=", "size="}
-            proc.Encoding = Encoding.UTF8
-            proc.Package = Package.ffmpeg
-            proc.Arguments = args
-            proc.Start()
+            Using proc As New Proc
+                proc.Header = "Find Gain " & GetTrackID()
+                proc.File = "cmd.exe"
+                proc.Arguments = "/S /C """ + sb.ToString + """"
+                proc.Package = Package.qaac
+                proc.SkipStrings = {", ETA ", "x)"}
+                proc.Start()
 
-            'Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
-            'If match.Success Then Gain += match.Groups(1).Value.ToSingle()
-
-            'QAAC faster ~x20 --peak RegEx dB : "Peak:\s*[.0-9]+\s*[(]([-.0-9]+)"
-            ' "qaac64.exe  --rate 192000 --peak --verbose - "
-            ' samplerate * 4 ; 
-            'Dim GainNormalizedDB As Double
-            'GainNormalizedDB = 20 * Math.Log10(Gain)
-
-            Dim match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
-            If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(match.Groups(1).Value.ToDouble < 0, match.Groups(1).Value.ToDouble, 0)
-
-            match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
-            If match.Success Then
-                Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
-                If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
-                    Gain -= match.Groups(1).Value.ToSingle + 0.05F 'Rounding error?
+                Dim match = Regex.Match(proc.Log.ToString, "Peak:\s*[.0-9]+\s*[(]([-.0-9]+)")
+                If match.Success Then
+                    Gain -= match.Groups(1).Value.ToSingle
                     GainWasNormalized = True
                 End If
-            Else
-                GainWasNormalized = False
-            End If
 
-            match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
-            If match.Success Then Params.ffmpegLoudnormLraMeasured = match.Groups(1).Value.ToDouble
+                'Dim GainNormalizedDB As Double  "Peak:\s+([.0-9]+)\s*"
+                'GainNormalizedDB = 20 * Math.Log10(Gain)
 
-            match = Regex.Match(proc.Log.ToString, "Input Threshold:\s*([-\.0-9]+)")
-            If match.Success Then Params.ffmpegLoudnormThresholdMeasured = match.Groups(1).Value.ToDouble
+            End Using
+        End If
 
-            match = Regex.Match(proc.Log.ToString, "Target Offset:\s*([-+\.0-9]+)")
-            If match.Success Then Params.ffmpegLoudnormOffset = match.Groups(1).Value.ToDouble
-
-        End Using
     End Sub
 
     Overrides Function Edit() As DialogResult
@@ -1121,11 +1145,11 @@ Public Class GUIAudioProfile
             If Gain <> 0 Then
                 sb.Append(" --gain " & Gain.ToInvariantString)
             End If
-            If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
+            If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak Then
                 sb.Append(" --normalize")
             End If
         Else
-            If Params.Normalize AndAlso Not GainWasNormalized AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peaknorm Then
+            If Params.Normalize AndAlso Not GainWasNormalized AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak Then
                 sb.Append(" --normalize")
                 If Gain <> 0 Then
                     sb.Append(" --gain " & Gain.ToInvariantString)
@@ -1208,7 +1232,7 @@ Public Class GUIAudioProfile
                     If Params.SamplingRate = 0 AndAlso Not SupportsNormGainSampR() Then     'Loudnorm auto x4 upsample
                         sb.Append(" -ar " & SourceSamplingRate)
                     End If
-                Case ffmpegNormalizeMode.peaknorm
+                Case ffmpegNormalizeMode.peak
                     If GainWasNormalized AndAlso Not SupportsNormGainSampR() Then
                         sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
                     End If
@@ -1419,7 +1443,7 @@ Public Class GUIAudioProfile
                         If Params.SamplingRate = 0 Then
                             sb.Append(" -ar " & SourceSamplingRate)     'Loudnorm auto x4 upsample
                         End If
-                    Case ffmpegNormalizeMode.peaknorm
+                    Case ffmpegNormalizeMode.peak
                         If GainWasNormalized Then
                             sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
                         End If
@@ -1540,7 +1564,7 @@ Public Class GUIAudioProfile
                 sb.Append(" --hard-cbr --bitrate " & CInt(Bitrate))
         End Select
 
-        If Params.opusEncComplexity <10 Then
+        If Params.opusEncComplexity < 10 Then
             sb.Append(" --comp " & Params.opusEncComplexity)
         End If
 

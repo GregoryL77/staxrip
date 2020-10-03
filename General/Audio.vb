@@ -339,9 +339,11 @@ Public Class Audio
         Dim gap = TryCast(ap, GUIAudioProfile)
 
         'Cut fail fix, normalize after cut which failed
-        If Not (gap Is Nothing OrElse (p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_"))) Then
-            gap.NormalizeFF()
-            'gap.Params.Normalize = False
+        If gap IsNot Nothing Then
+            If p.Ranges.Count = 0 OrElse (p.Ranges.Count > 0 AndAlso ap.File.Contains("_cut_")) Then
+                gap.NormalizeFF()
+                'gap.Params.Normalize = False
+            End If
         End If
 
         Dim outPath = (p.TempDir + ap.File.Base + "." + ap.ConvertExt).LongPathPrefix
@@ -356,29 +358,32 @@ Public Class Audio
             args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
         End If
 
-        If gap?.Params.Normalize Then
-            Select Case gap.Params.ffmpegNormalizeMode
-                Case ffmpegNormalizeMode.dynaudnorm
-                    args += " " + Audio.GetDynAudNormArgs(gap.Params)
-                    If ap.Gain <> 0 Then
-                        args += ",volume=" + ap.Gain.ToInvariantString + "dB"
-                    End If
-                Case ffmpegNormalizeMode.loudnorm
-                    args += " " + Audio.GetLoudNormArgs(gap.Params)
-                    If ap.Gain <> 0 Then
-                        args += ",volume=" + ap.Gain.ToInvariantString + "dB"
-                    End If
-                    If gap.Params.SamplingRate = 0 Then     'Loudnorm auto x4 upsample
-                        args += " -ar " & gap.SourceSamplingRate
-                    End If
-                Case ffmpegNormalizeMode.peaknorm
-                    If ap.GainWasNormalized Then
-                        args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
-                    End If
-            End Select
-        ElseIf ap.Gain <> 0 Then
-            args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+        If p.Ranges.Count = 0 OrElse (p.Ranges.Count > 0 AndAlso ap.File.Contains("_cut_")) OrElse (p.Ranges.Count > 0 AndAlso gap?.DecodingMode <> AudioDecodingMode.Pipe) Then
+            If gap?.Params.Normalize Then
+                Select Case gap.Params.ffmpegNormalizeMode
+                    Case ffmpegNormalizeMode.dynaudnorm
+                        args += " " + Audio.GetDynAudNormArgs(gap.Params)
+                        If ap.Gain <> 0 Then
+                            args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                        End If
+                    Case ffmpegNormalizeMode.loudnorm
+                        args += " " + Audio.GetLoudNormArgs(gap.Params)
+                        If ap.Gain <> 0 Then
+                            args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                        End If
+                        If gap.Params.SamplingRate = 0 Then     'Loudnorm auto x4 upsample
+                            args += " -ar " & gap.SourceSamplingRate
+                        End If
+                    Case ffmpegNormalizeMode.peak
+                        If ap.GainWasNormalized Then
+                            args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+                        End If
+                End Select
+            ElseIf ap.Gain <> 0 Then
+                args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+            End If
         End If
+
 
         If gap?.Params.SamplingRate <> 0 Then
             args += " -ar " & gap.Params.SamplingRate
@@ -448,8 +453,8 @@ Public Class Audio
 
             ap.File = outPath
             Log.WriteLine(MediaInfo.GetSummary(outPath))
-            Else
-                Log.Write("Error", "no output found")
+        Else
+            Log.Write("Error", "no output found")
         End If
     End Sub
 
@@ -829,7 +834,7 @@ Public Enum ffNormalizeMode
 End Enum
 
 Public Enum ffmpegNormalizeMode
-    peaknorm
+    <UI.DispName("(true)peak based")> peak
     loudnorm
     dynaudnorm
 End Enum

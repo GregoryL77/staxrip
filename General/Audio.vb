@@ -80,13 +80,13 @@ Public Class Audio
         Dim base As String
 
         If p.TempDir.EndsWithEx("_temp\") AndAlso path.Base.StartsWithEx(p.SourceFile.Base) Then
-            base = path.Base.Substring(p.SourceFile.Base.Length).TrimStart
-
-            'To Do: empty pipe streams temp files
-            'If base = "" Then base = ShortBegEnd(path.Base)
+            base = path.Base.Substring(p.SourceFile.Base.Length)
         Else
             base = path.Base
         End If
+
+        'To Do: empty pipe streams temp files
+        If base = "" Then ShortBegEnd(base)
 
         Dim ret = base + " ID" & (stream.Index + 1)
 
@@ -441,6 +441,9 @@ Public Class Audio
         End Using
 
         If g.FileExists(outPath) Then
+            If outPath.StartsWith("\\?\") Then
+                outPath = outPath.Substring(4)
+            End If
 
             'normalize, Gain eac3to duplication
             If gap?.GetEncoder() = GuiAudioEncoder.eac3to Then
@@ -726,7 +729,6 @@ Public Class Audio
             fail = True
         End If
 
-        'TO Do: Cut fail fix Test this Wavpack as default instead
         If fail AndAlso TypeOf ap Is GUIAudioProfile AndAlso Not ap.File.Ext.EqualsAny("wv", "wav") Then
             Log.Write("Error", "no output found")
             Convert(ap)
@@ -828,7 +830,7 @@ Public Enum CuttingMode
 End Enum
 
 Public Enum ffNormalizeMode
-    peaknorm
+    <UI.DispName("(true)peak based")> peak
     loudnorm
     dynaudnorm
 End Enum

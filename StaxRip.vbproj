@@ -186,6 +186,12 @@
     <Compile Include="Encoding\QSVEnc.vb" />
     <Compile Include="Encoding\NVEnc.vb" />
     <Compile Include="Encoding\x264Enc.vb" />
+    <Compile Include="Forms\DownloadForm.Designer.vb">
+      <DependentUpon>DownloadForm.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\DownloadForm.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\LogForm.Designer.vb">
       <DependentUpon>LogForm.vb</DependentUpon>
     </Compile>
@@ -209,8 +215,9 @@
     <Compile Include="General\Macro.vb" />
     <Compile Include="General\PowerShell.vb" />
     <Compile Include="General\ProcController.vb" />
-    <Compile Include="General\Update.vb" />
+    <Compile Include="General\StaxRipUpdate.vb" />
     <Compile Include="General\Test.vb" />
+    <Compile Include="General\ToolUpdate.vb" />
     <Compile Include="General\VideoRenderer.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -470,6 +477,9 @@
     <EmbeddedResource Include="Forms\AudioForm.resx">
       <DependentUpon>AudioForm.vb</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\DownloadForm.resx">
+      <DependentUpon>DownloadForm.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\LogForm.resx">
       <DependentUpon>LogForm.vb</DependentUpon>
     </EmbeddedResource>
@@ -626,9 +636,6 @@
   <ItemGroup>
     <Folder Include="My Project\DataSources\" />
     <Folder Include="Tools\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
   <PropertyGroup>

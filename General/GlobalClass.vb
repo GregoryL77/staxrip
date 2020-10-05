@@ -408,11 +408,13 @@ Public Class GlobalClass
 
     Function VerifyRequirements() As Boolean
         If s.VerifyToolStatus AndAlso Not g.Is32Bit Then
-            For Each pack In Package.Items.Values
-                If Not pack.VerifyOK Then
-                    Return False
-                End If
-            Next
+            SyncLock Package.ConfLock
+                For Each pack In Package.Items.Values
+                    If Not pack.VerifyOK Then
+                        Return False
+                    End If
+                Next
+            End SyncLock
 
             If Not p.Script.IsFilterActive("Source") Then
                 MsgWarn("No active filter of category 'Source' found.")
@@ -1461,6 +1463,10 @@ Public Class GlobalClass
 
     Function Is32Bit() As Boolean
         Return IntPtr.Size = 4
+    End Function
+
+    Function Is64Bit() As Boolean
+        Return IntPtr.Size = 8
     End Function
 
     Sub RunTask(action As Action)

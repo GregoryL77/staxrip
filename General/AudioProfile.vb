@@ -151,15 +151,23 @@ Public MustInherit Class AudioProfile
             Dim ret As String
 
             Select Case DecodingMode
-                Case AudioDecodingMode.WavPack
-                    ret = "wv"
-                Case AudioDecodingMode.FLAC
-                    ret = "flac"
                 Case AudioDecodingMode.WAVE
                     ret = "wav"
+                'Case AudioDecodingMode.W64
+                '   ret = "w64"
+                Case AudioDecodingMode.FLAC
+                    ret = "flac"
                 Case Else
                     ret = "wv"
             End Select
+
+            'If Not SupportedInput.Contains(ret) Then
+            '   ret = "flac"
+            'End If
+
+            'If Not SupportedInput.Contains(ret) Then
+            '   ret = "w64"
+            'End If
 
             If Not SupportedInput.Contains(ret) Then
                 ret = "wv"
@@ -169,18 +177,10 @@ Public MustInherit Class AudioProfile
                 ret = "wav"
             End If
 
-            'To Do: Check this VW to save temp size for cuts,  -> only AndAlso p.Ranges.Count > 0 ???
+            'To Do: Check this VW to save temp size for cuts,  -> only AndAlso p.Ranges.Count > 0, decoder, eac3to ???
             If DecodingMode = AudioDecodingMode.Pipe Then
                 ret = "wv"
             End If
-
-            'If Not SupportedInput.Contains(ret) Then
-            'ret = "flac"
-            'End If
-
-            'If Not SupportedInput.Contains(ret) Then
-            'ret = "w64"
-            'End If
 
             Return ret
         End Get
@@ -295,14 +295,16 @@ Public MustInherit Class AudioProfile
         Dim base As String
 
         If p.TempDir.EndsWithEx("_temp\") AndAlso File.Base.StartsWithEx(p.SourceFile.Base) Then
-            base = File.Base.Substring(p.SourceFile.Base.Length)
-
-            'To Do: empty pipe streams temp files
-            'If base = "" Then ShortBegEnd(File.Base)
-
+            base = File.Base.Substring(p.SourceFile.Base.Length).Trim
         Else
             base = File.Base
         End If
+
+        'If base = "" Then
+        'base = "temp"
+        'End If
+        'To Do: empty pipe streams temp files
+        If base = "" Then ShortBegEnd(Base)
 
         If Delay <> 0 Then
             If HandlesDelay() Then
@@ -361,7 +363,7 @@ Public MustInherit Class AudioProfile
         ret.Add(New GUIAudioProfile(AudioCodec.MP3, 4))
         ret.Add(New GUIAudioProfile(AudioCodec.AC3, 1.0) With {.Channels = 6, .Bitrate = 640})
         ret.Add(New GUIAudioProfile(AudioCodec.EAC3, 1.0) With {.Channels = 6, .Bitrate = 640})
-        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -sn -vn -dn -i ""%input%"" -b:a %bitrate%k -y" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner ""%output%"""))
+        ret.Add(New BatchAudioProfile(640, {}, "ac3", 6, """%app:ffmpeg%"" -sn -vn -dn -i ""%input%"" -b:a %bitrate%k -y -hide_banner ""%output%"""))
         ret.Add(New MuxAudioProfile())
         ret.Add(New NullAudioProfile())
 
@@ -842,11 +844,12 @@ Public Class GUIAudioProfile
 
             args += " -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner"
 
-            'args Then += " -c:a pcm_s16le -af volumedetect"
 
             args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
                 ":TP=" & Params.ffmpegLoudnormTruePeak.ToInvariantString + ":LRA=" &
                 Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary -c:a pcm_f64le -f null NUL"
+            'pcm_f64le - disables last pointless auto resempler step 64fp-16int to null, not measurable speed diff anyway
+
 
             Using proc As New Proc
                 proc.Header = "Find Gain " & GetTrackID()
@@ -856,16 +859,15 @@ Public Class GUIAudioProfile
                 proc.Arguments = args
                 proc.Start()
 
-                'Dim match = Regex.Match(proc.Log.ToString, "max_volume: -(\d+\.\d+) dB")
-                'If match.Success Then Gain += match.Groups(1).Value.ToSingle()
+
+
+
 
                 Dim match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
                 If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(match.Groups(1).Value.ToDouble < 0, match.Groups(1).Value.ToDouble, 0)
 
                 match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
-                If match.Success Then
-                    Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
-                End If
+                If match.Success Then  Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
 
                 match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
                 If match.Success Then Params.ffmpegLoudnormLraMeasured = match.Groups(1).Value.ToDouble
@@ -875,7 +877,6 @@ Public Class GUIAudioProfile
 
                 match = Regex.Match(proc.Log.ToString, "Target Offset:\s*([-+\.0-9]+)")
                 If match.Success Then Params.ffmpegLoudnormOffset = match.Groups(1).Value.ToDouble
-
             End Using
 
         Else 'QAAC is ~x20 faster than ffmpeg
@@ -887,7 +888,7 @@ Public Class GUIAudioProfile
                 sb.Append(" -map 0:a:" & Stream.Index)
             End If
 
-            sb.Append(" -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.warning) & " -hide_banner")
+            sb.Append(" -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.error) & " -hide_banner")
 
             '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
             'Without this ffmpeg tends to use different matrixes for FP and Int audio formats, also 1 is consistent with LibAV
@@ -898,7 +899,7 @@ Public Class GUIAudioProfile
                 End If
             End If
 
-            Dim UpSampleFactor As Integer = 4   'upsample true peak
+            Const UpSampleFactor As Integer = 8   'upsample true peak
             Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
             If SRate < 176400 Then SRate = 48000 * UpSampleFactor
             Dim QLogL As String = If(s.FfmpegLogLevel > 24, " --verbose", "")
@@ -1181,9 +1182,9 @@ Public Class GUIAudioProfile
             sb.Append(" " + Params.CustomSwitches)
         End If
 
-        '   sb.Append(" -n") lower priority
+        '   sb.Append(" -n") force low priority
 
-        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.ToShortFilePath.Escape)
+        Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
 
         If includePaths Then
             If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
@@ -1191,7 +1192,7 @@ Public Class GUIAudioProfile
             ElseIf s.FfmpegLogLevel > 24 Then
                 sb.Append(" --verbose")
             End If
-            sb.Append(" " + input + " -o " + GetOutputFile.ToShortFilePath.Escape)
+            sb.Append(" " + input + " -o " + GetOutputFile.Escape)
         End If
 
         Return sb.ToString
@@ -1248,8 +1249,6 @@ Public Class GUIAudioProfile
         Select Case Depth
             Case 24
                 sb.Append(" -c:a pcm_s24le")
-            Case 32
-                sb.Append(" -c:a pcm_f32le")
             Case 16
                 sb.Append(" -c:a pcm_s16le")
             Case Else
@@ -1514,10 +1513,9 @@ Public Class GUIAudioProfile
 
         If Params.WavPackMode = 1 Then
             sb.Append(" -b" & CInt(Bitrate))
-        End If
-
-        If Params.WavPackCreateCorrection AndAlso Params.WavPackMode = 1 Then
-            sb.Append(" -c")
+            If Params.WavPackCreateCorrection Then
+                sb.Append(" -c")
+            End If
         End If
 
         If Params.WavPackPreQuant > 0 Then
@@ -1534,7 +1532,8 @@ Public Class GUIAudioProfile
             If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
                 sb.Append(" -q -z0")
             End If
-            sb.Append(" -l -m -y " + input + " " + GetOutputFile.Escape)
+            ' -l WVPenc force low priority, is needed?
+            sb.Append(" -m -y " + input + " " + GetOutputFile.Escape)
         End If
 
         Return sb.ToString
@@ -1674,32 +1673,32 @@ Public Class GUIAudioProfile
 
                     Return GuiAudioEncoder.eac3to
                 End If
-            Case GuiAudioEncoder.qaac
-                If Params.Codec = AudioCodec.AAC Then
-                    Return GuiAudioEncoder.qaac
-                End If
+            'Case GuiAudioEncoder.qaac
+            '    If Params.Codec = AudioCodec.AAC Then
+            '        Return GuiAudioEncoder.qaac
+            '    End If
             Case GuiAudioEncoder.fdkaac
                 If Params.Codec = AudioCodec.AAC Then
                     Return GuiAudioEncoder.fdkaac
                 End If
-            Case GuiAudioEncoder.Automatic
-                If Params.Codec = AudioCodec.AAC Then
-                    Return GuiAudioEncoder.qaac
-                End If
-                If Params.Codec = AudioCodec.WavPack Then
-                    Return GuiAudioEncoder.WavPack
-                End If
-                If Params.Codec = AudioCodec.Opus Then
-                    Return GuiAudioEncoder.OpusEnc
-                End If
-            Case GuiAudioEncoder.WavPack
-                If Params.Codec = AudioCodec.WavPack Then
-                    Return GuiAudioEncoder.WavPack
-                End If
-            Case GuiAudioEncoder.OpusEnc
-                If Params.Codec = AudioCodec.Opus Then
-                    Return GuiAudioEncoder.OpusEnc
-                End If
+            'Case GuiAudioEncoder.Automatic
+            '    If Params.Codec = AudioCodec.AAC Then
+            '        Return GuiAudioEncoder.qaac
+            '    End If
+            '    If Params.Codec = AudioCodec.WavPack Then
+            '        Return GuiAudioEncoder.WavPack
+            '    End If
+            '    If Params.Codec = AudioCodec.Opus Then
+            '        Return GuiAudioEncoder.OpusEnc
+            '    End If
+            'Case GuiAudioEncoder.WavPack
+            '    If Params.Codec = AudioCodec.WavPack Then
+            '        Return GuiAudioEncoder.WavPack
+            '    End If
+            'Case GuiAudioEncoder.OpusEnc
+            '    If Params.Codec = AudioCodec.Opus Then
+            '        Return GuiAudioEncoder.OpusEnc
+            '    End If
             Case GuiAudioEncoder.ffmpeg
                 Return GuiAudioEncoder.ffmpeg
         End Select
@@ -1765,8 +1764,7 @@ Public Class GUIAudioProfile
                     End If
             End Select
 
-            Return {""}
-
+            Return {}
         End Get
         Set(value As String())
         End Set
@@ -1807,7 +1805,6 @@ Public Class GUIAudioProfile
         Property opusEncComplexity As Integer = 10
         Property opusEncFramesize As Double = 20
         Property opusEncNoPhaseInv As Boolean = False
-        'Property opusEncMigrateVersion As Integer = 1
 
         Property fdkaacProfile As Integer = 2
         Property fdkaacBandwidth As Integer
@@ -1850,7 +1847,7 @@ Public Class GUIAudioProfile
 
         Property WavPackCompression As Integer = 1
         Property WavPackExtraCompression As Integer = 0
-        Property WavPackPreQuant As Integer = 0
+        Property WavPackPreQuant As Integer
         Property WavPackMode As Integer = 0 'lossless
         Property WavPackCreateCorrection As Boolean
 
@@ -1977,7 +1974,6 @@ Public Enum GuiAudioEncoder
     fdkaac
     WavPack
     OpusEnc
-
 End Enum
 
 Public Enum AudioFrameRateMode

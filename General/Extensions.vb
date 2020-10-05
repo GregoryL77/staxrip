@@ -229,7 +229,9 @@ Module StringExtensions
 
     <Extension()>
     Function DirExists(instance As String) As Boolean
-        Return Directory.Exists(instance)
+        If instance <> "" Then
+            Return Directory.Exists(instance)
+        End If
     End Function
 
     <Extension()>
@@ -284,10 +286,10 @@ Module StringExtensions
     <Extension()>
     Function ShortBegEnd(instance As String) As String
 
-        Dim slen As Integer = 26
-        Dim eidx As Integer = 14
-        Dim sval = instance.Substring(0, slen) & instance.Substring(instance.Length - eidx)
-        Return If(instance.Length <= slen + eidx, instance, sval)
+        Const slen As Integer = 30
+        Const eidx As Integer = 18
+        Dim sval = instance.Substring(0, slen) & "_" & instance.Substring(instance.Length - eidx)
+        Return If(instance.Length > slen + eidx, sval, instance)
 
     End Function
 
@@ -372,7 +374,7 @@ Module StringExtensions
 
     <Extension()>
     Function ContainsAny(instance As String, ParamArray any As String()) As Boolean
-        If instance <> "" Then
+        If instance <> "" AndAlso Not any.NothingOrEmpty Then
             Return any.Any(Function(arg) instance.Contains(arg))
         End If
     End Function
@@ -769,14 +771,12 @@ Module StringExtensions
     End Sub
 End Module
 
-Module NumericExtensions
+Module MiscExtensions
     <Extension()>
     Function ToInvariantString(value As Double, format As String) As String
         Return value.ToString(format, CultureInfo.InvariantCulture)
     End Function
-End Module
 
-Module MiscExtensions
     <Extension()>
     Function ToInvariantString(instance As IConvertible) As String
         If instance Is Nothing Then
@@ -784,6 +784,11 @@ Module MiscExtensions
         End If
 
         Return instance.ToString(CultureInfo.InvariantCulture)
+    End Function
+
+    <Extension()>
+    Function ToInvariantString(instance As Date, format As String) As String
+        Return instance.ToString(format, CultureInfo.InvariantCulture)
     End Function
 
     <Extension()>

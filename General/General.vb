@@ -8,7 +8,6 @@ Imports System.Text.RegularExpressions
 Imports System.Xml
 Imports System.Text
 Imports System.Security.Permissions
-Imports System.Security.Principal
 
 Imports StaxRip.UI
 Imports VB6 = Microsoft.VisualBasic
@@ -713,7 +712,7 @@ table {
             IsClosed = True
 
             Writer.WriteRaw("<p>&nbsp;</p>" + BR)
-            Writer.WriteRaw("<h5 align=""center"">Copyright &copy; 2002-" & DateTime.Now.Year & " StaxRip authors</h5><br>")
+            Writer.WriteRaw("<h5 align=""center"">Copyright (C) 2002-" & DateTime.Now.Year & " StaxRip authors</h5><br>")
             Writer.WriteEndElement() 'body
             Writer.WriteEndElement() 'html
             Writer.Close()

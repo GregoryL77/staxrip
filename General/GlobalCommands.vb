@@ -12,7 +12,7 @@ Imports StaxRip.UI
 Public Class GlobalCommands
     <Command("Checks if a update is available.")>
     Sub CheckForUpdate()
-        Update.CheckForUpdate(True, s.CheckForUpdatesBeta, Environment.Is64BitProcess)
+        StaxRipUpdate.CheckForUpdate(True, s.CheckForUpdatesBeta, Environment.Is64BitProcess)
     End Sub
 
     <Command("Shows the log file with the built-in log file viewer.")>
@@ -229,7 +229,7 @@ Public Class GlobalCommands
             File.WriteAllText(fs, BR + msg.Trim + BR)
             g.ShellExecute(fs)
         Else
-            MsgInfo("No issues found.")
+            MsgInfo("All Good!")
         End If
     End Sub
 
@@ -457,10 +457,10 @@ Public Class GlobalCommands
             dialog.Multiselect = True
 
             If dialog.ShowDialog = DialogResult.OK Then
-                Using f As New SimpleSettingsForm("Gif Options")
-                    f.ScaleClientSize(27, 18)
+                Using form As New SimpleSettingsForm("Gif Options")
+                    form.ScaleClientSize(27, 18)
 
-                    Dim ui = f.SimpleUI
+                    Dim ui = form.SimpleUI
                     Dim page = ui.CreateFlowPage("main page")
                     ui.Store = s
                     page.SuspendLayout()
@@ -534,7 +534,7 @@ Public Class GlobalCommands
 
                     page.ResumeLayout()
 
-                    If f.ShowDialog() = DialogResult.OK Then
+                    If form.ShowDialog() = DialogResult.OK Then
                         ui.Save()
 
                         For Each i In dialog.FileNames

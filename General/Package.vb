@@ -1,4 +1,5 @@
 
+Imports System.Text
 Imports System.Text.RegularExpressions
 
 Imports Microsoft.Win32
@@ -8,21 +9,24 @@ Public Class Package
 
     Property Description As String
     Property DownloadURL As String
-    Property Filename As String
+    Property Exclude As String()
+    Property Filename32 As String
+    Property Find As Boolean = True
     Property HelpFilename As String
     Property HelpSwitch As String
     Property HelpURL As String
     Property HelpUrlAviSynth As String
     Property HelpUrlVapourSynth As String
     Property HintDirFunc As Func(Of String)
-    Property IgnorePath As String
+    Property Include As String
     Property IsIncluded As Boolean = True
+    Property Keep As String()
     Property Location As String
     Property Locations As String()
     Property Name As String
     Property RequiredFunc As Func(Of Boolean)
-    Property Find As Boolean = True
     Property SetupAction As Action
+    Property Siblings As String()
     Property StatusFunc As Func(Of String)
     Property TreePath As String
     Property Version As String
@@ -50,7 +54,7 @@ Public Class Package
         .Location = "Support\D2V Witch",
         .RequiredFunc = Function() CommandLineDemuxer.IsActive("%app:D2V Witch%"),
         .LaunchAction = Sub()
-                            g.AddToPath(Package.d2vsource.Directory)
+                            g.AddToPath(Package.d2vsourceVS.Directory)
                             g.Execute(D2VWitch.Path)
                         End Sub})
 
@@ -61,7 +65,7 @@ Public Class Package
         .Description = "Shareware indexer and demuxer.",
         .IsIncluded = False,
         .HintDirFunc = Function() DGDecodeNV.GetStoredPath.Dir,
-        .RequiredFunc = Function() CommandLineDemuxer.IsActive("DGIndexNV"),
+        .RequiredFunc = Function() CommandLineDemuxer.IsActive("%app:DGIndexNV%"),
         .LaunchAction = Sub()
                             g.AddToPath(Package.DGIndexNV.Directory)
                             g.Execute(DGIndexNV.Path)
@@ -129,9 +133,12 @@ Public Class Package
     Shared Property qaac As Package = Add(New Package With {
         .Name = "qaac",
         .Filename = "qaac64.exe",
+        .Filename32 = "qaac.exe",
         .Location = "Audio\qaac",
         .WebURL = "http://github.com/nu774/qaac",
+        .DownloadURL = "https://github.com/nu774/qaac/releases",
         .HelpSwitch = "-h",
+        .Keep = {"QTfiles64", "libsndfile-1.dll", "libFLAC_dynamic.dll", "wavpackdll.dll"},
         .HelpURL = "https://github.com/nu774/qaac/wiki",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.qaac),
         .Description = "Console AAC encoder using the non-free Apple AAC encoder. " + Strings.Opus})
@@ -231,6 +238,7 @@ Public Class Package
         .HelpURL = "http://avisynth.nl",
         .DownloadURL = "https://github.com/AviSynth/AviSynthPlus/releases",
         .Description = "Video processing scripting library.",
+        .Exclude = {"_arm64", "_xp", ".exe"},
         .HintDirFunc = Function() Package.AviSynth.GetAviSynthHintDir,
         .RequiredFunc = Function() p.Script.Engine = ScriptEngine.AviSynth})
 
@@ -242,6 +250,7 @@ Public Class Package
         .HelpURL = "http://www.vapoursynth.com/doc",
         .DownloadURL = "https://github.com/vapoursynth/vapoursynth/releases",
         .HelpFilename = "doc\index.html",
+        .Siblings = {"vspipe"},
         .RequiredFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
         .HintDirFunc = Function() Package.VapourSynth.GetVapourSynthHintDir})
 
@@ -253,6 +262,7 @@ Public Class Package
         .HelpURL = "http://www.vapoursynth.com/doc/vspipe.html",
         .DownloadURL = "https://github.com/vapoursynth/vapoursynth/releases",
         .HelpSwitch = "stderr",
+        .Siblings = {"VapourSynth"},
         .RequiredFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
         .HintDirFunc = Function() Package.VapourSynth.GetVapourSynthHintDir})
 
@@ -263,7 +273,7 @@ Public Class Package
         .WebURL = "http://www.python.org",
         .HelpSwitch = "-h",
         .Description = "Scripting language used by VapourSynth.",
-        .IgnorePath = "\WindowsApps\",
+        .Exclude = {"\WindowsApps\"},
         .RequiredFunc = Function() p.Script.Engine = ScriptEngine.VapourSynth,
         .HintDirFunc = AddressOf GetPythonHintDir})
 
@@ -272,8 +282,17 @@ Public Class Package
         .Location = "Support\chapterEditor",
         .Filename = "chapterEditor.exe",
         .Description = "GUI app to edit chapters and menus for OGG, XML, TTXT, m.AVCHD, m.editions-mkv, Matroska Menu.",
+        .Exclude = {"-Linux", "CLI"},
         .WebURL = "https://forum.doom9.org/showthread.php?t=169984",
         .DownloadURL = "https://www.videohelp.com/software/chapterEditor"})
+
+    Shared Property SevenZip As Package = Add(New Package With {
+        .Name = "7zip",
+        .Location = "Support\7zip",
+        .Filename = "7za.exe",
+        .Description = "Packing console app.",
+        .WebURL = "https://www.7-zip.org",
+        .DownloadURL = "https://www.7-zip.org/download.html"})
 
     Shared Property xvid_encraw As Package = Add(New Package With {
         .Name = "xvid_encraw",
@@ -331,6 +350,7 @@ Public Class Package
         .Name = "AVSMeter",
         .Location = "Support\AVSMeter",
         .Filename = "AVSMeter64.exe",
+        .Filename32 = "AVSMeter.exe",
         .Description = "Console app that displays AviSynth script clip info.",
         .HelpFilename = "doc\AVSMeter.html",
         .WebURL = "http://forum.doom9.org/showthread.php?t=174797",
@@ -358,8 +378,10 @@ Public Class Package
         .Name = "Subtitle Edit",
         .Filename = "SubtitleEdit.exe",
         .Location = "Support\SubtitleEdit",
+        .Exclude = {"-Setup.zip", "FI.zip", "PL.zip"},
         .WebURL = "http://www.nikse.dk/SubtitleEdit",
         .HelpURL = "http://www.nikse.dk/SubtitleEdit/Help",
+        .DownloadURL = "https://github.com/SubtitleEdit/subtitleedit/releases",
         .Description = "Subtitle editor GUI app."})
 
     Shared Property mpvnet As Package = Add(New Package With {
@@ -372,6 +394,7 @@ Public Class Package
     Shared Property MpcBE As Package = Add(New Package With {
         .Name = "MPC-BE",
         .Filename = "mpc-be64.exe",
+        .Filename32 = "mpc-be.exe",
         .IsIncluded = False,
         .VersionAllowAny = True,
         .Required = False,
@@ -382,6 +405,7 @@ Public Class Package
     Shared Property MpcHC As Package = Add(New Package With {
         .Name = "MPC-HC",
         .Filename = "mpc-hc64.exe",
+        .Filename32 = "mpc-hc.exe",
         .IsIncluded = False,
         .VersionAllowAny = True,
         .Required = False,
@@ -483,6 +507,7 @@ Public Class Package
     Shared Property avs2pipemod As Package = Add(New Package With {
         .Name = "avs2pipemod",
         .Filename = "avs2pipemod64.exe",
+        .Filename32 = "avs2pipemod.exe",
         .Location = "Support\avs2pipemod",
         .WebURL = "http://github.com/chikuzen/avs2pipemod",
         .DownloadURL = "https://github.com/chikuzen/avs2pipemod/releases",
@@ -550,6 +575,8 @@ Public Class Package
         .HelpURL = "https://mkvtoolnix.download/docs.html",
         .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
         .HelpSwitch = "",
+        .Siblings = {"mkvextract", "mkvinfo", "MKVToolnix GUI"},
+        .Exclude = {"-setup"},
         .Description = "MKV muxing tool."})
 
     Shared Property mkvextract As Package = Add(New Package With {
@@ -560,6 +587,8 @@ Public Class Package
         .HelpURL = "https://mkvtoolnix.download/docs.html",
         .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
         .HelpSwitch = "",
+        .Exclude = {"-setup"},
+        .Siblings = {"mkvinfo", "MKVToolnix GUI", "mkvmerge"},
         .Description = "MKV demuxing tool."})
 
     Shared Property mkvinfo As Package = Add(New Package With {
@@ -570,7 +599,20 @@ Public Class Package
         .HelpURL = "https://mkvtoolnix.download/docs.html",
         .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
         .HelpSwitch = "",
+        .Exclude = {"-setup"},
+        .Siblings = {"mkvextract", "MKVToolnix GUI", "mkvmerge"},
         .Description = "MKV info tool."})
+
+    Shared Property MKVToolnixGUI As Package = Add(New Package With {
+        .Name = "MKVToolnix GUI",
+        .Filename = "mkvtoolnix-gui.exe",
+        .Location = "Support\MKVToolNix",
+        .Siblings = {"mkvextract", "mkvinfo", "mkvmerge"},
+        .Exclude = {"-setup"},
+        .WebURL = "https://mkvtoolnix.download/",
+        .HelpURL = "https://mkvtoolnix.download/docs.html",
+        .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
+        .Description = "MKV muxing/demuxing GUI app."})
 
     Shared Property AutoCrop As Package = Add(New Package With {
         .Name = "AutoCrop",
@@ -591,6 +633,7 @@ Public Class Package
     Shared Property NVEnc As Package = Add(New Package With {
         .Name = "NVEnc",
         .Filename = "NVEncC64.exe",
+        .Filename32 = "NVEncC.exe",
         .Location = "Encoders\NVEnc",
         .HelpSwitch = "-h",
         .WebURL = "http://github.com/rigaya/NVEnc",
@@ -602,6 +645,7 @@ Public Class Package
     Shared Property QSVEnc As Package = Add(New Package With {
         .Name = "QSVEnc",
         .Filename = "QSVEncC64.exe",
+        .Filename32 = "QSVEncC.exe",
         .Location = "Encoders\QSVEnc",
         .Description = "Intel hardware video encoder.",
         .HelpFilename = "QSVEnc Help.txt",
@@ -613,9 +657,9 @@ Public Class Package
     Shared Property VCEEnc As Package = Add(New Package With {
         .Name = "VCEEnc",
         .Filename = "VCEEncC64.exe",
+        .Filename32 = "VCEEncC.exe",
         .Location = "Encoders\VCEEnc",
         .Description = "AMD hardware video encoder.",
-        .HelpFilename = "VCEEnc Help.txt",
         .HelpSwitch = "-h",
         .WebURL = "http://github.com/rigaya/VCEEnc",
         .DownloadURL = "https://github.com/rigaya/VCEEnc/releases"})
@@ -849,16 +893,16 @@ Public Class Package
         .AvsFilterNames = {"FFT3DGPU"},
         .AvsFiltersFunc = Function() {New VideoFilter("Noise", "FFT3DFilter | FFT3DGPU", "FFT3DGPU(sigma=1.5, bt=5, bw=32, bh=32, ow=16, oh=16, sharpen=0.4, NVPerf=$select:msg:Enable Nvidia Function;True;False$)")}})
 
-    Shared Property MPEG2DecPlus As Package = Add(New PluginPackage With {
-        .Name = "MPEG2DecPlus",
-        .Filename = "MPEG2DecPlus64.dll",
+    Shared Property D2VSourceAVS As Package = Add(New PluginPackage With {
+        .Name = "D2VSource",
+        .Filename = "D2VSource.dll",
         .WebURL = "https://github.com/Asd-g/MPEG2DecPlus",
         .DownloadURL = "https://github.com/Asd-g/MPEG2DecPlus/releases",
         .Description = "Source filter to open D2V index files created with DGIndex or D2V Witch.",
-        .AvsFilterNames = {"MPEG2Source"},
-        .AvsFiltersFunc = Function() {New VideoFilter("Source", "MPEG2Source", "MPEG2Source(""%source_file%"")")}})
+        .AvsFilterNames = {"D2VSource"},
+        .AvsFiltersFunc = Function() {New VideoFilter("Source", "D2VSource", "D2VSource(""%source_file%"")")}})
 
-    Shared Property d2vsource As Package = Add(New PluginPackage With {
+    Shared Property d2vsourceVS As Package = Add(New PluginPackage With {
         .Name = "d2vsource",
         .Filename = "d2vsource.dll",
         .Description = "Source filter to open D2V index files created with DGIndex or D2V Witch.",
@@ -1298,8 +1342,9 @@ Public Class Package
         Add(New PluginPackage With {
             .Name = "AddGrainC",
             .Filename = "AddGrainC.dll",
-            .HelpFilename = "Readme.txt",
-            .WebURL = "http://avisynth.nl/index.php/AddGrainC",
+            .WebURL = "https://github.com/pinterf/AddGrainC",
+            .HelpURL = "https://raw.githubusercontent.com/pinterf/AddGrainC/master/Documentation/AddGrainC.txt",
+            .DownloadURL = "https://github.com/pinterf/AddGrainC/releases",
             .Description = "Generate film-like grain or other effects (like rain) by adding random noise to a video clip.",
             .AvsFilterNames = {"AddGrainC", "AddGrain"}})
 
@@ -1780,7 +1825,7 @@ Public Class Package
             .WebURL = "https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TTempSmooth",
             .VSFilterNames = {"ttmpsm.TTempSmooth"},
             .VSFiltersFunc = Function() {New VideoFilter("Noise", "TTempSmooth", "clip =  core.ttmpsm.TTempSmooth(clip, maxr=3)")}})
-        'TTempSmooth for Vapoursynth
+        'TTempSmooth for Avisynth
         Add(New PluginPackage With {
             .Name = "TTempSmooth",
             .Filename = "TTempSmooth.dll",
@@ -1863,28 +1908,16 @@ Public Class Package
             .TreePath = "Runtimes",
             .RequiredFunc = Function() AviSynthShader.Required OrElse FFT3DGPU.Required})
 
-        Try
-            Dim versionFile = Folder.Apps + "Versions.txt"
-
-            For Each line In File.ReadAllLines(versionFile)
-                For Each pack In Items.Values
-                    If line Like "*=*;*" Then
-                        Dim name = line.Left("=").Trim
-
-                        If name = pack.ID Then
-                            pack.Version = line.Right("=").Right(";").Trim
-                            Dim dateArray = line.Right("=").Left(";").Trim.Split("-"c)
-                            pack.VersionDate = New DateTime(CInt(dateArray(0)), CInt(dateArray(1)), CInt(dateArray(2)))
-                        End If
-                    End If
-                Next
-            Next
-        Catch ex As Exception
-            MsgError("You are running a StaxRip version that don't has any apps included!" + BR2 +
-                     "Please download and use a StaxRip version that has all required apps included." + BR2 +
-                     "The Apps are expected to be located in a directory called 'Apps' in the startup folder besides the StaxRip executable.")
-        End Try
+        g.RunTask(Sub()
+                      SyncLock ConfLock
+                          For Each pack In Items.Values
+                              pack.LoadConf()
+                          Next
+                      End SyncLock
+                  End Sub)
     End Sub
+
+    Shared Property ConfLock As New Object
 
     Shared Function Add(pack As Package) As Package
         Items(pack.ID) = pack
@@ -1909,6 +1942,21 @@ Public Class Package
 
             Return Name
         End Get
+    End Property
+
+    Private FilenameValue As String
+
+    Property Filename As String
+        Get
+            If g.Is32Bit AndAlso Filename32 <> "" Then
+                Return Filename32
+            End If
+
+            Return FilenameValue
+        End Get
+        Set(value As String)
+            FilenameValue = value
+        End Set
     End Property
 
     Private LaunchActionValue As Action
@@ -1975,6 +2023,22 @@ Public Class Package
             Return "Misc"
         End If
     End Function
+
+    Sub SetVersion(versionName As String)
+        SetVersionInternal(versionName)
+
+        If Not Siblings.NothingOrEmpty Then
+            For Each i In Siblings
+                Items(i).SetVersionInternal(versionName)
+            Next
+        End If
+    End Sub
+
+    Sub SetVersionInternal(versionName As String)
+        Version = versionName
+        VersionDate = File.GetLastWriteTimeUtc(Path)
+        SaveConf()
+    End Sub
 
     Sub ShowHelp()
         Dim dic As New SortedDictionary(Of String, String)
@@ -2262,7 +2326,7 @@ Public Class Package
                 Next
             Next
 
-            exePath = FindEverywhere("python.exe", Python.IgnorePath)
+            exePath = FindEverywhere("python.exe", Python.Exclude(0))
 
             If exePath <> "" Then
                 Return exePath.Dir
@@ -2331,7 +2395,11 @@ Public Class Package
             End If
 
             If Find Then
-                ret = FindEverywhere(Filename, IgnorePath)
+                If Exclude.NothingOrEmpty Then
+                    ret = FindEverywhere(Filename)
+                Else
+                    ret = FindEverywhere(Filename, Exclude(0))
+                End If
 
                 If ret <> "" Then
                     Return ret
@@ -2351,14 +2419,6 @@ Public Class Package
 
         If File.Exists(dir.FixDir + Filename) Then
             Return dir.FixDir + Filename
-        End If
-
-        If g.Is32Bit AndAlso Filename.Contains("64.exe") Then
-            Dim fp = dir.FixDir + Filename.Replace("64.exe", ".exe")
-
-            If File.Exists(fp) Then
-                Return fp
-            End If
         End If
     End Function
 
@@ -2477,6 +2537,78 @@ Public Class Package
     Function CompareTo(other As Package) As Integer Implements System.IComparable(Of Package).CompareTo
         Return Name.CompareTo(other.Name)
     End Function
+
+    ReadOnly Property ConfPath As String
+        Get
+            Return Folder.Apps + "Conf\" + ID + ".conf"
+        End Get
+    End Property
+
+    Function GetConf() As String
+        Return FileHelp.ReadAllText(ConfPath)
+    End Function
+
+    Sub LoadConf()
+        For Each line In GetConf.SplitLinesNoEmpty
+            If Not line.Contains("=") Then
+                Continue For
+            End If
+
+            Dim name = line.Left("=").Trim
+            Dim value = line.Right("=").Trim
+
+            Select Case name
+                Case "Version"
+                    Version = value
+                Case "Ignore", "Exclude"
+                    Exclude = value.Split(";"c)
+                Case "Date"
+                    SetVersionDate(value)
+                Case "Include"
+                    Include = value
+                Case "Keep"
+                    Keep = value.Split(";"c)
+                Case "WebURL"
+                    WebURL = value
+                Case "DownloadURL"
+                    DownloadURL = value
+                Case "HelpURL"
+                    HelpURL = value
+                Case "HelpUrlAviSynth"
+                    HelpUrlAviSynth = value
+                Case "HelpUrlVapourSynth"
+                    HelpUrlVapourSynth = value
+            End Select
+        Next
+    End Sub
+
+    Sub SaveConf()
+        Dim sb As New StringBuilder
+
+        sb.Append("Version = " + Version + BR +
+                  "Date = " + VersionDate.ToInvariantString("yyyy-MM-dd"))
+
+        If Not Exclude.NothingOrEmpty Then sb.Append(BR + "Exclude = " + Exclude.Join(";"))
+        If Include <> "" Then sb.Append(BR + "Include = " + Include)
+        If Not Keep.NothingOrEmpty Then sb.Append(BR + "Keep = " + Keep.Join(";"))
+
+        If WebURL <> "" Then sb.Append(BR + "WebURL = " + WebURL)
+        If DownloadURL <> "" Then sb.Append(BR + "DownloadURL = " + DownloadURL)
+        If HelpURL <> "" Then sb.Append(BR + "HelpURL = " + HelpURL)
+        If HelpUrlAviSynth <> "" Then sb.Append(BR + "HelpUrlAviSynth = " + HelpUrlAviSynth)
+        If HelpUrlVapourSynth <> "" Then sb.Append(BR + "HelpUrlVapourSynth = " + HelpUrlVapourSynth)
+
+        sb.ToString.WriteFileUTF8BOM(ConfPath)
+    End Sub
+
+    Sub SetVersionDate(value As String)
+        Try
+            Dim tokens = value.Split("-"c)
+            VersionDate = New DateTime(CInt(tokens(0)), CInt(tokens(1)), CInt(tokens(2)))
+        Catch ex As Exception
+            g.ShowException(ex)
+        End Try
+    End Sub
 End Class
 
 Public Class PluginPackage

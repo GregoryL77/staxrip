@@ -973,7 +973,7 @@ Public Class AudioForm
         Else
             numQuality.Minimum = 0
             numQuality.Maximum = Integer.MaxValue
-            numQuality.Increment = 0.1
+            numQuality.Increment = 0.01
             numQuality.DecimalPlaces = 2
         End If
 
@@ -1167,7 +1167,7 @@ Public Class AudioForm
                                 TempProfile.Params.RateMode = If(TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR, AudioRateMode.VBR, AudioRateMode.CBR)
                             End Sub
 
-                        Dim mbOpusApp = ui.AddMenu(Of OpusApp) 'Is this really needed? Can do more harm
+                        Dim mbOpusApp = ui.AddMenu(Of OpusApp)
                         mbOpusApp.Text = "Application Type"
                         mbOpusApp.Expandet = True
                         mbOpusApp.Button.Value = TempProfile.Params.ffmpegOpusApp
@@ -1387,7 +1387,7 @@ Public Class AudioForm
                                                                If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
                                                            End Sub
 
-                'AFAIK this is intended only for wav/ALAC out and depth (-b) param - no effect in Staxrip: 
+                'AFAIK dither is intended only for wav/ALAC out and depth (-b) param - no effect in Staxrip: 
                 'limiter is quite usefull btw
                 cb = ui.AddBool(page)
                 cb.Text = "Smart Soft Limiter"

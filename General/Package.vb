@@ -115,7 +115,7 @@ Public Class Package
         .HelpURL = "http://www.ffmpeg.org/documentation.html",
         .DownloadURL = "https://www.mediafire.com/folder/vkt2ckzjvt0qf/StaxRip_Tools",
         .HelpSwitch = "-h",
-        .Description = "Versatile and free audio video convertor console app. " + Strings.Opus})
+        .Description = "Versatile and free audio video convertor console app."})
 
     Shared Property ffmpeg_non_free As Package = Add(New Package With {
         .Name = "ffmpeg non-free",
@@ -127,7 +127,7 @@ Public Class Package
         .VersionAllowAny = True,
         .Find = False,
         .Description = "Versatile audio video convertor console app. " +
-                       "Custom build with non-free libraries like fdk-aac. " + Strings.Opus,
+                       "Custom build with non-free libraries like fdk-aac.",
         .RequiredFunc = Function() Audio.CommandContains("libfdk_aac")})
 
     Shared Property qaac As Package = Add(New Package With {
@@ -141,7 +141,7 @@ Public Class Package
         .Keep = {"QTfiles64", "libsndfile-1.dll", "libFLAC_dynamic.dll", "wavpackdll.dll"},
         .HelpURL = "https://github.com/nu774/qaac/wiki",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.qaac),
-        .Description = "Console AAC encoder using the non-free Apple AAC encoder. " + Strings.Opus})
+        .Description = "Console AAC encoder using the non-free Apple AAC encoder."})
 
     Shared Property fdkaac As Package = Add(New Package With {
         .Name = "fdkaac",
@@ -150,7 +150,7 @@ Public Class Package
         .HelpSwitch = "-h",
         .IsIncluded = False,
         .VersionAllowAny = True,
-        .Description = "Non-free AAC console encoder using libfdk-aac. " + Strings.Opus,
+        .Description = "Non-free AAC console encoder using libfdk-aac.",
         .WebURL = "http://github.com/nu774/fdkaac",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.fdkaac)})
 
@@ -161,7 +161,7 @@ Public Class Package
         .WebURL = "http://forum.doom9.org/showthread.php?t=125966",
         .HelpURL = "http://en.wikibooks.org/wiki/Eac3to/How_to_Use",
         .HelpSwitch = "",
-        .Description = "Audio convertor console app. " + Strings.Opus})
+        .Description = "Audio convertor console app."})
 
     Shared Property NeroAAC As Package = Add(New Package With {
         .Name = "NeroAAC",
@@ -170,7 +170,7 @@ Public Class Package
         .IsIncluded = False,
         .VersionAllowAny = True,
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.eac3to) AndAlso Audio.CommandContains("m4a"),
-        .Description = "Non-free AAC audio convertor console app. " + Strings.Opus})
+        .Description = "Non-free AAC audio convertor console app."})
 
     Shared Property WavPack As Package = Add(New Package With {
         .Name = "WavPack",
@@ -187,7 +187,7 @@ Public Class Package
     Shared Property OpusEnc As Package = Add(New Package With {
         .Name = "OpusEnc",
         .Filename = "opusenc.exe",
-        .Description = "OpusEnc part of Opus-Tools. Reference CLI encoder for LibOpus." + Strings.Opus,
+        .Description = "OpusEnc part of Opus-Tools. Reference CLI encoder for LibOpus.",
         .WebURL = "https://opus-codec.org/",
         .DownloadURL = "https://opus-codec.org/development/",
         .HelpURL = "https://wiki.xiph.org/Opus_Recommended_Settings",
@@ -292,6 +292,7 @@ Public Class Package
         .Filename = "7za.exe",
         .Description = "Packing console app.",
         .WebURL = "https://www.7-zip.org",
+        .HelpSwitch = "",
         .DownloadURL = "https://www.7-zip.org/download.html"})
 
     Shared Property xvid_encraw As Package = Add(New Package With {
@@ -512,7 +513,7 @@ Public Class Package
         .WebURL = "http://github.com/chikuzen/avs2pipemod",
         .DownloadURL = "https://github.com/chikuzen/avs2pipemod/releases",
         .HelpSwitch = "stderr",
-        .Description = "Given an AviSynth script as input, avs2pipemod can send video, audio, or information of various types to stdout for consumption by command line encoders or other tools."})
+        .Description = "Console app given an AviSynth script as input, avs2pipemod can send video, audio, or information of various types to stdout for consumption by command line encoders or other tools."})
 
     Shared Property x264 As Package = Add(New Package With {
         .Name = "x264",

@@ -676,6 +676,7 @@ Public Class AudioForm
 #End Region
 
     Private Profile, TempProfile As GUIAudioProfile
+    Private numFFLFEMixLevel As SimpleUI.NumBlock
 
     Sub New()
         MyBase.New()
@@ -1049,8 +1050,6 @@ Public Class AudioForm
         numBitrate.Value = v
     End Sub
 
-    Private numFFLFEMixLevel As SimpleUI.NumBlock
-
     Sub LoadAdvanced()
         RemoveHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
 
@@ -1098,7 +1097,6 @@ Public Class AudioForm
         End If
 
         Dim cb As SimpleUI.SimpleUICheckBox
-
         Dim cbCreateCorrectionWVC As SimpleUI.SimpleUICheckBox
 
         Select Case TempProfile.GetEncoder

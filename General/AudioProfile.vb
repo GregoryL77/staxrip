@@ -149,6 +149,7 @@ Public MustInherit Class AudioProfile
     ReadOnly Property ConvertExt As String
         Get
             Dim ret As String
+            Dim GAP As GUIAudioProfile
 
             Select Case DecodingMode
                 Case AudioDecodingMode.WAVE
@@ -178,7 +179,7 @@ Public MustInherit Class AudioProfile
             End If
 
             'To Do: Check this VW to save temp size for cuts,  -> only AndAlso p.Ranges.Count > 0, decoder, eac3to ???
-            If DecodingMode = AudioDecodingMode.Pipe Then
+            If DecodingMode = AudioDecodingMode.Pipe AndAlso Not GAP.GetEncoder() = GuiAudioEncoder.eac3to AndAlso {AudioDecoderMode.ffmpeg, AudioDecoderMode.Automatic}.Contains(GAP.Decoder) Then
                 ret = "wv"
             End If
 
@@ -296,15 +297,16 @@ Public MustInherit Class AudioProfile
 
         If p.TempDir.EndsWithEx("_temp\") AndAlso File.Base.StartsWithEx(p.SourceFile.Base) Then
             base = File.Base.Substring(p.SourceFile.Base.Length).Trim
+
+            'To Do: empty pipe streams temp files
+            If base = "" Then ShortBegEnd(File.Base)
         Else
             base = File.Base
         End If
 
-        'If base = "" Then
-        'base = "temp"
-        'End If
-        'To Do: empty pipe streams temp files
-        If base = "" Then ShortBegEnd(Base)
+        If base = "" Then
+            base = "temp"
+        End If
 
         If Delay <> 0 Then
             If HandlesDelay() Then
@@ -801,7 +803,7 @@ Public Class GUIAudioProfile
                     'proc.SkipStrings = {"done."}
                 ElseIf cl.Contains("opusenc") Then
                     proc.Package = Package.OpusEnc
-                    'proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
+                    proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
 
                 End If
 

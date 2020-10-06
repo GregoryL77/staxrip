@@ -168,8 +168,8 @@ Public Class ToolUpdate
         Dim list = String.Join(BR, names)
         UpdatePackageDialog()
 
-        If MsgQuestion("Copy New Files?",
-            "Copy files from:" + BR2 + ExtractDir + BR2 + "to:" + BR2 +
+        If MsgQuestion("Copy new files?",
+            "Copy new files from:" + BR2 + ExtractDir + BR2 + "to:" + BR2 +
             TargetDir + BR2 + list) = DialogResult.OK Then
 
             For Each file In Directory.GetFiles(ExtractDir)
@@ -194,9 +194,11 @@ Public Class ToolUpdate
         Dim value As String
         Dim base = DownloadFile.Base
 
-        If base.Contains("_x64") Then
-            base = base.Replace("_x64", "")
-        End If
+        For Each i In {"_x64", "_x86", "-64-bit-", "-32-bit-"}
+            If base.Contains(i) Then
+                base = base.Replace(i, "")
+            End If
+        Next
 
         For Each i In base
             If "0123456789.-_".Contains(i) Then
@@ -208,11 +210,7 @@ Public Class ToolUpdate
         Dim input = InputBox.Show(msg, "StaxRip", value)
 
         If input <> "" Then
-            input = input.Replace(";", "_")
-
-            Package.Version = input
-            Package.VersionDate = File.GetLastWriteTimeUtc(Package.Path)
-            Package.SaveConf()
+            Package.SetVersion(input.Replace(";", "_"))
             UpdatePackageDialog()
             g.DefaultCommands.TestAndDynamicFileCreation()
         End If
@@ -223,7 +221,7 @@ Public Class ToolUpdate
             Return True
         End If
 
-        Dim x86 = {"_Win32", "\x86", "-x86"}
+        Dim x86 = {"_Win32", "\x86", "-x86", "32-bit"}
 
         If g.Is64Bit AndAlso value.ContainsAny(x86) Then
             Return True

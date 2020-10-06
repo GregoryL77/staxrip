@@ -122,7 +122,7 @@ Public Class NVEnc
         tester.IgnoredSwitches = "help version check-device input-analyze input-format output-format
             video-streamid video-track vpp-delogo vpp-delogo-cb vpp-delogo-cr vpp-delogo-depth output
             vpp-delogo-pos vpp-delogo-select vpp-delogo-y check-avversion check-codecs caption2ass log
-            check-encoders check-decoders check-formats check-protocols log-framelist vpp-colorspace fps
+            check-encoders check-decoders check-formats check-protocols log-framelist fps
             check-filters input raw avs vpy vpy-mt key-on-chapter audio-delay audio-ignore-decode-error
             avcuvid-analyze audio-source audio-file seek format audio-copy audio-ignore-notrack-error
             audio-copy audio-codec vpp-perf-monitor avi audio-profile check-profiles avsync mux-option
@@ -719,8 +719,39 @@ Public Class NVEnc
                 For Each i In {AfsShift, AfsDrop, AfsSmooth, Afs24fps, AfsTune, AfsRFF, AfsTimecode, AfsLog}
                     i.CheckBox.Enabled = Afs.Value
                 Next
-            End If
 
+                For Each i In {ColorSpaceMatrixIn,
+                        ColorSpaceMatrixOut,
+                        ColorSpaceColorPrimIn,
+                        ColorSpaceColorPrimOut,
+                        ColorSpaceTransferIn,
+                        ColorSpaceTransferOut,
+                        ColorSpaceRangeIn,
+                        ColorSpaceRangeOut,
+                        ColorSpaceHDR2SDR}
+                    i.MenuButton.Enabled = ColorSpace.Value
+                Next
+
+                For Each i In {ColorSpaceSourcePeak,
+                        ColorSpaceLDRNits,
+                        ColorSpaceHDRpA,
+                        ColorSpaceHDRpB,
+                        ColorSpaceHDRpC,
+                        ColorSpaceHDRpD,
+                        ColorSpaceHDRpE,
+                        ColorSpaceHDRpF,
+                        ColorSpaceHDRTransition,
+                        ColorSpaceHDRContrast,
+                        ColorSpaceHDRPeak}
+                    i.NumEdit.Enabled = ColorSpace.Value
+                Next
+
+                ColorSpaceMatrixOut.MenuButton.Enabled = ColorSpaceMatrixIn.Value <> ColorSpaceMatrixIn.DefaultValue AndAlso ColorSpace.Value
+                ColorSpaceColorPrimOut.MenuButton.Enabled = ColorSpaceColorPrimIn.Value <> ColorSpaceColorPrimIn.DefaultValue AndAlso ColorSpace.Value
+                ColorSpaceTransferOut.MenuButton.Enabled = ColorSpaceTransferIn.Value <> ColorSpaceTransferIn.DefaultValue AndAlso ColorSpace.Value
+                ColorSpaceRangeOut.MenuButton.Enabled = ColorSpaceRangeIn.Value <> ColorSpaceRangeIn.DefaultValue AndAlso ColorSpace.Value
+
+            End If
             MyBase.OnValueChanged(item)
         End Sub
 
@@ -794,11 +825,13 @@ Public Class NVEnc
                             If ColorSpaceHDRTransition.Value <> ColorSpaceHDRTransition.DefaultValue Then
                                 ret += ",transition=" & ColorSpaceHDRTransition.Value.ToInvariantString
                             End If
+                            If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
+                                ret += ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
+                            End If
                         Case = "reinhard"
                             If ColorSpaceHDRContrast.Value <> ColorSpaceHDRContrast.DefaultValue Then
                                 ret += ",contrast=" & ColorSpaceHDRContrast.Value.ToInvariantString
                             End If
-                        Case = "reinhard", "mobius"
                             If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
                                 ret += ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
                             End If
@@ -1234,7 +1267,7 @@ Public Class NVEnc
                 Case "avs"
                     sourcePath = p.Script.Path
 
-                    'Vapoursynth fix
+                    'Vapoursynth fix, avisynth is not my thing BTW
                     If includePaths AndAlso FrameServerHelp.IsAviSynthPortableUsed AndAlso p.Script.Engine = ScriptEngine.AviSynth Then
                         ret += " --avsdll " + Package.AviSynth.Path.Escape
                     End If

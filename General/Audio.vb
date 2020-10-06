@@ -81,12 +81,16 @@ Public Class Audio
 
         If p.TempDir.EndsWithEx("_temp\") AndAlso path.Base.StartsWithEx(p.SourceFile.Base) Then
             base = path.Base.Substring(p.SourceFile.Base.Length)
+
+            'To Do: empty pipe streams temp files
+            If base = "" Then ShortBegEnd(path.Base)
         Else
             base = path.Base
         End If
 
-        'To Do: empty pipe streams temp files
-        If base = "" Then ShortBegEnd(base)
+        If base = "" Then
+            base = "temp"
+        End If
 
         Dim ret = base + " ID" & (stream.Index + 1)
 

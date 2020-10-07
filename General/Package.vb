@@ -175,7 +175,7 @@ Public Class Package
     Shared Property WavPack As Package = Add(New Package With {
         .Name = "WavPack",
         .Filename = "wavpack.exe",
-        .Description = "WavPack is a completely free and open source audio compression format providing lossless, high-quality lossy, and a unique hybrid compression mode. Also supports floating point and DSD audio data",
+        .Description = "WavPack is a completely free and open audio compression format providing lossless, high-quality lossy, and a unique hybrid compression mode. Also supports floating point and DSD audio data",
         .WebURL = "http://www.wavpack.com/index.html",
         .DownloadURL = "http://www.wavpack.com/downloads.html",
         .HelpURL = "http://www.wavpack.com/wavpack_doc.html",
@@ -574,7 +574,7 @@ Public Class Package
         .Location = "Support\MKVToolNix",
         .WebURL = "https://mkvtoolnix.download/",
         .HelpURL = "https://mkvtoolnix.download/docs.html",
-        .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
+        .DownloadURL = "https://www.videohelp.com/software/MKVToolNix",
         .HelpSwitch = "",
         .Siblings = {"mkvextract", "mkvinfo", "MKVToolnix GUI"},
         .Exclude = {"-setup"},
@@ -586,7 +586,7 @@ Public Class Package
         .Location = "Support\MKVToolNix",
         .WebURL = "https://mkvtoolnix.download/",
         .HelpURL = "https://mkvtoolnix.download/docs.html",
-        .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
+        .DownloadURL = "https://www.videohelp.com/software/MKVToolNix",
         .HelpSwitch = "",
         .Exclude = {"-setup"},
         .Siblings = {"mkvinfo", "MKVToolnix GUI", "mkvmerge"},
@@ -598,7 +598,7 @@ Public Class Package
         .Location = "Support\MKVToolNix",
         .WebURL = "https://mkvtoolnix.download/",
         .HelpURL = "https://mkvtoolnix.download/docs.html",
-        .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
+        .DownloadURL = "https://www.videohelp.com/software/MKVToolNix",
         .HelpSwitch = "",
         .Exclude = {"-setup"},
         .Siblings = {"mkvextract", "MKVToolnix GUI", "mkvmerge"},
@@ -612,7 +612,7 @@ Public Class Package
         .Exclude = {"-setup"},
         .WebURL = "https://mkvtoolnix.download/",
         .HelpURL = "https://mkvtoolnix.download/docs.html",
-        .DownloadURL = "https://www.fosshub.com/MKVToolNix.html",
+        .DownloadURL = "https://www.videohelp.com/software/MKVToolNix",
         .Description = "MKV muxing/demuxing GUI app."})
 
     Shared Property AutoCrop As Package = Add(New Package With {
@@ -1348,7 +1348,8 @@ Public Class Package
             .HelpURL = "https://raw.githubusercontent.com/pinterf/AddGrainC/master/Documentation/AddGrainC.txt",
             .DownloadURL = "https://github.com/pinterf/AddGrainC/releases",
             .Description = "Generate film-like grain or other effects (like rain) by adding random noise to a video clip.",
-            .AvsFilterNames = {"AddGrainC", "AddGrain"}})
+            .AvsFilterNames = {"AddGrainC", "AddGrain"},
+            .AvsFiltersFunc = Function() {New VideoFilter("Noise", "AddGrainC", "AddGrainC(var=1.0, uvar=0.0, hcorr=0.0, vcorr=0.0, seed=6, constant=false, sse2=true)")}})
 
         Add(New PluginPackage With {
             .Name = "YFRC",
@@ -2562,44 +2563,16 @@ Public Class Package
             Select Case name
                 Case "Version"
                     Version = value
-                Case "Ignore", "Exclude"
-                    Exclude = value.Split(";"c)
                 Case "Date"
                     SetVersionDate(value)
-                Case "Include"
-                    Include = value
-                Case "Keep"
-                    Keep = value.Split(";"c)
-                Case "WebURL"
-                    WebURL = value
-                Case "DownloadURL"
-                    DownloadURL = value
-                Case "HelpURL"
-                    HelpURL = value
-                Case "HelpUrlAviSynth"
-                    HelpUrlAviSynth = value
-                Case "HelpUrlVapourSynth"
-                    HelpUrlVapourSynth = value
             End Select
         Next
     End Sub
 
     Sub SaveConf()
         Dim sb As New StringBuilder
-
         sb.Append("Version = " + Version + BR +
                   "Date = " + VersionDate.ToInvariantString("yyyy-MM-dd"))
-
-        If Not Exclude.NothingOrEmpty Then sb.Append(BR + "Exclude = " + Exclude.Join(";"))
-        If Include <> "" Then sb.Append(BR + "Include = " + Include)
-        If Not Keep.NothingOrEmpty Then sb.Append(BR + "Keep = " + Keep.Join(";"))
-
-        If WebURL <> "" Then sb.Append(BR + "WebURL = " + WebURL)
-        If DownloadURL <> "" Then sb.Append(BR + "DownloadURL = " + DownloadURL)
-        If HelpURL <> "" Then sb.Append(BR + "HelpURL = " + HelpURL)
-        If HelpUrlAviSynth <> "" Then sb.Append(BR + "HelpUrlAviSynth = " + HelpUrlAviSynth)
-        If HelpUrlVapourSynth <> "" Then sb.Append(BR + "HelpUrlVapourSynth = " + HelpUrlVapourSynth)
-
         sb.ToString.WriteFileUTF8BOM(ConfPath)
     End Sub
 

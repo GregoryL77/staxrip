@@ -927,6 +927,11 @@ Public Class AppsForm
     End Sub
 
     Sub miAutoUpdate_Click(sender As Object, e As EventArgs) Handles miAutoUpdate.Click
+        If CurrentPackage.DownloadURL.ContainsEx("mediafire") Then
+            MsgError("The auto update feature does currently not support MediaFire.")
+            Exit Sub
+        End If
+
         ToolUpdate = New ToolUpdate(CurrentPackage, Me)
         ToolUpdate.Update()
     End Sub

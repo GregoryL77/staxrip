@@ -127,7 +127,7 @@ Public Class ProcController
                 Exit Sub
             End If
         ElseIf Proc.Duration <> TimeSpan.Zero AndAlso value.Contains(" time=") Then
-            Dim tokens = value.Right(" time=").Left(" ").Split(":"c)
+            Dim tokens = value.Right(" time=").Left(".").Split(":"c) 'ff sec. progress fix
 
             If tokens.Length = 3 Then
                 Dim ts As New TimeSpan(tokens(0).ToInt, tokens(1).ToInt, tokens(2).ToInt)
@@ -143,6 +143,33 @@ Public Class ProcController
 
                 Exit Sub
             End If
+
+            'Opus Enc, QAAC StdIn mode
+        ElseIf Proc.Duration <> TimeSpan.Zero AndAlso (value.Contains("x realtime,") OrElse (value.Contains("x)") AndAlso Not value.Contains(", ETA"))) Then
+            Dim tokens As String()
+            If value.Contains("x realtime,") Then
+                tokens = value.Right("] ").Left(".").Split(":"c)
+            ElseIf value.Contains("x)") Then
+                tokens = value.Left(".").TrimEnd.Split(":"c)
+            End If
+
+            Select Case tokens.Length
+                Case 3, 2
+                    Dim ts = If(tokens.Length = 3,
+                        New TimeSpan(tokens(0).ToInt, tokens(1).ToInt, tokens(2).ToInt),
+                        New TimeSpan(0, tokens(0).ToInt, tokens(1).ToInt))
+                    Dim val = 100 / Proc.Duration.TotalSeconds * ts.TotalSeconds
+
+                    If LastProgress <> val Then
+                        ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
+                        ProcForm.Taskbar?.SetValue(Math.Max(val, 1), 100)
+                        ProcForm.NotifyIcon.Text = val & "%"
+                        ProgressBar.Value = val
+                        LastProgress = val
+                    End If
+                    Exit Sub
+            End Select
+
         ElseIf Proc.FrameCount > 0 AndAlso value.Contains("frame=") AndAlso value.Contains("fps=") Then
             Dim frameString = value.Left("fps=").Right("frame=")
 

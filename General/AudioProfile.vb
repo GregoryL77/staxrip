@@ -781,6 +781,7 @@ Public Class GUIAudioProfile
                 If cl.Contains("qaac64") Then
                     proc.Package = Package.qaac
                     proc.SkipStrings = {", ETA ", "x)"}
+                    proc.Duration = GetDuration()
                 ElseIf cl.Contains("fdkaac") Then
                     proc.Package = Package.fdkaac
                     proc.SkipStrings = {"%]", "x)"}
@@ -789,12 +790,10 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"process: ", "analyze: "}
                     proc.TrimChars = {"-"c, " "c}
                     g.AddToPath(Package.NeroAAC.Directory)
-
-                ElseIf cl.Contains("wavpack") Then
-                    proc.Package = Package.WavPack
-                    proc.SkipStrings = {"% done..."}
-                    'proc.Encoding = Encoding.UTF8
-
+                ElseIf cl.Contains("opusenc") Then
+                    proc.Package = Package.OpusEnc
+                    proc.SkipStrings = {"x realtime,"}
+                    proc.Duration = GetDuration()
                 ElseIf cl.Contains("ffmpeg") Then
                     If cl.Contains("libfdk_aac") Then
                         proc.Package = Package.ffmpeg_non_free
@@ -806,12 +805,11 @@ Public Class GUIAudioProfile
                     proc.Encoding = Encoding.UTF8
                     proc.Duration = GetDuration()
 
-                    'To Do:
-
-                ElseIf cl.Contains("opusenc") Then
-                    proc.Package = Package.OpusEnc
-                    proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
-
+                    'To Do: Sometimes ffmpeg pipe blocks WP % progress, console shows only creating .WV
+                ElseIf cl.Contains("wavpack") Then
+                    proc.Package = Package.WavPack
+                    proc.SkipStrings = {"% done..."}
+                    'If cl.Contains("ffmpeg") Then proc.Encoding = Encoding.UTF8
                 End If
 
                 proc.Start()
@@ -888,7 +886,7 @@ Public Class GUIAudioProfile
                 If match.Success Then Params.ffmpegLoudnormOffset = match.Groups(1).Value.ToDouble
             End Using
 
-        Else 'QAAC is ~x20 faster than ffmpeg
+        Else 'QAAC is ~x20 faster than ffmpeg,  also with --peak no PCM temp file like --normalize
 
             Dim sb As New StringBuilder
             sb.Append(Package.ffmpeg.Path.Escape + " -sn -vn -dn -i " + File.LongPathPrefix.Escape)
@@ -911,7 +909,7 @@ Public Class GUIAudioProfile
             Const UpSampleFactor As Integer = 4   'upsample true peak
             Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
             If SRate < 44100 * UpSampleFactor Then SRate = 48000 * UpSampleFactor
-            Dim QLogL As String = If(s.FfmpegLogLevel > 24, " --verbose", "")
+            Dim QLogL As String = If(s.FfmpegLogLevel > 16, " --verbose", "")
 
             sb.Append(" -c:a pcm_f32le -f wav - | " & Package.qaac.Path.Escape & " --rate " & SRate & " --peak" & QLogL & " - ")
 
@@ -921,6 +919,7 @@ Public Class GUIAudioProfile
                 proc.Arguments = "/S /C """ + sb.ToString + """"
                 proc.Package = Package.qaac
                 proc.SkipStrings = {", ETA ", "x)"}
+                proc.Duration = GetDuration()
                 proc.Start()
 
                 Dim match = Regex.Match(proc.Log.ToString, "Peak:\s*[.0-9]+\s*[(]([-.0-9]+)")
@@ -1199,7 +1198,7 @@ Public Class GUIAudioProfile
         If includePaths Then
             If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
                 sb.Append(" -s")
-            ElseIf s.FfmpegLogLevel > 24 Then
+            ElseIf s.FfmpegLogLevel > 16 Then
                 sb.Append(" --verbose")
             End If
             sb.Append(" " + input + " -o " + GetOutputFile.Escape)
@@ -1266,7 +1265,12 @@ Public Class GUIAudioProfile
         End Select
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(" -hide_banner" & s.GetFFLogLevel(FfLogLevel.fatal) & " -f wav - | ")
+            If GetEncoder() = GuiAudioEncoder.WavPack Then
+                sb.Append(s.GetFFLogLevel(FfLogLevel.info)) ' Progress % workaround :(
+            Else
+                sb.Append(s.GetFFLogLevel(FfLogLevel.fatal))
+            End If
+            sb.Append(" -hide_banner -f wav - | ")
         End If
 
         Return sb.ToString
@@ -1542,7 +1546,7 @@ Public Class GUIAudioProfile
                     sb.Append(" -i") 'ffmpeg wav pipe mandatory
             End Select
             ' -l WVPenc force low priority, is needed?
-            sb.Append(" -m -z0 -y " + input + " " + GetOutputFile.Escape)
+            sb.Append(" -m -z1 -y " + input + " " + GetOutputFile.Escape)
         End If
 
         Return sb.ToString

@@ -133,17 +133,14 @@ Public Class Proc
             Return {", ETA ", "x)"}
         ElseIf commands.Contains("fdkaac") Then
             Return {"%]", "x)"}
+        ElseIf commands.Contains("opusenc") Then
+            Return {"x realtime,"}
         ElseIf commands.Contains("eac3to") Then
             Return {"process: ", "analyze: "}
-
-        ElseIf commands.Contains("wavpack") Then
-            Return {"% done..."}
-
         ElseIf commands.Contains("ffmpeg") Then
             Return {"frame=", "size="}
-
-        ElseIf commands.Contains("opusenc") Then
-            Return {"[-]", "[|]", "[\]", "[/]"}
+        ElseIf commands.Contains("wavpack") Then 'Sometimes ffmpeg pipe blocks % progress from WP
+            Return {"% done..."}
         Else
             Return {" [ETA ", ", eta ", "frames: ", "Maximum Gain Found",
                 "transcoding ...", "process: ", "analyze: "}

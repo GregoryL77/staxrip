@@ -285,12 +285,13 @@ Module StringExtensions
 
     <Extension()>
     Function ShortBegEnd(instance As String) As String
-
-        Const slen As Integer = 30
-        Const eidx As Integer = 18
-        Dim sval = instance.Substring(0, slen) & "_" & instance.Substring(instance.Length - eidx)
-        Return If(instance.Length > slen + eidx, sval, instance)
-
+        Const slen As Integer = 32
+        Const eidx As Integer = 16
+        If instance.Length > slen + eidx + 1 Then
+            Return instance.Substring(0, slen) & "_" & instance.Substring(instance.Length - eidx)
+        Else
+            Return instance
+        End If
     End Function
 
     <Extension()>

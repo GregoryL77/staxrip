@@ -289,7 +289,7 @@ Public Class Package
     Shared Property SevenZip As Package = Add(New Package With {
         .Name = "7zip",
         .Location = "Support\7zip",
-        .Filename = "7za.exe",
+        .Filename = "7z.exe",
         .Description = "Packing console app.",
         .WebURL = "https://www.7-zip.org",
         .HelpSwitch = "",
@@ -678,7 +678,8 @@ Public Class Package
         .Name = "ffms2",
         .Filename = "ffms2.dll",
         .WebURL = "http://github.com/FFMS/ffms2",
-        .HelpURL = "http://github.com/FFMS/ffms2/blob/master/doc/ffms2-avisynth.md",
+        .DownloadURL = "https://github.com/FFMS/ffms2/releases",
+        .HelpURL = "https://github.com/FFMS/ffms2/tree/master/doc",
         .Description = "AviSynth+ and VapourSynth source filter supporting various input formats.",
         .AvsFilterNames = {"FFVideoSource", "FFAudioSource"},
         .AvsFiltersFunc = Function() {New VideoFilter("Source", "FFVideoSource", $"FFVideoSource(""%source_file%"", cachefile=""%source_temp_file%.ffindex"")" + BR + "#AssumeFPS(25)")},

@@ -705,7 +705,10 @@ Public Class GUIAudioProfile
 
     Private Function GetCalcDepth() As Integer
 
-        If Params.Codec = AudioCodec.WavPack AndAlso Params.WavPackPreQuant <> 0 AndAlso Params.WavPackMode = 0 Then Return Params.WavPackPreQuant
+        If Params.Codec = AudioCodec.WavPack AndAlso Not Params.Encoder = GuiAudioEncoder.ffmpeg AndAlso
+            Params.WavPackPreQuant <> 0 AndAlso Params.WavPackMode = 0 Then
+            Return Params.WavPackPreQuant
+        End If
 
         If Depth = 0 Then
             If Not Stream Is Nothing AndAlso Stream.BitDepth <> 0 Then
@@ -786,6 +789,12 @@ Public Class GUIAudioProfile
                     proc.SkipStrings = {"process: ", "analyze: "}
                     proc.TrimChars = {"-"c, " "c}
                     g.AddToPath(Package.NeroAAC.Directory)
+
+                ElseIf cl.Contains("wavpack") Then
+                    proc.Package = Package.WavPack
+                    proc.SkipStrings = {"% done..."}
+                    'proc.Encoding = Encoding.UTF8
+
                 ElseIf cl.Contains("ffmpeg") Then
                     If cl.Contains("libfdk_aac") Then
                         proc.Package = Package.ffmpeg_non_free
@@ -798,9 +807,7 @@ Public Class GUIAudioProfile
                     proc.Duration = GetDuration()
 
                     'To Do:
-                ElseIf cl.Contains("wavpack") Then
-                    proc.Package = Package.WavPack
-                    'proc.SkipStrings = {"done."}
+
                 ElseIf cl.Contains("opusenc") Then
                     proc.Package = Package.OpusEnc
                     proc.SkipStrings = {"[-]", "[|]", "[\]", "[/]"}
@@ -869,7 +876,7 @@ Public Class GUIAudioProfile
                 If match.Success Then Params.ffmpegLoudnormIntegratedMeasured = If(match.Groups(1).Value.ToDouble < 0, match.Groups(1).Value.ToDouble, 0)
 
                 match = Regex.Match(proc.Log.ToString, "Input True Peak:\s*([-+\.0-9]+)")
-                If match.Success Then  Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
+                If match.Success Then Params.ffmpegLoudnormTruePeakMeasured = match.Groups(1).Value.ToDouble
 
                 match = Regex.Match(proc.Log.ToString, "Input LRA:\s*([-\.0-9]+)")
                 If match.Success Then Params.ffmpegLoudnormLraMeasured = match.Groups(1).Value.ToDouble
@@ -901,9 +908,9 @@ Public Class GUIAudioProfile
                 End If
             End If
 
-            Const UpSampleFactor As Integer = 8   'upsample true peak
+            Const UpSampleFactor As Integer = 4   'upsample true peak
             Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
-            If SRate < 176400 Then SRate = 48000 * UpSampleFactor
+            If SRate < 44100 * UpSampleFactor Then SRate = 48000 * UpSampleFactor
             Dim QLogL As String = If(s.FfmpegLogLevel > 24, " --verbose", "")
 
             sb.Append(" -c:a pcm_f32le -f wav - | " & Package.qaac.Path.Escape & " --rate " & SRate & " --peak" & QLogL & " - ")
@@ -918,7 +925,8 @@ Public Class GUIAudioProfile
 
                 Dim match = Regex.Match(proc.Log.ToString, "Peak:\s*[.0-9]+\s*[(]([-.0-9]+)")
                 If match.Success Then
-                    Gain -= match.Groups(1).Value.ToSingle
+                    Dim NormG = Math.Round(match.Groups(1).Value.ToDouble, 2)
+                    Gain -= CSng(NormG + 0.05)
                     GainWasNormalized = True
                 End If
 
@@ -1504,11 +1512,6 @@ Public Class GUIAudioProfile
                 sb.Append(" -hh")
         End Select
 
-        Select Case DecodingMode 'is this needed?
-            Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
-                sb.Append(" -i")
-        End Select
-
         If Params.WavPackExtraCompression > 0 Then
             sb.Append(" -x" & Params.WavPackExtraCompression)
         End If
@@ -1532,10 +1535,14 @@ Public Class GUIAudioProfile
 
         If includePaths Then
             If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
-                sb.Append(" -q -z0")
+                sb.Append(" -q")
             End If
+            Select Case DecodingMode
+                Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
+                    sb.Append(" -i") 'ffmpeg wav pipe mandatory
+            End Select
             ' -l WVPenc force low priority, is needed?
-            sb.Append(" -m -y " + input + " " + GetOutputFile.Escape)
+            sb.Append(" -m -z0 -y " + input + " " + GetOutputFile.Escape)
         End If
 
         Return sb.ToString

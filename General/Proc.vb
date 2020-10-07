@@ -135,10 +135,13 @@ Public Class Proc
             Return {"%]", "x)"}
         ElseIf commands.Contains("eac3to") Then
             Return {"process: ", "analyze: "}
+
+        ElseIf commands.Contains("wavpack") Then
+            Return {"% done..."}
+
         ElseIf commands.Contains("ffmpeg") Then
             Return {"frame=", "size="}
-        ElseIf commands.Contains("wavpack") Then
-            Return {"done."}
+
         ElseIf commands.Contains("opusenc") Then
             Return {"[-]", "[|]", "[\]", "[/]"}
         Else

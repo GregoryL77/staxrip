@@ -38,6 +38,7 @@ Public Class NVEnc
 
         Using form As New CommandLineForm(newParams)
             form.HTMLHelp = "<h2>NVEnc Help</h2>" + "<p>Right-clicking a option shows the local console help for the option.</p>" +
+                            "<p>For Constant Quality Mode choose VBR mode, then check Constant Quality Mode and set desired VBR Quality (usually between 10-30).</p>" +
                            $"<h2>NVEnc Online Help</h2><p><a href=""{Package.NVEnc.HelpURL}"">NVEnc Online Help</a></p>" +
                            $"<h2>NVEnc Console Help</h2><pre>{HelpDocument.ConvertChars(Package.NVEnc.CreateHelpfile())}</pre>"
 
@@ -122,7 +123,7 @@ Public Class NVEnc
         tester.IgnoredSwitches = "help version check-device input-analyze input-format output-format
             video-streamid video-track vpp-delogo vpp-delogo-cb vpp-delogo-cr vpp-delogo-depth output
             vpp-delogo-pos vpp-delogo-select vpp-delogo-y check-avversion check-codecs caption2ass log
-            check-encoders check-decoders check-formats check-protocols log-framelist vpp-colorspace fps
+            check-encoders check-decoders check-formats check-protocols log-framelist fps
             check-filters input raw avs vpy vpy-mt key-on-chapter audio-delay audio-ignore-decode-error
             avcuvid-analyze audio-source audio-file seek format audio-copy audio-ignore-notrack-error
             audio-copy audio-codec vpp-perf-monitor avi audio-profile check-profiles avsync mux-option
@@ -152,18 +153,18 @@ Public Class NVEnc
                         "NVEnc Software",
                         "QSVEnc (Intel)",
                         "ffmpeg (Intel)",
-                        "ffmpeg (DXVA2)"},
-            .Values = {"avs", "nvhw", "nvsw", "qs", "ffqsv", "ffdxva"}}
+                        "ffmpeg (CUDA)"},
+            .Values = {"avs", "nvhw", "nvsw", "qs", "ffqsv", "ffcuda"}}
 
         Property Mode As New OptionParam With {
             .Text = "Mode",
             .Expand = True,
             .Switches = {"--cqp", "--cbr", "--cbrhq", "--vbr", "--vbrhq"},
             .Options = {"CQP - Constant QP",
-                        "CBR - Constant Bitrate",
-                        "CBR HQ - Constant Bitrate HQ",
-                        "VBR - Variable Bitrate",
-                        "VBR HQ - Variable Bitrate HQ"},
+            "CBR - Constant Bitrate",
+            "CBR HQ (=CBR+2PassF, obsolete)",
+            "VBR - Variable Bitrate",
+            "VBR HQ (=VBR+2PassF, obsolete)"},
             .VisibleFunc = Function() Not Lossless.Value,
             .ArgsFunc = AddressOf GetModeArgs,
             .ImportAction = Sub(param, arg)
@@ -171,10 +172,17 @@ Public Class NVEnc
                                     Mode.Value = Array.IndexOf(Mode.Switches.ToArray, param)
                                 End If
 
-                                If param = "--vbrhq" AndAlso arg = "0" Then
+                                If (param = "--vbrhq" OrElse param = "--vbr") AndAlso arg = "0" Then
                                     ConstantQualityMode.Value = True
                                 End If
                             End Sub}
+
+        Property Multipass As New OptionParam With {
+            .Text = "Multipass",
+            .Switch = "--multipass",
+            .VisibleFunc = Function() Mode.Value = 1 OrElse Mode.Value = 3,
+            .Options = {"2pass-full", "2pass-quarter", "none"},
+            .Init = 2}
 
         Property Codec As New OptionParam With {
             .Switch = "--codec",
@@ -202,7 +210,7 @@ Public Class NVEnc
         Property ConstantQualityMode As New BoolParam With {
             .Switches = {"--vbr-quality"},
             .Text = "Constant Quality Mode",
-            .VisibleFunc = Function() Mode.Value = 3 OrElse Mode.Value = 4
+            .VisibleFunc = Function() Not Lossless.Value AndAlso Mode.Value >= 3
         }
 
         Property QPAdvanced As New BoolParam With {
@@ -242,7 +250,7 @@ Public Class NVEnc
             .Switch = "--vbr-quality",
             .Text = "VBR Quality",
             .Config = {0, 51, 1, 1},
-            .VisibleFunc = Function() Mode.Value = 3 OrElse Mode.Value = 4,
+            .VisibleFunc = Function() Not Lossless.Value AndAlso Mode.Value >= 3,
             .ArgsFunc = Function()
                             If ConstantQualityMode.Value OrElse
                                 VbrQuality.Value <> VbrQuality.DefaultValue Then
@@ -257,8 +265,7 @@ Public Class NVEnc
 
         Property Lossless As New BoolParam With {
             .Switch = "--lossless",
-            .Text = "Lossless",
-            .VisibleFunc = Function() Codec.ValueText = "h264" AndAlso Profile.Visible}
+            .Text = "Lossless"}
 
         Property MaxCLL As New NumParam With {
             .Switch = "--max-cll",
@@ -388,19 +395,42 @@ Public Class NVEnc
         Property SmoothQP As New NumParam With {.Text = "      QP", .HelpSwitch = "--vpp-smooth", .Config = {0, 100, 10, 1}}
         Property SmoothPrec As New OptionParam With {.Text = "      Precision", .HelpSwitch = "--vpp-smooth", .Options = {"Auto", "FP16", "FP32"}}
 
+        Property ColorSpace As New BoolParam With {.Text = "Color Space", .Switch = "--vpp-colorspace", .ArgsFunc = AddressOf GetColorSpace}
+        Property ColorSpaceMatrixIn As New OptionParam With {.Text = "      Matrix In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470bg", "smpte240m", "YCgCo", "fcc", "GBR", "bt2020nc", "bt2020c", "auto"}}
+        Property ColorSpaceMatrixOut As New OptionParam With {.Text = "      Matrix Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470bg", "smpte240m", "YCgCo", "fcc", "GBR", "bt2020nc", "bt2020c", "auto"}}
+        Property ColorSpaceColorPrimIn As New OptionParam With {.Text = "      ColorPrim In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "film", "bt2020", "auto"}}
+        Property ColorSpaceColorPrimOut As New OptionParam With {.Text = "      ColorPrim Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "film", "bt2020", "auto"}}
+        Property ColorSpaceTransferIn As New OptionParam With {.Text = "      Transfer In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "linear", "log100", "log316", "iec61966-2-4", "iec61966-2-1", "bt2020-10", "bt2020-12", "smpte2084", "arib-srd-b67", "auto"}}
+        Property ColorSpaceTransferOut As New OptionParam With {.Text = "      Transfer Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "linear", "log100", "log316", "iec61966-2-4", "iec61966-2-1", "bt2020-10", "bt2020-12", "smpte2084", "arib-srd-b67", "auto"}}
+        Property ColorSpaceRangeIn As New OptionParam With {.Text = "      Range In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "limited", "full", "auto"}}
+        Property ColorSpaceRangeOut As New OptionParam With {.Text = "      Range Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "limited", "full", "auto"}}
+        Property ColorSpaceHDR2SDR As New OptionParam With {.Text = "      HDR2SDR", .HelpSwitch = "--vpp-colorspace", .Options = {"none", "hable", "mobius", "reinhard"}}
+        Property ColorSpaceSourcePeak As New NumParam With {.Text = "      Source_Peak", .HelpSwitch = "--vpp-colorspace", .Init = 1000, .Config = {1, 100000, 50, 1}}
+        Property ColorSpaceLDRNits As New NumParam With {.Text = "      LDR_Nits", .HelpSwitch = "--vpp-colorspace", .Init = 100, .Config = {1, 20000, 10, 1}}
+
+        Property ColorSpaceHDRpA As New NumParam With {.Text = "      Hable A par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "hable", .Init = 0.22, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpB As New NumParam With {.Text = "      Hable B par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "hable", .Init = 0.3, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpC As New NumParam With {.Text = "      Hable C par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "hable", .Init = 0.1, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpD As New NumParam With {.Text = "      Hable D par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "hable", .Init = 0.2, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpE As New NumParam With {.Text = "      Hable E par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "hable", .Init = 0.01, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpF As New NumParam With {.Text = "      Hable F par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "hable", .Init = 0.3, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRTransition As New NumParam With {.Text = "      Mobius Transition", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "mobius", .Init = 0.3, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRPeak As New NumParam With {.Text = "      Mobius/Reinhard Peak", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText.EqualsAny("mobius", "reinhard"), .Init = 1, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRContrast As New NumParam With {.Text = "      Reinhard Contrast", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "reinhard", .Init = 0.5, .Config = {0, 10, 0.02, 2}}
+
+
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
                     ItemsValue = New List(Of CommandLineParam)
-                    Add("Basic", Mode,
-                        New OptionParam With {.Switch = "--multipass", .Text = "Multipass", .Options = {"None", "2Pass-Quarter", "2Pass-Full"}, .VisibleFunc = Function() Mode.Value = 1 OrElse Mode.Value = 3},
-                        Decoder, Codec,
-                        New OptionParam With {.Switch = "--preset", .HelpSwitch = "-u", .Text = "Preset", .Init = 6, .Options = {"Default", "Quality", "Performance", "P1 (=Performance)", "P2", "P3", "P4 (=Default)", "P5", "P6", "P7 (=Quality)"}, .Values = {"default", "quality", "performance", "P1", "P2", "P3", "P4", "P5", "P6", "P7"}},
+                    'To DO: 8 bit depth switch show and default auto. Is really needed?, can force 8b with main10 profile, checking 4:4:4 is needed
+                    Add("Basic", Mode, Multipass, Decoder, Codec,
+                        New OptionParam With {.Switch = "--preset", .HelpSwitch = "-u", .Text = "Presets", .Init = 6, .Options = {"Default (=P4)", "Max Quality (=P7)", "Performance (=P1)", "P1 (=Performance)", "P2", "P3", "P4 (=Default)", "P5", "P6", "P7 (=Quality)"}, .Values = {"default", "quality", "performance", "P1", "P2", "P3", "P4", "P5", "P6", "P7"}},
                         Profile, ProfileH265,
-                        New OptionParam With {.Switch = "--tier", .Text = "Tier", .VisibleFunc = Function() Codec.ValueText = "h265", .Options = {"Main", "High"}, .Values = {"main", "high"}},
+                        New OptionParam With {.Switch = "--tier", .Text = "Tier", .Value = 1, .VisibleFunc = Function() Codec.ValueText = "h265", .Options = {"Main", "High"}, .Values = {"main", "high"}},
                         New OptionParam With {.Name = "LevelH264", .Switch = "--level", .Text = "Level", .VisibleFunc = Function() Codec.ValueText = "h264", .Options = {"Unrestricted", "1", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3", "3.1", "3.2", "4", "4.1", "4.2", "5", "5.1", "5.2"}},
                         New OptionParam With {.Name = "LevelH265", .Switch = "--level", .Text = "Level", .VisibleFunc = Function() Codec.ValueText = "h265", .Options = {"Unrestricted", "1", "2", "2.1", "3", "3.1", "4", "4.1", "5", "5.1", "5.2", "6", "6.1", "6.2"}},
-                        New OptionParam With {.Switch = "--output-depth", .Text = "Depth", .Options = {"8-Bit", "10-Bit"}, .Values = {"8", "10"}},
+                        New OptionParam With {.Switch = "--output-depth", .Text = "Depth", .VisibleFunc = Function() Codec.ValueText = "h265", .Options = {"Default", "8-Bit", "10-Bit"}, .Values = {"8", "8", "10"}},
                         QPAdvanced, QP, QPI, QPP, QPB)
                     Add("Rate Control",
                         New StringParam With {.Switch = "--dynamic-rc", .Text = "Dynamic RC"},
@@ -431,8 +461,8 @@ Public Class NVEnc
                         New BoolParam With {.Switch = "--nonrefp", .Text = "Enable adapt. non-reference P frame insertion"})
                     Add("Analysis",
                         New OptionParam With {.Switch = "--adapt-transform", .Text = "Adaptive Transform", .Options = {"Automatic", "Enabled", "Disabled"}, .Values = {"", "--adapt-transform", "--no-adapt-transform"}, .VisibleFunc = Function() Codec.ValueText = "h264"},
-                        New NumParam With {.Switch = "--cu-min", .Text = "Minimum CU Size", .Config = {0, 32, 16}},
-                        New NumParam With {.Switch = "--cu-max", .Text = "Maximum CU Size", .Config = {0, 64, 16}},
+                        New NumParam With {.Switch = "--cu-min", .VisibleFunc = Function() Codec.ValueText = "h265", .Text = "Minimum CU Size", .Config = {0, 32, 16}},
+                        New NumParam With {.Switch = "--cu-max", .VisibleFunc = Function() Codec.ValueText = "h265", .Text = "Maximum CU Size", .Config = {0, 64, 16}},
                         New BoolParam With {.Switch = "--weightp", .Text = "Enable weighted prediction in P slices"})
                     Add("Performance",
                         New StringParam With {.Switch = "--perf-monitor", .Text = "Perf. Monitor"},
@@ -447,11 +477,11 @@ Public Class NVEnc
                         New StringParam With {.Switch = "--sar", .Text = "Sample Aspect Ratio", .Init = "auto", .Menu = s.ParMenu, .ArgsFunc = AddressOf GetSAR},
                         New StringParam With {.Switch = "--dhdr10-info", .Text = "HDR10 Info File", .BrowseFile = True},
                         New OptionParam With {.Switch = "--input-csp", .Text = "Input CSP", .Init = 1, .Options = {"NV12", "YV12", "YUV420P", "YUV422P", "YUV444P", "YUV420P9LE", "YUV420P10LE", "YUV420P12LE", "YUV420P14LE", "YUV420P16LE", "P010", "YUV422P9LE", "YUV422P10LE", "YUV422P12LE", "YUV422P14LE", "YUV422P16LE", "YUV444P9LE", "YUV444P10LE", "YUV444P12LE", "YUV444P14LE", "YUV444P16LE"}},
-                        New OptionParam With {.Switch = "--videoformat", .Text = "Videoformat", .Options = {"Undefined", "NTSC", "Component", "PAL", "SECAM", "MAC"}},
-                        New OptionParam With {.Switch = "--colormatrix", .Text = "Colormatrix", .Options = {"Undefined", "BT 2020 C", "BT 2020 NC", "BT 470 BG", "BT 709", "FCC", "GBR", "SMPTE 170 M", "SMPTE 240 M", "YCgCo"}},
-                        New OptionParam With {.Switch = "--colorprim", .Text = "Colorprim", .Options = {"Undefined", "BT 2020", "BT 470 BG", "BT 470 M", "BT 709", "Film", "SMPTE 170 M", "SMPTE 240 M"}},
-                        New OptionParam With {.Switch = "--transfer", .Text = "Transfer", .Options = {"Undefined", "ARIB-SRD-B67", "Auto", "BT 1361 E", "BT 2020-10", "BT 2020-12", "BT 470 BG", "BT 470 M", "BT 709", "IEC 61966-2-1", "IEC 61966-2-4", "Linear", "Log 100", "Log 316", "SMPTE 170 M", "SMPTE 240 M", "SMPTE 2084", "SMPTE 428"}},
-                        New OptionParam With {.Switch = "--colorrange", .Text = "Colorrange", .Options = {"Undefined", "Auto", "Limited", "TV", "Full", "PC"}},
+                        New OptionParam With {.Switch = "--videoformat", .Text = "Videoformat", .Options = {"Undefined", "NTSC", "Component", "PAL", "SECAM", "MAC", "Auto"}},
+                        New OptionParam With {.Switch = "--colormatrix", .Text = "Colormatrix", .Options = {"Undefined", "BT 2020 C", "BT 2020 NC", "BT 470 BG", "BT 709", "FCC", "GBR", "SMPTE 170 M", "SMPTE 240 M", "YCgCo", "Auto"}},
+                        New OptionParam With {.Switch = "--colorprim", .Text = "Colorprim", .Options = {"Undefined", "BT 2020", "BT 470 BG", "BT 470 M", "BT 709", "Film", "SMPTE 170 M", "SMPTE 240 M", "Auto"}},
+                        New OptionParam With {.Switch = "--transfer", .Text = "Transfer", .Options = {"Undefined", "ARIB-SRD-B67", "BT 1361 E", "BT 2020-10", "BT 2020-12", "BT 470 BG", "BT 470 M", "BT 709", "IEC 61966-2-1", "IEC 61966-2-4", "Linear", "Log 100", "Log 316", "SMPTE 170 M", "SMPTE 240 M", "SMPTE 2084", "SMPTE 428", "Auto"}},
+                        New OptionParam With {.Switch = "--colorrange", .Text = "Colorrange", .Options = {"Undefined", "Limited", "TV", "Full", "PC", "Auto"}},
                         MaxCLL, MaxFALL,
                         New NumParam With {.Switch = "--chromaloc", .Text = "Chromaloc", .Config = {0, 5}},
                         New BoolParam With {.Switch = "--pic-struct", .Text = "Set the picture structure and emits it in the picture timing SEI message"},
@@ -459,7 +489,7 @@ Public Class NVEnc
                         New BoolParam With {.Switch = "--repeat-headers", .Text = "Output VPS, SPS and PPS for every IDR frame"})
                     Add("VPP | Misc",
                         New StringParam With {.Switch = "--vpp-subburn", .Text = "Subburn"},
-                        New OptionParam With {.Switch = "--vpp-resize", .Text = "Resize", .Options = {"Disabled", "Default", "Bilinear", "Cubic", "Cubic_B05C03", "Cubic_bSpline", "Cubic_Catmull", "Lanczos", "NN", "NPP_Linear", "Spline 36", "Super"}},
+                        New OptionParam With {.Switch = "--vpp-resize", .Text = "Resize", .Options = {"Disabled", "Default", "Bilinear", "Cubic_B05C03", "Cubic_bSpline", "Cubic_Catmull", "spline16", "Spline36", "spline64", "lanczos2", "lanczos3", "lanczos4", "Cubic", "Super", "NN", "NPP_Linear", "Lanczos"}},
                         New OptionParam With {.Switch = "--vpp-deinterlace", .Text = "Deinterlace", .VisibleFunc = Function() Decoder.ValueText.EqualsAny("nvhw", "nvsw"), .Options = {"None", "Adaptive", "Bob"}},
                         New OptionParam With {.Switch = "--vpp-gauss", .Text = "Gauss", .Options = {"Disabled", "3", "5", "7"}},
                         New OptionParam With {.Switch = "--vpp-rotate", .Text = "Rotate", .Options = {"Disabled", "90", "180", "270"}},
@@ -496,6 +526,30 @@ Public Class NVEnc
                         TransformFlipX,
                         TransformFlipY,
                         TransformTranspose)
+
+                    Add("VPP | Color Space",
+                        ColorSpace,
+                        ColorSpaceMatrixIn,
+                        ColorSpaceMatrixOut,
+                        ColorSpaceColorPrimIn,
+                        ColorSpaceColorPrimOut,
+                        ColorSpaceTransferIn,
+                        ColorSpaceTransferOut,
+                        ColorSpaceRangeIn,
+                        ColorSpaceRangeOut,
+                        ColorSpaceHDR2SDR,
+                        ColorSpaceSourcePeak,
+                        ColorSpaceLDRNits,
+                        ColorSpaceHDRpA,
+                        ColorSpaceHDRpB,
+                        ColorSpaceHDRpC,
+                        ColorSpaceHDRpD,
+                        ColorSpaceHDRpE,
+                        ColorSpaceHDRpF,
+                        ColorSpaceHDRTransition,
+                        ColorSpaceHDRContrast,
+                        ColorSpaceHDRPeak)
+
                     Add("VPP | Denoise",
                         Knn, KnnRadius, KnnStrength, KnnLerp, KnnThLerp,
                         Pmd, PmdApplyCount, PmdStrength, PmdThreshold)
@@ -559,7 +613,7 @@ Public Class NVEnc
                         New StringParam With {.Switch = "--data-copy", .Text = "Data Copy"},
                         New StringParam With {.Switch = "--input-option", .Text = "Input Option"},
                         New OptionParam With {.Switch = "--mv-precision", .Text = "MV Precision", .Options = {"Automatic", "Q-pel", "Half-pel", "Full-pel"}},
-                        New OptionParam With {.Switches = {"--cabac", "--cavlc"}, .Text = "Cabac/Cavlc", .Options = {"Disabled", "Cabac", "Cavlc"}, .Values = {"", "--cabac", "--cavlc"}},
+                        New OptionParam With {.Switches = {"--cabac", "--cavlc"}, .VisibleFunc = Function() Codec.ValueText = "h264", .Text = "Cabac/Cavlc", .Options = {"Disabled", "Cabac", "Cavlc"}, .Values = {"", "--cabac", "--cavlc"}},
                         Interlace,
                         New NumParam With {.Switch = "--device", .HelpSwitch = "-d", .Text = "Device", .Config = {0, 4}},
                         New BoolParam With {.Switch = "--deblock", .NoSwitch = "--no-deblock", .Text = "Deblock", .Init = True},
@@ -666,8 +720,39 @@ Public Class NVEnc
                 For Each i In {AfsShift, AfsDrop, AfsSmooth, Afs24fps, AfsTune, AfsRFF, AfsTimecode, AfsLog}
                     i.CheckBox.Enabled = Afs.Value
                 Next
-            End If
 
+                For Each i In {ColorSpaceMatrixIn,
+                        ColorSpaceMatrixOut,
+                        ColorSpaceColorPrimIn,
+                        ColorSpaceColorPrimOut,
+                        ColorSpaceTransferIn,
+                        ColorSpaceTransferOut,
+                        ColorSpaceRangeIn,
+                        ColorSpaceRangeOut,
+                        ColorSpaceHDR2SDR}
+                    i.MenuButton.Enabled = ColorSpace.Value
+                Next
+
+                For Each i In {ColorSpaceSourcePeak,
+                        ColorSpaceLDRNits,
+                        ColorSpaceHDRpA,
+                        ColorSpaceHDRpB,
+                        ColorSpaceHDRpC,
+                        ColorSpaceHDRpD,
+                        ColorSpaceHDRpE,
+                        ColorSpaceHDRpF,
+                        ColorSpaceHDRTransition,
+                        ColorSpaceHDRContrast,
+                        ColorSpaceHDRPeak}
+                    i.NumEdit.Enabled = ColorSpace.Value
+                Next
+
+                ColorSpaceMatrixOut.MenuButton.Enabled = ColorSpaceMatrixIn.Value <> ColorSpaceMatrixIn.DefaultValue AndAlso ColorSpace.Value
+                ColorSpaceColorPrimOut.MenuButton.Enabled = ColorSpaceColorPrimIn.Value <> ColorSpaceColorPrimIn.DefaultValue AndAlso ColorSpace.Value
+                ColorSpaceTransferOut.MenuButton.Enabled = ColorSpaceTransferIn.Value <> ColorSpaceTransferIn.DefaultValue AndAlso ColorSpace.Value
+                ColorSpaceRangeOut.MenuButton.Enabled = ColorSpaceRangeIn.Value <> ColorSpaceRangeIn.DefaultValue AndAlso ColorSpace.Value
+
+            End If
             MyBase.OnValueChanged(item)
         End Sub
 
@@ -694,6 +779,83 @@ Public Class NVEnc
                 End If
             End If
         End Function
+
+        Function GetColorSpace() As String
+            If ColorSpace.Value Then
+                Dim ret = ""
+
+                If ColorSpaceMatrixIn.Value <> ColorSpaceMatrixIn.DefaultValue AndAlso ColorSpaceMatrixOut.Value <> ColorSpaceMatrixOut.DefaultValue Then
+                    ret += ",matrix=" & ColorSpaceMatrixIn.ValueText & ":" & ColorSpaceMatrixOut.ValueText
+                End If
+
+                If ColorSpaceColorPrimIn.Value <> ColorSpaceColorPrimIn.DefaultValue AndAlso ColorSpaceColorPrimOut.Value <> ColorSpaceColorPrimOut.DefaultValue Then
+                    ret += ",colorprim=" & ColorSpaceColorPrimIn.ValueText & ":" & ColorSpaceColorPrimOut.ValueText
+                End If
+
+                If ColorSpaceTransferIn.Value <> ColorSpaceTransferIn.DefaultValue AndAlso ColorSpaceTransferOut.Value <> ColorSpaceTransferOut.DefaultValue Then
+                    ret += ",transfer=" & ColorSpaceTransferIn.ValueText & ":" & ColorSpaceTransferOut.ValueText
+                End If
+
+                If ColorSpaceRangeIn.Value <> ColorSpaceRangeIn.DefaultValue AndAlso ColorSpaceRangeOut.Value <> ColorSpaceRangeOut.DefaultValue Then
+                    ret += ",range=" & ColorSpaceRangeIn.ValueText & ":" & ColorSpaceRangeOut.ValueText
+                End If
+
+                If ColorSpaceHDR2SDR.Value <> ColorSpaceHDR2SDR.DefaultValue Then
+                    ret += ",hdr2sdr=" & ColorSpaceHDR2SDR.ValueText
+                    Select Case ColorSpaceHDR2SDR.ValueText
+                        Case = "hable"
+                            If ColorSpaceHDRpA.Value <> ColorSpaceHDRpA.DefaultValue Then
+                                ret += ",a=" & ColorSpaceHDRpA.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRpB.Value <> ColorSpaceHDRpB.DefaultValue Then
+                                ret += ",b=" & ColorSpaceHDRpB.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRpC.Value <> ColorSpaceHDRpC.DefaultValue Then
+                                ret += ",c=" & ColorSpaceHDRpC.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRpD.Value <> ColorSpaceHDRpD.DefaultValue Then
+                                ret += ",d=" & ColorSpaceHDRpD.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRpE.Value <> ColorSpaceHDRpE.DefaultValue Then
+                                ret += ",e=" & ColorSpaceHDRpE.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRpF.Value <> ColorSpaceHDRpF.DefaultValue Then
+                                ret += ",f=" & ColorSpaceHDRpF.Value.ToInvariantString
+                            End If
+                        Case = "mobius"
+                            If ColorSpaceHDRTransition.Value <> ColorSpaceHDRTransition.DefaultValue Then
+                                ret += ",transition=" & ColorSpaceHDRTransition.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
+                                ret += ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
+                            End If
+                        Case = "reinhard"
+                            If ColorSpaceHDRContrast.Value <> ColorSpaceHDRContrast.DefaultValue Then
+                                ret += ",contrast=" & ColorSpaceHDRContrast.Value.ToInvariantString
+                            End If
+                            If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
+                                ret += ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
+                            End If
+                    End Select
+                End If
+
+                If ColorSpaceSourcePeak.Value <> ColorSpaceSourcePeak.DefaultValue Then
+                    ret += ",source_peak=" & ColorSpaceSourcePeak.Value.ToInvariantString
+                End If
+
+                If ColorSpaceLDRNits.Value <> ColorSpaceLDRNits.DefaultValue Then
+                    ret += ",ldr_nits=" & ColorSpaceLDRNits.Value.ToInvariantString
+                End If
+
+                If ret <> "" Then
+                    Return "--vpp-colorspace " + ret.TrimStart(","c).TrimEnd
+                Else
+                    Return "--vpp-colorspace"
+                End If
+
+            End If
+        End Function
+
 
         Function GetPmdArgs() As String
             If Pmd.Value Then
@@ -1106,7 +1268,8 @@ Public Class NVEnc
                 Case "avs"
                     sourcePath = p.Script.Path
 
-                    If includePaths AndAlso FrameServerHelp.IsAviSynthPortableUsed Then
+                    'Vapoursynth fix, avisynth is not my thing BTW
+                    If includePaths AndAlso FrameServerHelp.IsAviSynthPortableUsed AndAlso p.Script.Engine = ScriptEngine.AviSynth Then
                         ret += " --avsdll " + Package.AviSynth.Path.Escape
                     End If
                 Case "nvhw"
@@ -1121,21 +1284,30 @@ Public Class NVEnc
                     If includePaths Then
                         ret = If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64") + " -o - -c raw" + " -i " + If(includePaths, p.SourceFile.Escape, "path") + " | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
                     End If
-                Case "ffdxva"
+                Case "ffcuda"
                     sourcePath = "-"
 
                     If includePaths Then
+
+                        'To DO Check Vsync: 0 - passthrough Each frame Is passed with its timestamp from the demuxer to the muxer, 
+                        '1, cfr Frames will be duplicated And dropped to achieve exactly the requested constant frame rate.
+                        '2, vfr Frames are passed through with their timestamp Or dropped so as to prevent 2 frames from having the same timestamp.
+                        '3? dropAs passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
+                        '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
+
                         Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
                         ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") +
-                            " -threads 1 -hwaccel dxva2 -i " + If(includePaths, p.SourceFile.Escape, "path") +
-                            " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1 -loglevel fatal -hide_banner - | " +
+                            " -vsync 1 -hwaccel cuda -i " + If(includePaths, p.SourceFile.Escape, "path") +
+                            " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
                             If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
+
+
                     End If
                 Case "ffqsv"
                     sourcePath = "-"
 
                     If includePaths Then
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.SourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p -loglevel fatal -hide_banner - | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
+                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.SourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
                     End If
             End Select
 

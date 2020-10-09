@@ -12,7 +12,7 @@ Public MustInherit Class AudioProfile
     Property Delay As Integer
     Property Depth As Integer = 0
     Property StreamName As String = ""
-    Property Gain As Single
+    Property Gain As Double  'causes rounding errors in UI
     Property GainWasNormalized As Boolean
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
     Property [Default] As Boolean
@@ -142,7 +142,7 @@ Public MustInherit Class AudioProfile
 
     Overridable Sub Migrate()
         'If Depth = 0 Then
-        'Depth = 24
+        'Depth = 0
         'End If
     End Sub
 
@@ -808,7 +808,7 @@ Public Class GUIAudioProfile
                     'To Do: Sometimes ffmpeg pipe blocks WP % progress, console shows only creating .WV
                 ElseIf cl.Contains("wavpack") Then
                     proc.Package = Package.WavPack
-                    proc.SkipStrings = {"% done..."}
+                    proc.SkipStrings = {"% done.."}
                     'If cl.Contains("ffmpeg") Then proc.Encoding = Encoding.UTF8
                 End If
 
@@ -836,7 +836,7 @@ Public Class GUIAudioProfile
 
     Sub NormalizeFF()
         If Not Params.Normalize OrElse ExtractCore OrElse
-                (SupportsNormGainSampR() AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
+                (SupportsNormalize() AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak AndAlso DecodingMode = AudioDecodingMode.Pipe) OrElse
                 Params.ffmpegNormalizeMode = ffmpegNormalizeMode.dynaudnorm Then
             Exit Sub
         End If
@@ -864,6 +864,7 @@ Public Class GUIAudioProfile
                 proc.Encoding = Encoding.UTF8
                 proc.Package = Package.ffmpeg
                 proc.Arguments = args
+                proc.Duration = GetDuration()
                 proc.Start()
 
 
@@ -899,6 +900,15 @@ Public Class GUIAudioProfile
 
             '-rematrix_maxval (def 0) Set maximum output value for rematrixing. This can be used to prevent clipping vs. preventing volume reduction. A value of 1.0 prevents clipping.
             'Without this ffmpeg tends to use different matrixes for FP and Int audio formats, also 1 is consistent with LibAV
+            'maybe add SOX Resampler: swresample isn't top notch:
+            'args += " -resampler soxr -precision 28 -output_sample_bits=0 "  20-def HQ, 28-VHQ 
+
+            If Params.ffmpegDither <> "Disabled" Then
+                sb.Append(" -dither_method " & Params.ffmpegDither)
+            End If
+            If Params.ffmpegResampSOX Then
+                sb.Append(" -resampler soxr -precision 28")
+            End If
             If Params.ChannelsMode <> ChannelsMode.Original Then
                 sb.Append(" -rematrix_maxval 1 -ac " & Channels)
                 If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
@@ -906,10 +916,15 @@ Public Class GUIAudioProfile
                 End If
             End If
 
+            If Params.SamplingRate <> 0 Then 'smooths some rounding problems, or remove ?
+                sb.Append(" -ar " & Params.SamplingRate)
+            End If
+
+
             Const UpSampleFactor As Integer = 4   'upsample true peak
             Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
             If SRate < 44100 * UpSampleFactor Then SRate = 48000 * UpSampleFactor
-            Dim QLogL As String = If(s.FfmpegLogLevel > 16, " --verbose", "")
+            Dim QLogL As String = If(s.FfmpegLogLevel >= 0, " --verbose", "")
 
             sb.Append(" -c:a pcm_f32le -f wav - | " & Package.qaac.Path.Escape & " --rate " & SRate & " --peak" & QLogL & " - ")
 
@@ -924,14 +939,12 @@ Public Class GUIAudioProfile
 
                 Dim match = Regex.Match(proc.Log.ToString, "Peak:\s*[.0-9]+\s*[(]([-.0-9]+)")
                 If match.Success Then
-                    Dim NormG = Math.Round(match.Groups(1).Value.ToDouble, 2)
-                    Gain -= CSng(NormG + 0.05)
+                    Gain = Math.Round(Gain - (match.Groups(1).Value.ToDouble + 0.02), 2)
                     GainWasNormalized = True
                 End If
 
                 'Dim GainNormalizedDB As Double  "Peak:\s+([.0-9]+)\s*"
                 'GainNormalizedDB = 20 * Math.Log10(Gain)
-
             End Using
         End If
 
@@ -1000,10 +1013,6 @@ Public Class GUIAudioProfile
                     sb.Append(" -" & Bitrate)
             End Select
 
-            If Params.Normalize Then
-                sb.Append(" -normalize")
-            End If
-
             If Depth = 16 Then
                 sb.Append(" -down16")
             End If
@@ -1024,12 +1033,18 @@ Public Class GUIAudioProfile
                 sb.Append(" " + If(Delay > 0, "+", "") & Delay & "ms")
             End If
 
-            If Gain < 0 Then
-                sb.Append(" " & CInt(Gain) & "dB")
-            End If
+            If Not GainWasNormalized Then
+                If Params.Normalize Then
+                    sb.Append(" -normalize")
+                End If
 
-            If Gain > 0 Then
-                sb.Append(" +" & CInt(Gain) & "dB")
+                If Gain < 0 Then
+                    sb.Append(" " & CInt(Gain) & "dB")
+                End If
+
+                If Gain > 0 Then
+                    sb.Append(" +" & CInt(Gain) & "dB")
+                End If
             End If
 
             Select Case Channels
@@ -1155,20 +1170,23 @@ Public Class GUIAudioProfile
             If Gain <> 0 Then
                 sb.Append(" --gain " & Gain.ToInvariantString)
             End If
-            If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak Then
-                sb.Append(" --normalize")
-            End If
+            'If Params.Normalize AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak Then
+            'sb.Append(" --normalize")
+            'End If
         Else
-            If Params.Normalize AndAlso Not GainWasNormalized AndAlso Params.ffmpegNormalizeMode = ffmpegNormalizeMode.peak Then
-                sb.Append(" --normalize")
-                If Gain <> 0 Then
+            If Not GainWasNormalized Then
+                If Params.Normalize Then
+                    sb.Append(" --normalize")
+                    If Gain <> 0 Then
+                        sb.Append(" --gain " & Gain.ToInvariantString)
+                    End If
+
+                    'To Do: Check this
+                ElseIf Gain <> 0 Then
                     sb.Append(" --gain " & Gain.ToInvariantString)
                 End If
-
-                'To Do: Check this
-            ElseIf Gain <> 0 AndAlso Not Params.Normalize Then
-                sb.Append(" --gain " & Gain.ToInvariantString)
             End If
+
             If Params.SamplingRate <> 0 Then
                 sb.Append(" --rate " & Params.SamplingRate)
             End If
@@ -1196,9 +1214,9 @@ Public Class GUIAudioProfile
         Dim input = If(DecodingMode = AudioDecodingMode.Pipe, "-", File.Escape)
 
         If includePaths Then
-            If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
+            If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 0 Then
                 sb.Append(" -s")
-            ElseIf s.FfmpegLogLevel > 16 Then
+            ElseIf s.FfmpegLogLevel >= 0 Then
                 sb.Append(" --verbose")
             End If
             sb.Append(" " + input + " -o " + GetOutputFile.Escape)
@@ -1220,6 +1238,13 @@ Public Class GUIAudioProfile
             sb.Append(" -sn -vn -dn -map 0:a:" & Stream.Index)
         End If
 
+        If Params.ffmpegDither <> "Disabled" Then
+            sb.Append(" -dither_method " & Params.ffmpegDither)
+        End If
+        If Params.ffmpegResampSOX Then
+            sb.Append(" -resampler soxr -precision 28")
+        End If
+
         If Params.ChannelsMode <> ChannelsMode.Original Then
             sb.Append(" -rematrix_maxval 1 -ac " & Channels)
             If Params.ffmpegLFEMixLevel <> 0 AndAlso Params.ChannelsMode < 3 Then
@@ -1231,27 +1256,27 @@ Public Class GUIAudioProfile
             Select Case Params.ffmpegNormalizeMode
                 Case ffmpegNormalizeMode.dynaudnorm
                     sb.Append(" " + Audio.GetDynAudNormArgs(Params))
-                    If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+                    If Gain <> 0 AndAlso Not SupportsGainSampR() Then
                         sb.Append(",volume=" + Gain.ToInvariantString + "dB")
                     End If
                 Case ffmpegNormalizeMode.loudnorm
                     sb.Append(" " + Audio.GetLoudNormArgs(Params))
-                    If Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+                    If Gain <> 0 AndAlso Not SupportsGainSampR() Then
                         sb.Append(",volume=" + Gain.ToInvariantString + "dB")
                     End If
-                    If Params.SamplingRate = 0 AndAlso Not SupportsNormGainSampR() Then     'Loudnorm auto x4 upsample
+                    If Params.SamplingRate = 0 AndAlso Not SupportsGainSampR() Then     'Loudnorm auto x4 upsample
                         sb.Append(" -ar " & SourceSamplingRate)
                     End If
                 Case ffmpegNormalizeMode.peak
-                    If GainWasNormalized AndAlso Not SupportsNormGainSampR() Then
+                    If GainWasNormalized And Not SupportsGainSampR() Then
                         sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
                     End If
             End Select
-        ElseIf Gain <> 0 AndAlso Not SupportsNormGainSampR() Then
+        ElseIf Gain <> 0 AndAlso Not SupportsGainSampR() Then
             sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
         End If
 
-        If Params.SamplingRate <> 0 AndAlso Not SupportsNormGainSampR() Then
+        If Params.SamplingRate <> 0 AndAlso Not SupportsGainSampR() Then
             sb.Append(" -ar " & Params.SamplingRate)
         End If
 
@@ -1282,7 +1307,17 @@ Public Class GUIAudioProfile
             Package.ffmpeg_non_free, Package.ffmpeg)
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(pack.Path.Escape + " -sn -vn -dn -i " + File.LongPathPrefix.Escape)
+            sb.Append(pack.Path.Escape)
+
+            If Params.ProbeSize <> 5 Then
+                sb.Append($" -probesize {Params.ProbeSize}M")
+            End If
+
+            If Params.AnalyzeDuration <> 5 Then
+                sb.Append($" -analyzeduration {Params.AnalyzeDuration}M")
+            End If
+
+            sb.Append(" -sn -vn -dn -i " + File.LongPathPrefix.Escape)
         Else
             sb.Append("ffmpeg")
         End If
@@ -1440,6 +1475,13 @@ Public Class GUIAudioProfile
                 End Select
         End Select
 
+        If Params.ffmpegDither <> "Disabled" Then
+            sb.Append(" -dither_method " & Params.ffmpegDither)
+        End If
+        If Params.ffmpegResampSOX Then
+            sb.Append(" -resampler soxr -precision 28")
+        End If
+
         If Not ExtractCore Then
             If Params.Normalize Then
                 Select Case Params.ffmpegNormalizeMode
@@ -1458,7 +1500,9 @@ Public Class GUIAudioProfile
                         End If
                     Case ffmpegNormalizeMode.peak
                         If GainWasNormalized Then
-                            sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
+                            If Gain <> 0 Then
+                                sb.Append(" -af volume=" + Gain.ToInvariantString + "dB")
+                            End If
                         End If
                 End Select
 
@@ -1581,7 +1625,7 @@ Public Class GUIAudioProfile
         End If
 
         If Params.opusEncFramesize <> 20 Then
-            sb.Append(" --framesize " & Params.opusEncFramesize)
+            sb.Append(" --framesize " & Params.opusEncFramesize.ToInvariantString)
         End If
 
         If Params.opusEncNoPhaseInv Then
@@ -1610,7 +1654,11 @@ Public Class GUIAudioProfile
         Return sb.ToString
     End Function
 
-    Function SupportsNormGainSampR() As Boolean
+    Function SupportsNormalize() As Boolean
+        Return GetEncoder() = GuiAudioEncoder.eac3to
+    End Function
+
+    Function SupportsGainSampR() As Boolean
         Return GetEncoder() = GuiAudioEncoder.eac3to OrElse GetEncoder() = GuiAudioEncoder.qaac
     End Function
 
@@ -1785,16 +1833,18 @@ Public Class GUIAudioProfile
 
     <Serializable()>
     Public Class Parameters
+        Property AnalyzeDuration As Integer = 5
+        Property ChannelsMode As ChannelsMode
         Property Codec As AudioCodec
         Property CustomSwitches As String = ""
         Property eac3toStereoDownmixMode As Integer
         Property Encoder As GuiAudioEncoder
         Property FrameRateMode As AudioFrameRateMode
         Property Normalize As Boolean = True
+        Property ProbeSize As Integer = 5
         Property Quality As Single = 0.3
         Property RateMode As AudioRateMode
         Property SamplingRate As Integer
-        Property ChannelsMode As ChannelsMode
 
         Property Migrate1 As Boolean = True
         Property MigrateffNormalizeMode As Boolean = True
@@ -1804,20 +1854,6 @@ Public Class GUIAudioProfile
         Property qaacNoDither As Boolean
         Property qaacQuality As Integer = 2
         Property qaacRateMode As Integer
-
-        Property ffmpegOpusApp As OpusApp = OpusApp.audio
-        Property ffmpegOpusCompress As Integer = 10
-        Property ffmpegOpusFrame As Double = 20
-        Property ffmpegOpusMap As Integer = -1
-        Property ffmpegOpusPacket As Integer
-        Property ffmpegOpusRateMode As OpusRateMode = OpusRateMode.VBR
-        Property ffmpegOpusMigrate As Integer = 1
-        Property ffmpegMp3Cutoff As Integer
-
-        Property opusEncMode As OpusEncMode
-        Property opusEncComplexity As Integer = 10
-        Property opusEncFramesize As Double = 20
-        Property opusEncNoPhaseInv As Boolean = False
 
         Property fdkaacProfile As Integer = 2
         Property fdkaacBandwidth As Integer
@@ -1855,8 +1891,24 @@ Public Class GUIAudioProfile
         Property ffmpegDynaudnormB As Boolean
         Property ffmpegDynaudnormS As Double
 
+        Property ffmpegOpusApp As OpusApp = OpusApp.audio
+        Property ffmpegOpusCompress As Integer = 10
+        Property ffmpegOpusFrame As Double = 20
+        Property ffmpegOpusMap As Integer = -1
+        Property ffmpegOpusPacket As Integer
+        Property ffmpegOpusRateMode As OpusRateMode = OpusRateMode.VBR
+        Property ffmpegOpusMigrate As Integer = 1
+        Property ffmpegMp3Cutoff As Integer
+
+        Property opusEncMode As OpusEncMode
+        Property opusEncComplexity As Integer = 10
+        Property opusEncFramesize As Double = 20
+        Property opusEncNoPhaseInv As Boolean = False
+
         Property ffmpegCompressionLevel As Integer = 1
         Property ffmpegLFEMixLevel As Double = 0
+        Property ffmpegResampSOX As Boolean
+        Property ffmpegDither As String = "Disabled"
 
         Property WavPackCompression As Integer = 1
         Property WavPackExtraCompression As Integer = 0
@@ -1926,6 +1978,13 @@ Public Class GUIAudioProfile
                 'opusEncMode = OpusEncMode.VBR
                 'opusEncNoPhaseInv = False
             End If
+
+            '2020
+            If ProbeSize = 0 AndAlso AnalyzeDuration = 0 Then
+                ProbeSize = 5
+                AnalyzeDuration = 5
+            End If
+            If ffmpegDither = "" Then ffmpegDither = "Disabled"
         End Sub
     End Class
 End Class

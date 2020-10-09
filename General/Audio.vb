@@ -362,7 +362,21 @@ Public Class Audio
             args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
         End If
 
-        If p.Ranges.Count = 0 OrElse (p.Ranges.Count > 0 AndAlso ap.File.Contains("_cut_")) OrElse (p.Ranges.Count > 0 AndAlso gap?.DecodingMode <> AudioDecodingMode.Pipe) Then
+        If gap.Params.ffmpegDither <> "Disabled" Then
+            args += " -dither_method " & gap.Params.ffmpegDither
+        End If
+
+        If gap.Params.ffmpegResampSOX Then
+            args += " -resampler soxr -precision 28"
+        End If
+
+        'p.Ranges.Count = 0 OrElse
+        '(p.Ranges.Count > 0 AndAlso ap.File.Contains("_cut_")) OrElse
+        '(p.Ranges.Count > 0 AndAlso gap?.DecodingMode <> AudioDecodingMode.Pipe) Or
+
+        'Not (p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_"))
+
+        If p.Ranges.Count = 0 OrElse ap.File.Contains("_cut_") Then
             If gap?.Params.Normalize Then
                 Select Case gap.Params.ffmpegNormalizeMode
                     Case ffmpegNormalizeMode.dynaudnorm
@@ -383,6 +397,7 @@ Public Class Audio
                             args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
                         End If
                 End Select
+                ap.GainWasNormalized = True
             ElseIf ap.Gain <> 0 Then
                 args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
             End If
@@ -450,13 +465,13 @@ Public Class Audio
             End If
 
             'normalize, Gain eac3to duplication
-            If gap?.GetEncoder() = GuiAudioEncoder.eac3to Then
-                ap.Gain = 0
-                'If p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_") Then
-                'Else
-                gap.Params.Normalize = False
-                'End If
-            End If
+            'If gap?.GetEncoder() = GuiAudioEncoder.eac3to Then
+            'ap.Gain = 0
+            'If p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_") Then
+            'Else
+            'gap.Params.Normalize = False
+            'End If
+            'End If
 
             ap.File = outPath
             Log.WriteLine(MediaInfo.GetSummary(outPath))

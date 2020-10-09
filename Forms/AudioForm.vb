@@ -793,7 +793,7 @@ Public Class AudioForm
     End Sub
 
     Sub numGain_ValueChanged(numEdit As NumEdit) Handles numGain.ValueChanged
-        TempProfile.Gain = CSng(numGain.Value)
+        TempProfile.Gain = numGain.Value
         UpdateControls()
     End Sub
 
@@ -1591,13 +1591,42 @@ Public Class AudioForm
             ffmpegNormalize.Text = "Normalize Method:"
             ffmpegNormalize.Property = NameOf(TempProfile.Params.ffmpegNormalizeMode)
 
+            Dim mb = ui.AddMenu(Of String)
+            mb.Text = "Dither type"
+            mb.Add("Disabled")
+            mb.Add("rectangular")
+            mb.Add("triangular")
+            mb.Add("triangular_hp")
+            mb.Add("lipshitz")
+            mb.Add("shibata")
+            mb.Add("low_shibata")
+            mb.Add("high_shibata")
+            mb.Add("f_weighted")
+            mb.Add("modified_e_weighted")
+            mb.Add("improved_e_weighted")
+            mb.Property = NameOf(TempProfile.Params.ffmpegDither)
+
+            Dim b = ui.AddBool()
+            b.Text = "SOX VHQ resampler"
+            b.Property = NameOf(TempProfile.Params.ffmpegResampSOX)
+
+            Dim n = ui.AddNum()
+            n.Text = "Probe Size"
+            n.Config = {1, 999, 5}
+            n.Property = NameOf(TempProfile.Params.ProbeSize)
+
+            n = ui.AddNum()
+            n.Text = "Analyze Duration"
+            n.Config = {1, 999, 5}
+            n.Property = NameOf(TempProfile.Params.AnalyzeDuration)
+
             ui.CreateFlowPage("ffmpeg | loudnorm", True)
 
             ui.AddLabel("EBU R128 Loudness Normalization")
 
             Dim helpUrl = "https://www.ffmpeg.org/ffmpeg-filters.html#loudnorm"
 
-            Dim n = ui.AddNum()
+            n = ui.AddNum()
             n.Text = "Integrated"
             n.Help = helpUrl
             n.Config = {-70.0, -5.0, 0.5, 1}
@@ -1657,7 +1686,7 @@ Public Class AudioForm
             n.Config = {0, 30, 1, 1}
             n.Property = NameOf(TempProfile.Params.ffmpegDynaudnormS)
 
-            Dim b = ui.AddBool
+            b = ui.AddBool
             b.Text = "Enable channels coupling"
             b.Help = helpUrl
             b.Property = NameOf(TempProfile.Params.ffmpegDynaudnormN)

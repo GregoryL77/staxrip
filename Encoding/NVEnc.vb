@@ -1294,10 +1294,11 @@ Public Class NVEnc
                         '2, vfr Frames are passed through with their timestamp Or dropped so as to prevent 2 frames from having the same timestamp.
                         '3? dropAs passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
                         '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
+                        'p.ExtractTimestamps seems like death switch, nvidia paper uses vsync 0
 
                         Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
                         ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") +
-                            " -vsync 1 -hwaccel cuda -i " + If(includePaths, p.SourceFile.Escape, "path") +
+                            If(p.ExtractTimestamps, " -vsync 0", " -vsync 1") + "-hwaccel cuda -i " + If(includePaths, p.SourceFile.Escape, "path") +
                             " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
                             If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
 

@@ -253,10 +253,13 @@ Public Class ffmpegEnc
             '2, vfr Frames are passed through with their timestamp Or dropped so as to prevent 2 frames from having the same timestamp.
             '3? drop As passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
             '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
-            If Not p.ExtractTimestamps Then
+            'p.ExtractTimestamps seems like death switch, nvidia paper uses vsync 0
+
+            If p.ExtractTimestamps Then
+                ret += " -vsync 0 -strict -1"
+            Else
                 ret += " -vsync 1 -strict -1"
             End If
-
 
             Select Case Decoder.ValueText
                 Case "sw"

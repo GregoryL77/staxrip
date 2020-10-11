@@ -1066,8 +1066,11 @@ Public Class x264Params
                     '3? drop As passthrough but destroys all timestamps, making the muxer generate fresh timestamps based on frame-rate.
                     '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
                     ' -vsync 0 -hwaccel cuda      ( -threads 1 )
+                    'seems like death switch, nvidia paper recommends vsync 0
+
                     Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -vsync 1 -hwaccel cuda -i " + p.SourceFile.Escape + " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
+                    pipeCmd = Package.ffmpeg.Path.Escape + If(p.ExtractTimestamps, " -vsync 0", " -vsync 1") + " -hwaccel cuda -i " +
+                        p.SourceFile.Escape + " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
 
             End Select
 

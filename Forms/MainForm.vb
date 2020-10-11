@@ -4434,7 +4434,7 @@ Public Class MainForm
             b.SaveAction = Sub(value) p.NoDialogs = value
 
             b = ui.AddBool(miscPage)
-            b.Text = "Extract timestamps from VFR MKV files"
+            b.Text = "Extract timestamps from VFR MKV files [use vsync 0 VFR]"
             b.Checked = p.ExtractTimestamps
             b.SaveAction = Sub(value) p.ExtractTimestamps = value
 

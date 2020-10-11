@@ -733,7 +733,8 @@ Public Class GUIAudioProfile
                 Case AudioCodec.AAC
                     Select Case Params.Encoder
                         Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
-                            Return CInt(Math.Pow(Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality), 1.5))
+                            'experiments
+                            Return CInt(Math.Pow(Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality), 1.006))
                         Case GuiAudioEncoder.eac3to
                             Return Calc.GetYFromTwoPointForm(0.01, CInt(50 / 8 * Channels), 1, CInt(1000 / 8 * Channels), Params.Quality)
                         Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg

@@ -149,8 +149,6 @@ Public MustInherit Class AudioProfile
     ReadOnly Property ConvertExt As String
         Get
             Dim ret As String
-            Dim GAP As GUIAudioProfile
-
             Select Case DecodingMode
                 Case AudioDecodingMode.WAVE
                     ret = "wav"
@@ -179,8 +177,15 @@ Public MustInherit Class AudioProfile
             End If
 
             'To Do: Check this VW to save temp size for cuts,  -> only AndAlso p.Ranges.Count > 0, decoder, eac3to ???
-            If DecodingMode = AudioDecodingMode.Pipe AndAlso Not GAP.GetEncoder() = GuiAudioEncoder.eac3to AndAlso {AudioDecoderMode.ffmpeg, AudioDecoderMode.Automatic}.Contains(GAP.Decoder) Then
-                ret = "wv"
+            If DecodingMode = AudioDecodingMode.Pipe Then
+                If TypeOf Me Is GUIAudioProfile Then
+                    Dim gap = DirectCast(Me, GUIAudioProfile)
+                    If {AudioDecoderMode.ffmpeg, AudioDecoderMode.Automatic}.Contains((gap.Decoder)) Then
+                        If gap.GetEncoder() <> GuiAudioEncoder.eac3to Then
+                            ret = "wv"
+                        End If
+                    End If
+                End If
             End If
 
             Return ret
@@ -441,11 +446,10 @@ Public Class BatchAudioProfile
             Else
                 Log.Write("Error", "no output found")
 
-                'TO Do: Test this Wavpack as default instead
-                If Not File.Ext.EqualsAny("wv", "wav") Then
+                If Not File.Ext = "wav" Then
                     Audio.Convert(Me)
 
-                    If File.Ext.EqualsAny("wv", "wav") Then
+                    If File.Ext = "wav" Then
                         Encode()
                     End If
                 End If
@@ -729,7 +733,7 @@ Public Class GUIAudioProfile
                 Case AudioCodec.AAC
                     Select Case Params.Encoder
                         Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
-                            Return Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality)
+                            Return CInt(Math.Pow(Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality), 1.5))
                         Case GuiAudioEncoder.eac3to
                             Return Calc.GetYFromTwoPointForm(0.01, CInt(50 / 8 * Channels), 1, CInt(1000 / 8 * Channels), Params.Quality)
                         Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
@@ -751,9 +755,8 @@ Public Class GUIAudioProfile
         End If
 
         Select Case Params.Codec
-            Case AudioCodec.FLAC
+            Case AudioCodec.FLAC, AudioCodec.WavPack
                 Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.55)
-            Case AudioCodec.WavPack
                 If Params.WavPackMode = 0 Then Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.54)
             Case AudioCodec.W64, AudioCodec.WAV
                 Return CInt((TargetSamplingRate * GetCalcDepth() * Channels) / 1000)
@@ -843,18 +846,27 @@ Public Class GUIAudioProfile
 
         If Params.ffmpegNormalizeMode = ffmpegNormalizeMode.loudnorm Then
 
-            Dim args = "-sn -vn -dn -i " + File.LongPathPrefix.Escape
-
-            If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
-                args += " -map 0:a:" & Stream.Index
+            Dim sb As New StringBuilder
+            If Params.ProbeSize <> 5 Then
+                sb.Append($" -probesize {Params.ProbeSize}M")
             End If
 
-            args += " -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner"
+            If Params.AnalyzeDuration <> 5 Then
+                sb.Append($" -analyzeduration {Params.AnalyzeDuration}M")
+            End If
+
+            sb.Append(" -sn -vn -dn -i " + File.LongPathPrefix.Escape)
+
+            If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
+                sb.Append(" -map 0:a:" & Stream.Index)
+            End If
+
+            sb.Append(" -sn -vn -dn" & s.GetFFLogLevel(FfLogLevel.info) & " -hide_banner")
 
 
-            args += " -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
+            sb.Append(" -af loudnorm=I=" & Params.ffmpegLoudnormIntegrated.ToInvariantString +
                 ":TP=" & Params.ffmpegLoudnormTruePeak.ToInvariantString + ":LRA=" &
-                Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary -c:a pcm_f64le -f null NUL"
+                Params.ffmpegLoudnormLRA.ToInvariantString + ":print_format=summary -c:a pcm_f64le -f null NUL")
             'pcm_f64le - disables last pointless auto resempler step 64fp-16int to null, not measurable speed diff anyway
 
 
@@ -863,12 +875,9 @@ Public Class GUIAudioProfile
                 proc.SkipStrings = {"frame=", "size="}
                 proc.Encoding = Encoding.UTF8
                 proc.Package = Package.ffmpeg
-                proc.Arguments = args
+                proc.Arguments = sb.ToString
                 proc.Duration = GetDuration()
                 proc.Start()
-
-
-
 
 
                 Dim match = Regex.Match(proc.Log.ToString, "Input Integrated:\s*([-+\.0-9]+)")
@@ -890,7 +899,17 @@ Public Class GUIAudioProfile
         Else 'QAAC is ~x20 faster than ffmpeg,  also with --peak no PCM temp file like --normalize
 
             Dim sb As New StringBuilder
-            sb.Append(Package.ffmpeg.Path.Escape + " -sn -vn -dn -i " + File.LongPathPrefix.Escape)
+            sb.Append(Package.ffmpeg.Path.Escape)
+
+            If Params.ProbeSize <> 5 Then
+                sb.Append($" -probesize {Params.ProbeSize}M")
+            End If
+
+            If Params.AnalyzeDuration <> 5 Then
+                sb.Append($" -analyzeduration {Params.AnalyzeDuration}M")
+            End If
+
+            sb.Append(" -sn -vn -dn -i " + File.LongPathPrefix.Escape)
 
             If Not Stream Is Nothing AndAlso Streams.Count > 1 Then
                 sb.Append(" -map 0:a:" & Stream.Index)
@@ -1157,7 +1176,7 @@ Public Class GUIAudioProfile
         End If
 
         If Params.qaacQuality <> 2 Then
-            sb.Append(" --quality " & Params.qaacQuality)
+            sb.Append(" --quality " & Params.qaacQuality) 'Generates huge PCM temp file
         End If
 
 
@@ -1229,7 +1248,17 @@ Public Class GUIAudioProfile
         Dim sb As New StringBuilder
 
         If includePaths AndAlso File <> "" Then
-            sb.Append(Package.ffmpeg.Path.Escape + " -sn -vn -dn -i " + File.Escape)
+            sb.Append(Package.ffmpeg.Path.Escape)
+
+            If Params.ProbeSize <> 5 Then
+                sb.Append($" -probesize {Params.ProbeSize}M")
+            End If
+
+            If Params.AnalyzeDuration <> 5 Then
+                sb.Append($" -analyzeduration {Params.AnalyzeDuration}M")
+            End If
+
+            sb.Append(" -sn -vn -dn -i " + File.LongPathPrefix.Escape)
         Else
             sb.Append("ffmpeg")
         End If
@@ -1611,21 +1640,39 @@ Public Class GUIAudioProfile
             sb.Append("opusenc")
         End If
 
-        Select Case Params.opusEncMode
-            Case OpusEncMode.VBR
+        Select Case Params.ffmpegOpusRateMode
+            Case OpusRateMode.VBR
                 sb.Append(" --vbr --bitrate " & CInt(Bitrate))
-            Case OpusEncMode.CVBR
+            Case OpusRateMode.CVBR
                 sb.Append(" --cvbr --bitrate " & CInt(Bitrate))
-            Case OpusEncMode.CBR
+            Case OpusRateMode.CBR
                 sb.Append(" --hard-cbr --bitrate " & CInt(Bitrate))
         End Select
 
-        If Params.opusEncComplexity < 10 Then
-            sb.Append(" --comp " & Params.opusEncComplexity)
+        Select Case Params.opusEncTuning
+            Case OpusEncTune.music
+                sb.Append(" --music")
+            Case OpusEncTune.speech
+                sb.Append(" --speech")
+            Case OpusEncTune.both
+                sb.Append(" --music --speech")
+                Exit Select
+        End Select
+
+        If Params.ffmpegOpusCompress < 10 Then
+            sb.Append(" --comp " & Params.ffmpegOpusCompress)
         End If
 
-        If Params.opusEncFramesize <> 20 Then
-            sb.Append(" --framesize " & Params.opusEncFramesize.ToInvariantString)
+        If Params.ffmpegOpusFrame <> 20 Then
+            sb.Append(" --framesize " & Params.ffmpegOpusFrame.ToInvariantString)
+        End If
+
+        If Params.ffmpegOpusPacket <> 0 Then
+            sb.Append(" --expect-loss " & CInt(Params.ffmpegOpusPacket))
+        End If
+
+        If Params.opusEncDelay < 1000 Then
+            sb.Append(" --max-delay " & Params.opusEncDelay)
         End If
 
         If Params.opusEncNoPhaseInv Then
@@ -1683,7 +1730,7 @@ Public Class GUIAudioProfile
                     ch += " Mono"
             End Select
 
-            Dim circa = If(Params.RateMode = AudioRateMode.VBR OrElse {AudioCodec.FLAC, AudioCodec.WavPack}.Contains(Params.Codec), "~", "")
+            Dim circa = If(Params.RateMode = AudioRateMode.VBR OrElse {AudioCodec.FLAC}.Contains(Params.Codec), "~", "")
             Dim bitrate = If(Params.RateMode = AudioRateMode.VBR, GetBitrate(), Me.Bitrate)
 
             If ExtractCore Then
@@ -1900,9 +1947,11 @@ Public Class GUIAudioProfile
         Property ffmpegOpusMigrate As Integer = 1
         Property ffmpegMp3Cutoff As Integer
 
-        Property opusEncMode As OpusEncMode
-        Property opusEncComplexity As Integer = 10
-        Property opusEncFramesize As Double = 20
+        'Property opusEncMode As OpusEncMode
+        'Property opusEncComplexity As Integer = 10
+        'Property opusEncFramesize As Double = 20
+        Property opusEncTuning As OpusEncTune
+        Property opusEncDelay As Integer
         Property opusEncNoPhaseInv As Boolean = False
 
         Property ffmpegCompressionLevel As Integer = 1
@@ -2020,11 +2069,18 @@ Public Enum OpusApp
     voip
     lowdelay
 End Enum
-Public Enum OpusEncMode
-    VBR
-    CVBR
-    CBR
+
+Public Enum OpusEncTune
+    auto
+    music
+    speech
+    <DispName("music && speech")> both
 End Enum
+'Public Enum OpusEncMode
+'VBR
+'CVBR
+'CBR
+'End Enum
 
 Public Enum SimpleAudioRateMode
     CBR

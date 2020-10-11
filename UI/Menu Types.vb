@@ -624,7 +624,7 @@ Namespace UI
                             Dim item As New ActionMenuItem(a(x) + g.MenuSpace, action, tip)
                             item.SetImage(symbol)
                             l.Add(item)
-                            l = item.DropDownItems
+                            'l = item.DropDownItems
                             Return item
                         End If
                     Else

@@ -138,6 +138,7 @@ Public Class Package
         .WebURL = "http://github.com/nu774/qaac",
         .DownloadURL = "https://github.com/nu774/qaac/releases",
         .HelpSwitch = "-h",
+        .HelpFilename = "qaac Help.txt",
         .Keep = {"QTfiles64", "libsndfile-1.dll", "libFLAC_dynamic.dll", "wavpackdll.dll"},
         .HelpURL = "https://github.com/nu774/qaac/wiki",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.qaac),

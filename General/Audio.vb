@@ -356,17 +356,27 @@ Public Class Audio
             outPath += "." + ap.ConvertExt
         End If
 
-        Dim args = "-sn -vn -dn -i " + ap.File.LongPathPrefix.Escape
+        Dim args As String
+
+        If gap?.Params.ProbeSize <> 5 Then
+            args += $" -probesize {gap.Params.ProbeSize}M"
+        End If
+
+        If gap?.Params.AnalyzeDuration <> 5 Then
+            args += $" -analyzeduration {gap.Params.AnalyzeDuration}M"
+        End If
+
+        args += " -sn -vn -dn -i " + ap.File.LongPathPrefix.Escape
 
         If Not ap.Stream Is Nothing Then
             args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
         End If
 
-        If gap.Params.ffmpegDither <> "Disabled" Then
+        If gap?.Params.ffmpegDither <> "Disabled" Then
             args += " -dither_method " & gap.Params.ffmpegDither
         End If
 
-        If gap.Params.ffmpegResampSOX Then
+        If gap?.Params.ffmpegResampSOX Then
             args += " -resampler soxr -precision 28"
         End If
 
@@ -397,10 +407,10 @@ Public Class Audio
                             args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
                         End If
                 End Select
-                ap.GainWasNormalized = True
             ElseIf ap.Gain <> 0 Then
                 args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
             End If
+            ap.GainWasNormalized = True
         End If
 
 
@@ -455,6 +465,7 @@ Public Class Audio
             proc.Encoding = Encoding.UTF8
             proc.Package = Package.ffmpeg
             proc.Arguments = args
+            proc.Duration = ap.GetDuration()
             proc.AllowedExitCodes = {0, 1}
             proc.Start()
         End Using

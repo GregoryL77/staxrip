@@ -141,7 +141,7 @@ Public MustInherit Class AudioProfile
     End Property
 
     Overridable Sub Migrate()
-        'If Depth = 0 Then
+        'If Depth <> 32 Then
         'Depth = 0
         'End If
     End Sub
@@ -734,7 +734,7 @@ Public Class GUIAudioProfile
                     Select Case Params.Encoder
                         Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
                             'experiments
-                            Return CInt(Math.Pow(Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality), 1.006))
+                            Return Calc.GetYFromTwoPointForm(0, CInt(50 / 8 * Channels), 127, CInt(1000 / 8 * Channels), Params.Quality)
                         Case GuiAudioEncoder.eac3to
                             Return Calc.GetYFromTwoPointForm(0.01, CInt(50 / 8 * Channels), 1, CInt(1000 / 8 * Channels), Params.Quality)
                         Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
@@ -752,13 +752,14 @@ Public Class GUIAudioProfile
                     End If
                 Case AudioCodec.Opus
                     Return CInt(Bitrate)
+                Case AudioCodec.WavPack
+                    If Params.WavPackMode = 0 Then Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.54)
             End Select
         End If
 
         Select Case Params.Codec
-            Case AudioCodec.FLAC, AudioCodec.WavPack
+            Case AudioCodec.FLAC
                 Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.55)
-                If Params.WavPackMode = 0 Then Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.54)
             Case AudioCodec.W64, AudioCodec.WAV
                 Return CInt((TargetSamplingRate * GetCalcDepth() * Channels) / 1000)
         End Select
@@ -1708,6 +1709,9 @@ Public Class GUIAudioProfile
 
     Function SupportsGainSampR() As Boolean
         Return GetEncoder() = GuiAudioEncoder.eac3to OrElse GetEncoder() = GuiAudioEncoder.qaac
+    End Function
+    Function IntegerCodec() As Boolean
+        Return {AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.WavPack}.Contains(Params.Codec)
     End Function
 
     Public Overrides ReadOnly Property DefaultName As String

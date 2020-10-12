@@ -454,7 +454,6 @@ Public Class Audio
                         args += " -sample_fmt fltp"
                     End If
             End Select
-
         End If
 
         args += " " + outPath.Escape

@@ -145,7 +145,7 @@ Public Class ProcController
             End If
 
             'Opus Enc, QAAC StdIn mode
-        ElseIf Proc.Duration <> TimeSpan.Zero AndAlso (value.Contains("x realtime,") OrElse (value.Contains("x)") AndAlso Not value.Contains(", ETA"))) Then
+        ElseIf Proc.Duration <> TimeSpan.Zero AndAlso (value.Contains("x)") OrElse (value.Contains("x realtime,") AndAlso Not value.Contains(", ETA"))) Then
             Dim tokens As String()
             If value.Contains("x realtime,") Then
                 tokens = value.Right("] ").Left(".").Split(":"c)

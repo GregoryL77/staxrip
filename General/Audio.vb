@@ -344,7 +344,7 @@ Public Class Audio
 
         'Cut fail fix, normalize after cut which failed
         If gap IsNot Nothing Then
-            If p.Ranges.Count = 0 OrElse (p.Ranges.Count > 0 AndAlso ap.File.Contains("_cut_")) Then
+            If gap.DecodingMode <> AudioDecodingMode.Pipe OrElse gap.Decoder <> AudioDecoderMode.Automatic OrElse gap.GetEncoder = GuiAudioEncoder.eac3to Then
                 gap.NormalizeFF()
                 'gap.Params.Normalize = False
             End If
@@ -386,8 +386,8 @@ Public Class Audio
 
         'Not (p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_"))
 
-        If p.Ranges.Count = 0 OrElse ap.File.Contains("_cut_") Then
-            If gap?.Params.Normalize Then
+        If gap?.DecodingMode <> AudioDecodingMode.Pipe OrElse gap?.Decoder <> AudioDecoderMode.Automatic OrElse gap?.GetEncoder = GuiAudioEncoder.eac3to Then
+            If gap.Params.Normalize Then
                 Select Case gap.Params.ffmpegNormalizeMode
                     Case ffmpegNormalizeMode.dynaudnorm
                         args += " " + Audio.GetDynAudNormArgs(gap.Params)
@@ -403,16 +403,19 @@ Public Class Audio
                             args += " -ar " & gap.SourceSamplingRate
                         End If
                     Case ffmpegNormalizeMode.peak
-                        If ap.GainWasNormalized Then
+                        If ap.Gain <> 0 Then
                             args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
                         End If
                 End Select
+
             ElseIf ap.Gain <> 0 Then
                 args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
             End If
-            ap.GainWasNormalized = True
-        End If
 
+            gap.Params.Normalize = False
+            ap.Gain = 0
+
+        End If
 
         If gap?.Params.SamplingRate <> 0 Then
             args += " -ar " & gap.Params.SamplingRate
@@ -427,33 +430,45 @@ Public Class Audio
 
         args += " -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info)
 
-        If ap.ConvertExt.EqualsAny("wav") Then
-            Select Case gap?.Depth
-                Case 24
-                    args += " -c:a pcm_s24le"
-                Case 32
-                    args += " -c:a pcm_f32le"
-                Case 16
-                    args += " -c:a pcm_s16le"
-                Case Else
-                    args += " -c:a pcm_f32le"
-            End Select
-        ElseIf ap.ConvertExt.EqualsAny("wv") Then
-            args += " -compression_level 1"
+        If p.Ranges.Count = 0 OrElse gap?.DecodingMode <> AudioDecodingMode.Pipe Then
+            If ap.ConvertExt.EqualsAny("wav") Then
+                Select Case gap?.Depth
+                    Case 24
+                        args += " -c:a pcm_s24le"
+                    Case 32
+                        args += " -c:a pcm_f32le"
+                    Case 16
+                        args += " -c:a pcm_s16le"
+                    Case Else
+                        args += " -c:a pcm_f32le"
+                End Select
 
-            Select Case gap?.Depth
-                Case 24
-                    args += " -sample_fmt s32p"
-                Case 32
-                    args += " -sample_fmt fltp"
-                Case 16
-                    args += " -sample_fmt s16p"
-                Case Else
-                    'ffmpeg should auto choose ???
-                    If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
+            ElseIf ap.ConvertExt.EqualsAny("wv") Then
+                args += " -compression_level 1"
+
+                Select Case gap?.Depth
+                    Case 24
+                        args += " -sample_fmt s32p"
+                    Case 32
                         args += " -sample_fmt fltp"
-                    End If
-            End Select
+                    Case 16
+                        args += " -sample_fmt s16p"
+                    Case Else
+                        'ffmpeg should auto choose ???
+                        If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
+                            args += " -sample_fmt fltp"
+                        End If
+                End Select
+            End If
+        Else 'PIPE: keep intermediate files 32FP; normalization, gain after cut will retain precision
+            If ap.ConvertExt.EqualsAny("wav") Then
+                args += " -c:a pcm_f32le"
+            ElseIf ap.ConvertExt.EqualsAny("wv") Then
+                args += " -compression_level 1"
+                If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
+                    args += " -sample_fmt fltp"
+                End If
+            End If
         End If
 
         args += " " + outPath.Escape

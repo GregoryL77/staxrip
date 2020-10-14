@@ -140,7 +140,7 @@ Public Class Proc
         ElseIf commands.Contains("ffmpeg") Then
             Return {"frame=", "size="}
         ElseIf commands.Contains("wavpack") Then 'Sometimes ffmpeg pipe blocks % progress from WP
-            Return {"% done.."}
+            Return {"% done."}
         Else
             Return {" [ETA ", ", eta ", "frames: ", "Maximum Gain Found",
                 "transcoding ...", "process: ", "analyze: "}

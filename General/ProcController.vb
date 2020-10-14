@@ -144,14 +144,9 @@ Public Class ProcController
                 Exit Sub
             End If
 
-            'Opus Enc, QAAC StdIn mode
-        ElseIf Proc.Duration <> TimeSpan.Zero AndAlso (value.Contains("x)") OrElse (value.Contains("x realtime,") AndAlso Not value.Contains(", ETA"))) Then
-            Dim tokens As String()
-            If value.Contains("x realtime,") Then
-                tokens = value.Right("] ").Left(".").Split(":"c)
-            ElseIf value.Contains("x)") Then
-                tokens = value.Left(".").TrimEnd.Split(":"c)
-            End If
+            ' QAAC StdIn mode
+        ElseIf Proc.Duration <> TimeSpan.Zero AndAlso value.Contains("x)") Then
+            Dim tokens = value.Left(".").TrimEnd.Split(":"c)
 
             Select Case tokens.Length
                 Case 3, 2
@@ -170,28 +165,46 @@ Public Class ProcController
                     Exit Sub
             End Select
 
+            'Opus enc StdIn mode
+        ElseIf Proc.Duration <> TimeSpan.Zero AndAlso value.Contains("x realtime,") Then
+            Dim tokens = value.Right("] ").Left(".").Split(":"c)
+
+            If tokens.Length = 3 Then
+                Dim ts = New TimeSpan(tokens(0).ToInt, tokens(1).ToInt, tokens(2).ToInt)
+                Dim val = 100 / Proc.Duration.TotalSeconds * ts.TotalSeconds
+
+                If LastProgress <> val Then
+                    ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
+                    ProcForm.Taskbar?.SetValue(Math.Max(val, 1), 100)
+                    ProcForm.NotifyIcon.Text = val & "%"
+                    ProgressBar.Value = val
+                    LastProgress = val
+                End If
+                Exit Sub
+            End If
+
         ElseIf Proc.FrameCount > 0 AndAlso value.Contains("frame=") AndAlso value.Contains("fps=") Then
             Dim frameString = value.Left("fps=").Right("frame=")
 
-            If frameString.IsInt Then
-                Dim frame = frameString.ToInt
+                If frameString.IsInt Then
+                    Dim frame = frameString.ToInt
 
-                If frame < Proc.FrameCount Then
-                    Dim progressValue = CSng(frame / Proc.FrameCount * 100)
+                    If frame < Proc.FrameCount Then
+                        Dim progressValue = CSng(frame / Proc.FrameCount * 100)
 
-                    If LastProgress <> progressValue Then
-                        ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                        ProcForm.Taskbar?.SetValue(Math.Max(progressValue, 1), 100)
-                        ProcForm.NotifyIcon.Text = progressValue & "%"
-                        ProgressBar.Value = progressValue
-                        LastProgress = progressValue
+                        If LastProgress <> progressValue Then
+                            ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
+                            ProcForm.Taskbar?.SetValue(Math.Max(progressValue, 1), 100)
+                            ProcForm.NotifyIcon.Text = progressValue & "%"
+                            ProgressBar.Value = progressValue
+                            LastProgress = progressValue
+                        End If
+
+                        Exit Sub
                     End If
-
-                    Exit Sub
                 End If
-            End If
-        ElseIf value.Contains("/100)") Then
-            Dim percentString = value.Right("(").Left("/")
+            ElseIf value.Contains("/100)") Then
+                Dim percentString = value.Right("(").Left("/")
 
             If percentString.IsInt Then
                 Dim percent = percentString.ToInt

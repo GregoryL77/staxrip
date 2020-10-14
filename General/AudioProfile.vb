@@ -126,9 +126,11 @@ Public MustInherit Class AudioProfile
                 End If
             End If
 
-            If SourceSamplingRateValue = 0 Then
+            If SourceSamplingRateValue <= 0 Then
                 SourceSamplingRateValue = 48000
             End If
+
+            If SourceSamplingRate > 48000 * 512 Then SourceSamplingRate = 48000 * 512
 
             Return SourceSamplingRateValue
         End Get
@@ -789,7 +791,7 @@ Public Class GUIAudioProfile
                 If cl.Contains("qaac64") Then
                     proc.Package = Package.qaac
                     proc.SkipStrings = {", ETA ", "x)"}
-                    proc.Duration = GetDuration()
+                    If DecodingMode = AudioDecodingMode.Pipe Then proc.Duration = GetDuration()
                 ElseIf cl.Contains("fdkaac") Then
                     proc.Package = Package.fdkaac
                     proc.SkipStrings = {"%]", "x)"}
@@ -801,7 +803,7 @@ Public Class GUIAudioProfile
                 ElseIf cl.Contains("opusenc") Then
                     proc.Package = Package.OpusEnc
                     proc.SkipStrings = {"x realtime,"}
-                    proc.Duration = GetDuration()
+                    If DecodingMode = AudioDecodingMode.Pipe Then proc.Duration = GetDuration()
                 ElseIf cl.Contains("ffmpeg") Then
                     If cl.Contains("libfdk_aac") Then
                         proc.Package = Package.ffmpeg_non_free
@@ -813,10 +815,10 @@ Public Class GUIAudioProfile
                     proc.Encoding = Encoding.UTF8
                     proc.Duration = GetDuration()
 
-                    'To Do: Sometimes ffmpeg pipe blocks WP % progress, console shows only creating .WV
+                    ' Sometimes ffmpeg pipe blocks WP progress, console shows only creating .WV
                 ElseIf cl.Contains("wavpack") Then
                     proc.Package = Package.WavPack
-                    proc.SkipStrings = {"% done.."}
+                    proc.SkipStrings = {"% done."}
                     'If cl.Contains("ffmpeg") Then proc.Encoding = Encoding.UTF8
                 End If
 
@@ -940,13 +942,10 @@ Public Class GUIAudioProfile
                     End If
                 End If
 
-                If Params.SamplingRate <> 0 Then 'smooths some rounding problems, or remove ?
-                    sb.Append(" -ar " & Params.SamplingRate)
-                End If
-
                 Const UpSampleFactor As Integer = 4   'upsample true peak
                 Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
                 If SRate < 44100 * UpSampleFactor Then SRate = 48000 * UpSampleFactor
+                If SRate > 48000 * 64 Then SRate = 48000 * 64
                 Dim QLogL As String = If(s.FfmpegLogLevel >= 0, " --verbose", "")
 
                 sb.Append(" -c:a pcm_f32le -f wav - | " & Package.qaac.Path.Escape & " --rate " & SRate & " --peak" & QLogL & " - ")

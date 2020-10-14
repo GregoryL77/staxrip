@@ -430,7 +430,16 @@ Public Class Audio
 
         args += " -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info)
 
-        If p.Ranges.Count = 0 OrElse gap?.DecodingMode <> AudioDecodingMode.Pipe Then
+        If gap?.DecodingMode = AudioDecodingMode.Pipe Then 'PIPE: keep intermediate files from loosing precision
+            If ap.ConvertExt.EqualsAny("wav") Then
+                args += " -c:a pcm_f32le"
+            ElseIf ap.ConvertExt = "wv" Then
+                args += " -compression_level 1"
+                If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
+                    args += " -sample_fmt fltp"
+                End If
+            End If
+        Else
             If ap.ConvertExt.EqualsAny("wav") Then
                 Select Case gap?.Depth
                     Case 24
@@ -443,7 +452,7 @@ Public Class Audio
                         args += " -c:a pcm_f32le"
                 End Select
 
-            ElseIf ap.ConvertExt.EqualsAny("wv") Then
+            ElseIf ap.ConvertExt = "wv" Then
                 args += " -compression_level 1"
 
                 Select Case gap?.Depth
@@ -459,15 +468,6 @@ Public Class Audio
                             args += " -sample_fmt fltp"
                         End If
                 End Select
-            End If
-        Else 'PIPE: keep intermediate files 32FP; normalization, gain after cut will retain precision
-            If ap.ConvertExt.EqualsAny("wav") Then
-                args += " -c:a pcm_f32le"
-            ElseIf ap.ConvertExt.EqualsAny("wv") Then
-                args += " -compression_level 1"
-                If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
-                    args += " -sample_fmt fltp"
-                End If
             End If
         End If
 

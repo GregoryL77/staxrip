@@ -811,7 +811,7 @@ Public Class AudioForm
                 Case AudioCodec.Opus, AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.DTS, AudioCodec.WavPack
                     numQuality.Enabled = False
                 Case Else
-                    numQuality.Enabled = TempProfile.Params.RateMode = AudioRateMode.VBR
+                    numQuality.Enabled = TempProfile.VBRMode()
             End Select
 
             Select Case TempProfile.Params.Codec
@@ -846,15 +846,16 @@ Public Class AudioForm
         Select Case TempProfile.Params.Codec
             Case AudioCodec.AAC
                 Select Case TempProfile.Params.Encoder
-                    Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
-                        SetQuality(54)
-                        TempProfile.Params.qaacQuality = 2
-                        TempProfile.Params.qaacLowpass = 0
-                        TempProfile.Params.qaacRateMode = 0
-                        TempProfile.Params.qaacHE = False
+                   'Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
+                        'SetQuality(54)
+                        'TempProfile.Params.qaacQuality = 2
+                        'TempProfile.Params.qaacLowpass = 0
+                        'TempProfile.Params.qaacRateMode = 0
+                        'TempProfile.Params.qaacHE = False
                     Case GuiAudioEncoder.eac3to
                         SetQuality(0.5)
                     Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
+                        TempProfile.Params.SimpleRateMode = SimpleAudioRateMode.VBR
                         SetQuality(3)
                     Case Else
                         SetQuality(54)
@@ -864,7 +865,6 @@ Public Class AudioForm
                         TempProfile.Params.qaacHE = False
                 End Select
 
-                TempProfile.Params.RateMode = AudioRateMode.VBR
             Case AudioCodec.AC3, AudioCodec.EAC3
                 If TempProfile.Channels = 6 Then
                     numBitrate.Value = 448
@@ -872,31 +872,31 @@ Public Class AudioForm
                     numBitrate.Value = 224
                 End If
 
-                TempProfile.Params.RateMode = AudioRateMode.CBR
+                'TempProfile.Params.RateMode = AudioRateMode.CBR
             Case AudioCodec.FLAC
                 TempProfile.Params.ffmpegCompressionLevel = 5
                 TempProfile.Depth = 0
                 numBitrate.Value = TempProfile.GetBitrate
-                TempProfile.Params.RateMode = AudioRateMode.VBR
+                'TempProfile.Params.RateMode = AudioRateMode.VBR
 
             Case AudioCodec.WavPack
                 TempProfile.Params.WavPackMode = 0
                 numBitrate.Value = TempProfile.GetBitrate
                 TempProfile.Params.WavPackCreateCorrection = False
                 TempProfile.Params.ffmpegCompressionLevel = 1
-                TempProfile.Depth = If(TempProfile.GetEncoder() = GuiAudioEncoder.ffmpeg, 0, 32)
-                TempProfile.Params.RateMode = AudioRateMode.VBR
+                TempProfile.Depth = If(TempProfile.Params.Encoder = GuiAudioEncoder.ffmpeg, 0, 32)
+                'TempProfile.Params.RateMode = AudioRateMode.VBR
                 TempProfile.Params.WavPackCompression = 1
                 TempProfile.Params.WavPackExtraCompression = 0
                 TempProfile.Params.WavPackPreQuant = 0
 
             Case AudioCodec.W64
                 TempProfile.Depth = 0
-                TempProfile.Params.RateMode = AudioRateMode.CBR
+                'TempProfile.Params.RateMode = AudioRateMode.CBR
 
             Case AudioCodec.WAV
                 TempProfile.Depth = 0
-                TempProfile.Params.RateMode = AudioRateMode.CBR
+                'TempProfile.Params.RateMode = AudioRateMode.CBR
 
             Case AudioCodec.DTS
                 If TempProfile.Channels = 6 Then
@@ -905,7 +905,7 @@ Public Class AudioForm
                     numBitrate.Value = 768
                 End If
 
-                TempProfile.Params.RateMode = AudioRateMode.CBR
+                'TempProfile.Params.RateMode = AudioRateMode.CBR
             Case AudioCodec.MP3
                 SetQuality(4)
                 TempProfile.Params.RateMode = AudioRateMode.VBR
@@ -916,7 +916,7 @@ Public Class AudioForm
                 TempProfile.Params.ffmpegMp3Cutoff = 0
             Case AudioCodec.Opus
                 numBitrate.Value = If(TempProfile.Channels = 6, 256, TempProfile.Channels * 96 / 2)
-                TempProfile.Params.RateMode = AudioRateMode.VBR
+                'TempProfile.Params.RateMode = AudioRateMode.VBR
                 TempProfile.Params.opusEncNoPhaseInv = False
                 TempProfile.Params.ffmpegOpusCompress = 10
                 TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR
@@ -933,7 +933,7 @@ Public Class AudioForm
                 End If
         End Select
 
-        If Not TempProfile.IntegerCodec Then TempProfile.Depth = 0
+        If Not TempProfile.IntegerCodec() Then TempProfile.Depth = 0
 
         UpdateBitrate()
         TempProfile.GetCommandLine(False) 'set encoder
@@ -1068,7 +1068,7 @@ Public Class AudioForm
         Dim page = ui.CreateFlowPage()
         page.SuspendLayout()
 
-        If Not {GuiAudioEncoder.eac3to}.Contains(TempProfile.GetEncoder()) Then
+        If Not {GuiAudioEncoder.eac3to}.Contains(TempProfile.Params.Encoder) Then
             numFFLFEMixLevel = ui.AddNum(page)
             numFFLFEMixLevel.Text = "FF LFE Downmix"
             numFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
@@ -1138,6 +1138,7 @@ Public Class AudioForm
                             mCompressionLevel.Help = "Over 10 is non-subset, could be unplayable"
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
+                            TempProfile.Params.WavPackMode = 0
                         End If
                         mCompressionLevel.Property = NameOf(TempProfile.Params.ffmpegCompressionLevel)
                         AddHandler mCompressionLevel.NumEdit.ValueChanged, Sub()
@@ -1154,7 +1155,13 @@ Public Class AudioForm
                         mbRateMode.Text = "Rate Mode"
                         mbRateMode.Expandet = True
                         mbRateMode.Button.Value = TempProfile.Params.SimpleRateMode
-                        mbRateMode.Button.SaveAction = Sub(value) TempProfile.Params.SimpleRateMode = value
+                        mbRateMode.Button.SaveAction =
+                            Sub(value)
+                                If TempProfile.Params.Encoder = GuiAudioEncoder.ffmpeg AndAlso TempProfile.Params.Codec = AudioCodec.AAC Then
+                                    TempProfile.Params.SimpleRateMode = value
+                                    UpdateBitrate()
+                                End If
+                            End Sub
 
                         cb = ui.AddBool
                         cb.Text = "Use fdk-aac"
@@ -1165,12 +1172,12 @@ Public Class AudioForm
                         mbRateMode.Expandet = True
                         mbRateMode.Button.Value = TempProfile.Params.ffmpegOpusRateMode
                         mbRateMode.Button.SaveAction =
-                            Sub(value)
-                                If TempProfile.Params.Codec = AudioCodec.Opus Then
-                                    TempProfile.Params.ffmpegOpusRateMode = value
-                                    TempProfile.Params.RateMode = If(TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR, AudioRateMode.VBR, AudioRateMode.CBR)
-                                End If
-                            End Sub
+                              Sub(value)
+                                  If TempProfile.Params.Encoder = GuiAudioEncoder.ffmpeg AndAlso TempProfile.Params.Codec = AudioCodec.Opus Then
+                                      TempProfile.Params.ffmpegOpusRateMode = value
+                                      'TempProfile.Params.RateMode = If(TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR, AudioRateMode.VBR, AudioRateMode.CBR)
+                                  End If
+                              End Sub
 
                         'Dim mbOpusApp = ui.AddMenu(Of OpusApp)
                         'mbOpusApp.Text = "Application Type"
@@ -1229,6 +1236,7 @@ Public Class AudioForm
                         mbRateMode.Button.SaveAction = Sub(value)
                                                            If {AudioCodec.MP3, AudioCodec.Vorbis}.Contains(TempProfile.Params.Codec) Then
                                                                TempProfile.Params.RateMode = value
+                                                               UpdateBitrate()
                                                            End If
                                                        End Sub
                         Dim num = ui.AddNum(page)
@@ -1266,8 +1274,10 @@ Public Class AudioForm
                 modeMenu.HelpAction = getHelpAction("--bitrate-mode")
                 modeMenu.Button.Value = TempProfile.Params.SimpleRateMode
                 modeMenu.Button.SaveAction = Sub(value)
-                                                 TempProfile.Params.SimpleRateMode = value
-                                                 UpdateBitrate()
+                                                 If TempProfile.Params.Codec = AudioCodec.AAC AndAlso TempProfile.Params.Encoder = GuiAudioEncoder.fdkaac Then
+                                                     TempProfile.Params.SimpleRateMode = value
+                                                     UpdateBitrate()
+                                                 End If
                                              End Sub
 
                 Dim profileMenu = ui.AddMenu(Of Integer)
@@ -1320,20 +1330,21 @@ Public Class AudioForm
                 transportFormat.Add("LOAS/LATM (LATM within LOAS)", 10)
                 transportFormat.Property = NameOf(TempProfile.Params.fdkaacTransportFormat)
 
-                'Dim n = ui.AddNum
-                'n.Text = "Bandwidth"
-                'n.HelpAction = getHelpAction("--bandwidth")
-                'n.Property = NameOf(TempProfile.Params.fdkaacBandwidth)
+                Dim n = ui.AddNum
+                n.Text = "Bandwidth"
+                n.HelpAction = getHelpAction("--bandwidth")
+                n.Config = {Integer.MinValue, Integer.MaxValue}
+                n.Property = NameOf(TempProfile.Params.fdkaacBandwidth)
 
                 cb = ui.AddBool
                 cb.Text = "Afterburner"
                 cb.HelpAction = getHelpAction("--afterburner")
                 cb.Property = NameOf(TempProfile.Params.fdkaacAfterburner)
 
-                'cb = ui.AddBool
-                'cb.Text = "Add CRC Check on ADTS header"
-                'cb.HelpAction = getHelpAction("--adts-crc-check")
-                'cb.Property = NameOf(TempProfile.Params.fdkaacAdtsCrcCheck)
+                cb = ui.AddBool
+                cb.Text = "Add CRC Check on ADTS header"
+                cb.HelpAction = getHelpAction("--adts-crc-check")
+                cb.Property = NameOf(TempProfile.Params.fdkaacAdtsCrcCheck)
 
                 'cb = ui.AddBool
                 'cb.Text = "Header Period"
@@ -1361,8 +1372,11 @@ Public Class AudioForm
                 mbMode.Help = "https://github.com/nu774/qaac/wiki/Encoder-configuration#tvbr-quality-steps"
                 mbMode.Button.Value = TempProfile.Params.qaacRateMode
                 mbMode.Button.SaveAction = Sub(value)
-                                               TempProfile.Params.qaacRateMode = value
-                                               UpdateBitrate()
+                                               If TempProfile.Params.Codec = AudioCodec.AAC AndAlso TempProfile.GetEncoder() = GuiAudioEncoder.qaac Then
+                                                   TempProfile.Params.qaacRateMode = value
+                                                   'TempProfile.Params.RateMode = If(TempProfile.Params.qaacRateMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
+                                                   UpdateBitrate()
+                                               End If
                                            End Sub
 
                 'Dim mbQuality = ui.AddMenu(Of Integer)(page)  'Is this really needed?
@@ -1389,19 +1403,18 @@ Public Class AudioForm
 
                 AddHandler cbqaacHE.CheckedChanged, Sub()
                                                         If cbqaacHE.Checked AndAlso mbMode.Button.Value = 0 Then
-                                                            Dim c21 As Double = If(TempProfile.Channels > 0, TempProfile.Channels * 64 / 2, 160)
-                                                            SetBitrate(CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
                                                             mbMode.Button.Value = 1
                                                             TempProfile.Params.qaacRateMode = 1
-                                                            TempProfile.Params.RateMode = AudioRateMode.CBR
+                                                            'TempProfile.Params.RateMode = AudioRateMode.CBR
+                                                            Dim c21 As Double = If(TempProfile.Channels > 0, TempProfile.Channels * 64 / 2, 160)
+                                                            SetBitrate(CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
                                                         End If
                                                     End Sub
 
                 AddHandler mbMode.Button.ValueChangedUser, Sub()
                                                                'cbqaacHE.Enabled = mbMode.Button.Value <> 0
-                                                               TempProfile.Params.RateMode = If(mbMode.Button.Value = 0, AudioRateMode.VBR, AudioRateMode.CBR)
                                                                If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
-                                                               UpdateControls()
+                                                               'UpdateControls()
                                                            End Sub
 
                 'AFAIK dither is intended only for wav/ALAC out and depth (-b) param - no effect in Staxrip: 
@@ -1422,24 +1435,10 @@ Public Class AudioForm
                 mbWavPackMode.Button.Value = TempProfile.Params.WavPackMode
                 mbWavPackMode.Button.SaveAction =
                     Sub(value)
-                        TempProfile.Params.WavPackMode = If(TempProfile.Params.Encoder = GuiAudioEncoder.ffmpeg, 0, value)
-                        UpdateBitrate()
-                    End Sub
-
-                AddHandler mbWavPackMode.Button.ValueChangedUser,
-                    Sub()
-                        If mbWavPackMode.Button.Value = 1 Then
-                            TempProfile.Params.WavPackMode = 1
-                            TempProfile.Params.RateMode = AudioRateMode.CBR
-                            'numBitrate.Value = TempProfile.Channels * 320 / 2
-                            SetBitrate(CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
-                        Else
-                            TempProfile.Params.RateMode = AudioRateMode.VBR
-                            'UpdateBitrate()
+                        If TempProfile.Params.Codec = AudioCodec.WavPack AndAlso TempProfile.GetEncoder() = GuiAudioEncoder.WavPack Then
+                            TempProfile.Params.WavPackMode = value
                         End If
-                        UpdateControls()
                     End Sub
-
 
                 Dim mCompression = ui.AddMenu(Of Integer)
                 mCompression.Text = "Comp/Decomp Mode"
@@ -1461,10 +1460,13 @@ Public Class AudioForm
                 mPreQuant.Config = {0, 24}
                 mPreQuant.HelpAction = getHelpAction("--pre-quantize=bits")
                 mPreQuant.NumEdit.Value = TempProfile.Params.WavPackPreQuant
-                mPreQuant.NumEdit.SaveAction = Sub(value)
-                                                   TempProfile.Params.WavPackPreQuant = CInt(value)
-                                                   UpdateBitrate()
-                                               End Sub
+                mPreQuant.NumEdit.SaveAction =
+                    Sub(value)
+                        If TempProfile.Params.Codec = AudioCodec.WavPack AndAlso TempProfile.GetEncoder() = GuiAudioEncoder.WavPack Then
+                            TempProfile.Params.WavPackPreQuant = CInt(value)
+                            UpdateBitrate()
+                        End If
+                    End Sub
 
                 Dim cbCreateCorrectionWVC = ui.AddBool(page)
                 cbCreateCorrectionWVC.Text = "Create correction file"
@@ -1474,14 +1476,16 @@ Public Class AudioForm
                 cbCreateCorrectionWVC.Enabled = mbWavPackMode.Button.Value = 1
                 AddHandler mbWavPackMode.Button.ValueChangedUser, Sub()
                                                                       If mbWavPackMode.Button.Value = 1 Then
+                                                                          TempProfile.Params.WavPackMode = 1
+                                                                          SetBitrate(CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
                                                                           cbCreateCorrectionWVC.Enabled = True
                                                                       Else
-                                                                          cbCreateCorrectionWVC.Checked = False
+                                                                          'cbCreateCorrectionWVC.Checked = False
                                                                           cbCreateCorrectionWVC.Enabled = False
+                                                                          TempProfile.Params.WavPackMode = 0
+                                                                          UpdateBitrate()
                                                                       End If
                                                                   End Sub
-
-
 
             Case GuiAudioEncoder.OpusEnc
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.OpusEnc, switch)
@@ -1492,9 +1496,9 @@ Public Class AudioForm
                 mbRateMode.Button.Value = TempProfile.Params.ffmpegOpusRateMode
                 mbRateMode.Button.SaveAction =
                     Sub(value)
-                        If TempProfile.Params.Codec = AudioCodec.Opus Then
+                        If TempProfile.Params.Codec = AudioCodec.Opus AndAlso TempProfile.GetEncoder() = GuiAudioEncoder.OpusEnc Then
                             TempProfile.Params.ffmpegOpusRateMode = value
-                            TempProfile.Params.RateMode = If(TempProfile.Params.ffmpegOpusRateMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
+                            'TempProfile.Params.RateMode = If(TempProfile.Params.ffmpegOpusRateMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
                         End If
                     End Sub
 

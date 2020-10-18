@@ -123,23 +123,23 @@ Public Class Proc
     Shared Function GetSkipStrings(commands As String) As String()
         commands = commands.ToLower
 
-        If commands.Contains("xvid_encraw") Then
-            Return {"key=", "frames("}
-        ElseIf commands.Contains("x264") OrElse commands.Contains("x265") Then
+        'If commands.Contains("xvid_encraw") Then
+        'Return {"key=", "frames("}
+        If commands.Contains("x264") OrElse commands.Contains("x265") Then
             Return {"%]"}
         ElseIf commands.Contains("nvenc") Then
             Return {"frames: "}
         ElseIf commands.Contains("qaac") Then
             Return {", ETA ", "x)"}
-        ElseIf commands.Contains("fdkaac") Then
-            Return {"%]", "x)"}
         ElseIf commands.Contains("opusenc") Then
             Return {"x realtime,"}
+        ElseIf commands.Contains("fdkaac") Then
+            Return {"%]", "x)"}
         ElseIf commands.Contains("eac3to") Then
             Return {"process: ", "analyze: "}
         ElseIf commands.Contains("ffmpeg") Then
             Return {"frame=", "size="}
-        ElseIf commands.Contains("wavpack") Then 'Sometimes ffmpeg pipe blocks % progress from WP
+        ElseIf commands.Contains("wavpack") Then
             Return {"% done."}
         Else
             Return {" [ETA ", ", eta ", "frames: ", "Maximum Gain Found",

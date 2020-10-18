@@ -344,7 +344,7 @@ Public Class Audio
 
         'Cut fail fix, normalize after cut which failed
         If gap IsNot Nothing Then
-            If gap.DecodingMode <> AudioDecodingMode.Pipe OrElse gap.Decoder <> AudioDecoderMode.Automatic OrElse gap.GetEncoder = GuiAudioEncoder.eac3to Then
+            If gap.DecodingMode <> AudioDecodingMode.Pipe OrElse gap.Decoder <> AudioDecoderMode.Automatic OrElse gap.SupportsNormalize Then
                 gap.NormalizeFF()
                 'gap.Params.Normalize = False
             End If
@@ -386,7 +386,7 @@ Public Class Audio
 
         'Not (p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_"))
 
-        If gap?.DecodingMode <> AudioDecodingMode.Pipe OrElse gap?.Decoder <> AudioDecoderMode.Automatic OrElse gap?.GetEncoder = GuiAudioEncoder.eac3to Then
+        If gap?.DecodingMode <> AudioDecodingMode.Pipe OrElse gap?.Decoder <> AudioDecoderMode.Automatic OrElse gap?.SupportsNormalize Then
             If gap.Params.Normalize Then
                 Select Case gap.Params.ffmpegNormalizeMode
                     Case ffmpegNormalizeMode.dynaudnorm
@@ -407,12 +407,12 @@ Public Class Audio
                             args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
                         End If
                 End Select
+                gap.Params.Normalize = False
 
             ElseIf ap.Gain <> 0 Then
                 args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
             End If
 
-            gap.Params.Normalize = False
             ap.Gain = 0
 
         End If
@@ -427,8 +427,6 @@ Public Class Audio
                 args += " -lfe_mix_level " & gap.Params.ffmpegLFEMixLevel.ToInvariantString
             End If
         End If
-
-        args += " -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info)
 
         If gap?.DecodingMode = AudioDecodingMode.Pipe Then 'PIPE: keep intermediate files from loosing precision
             If ap.ConvertExt.EqualsAny("wav") Then
@@ -463,13 +461,16 @@ Public Class Audio
                     Case 16
                         args += " -sample_fmt s16p"
                     Case Else
-                        'ffmpeg should auto choose ???
+                        'should ffmpeg auto choose ???
                         If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
                             args += " -sample_fmt fltp"
                         End If
+                        'Exit Select
                 End Select
             End If
         End If
+
+        args += " -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info)
 
         args += " " + outPath.Escape
 

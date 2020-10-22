@@ -1135,7 +1135,7 @@ Public Class AudioForm
                         mCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
                             mCompressionLevel.NumEdit.Config = {0, 12}
-                            mCompressionLevel.Help = "Over 10 is non-subset, could be unplayable"
+                            mCompressionLevel.Help = "Over 10 is non-subset"
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
                             TempProfile.Params.WavPackMode = 0

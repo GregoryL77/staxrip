@@ -60,6 +60,12 @@ Public Class SelectionBox(Of T)
                 End If
             Next
 
+            'audio conv muxer select profile width
+            Dim LtextWidth As Integer = CInt(TextRenderer.MeasureText(Text, form.laText.Font).Width / 1.75)
+            If form.laText.Width < LtextWidth Then
+                form.Width += LtextWidth - form.laText.Width
+            End If
+
             form.Text = Title
 
             If form.Text = "" Then

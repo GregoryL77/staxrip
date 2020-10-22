@@ -4697,7 +4697,7 @@ Public Class MainForm
         ret.Add("Apps|Players|MPC-BE", NameOf(g.DefaultCommands.StartTool), {"MPC-BE"})
         ret.Add("Apps|Players|MPC-HC", NameOf(g.DefaultCommands.StartTool), {"MPC-HC"})
         ret.Add("Apps|Indexing|D2V Witch", NameOf(g.DefaultCommands.StartTool), {"D2V Witch"})
-   'DGIndex Back
+        'DGIndex Back
         ret.Add("Apps|Indexing|DGIndexNV", NameOf(g.DefaultCommands.StartTool), {"DGIndexNV"})
         ret.Add("Apps|Indexing|DGIndex", NameOf(g.DefaultCommands.StartTool), {"DGIndex"})
         ret.Add("Apps|Thumbnails|MTN Thumbnailer", NameOf(g.DefaultCommands.SaveMTN))
@@ -6008,7 +6008,7 @@ Public Class MainForm
     Sub ExecuteAudio(ap As AudioProfile)
         If MsgQuestion("Confirm to process the track.") = DialogResult.OK Then
             Try
-                If p.TempDir = "" Then
+                If p.TempDir = "" OrElse p.TempDir.Contains("%") Then
                     p.TempDir = ap.File.Dir
                 End If
 

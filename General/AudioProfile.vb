@@ -1598,8 +1598,8 @@ Public Class GUIAudioProfile
                 Case AudioDecodingMode.Pipe, AudioDecodingMode.WAVE
                     sb.Append(" -i") 'ffmpeg wav pipe mandatory
             End Select
-            ' -l WVPenc force low priority, is needed?
-            sb.Append(" -m -z1 -y " + input + " " + GetOutputFile.Escape)
+            ' -l WVPenc force low priority, is needed, -z0 cmd title?
+            sb.Append(" -w encoder -w settings -m -y " + input + " " + GetOutputFile.Escape)
         End If
 
         Return sb.ToString

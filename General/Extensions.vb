@@ -284,11 +284,9 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function ShortBegEnd(instance As String) As String
-        Const slen As Integer = 32
-        Const eidx As Integer = 16
-        If instance.Length > slen + eidx + 1 Then
-            Return instance.Substring(0, slen) & "_" & instance.Substring(instance.Length - eidx)
+    Function ShortBegEnd(instance As String, Optional StartLen As Integer = 32, Optional EndLen As Integer = 18) As String
+        If instance.Length > StartLen + EndLen + 1 Then
+            Return instance.Substring(0, StartLen) & "_" & instance.Substring(instance.Length - EndLen)
         Else
             Return instance
         End If

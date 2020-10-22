@@ -1513,7 +1513,7 @@ Public Class FileTypes
     Shared Property VideoRaw As String() = {"264", "265", "h264", "h265", "avc", "hevc", "hvc", "ivf"}
     Shared Property VideoText As String() = {"d2v", "dgi", "dga", "dgim", "avs", "vpy"}
     Shared Property VideoDemuxOutput As String() = {"mpg", "h264", "avi", "h265"}
-    Shared Property Image As String() = {"bmp", "jpg", "png", "gif", "tif", "jpe", "jpeg", "psd", "webp"}
+    Shared Property Image As String() = {"bmp", "jpg", "png", "gif", "tif", "jpe", "jpeg", "psd", "webp", "heif", "avif"}
 
     Shared Function GetFilter(values As IEnumerable(Of String)) As String
         Return "*." + values.Join(";*.") + "|*." + values.Join(";*.") + "|All Files|*.*"

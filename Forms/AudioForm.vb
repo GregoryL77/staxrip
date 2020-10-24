@@ -1578,7 +1578,7 @@ Public Class AudioForm
         If TempProfile.File <> "" Then
             If Not TempProfile.IsInputSupported AndAlso Not TempProfile.DecodingMode = AudioDecodingMode.Pipe Then
                 MsgWarn("The input format isn't supported by the current encoder," + BR + "convert to WAV or WV first or enable piping in the options.")
-                Else
+            Else
                 Dim pr As New Process
                 pr.StartInfo.FileName = "cmd.exe"
                 pr.StartInfo.Arguments = "/S /K """ + TempProfile.GetCommandLine(True) + """"

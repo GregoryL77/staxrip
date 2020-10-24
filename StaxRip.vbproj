@@ -186,6 +186,9 @@
     <Compile Include="Encoding\QSVEnc.vb" />
     <Compile Include="Encoding\NVEnc.vb" />
     <Compile Include="Encoding\x264Enc.vb" />
+    <Compile Include="Forms\AudioConverterForm.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\DownloadForm.Designer.vb">
       <DependentUpon>DownloadForm.vb</DependentUpon>
     </Compile>
@@ -473,6 +476,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\AppsForm.resx">
       <DependentUpon>AppsForm.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\AudioConverterForm.resx">
+      <DependentUpon>AudioConverterForm.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\AudioForm.resx">
       <DependentUpon>AudioForm.vb</DependentUpon>

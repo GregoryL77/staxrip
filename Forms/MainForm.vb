@@ -4067,6 +4067,13 @@ Public Class MainForm
         form.Show()
     End Sub
 
+    <Command("Audio Converter.")>
+    Sub ShowAudioConverter()
+        Using form As New AudioConverterForm
+            form.ShowDialog()
+        End Using
+    End Sub
+
     <Command("Dialog to edit filters.")>
     Sub ShowFiltersEditor()
         FiltersListView.ShowEditor()
@@ -4647,6 +4654,9 @@ Public Class MainForm
         ret.Add("Options", NameOf(ShowOptionsDialog), Keys.F8)
 
         ret.Add("Tools|Jobs...", NameOf(ShowJobsDialog), Keys.F6, Symbol.MultiSelectLegacy)
+
+        ret.Add("Tools|Audio Converter...", NameOf(ShowAudioConverter), Keys.F7, Symbol.MusicInfo)
+
         ret.Add("Tools|Log File", NameOf(g.DefaultCommands.ShowLogFile), Keys.F7, Symbol.Page)
         ret.Add("Tools|Folders", Symbol.Folder)
         ret.Add("Tools|Folders|Log Files", NameOf(g.DefaultCommands.ExecuteCommandLine), {"""%settings_dir%Log Files"""})

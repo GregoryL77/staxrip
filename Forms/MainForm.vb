@@ -4069,9 +4069,12 @@ Public Class MainForm
 
     <Command("Audio Converter.")>
     Sub ShowAudioConverter()
+        'Dim Oldlog As LogBuilder
+        'If Not Log.IsEmpty Then Oldlog = Log
         Using form As New AudioConverterForm
             form.ShowDialog()
         End Using
+        'If Oldlog IsNot Nothing Then Log = Oldlog
     End Sub
 
     <Command("Dialog to edit filters.")>

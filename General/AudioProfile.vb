@@ -28,6 +28,8 @@ Public MustInherit Class AudioProfile
 
     Overridable Property CommandLines As String
 
+    Public Shared Property AudioEditDialogResult As DialogResult
+
     Sub New(name As String)
         MyBase.New(name)
     End Sub
@@ -114,7 +116,7 @@ Public MustInherit Class AudioProfile
 
     Private SourceSamplingRateValue As Integer
 
-    ReadOnly Property SourceSamplingRate As Integer
+    Property SourceSamplingRate As Integer
         Get
             If SourceSamplingRateValue = 0 Then
                 If Stream Is Nothing Then
@@ -134,6 +136,9 @@ Public MustInherit Class AudioProfile
 
             Return SourceSamplingRateValue
         End Get
+        Set(value As Integer)
+            SourceSamplingRateValue = value
+        End Set
     End Property
 
     ReadOnly Property HasStream As Boolean
@@ -464,7 +469,7 @@ Public Class BatchAudioProfile
 
     Overrides Sub EditProject()
         Using f As New CommandLineAudioEncoderForm(Me)
-            f.ShowDialog()
+            AudioEditDialogResult = f.ShowDialog()
         End Using
     End Sub
 
@@ -495,7 +500,8 @@ Public Class NullAudioProfile
             n.Config = {0, Integer.MaxValue, 8}
             n.Property = NameOf(Bitrate)
 
-            If form.ShowDialog() = DialogResult.OK Then
+            AudioEditDialogResult = form.ShowDialog()
+            If AudioEditDialogResult = DialogResult.OK Then
                 ui.Save()
             End If
         End Using
@@ -632,7 +638,7 @@ Public Class MuxAudioProfile
             page.ResumeLayout()
 
             Dim ret = form.ShowDialog()
-
+            AudioEditDialogResult = ret
             If ret = DialogResult.OK Then
                 ui.Save()
             End If
@@ -968,7 +974,7 @@ Public Class GUIAudioProfile
             form.LoadProfile(Me)
             form.mbLanguage.Enabled = False
             form.numDelay.Enabled = False
-            form.numGain.Enabled = False
+            'form.numGain.Enabled = False
             Return form.ShowDialog()
         End Using
     End Function
@@ -976,7 +982,7 @@ Public Class GUIAudioProfile
     Overrides Sub EditProject()
         Using form As New AudioForm()
             form.LoadProfile(Me)
-            form.ShowDialog()
+            AudioEditDialogResult = form.ShowDialog()
         End Using
     End Sub
 
@@ -1053,12 +1059,12 @@ Public Class GUIAudioProfile
             End If
 
             If Gain < 0 Then
-                    sb.Append(" " & CInt(Gain) & "dB")
-                End If
+                sb.Append(" " & CInt(Gain) & "dB")
+            End If
 
-                If Gain > 0 Then
-                    sb.Append(" +" & CInt(Gain) & "dB")
-                End If
+            If Gain > 0 Then
+                sb.Append(" +" & CInt(Gain) & "dB")
+            End If
 
             Select Case Channels
                 Case 6

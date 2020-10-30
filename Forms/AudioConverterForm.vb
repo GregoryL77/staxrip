@@ -44,6 +44,10 @@ Public Class AudioConverterForm
         Me.numThreads = New StaxRip.UI.NumEdit()
         Me.laThreads = New System.Windows.Forms.Label()
         Me.bnAudioRemove = New StaxRip.UI.ButtonEx()
+        Me.bnAudioConvert = New StaxRip.UI.ButtonEx()
+        Me.bnAudioEdit = New StaxRip.UI.ButtonEx()
+        Me.laAC = New System.Windows.Forms.Label()
+        Me.bnMenuAudio = New StaxRip.UI.ButtonEx()
         Me.tcMain = New System.Windows.Forms.TabControl()
         Me.tpAudio = New System.Windows.Forms.TabPage()
         Me.tlpAudio = New System.Windows.Forms.TableLayoutPanel()
@@ -53,11 +57,7 @@ Public Class AudioConverterForm
         Me.bnAudioUp = New StaxRip.UI.ButtonEx()
         Me.bnAudioDown = New StaxRip.UI.ButtonEx()
         Me.bnAudioPlay = New StaxRip.UI.ButtonEx()
-        Me.bnAudioConvert = New StaxRip.UI.ButtonEx()
-        Me.bnAudioEdit = New StaxRip.UI.ButtonEx()
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
-        Me.laAC = New System.Windows.Forms.Label()
-        Me.bnMenuAudio = New StaxRip.UI.ButtonEx()
         Me.pnTab = New System.Windows.Forms.Panel()
         Me.tcMain.SuspendLayout()
         Me.tpAudio.SuspendLayout()
@@ -78,7 +78,7 @@ Public Class AudioConverterForm
         Me.numThreads.Minimum = 1.0R
         Me.numThreads.Name = "numThreads"
         Me.numThreads.Size = New System.Drawing.Size(40, 20)
-        Me.numThreads.TabIndex = 5
+        Me.numThreads.TabIndex = 4
         Me.numThreads.TabStop = False
         Me.numThreads.Tag = "No. threads"
         Me.TipProvider.SetTipText(Me.numThreads, "Number of parallel processes, set the default in settings")
@@ -106,6 +106,44 @@ Public Class AudioConverterForm
         Me.bnAudioRemove.Size = New System.Drawing.Size(93, 26)
         Me.bnAudioRemove.Text = "  Remove"
         Me.TipProvider.SetTipText(Me.bnAudioRemove, "Removes Selection <Delete>")
+        '
+        'bnAudioConvert
+        '
+        Me.bnAudioConvert.Anchor = System.Windows.Forms.AnchorStyles.Left
+        Me.bnAudioConvert.Location = New System.Drawing.Point(584, 351)
+        Me.bnAudioConvert.Size = New System.Drawing.Size(93, 26)
+        Me.bnAudioConvert.Text = "     Convert..."
+        Me.TipProvider.SetTipText(Me.bnAudioConvert, "Converts Selection")
+        '
+        'bnAudioEdit
+        '
+        Me.bnAudioEdit.Anchor = System.Windows.Forms.AnchorStyles.Left
+        Me.bnAudioEdit.Location = New System.Drawing.Point(485, 351)
+        Me.bnAudioEdit.Size = New System.Drawing.Size(93, 26)
+        Me.bnAudioEdit.Text = "    Edit..."
+        Me.TipProvider.SetTipText(Me.bnAudioEdit, "Edit assigned Audio Profile")
+        '
+        'laAC
+        '
+        Me.laAC.AutoSize = True
+        Me.tlpMain.SetColumnSpan(Me.laAC, 5)
+        Me.laAC.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.laAC.Font = New System.Drawing.Font("Segoe UI", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(238, Byte))
+        Me.laAC.Location = New System.Drawing.Point(44, 328)
+        Me.laAC.Name = "laAC"
+        Me.laAC.Size = New System.Drawing.Size(435, 20)
+        Me.laAC.TabIndex = 18
+        Me.laAC.Text = "Please add or drag music files..."
+        Me.TipProvider.SetTipText(Me.laAC, "Double Click change resize mode")
+        '
+        'bnMenuAudio
+        '
+        Me.bnMenuAudio.Anchor = System.Windows.Forms.AnchorStyles.Left
+        Me.bnMenuAudio.Location = New System.Drawing.Point(3, 351)
+        Me.bnMenuAudio.Margin = New System.Windows.Forms.Padding(0)
+        Me.bnMenuAudio.ShowMenuSymbol = True
+        Me.bnMenuAudio.Size = New System.Drawing.Size(38, 26)
+        Me.TipProvider.SetTipText(Me.bnMenuAudio, "Click to open menu")
         '
         'tcMain
         '
@@ -167,10 +205,10 @@ Public Class AudioConverterForm
         Me.dgvAudio.Location = New System.Drawing.Point(0, 0)
         Me.dgvAudio.Margin = New System.Windows.Forms.Padding(0)
         Me.dgvAudio.Name = "dgvAudio"
-        Me.dgvAudio.RowHeadersWidth = 26
+        Me.dgvAudio.RowHeadersWidth = 22
         Me.dgvAudio.Size = New System.Drawing.Size(662, 299)
         Me.dgvAudio.StandardTab = True
-        Me.dgvAudio.TabIndex = 0
+        Me.dgvAudio.TabIndex = 1
         '
         'bnAudioAdd
         '
@@ -199,20 +237,6 @@ Public Class AudioConverterForm
         Me.bnAudioPlay.Location = New System.Drawing.Point(386, 351)
         Me.bnAudioPlay.Size = New System.Drawing.Size(93, 26)
         Me.bnAudioPlay.Text = "  Play"
-        '
-        'bnAudioConvert
-        '
-        Me.bnAudioConvert.Anchor = System.Windows.Forms.AnchorStyles.Left
-        Me.bnAudioConvert.Location = New System.Drawing.Point(584, 351)
-        Me.bnAudioConvert.Size = New System.Drawing.Size(93, 26)
-        Me.bnAudioConvert.Text = "     Convert..."
-        '
-        'bnAudioEdit
-        '
-        Me.bnAudioEdit.Anchor = System.Windows.Forms.AnchorStyles.Left
-        Me.bnAudioEdit.Location = New System.Drawing.Point(485, 351)
-        Me.bnAudioEdit.Size = New System.Drawing.Size(93, 26)
-        Me.bnAudioEdit.Text = "    Edit..."
         '
         'tlpMain
         '
@@ -247,28 +271,8 @@ Public Class AudioConverterForm
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.tlpMain.Size = New System.Drawing.Size(681, 383)
-        Me.tlpMain.TabIndex = 1
+        Me.tlpMain.TabIndex = 2
         Me.tlpMain.TabStop = True
-        '
-        'laAC
-        '
-        Me.laAC.AutoSize = True
-        Me.tlpMain.SetColumnSpan(Me.laAC, 5)
-        Me.laAC.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.laAC.Font = New System.Drawing.Font("Segoe UI", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(238, Byte))
-        Me.laAC.Location = New System.Drawing.Point(44, 328)
-        Me.laAC.Name = "laAC"
-        Me.laAC.Size = New System.Drawing.Size(435, 20)
-        Me.laAC.TabIndex = 18
-        Me.laAC.Text = "Please add or drag music files..."
-        '
-        'bnMenuAudio
-        '
-        Me.bnMenuAudio.Anchor = System.Windows.Forms.AnchorStyles.Left
-        Me.bnMenuAudio.Location = New System.Drawing.Point(3, 351)
-        Me.bnMenuAudio.Margin = New System.Windows.Forms.Padding(0)
-        Me.bnMenuAudio.ShowMenuSymbol = True
-        Me.bnMenuAudio.Size = New System.Drawing.Size(38, 26)
         '
         'pnTab
         '
@@ -332,16 +336,16 @@ Public Class AudioConverterForm
         dgvAudio.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.EnableResizing
         dgvAudio.RowTemplate.Height = 20
         dgvAudio.RowHeadersWidth = 64
-        dgvAudio.ColumnHeadersDefaultCellStyle.Font = New Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Bold)
 
+        dgvAudio.ColumnHeadersDefaultCellStyle.Font = New Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Bold)
         dgvAudio.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft
         dgvAudio.RowHeadersDefaultCellStyle.Padding = Padding.Empty
-        dgvAudio.RowHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True
-
+        dgvAudio.RowHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False
 
         dgvAudio.AllowUserToDeleteRows = True
         dgvAudio.AllowUserToOrderColumns = True
         dgvAudio.AllowUserToResizeColumns = True
+
         dgvAudio.AllowDrop = True
         'dgvAudio.ReadOnly = True
 
@@ -370,22 +374,17 @@ Public Class AudioConverterForm
         profileName.ReadOnly = True
         profileName.FillWeight = 10
 
-        'Dim rowH As DataGridViewRowHeaderCell
-
-        'rowH = dgvAudio.DataSource
-        'rowH.Value = dgvAudio.Rows?.IndexOf(dgvAudio?.CurrentRow)
+        Dim dispNameColumn = dgvAudio.AddTextBoxColumn()
+        dispNameColumn.DataPropertyName = "DisplayName"
+        dispNameColumn.HeaderText = "Track"
+        dispNameColumn.ReadOnly = True
+        dispNameColumn.FillWeight = 40
 
         Dim pathColumn = dgvAudio.AddTextBoxColumn()
-        pathColumn.DataPropertyName = "DisplayName"
-        pathColumn.HeaderText = "Track"
+        pathColumn.DataPropertyName = "File"
+        pathColumn.HeaderText = "Full Path"
         pathColumn.ReadOnly = True
-        pathColumn.FillWeight = 40
-
-        Dim patchColumn = dgvAudio.AddTextBoxColumn()
-        patchColumn.DataPropertyName = "File"
-        patchColumn.HeaderText = "Full Path"
-        patchColumn.ReadOnly = True
-        patchColumn.FillWeight = 50
+        pathColumn.FillWeight = 50
 
         For Each col As DataGridViewColumn In dgvAudio.Columns
             col.SortMode = DataGridViewColumnSortMode.NotSortable
@@ -415,6 +414,8 @@ Public Class AudioConverterForm
         'Log = New LogBuilder
     End Sub
 
+
+
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
         Dim lastAction As Action
@@ -432,7 +433,7 @@ Public Class AudioConverterForm
         dgvAudio.Columns.Clear()
     End Sub
 
-    Public Shared Function OpenAudioConverterDialog() As DialogResult
+    Public Shared Function OpenAudioConverterDialog() As DialogResult 'Debug
         Using form As New AudioConverterForm
             Return form.ShowDialog()
         End Using
@@ -445,7 +446,13 @@ Public Class AudioConverterForm
         bnAudioConvert.Enabled = dgvAudio.SelectedRows.Count > 0
         bnAudioUp.Enabled = dgvAudio.CanMoveUp AndAlso dgvAudio.SelectedRows.Count = 1
         bnAudioDown.Enabled = dgvAudio.CanMoveDown AndAlso dgvAudio.SelectedRows.Count = 1
-        numThreads.Enabled = dgvAudio.SelectedRows.Count <> 1
+        numThreads.Enabled = dgvAudio.SelectedRows.Count > 1
+
+        If dgvAudio.Rows.Count > 0 Then
+            laAC.Text = "Pos: " & AudioBindingSource?.Position & "   |   Sel: " & dgvAudio.SelectedRows.Count & " / Tot: " & dgvAudio.Rows.Count
+        Else
+            laAC.Text = "Please add or drag music files..."
+        End If
         'dgvAudio.ReadOnly = True
     End Sub
 
@@ -465,10 +472,10 @@ Public Class AudioConverterForm
             Log.Save()
             If UseDialog Then
                 Using dialog As New FolderBrowserDialog
-                    dialog.Description = "Please select LOG File output directory"
+                    dialog.Description = "Please select LOG File location :"
                     dialog.UseDescriptionForTitle = True
                     dialog.RootFolder = Environment.SpecialFolder.MyComputer
-                    dialog.SetSelectedPath(p.TempDir)
+                    If p.TempDir <> "" AndAlso Not p.TempDir.Contains("%") Then dialog.SetSelectedPath(p.TempDir)
                     If dialog.ShowDialog = DialogResult.OK Then
                         LogPath = dialog.SelectedPath
                     End If
@@ -477,9 +484,10 @@ Public Class AudioConverterForm
 
             If LogPath <> "" Then
                 Try
+                    Dim lName = "\" & Date.Now & "_staxrip.log"
                     If File.Exists(Log.GetPath) Then
-                        If File.Exists(LogPath & "staxrip.log") Then File.Delete(LogPath & "staxrip.log")
-                        File.Move(Log.GetPath, LogPath & "staxrip.log")
+                        If File.Exists(LogPath & lName) Then File.Delete(LogPath & lName)
+                        File.Move(Log.GetPath, LogPath & lName)
                     End If
                 Catch ex As Exception
                 End Try
@@ -541,20 +549,19 @@ Public Class AudioConverterForm
 
                 Parallel.Invoke(New ParallelOptions With {.MaxDegreeOfParallelism = MaxThreads}, actions.ToArray)
 
-
-
                 For Each sr As DataGridViewRow In dgvAudio.SelectedRows
-                    Dim ap As AudioProfile = DirectCast(AudioBindingSource(dgvAudio.Rows(sr.Index).Index), AudioProfile)
-                    If File.Exists(If(OutPath = "", ap.GetOutputFile(), OutPath & ap.GetOutputFile.FileName())) Then sr.HeaderCell.Value = "OK"
+                    Dim srbs As Object = AudioBindingSource(dgvAudio.Rows(sr.Index).Index)
+                    Dim ap As AudioProfile = DirectCast(srbs, AudioProfile)
+                    If File.Exists(If(OutPath = "", ap.GetOutputFile(), OutPath & ap.GetOutputFile.FileName())) Then
+                        sr.HeaderCell.Value = "OK"
+                    End If
                 Next
-
 
                 SaveConverterLog(OutPath)
             Catch ex As AggregateException
                 SaveConverterLog(OutPath)
                 ExceptionDispatchInfo.Capture(ex.InnerExceptions(0)).Throw()
             End Try
-            'add header row status after encode succes file exist
         End If
     End Sub
 
@@ -579,7 +586,7 @@ Public Class AudioConverterForm
                     streamSelection.AddItem(stream)
                 Next
 
-                streamSelection.AddItem("> Use first stream and don't ask me again <", NullDummyStream)
+                streamSelection.AddItem(" > Use first stream and don't ask me again <", NullDummyStream)
 
                 If streamSelection.Show <> DialogResult.OK Then
                     Exit Sub
@@ -598,8 +605,8 @@ Public Class AudioConverterForm
     End Sub
 
     Sub ProcessInputAudioFiles(files As String())
-        If files.Count > 500 Then
-            If MsgQuestion("Add (" & files.Count & ") files ?") = DialogResult.Cancel Then
+        If files.Count > 100 Then
+            If MsgQuestion("Add " & files.Count & " files ?") <> DialogResult.OK Then
                 Exit Sub
             End If
         End If
@@ -609,9 +616,8 @@ Public Class AudioConverterForm
 
             Dim ap As AudioProfile
 
-            SelectionBoxForm.StartPosition = FormStartPosition.CenterParent  'Drag Drop is out of center, still..
-
             Dim profileSelection As New SelectionBox(Of AudioProfile)
+            SelectionBoxForm.StartPosition = FormStartPosition.CenterScreen   'Drag Drop is out of center, still..
             profileSelection.Title = "Please select Audio Profile"
 
             If Not TypeOf p.Audio0 Is NullAudioProfile Then
@@ -635,6 +641,8 @@ Public Class AudioConverterForm
                 AddAudio(path, ap)
             Next
 
+            'dgvAudio.Sort(dgvAudio.Columns(2), System.ComponentModel.ListSortDirection.Ascending)
+
             AudioBindingSource.Position = AudioBindingSource.Count - 1
             g.MainForm.UpdateSizeOrBitrate()
             UpdateControls()
@@ -645,16 +653,45 @@ Public Class AudioConverterForm
     End Sub
 
     Sub bnAudioAdd_Click(sender As Object, e As EventArgs) Handles bnAudioAdd.Click
-        Using dialog As New OpenFileDialog
+        Using td As New TaskDialog(Of String)
             Dim ftav = FileTypes.Audio.Union(FileTypes.VideoAudio)
-            dialog.Multiselect = True
-            dialog.SetFilter(ftav)
-            dialog.SetInitDir(p.TempDir)
 
-            If dialog.ShowDialog = DialogResult.OK Then
-                Dim av = dialog.FileNames.Where(Function(file) ftav.ContainsAny(file.Ext))
-                ProcessInputAudioFiles(av.ToArray)
-            End If
+            td.AddCommand("Add files", "files")
+            td.AddCommand("Add folder", "folder")
+
+            Select Case td.Show
+                Case "files"
+                    Using dialog As New OpenFileDialog
+                        dialog.Multiselect = True
+                        dialog.SetFilter(ftav)
+                        If p.TempDir <> "" AndAlso Not p.TempDir.Contains("%") Then dialog.SetInitDir(p.TempDir)
+
+                        If dialog.ShowDialog = DialogResult.OK Then
+                            Dim av = dialog.FileNames.Where(Function(file) ftav.Contains(file.Ext))
+                            ProcessInputAudioFiles(av.ToArray)
+                        End If
+                    End Using
+
+                Case "folder"
+                    Using dialog As New FolderBrowserDialog
+                        dialog.RootFolder = Environment.SpecialFolder.MyComputer
+                        If p.TempDir <> "" AndAlso Not p.TempDir.Contains("%") Then dialog.SetSelectedPath(p.TempDir)
+
+                        If dialog.ShowDialog = DialogResult.OK Then
+                            Dim subfolders = Directory.GetDirectories(dialog.SelectedPath)
+                            Dim opt = SearchOption.TopDirectoryOnly
+
+                            If Directory.GetDirectories(dialog.SelectedPath).Count > 0 Then
+                                If MsgQuestion("Include sub folders?", TaskDialogButtons.YesNo) = DialogResult.Yes Then
+                                    opt = SearchOption.AllDirectories
+                                End If
+                            End If
+
+                            Dim avd = Directory.GetFiles(dialog.SelectedPath, "*.*", opt).Where(Function(val) ftav.Contains(val.Ext))
+                            ProcessInputAudioFiles(avd.ToArray)
+                        End If
+                    End Using
+            End Select
         End Using
     End Sub
     Sub dgvAudio_DragEnter(sender As Object, e As DragEventArgs) Handles dgvAudio.DragEnter
@@ -680,7 +717,7 @@ Public Class AudioConverterForm
 
     Sub bnAudioEdit_Click(sender As Object, e As EventArgs) Handles bnAudioEdit.Click
         Dim sr = dgvAudio.SelectedRows
-        Dim srlast = sr(sr.Count - 1)
+        Dim srlast = sr(sr.Count - 1) 'First in selecting order is used for editing
         'Dim ap0 = DirectCast(AudioBindingSource(sr(0).Index), AudioProfile)
         Dim ap0 = DirectCast(AudioBindingSource(srlast.Index), AudioProfile)
         ap0.EditProject()
@@ -699,15 +736,30 @@ Public Class AudioConverterForm
                     ap0.SourceSamplingRate = ap.SourceSamplingRate
                     AudioBindingSource(sr(i).Index) = ap0
                 Next
-
-                g.MainForm.UpdateAudioMenu()
-                g.MainForm.UpdateSizeOrBitrate()
             End If
-        End If
 
-        AudioBindingSource.ResetBindings(False)
-        'dgvAudio.Refresh()
-        AutoResizeColumns()
+            g.MainForm.UpdateAudioMenu()
+            g.MainForm.UpdateSizeOrBitrate()
+
+            Dim srCache(dgvAudio.Rows.Count) as Boolean  'not perfect...
+            For Each oldSR As DataGridViewRow In sr
+                srCache(oldSR.Index) = True
+            Next
+
+            AudioBindingSource.ResetBindings(False)
+
+            For Each nRow As DataGridViewRow In dgvAudio.Rows
+                If srCache(nRow.Index) = True Then
+                    dgvAudio.Rows(nRow.Index).Selected = True
+                End If
+            Next
+
+            AutoResizeColumns()
+        End If
+    End Sub
+
+    Private Sub dgvAudio_SelectionChanged(sender As Object, e As EventArgs) Handles dgvAudio.SelectionChanged
+        UpdateControls()
     End Sub
 
     Sub bnAudioRemove_Click(sender As Object, e As EventArgs) Handles bnAudioRemove.Click
@@ -717,12 +769,22 @@ Public Class AudioConverterForm
         dgvAudio.RemoveSelection
         AutoResizeColumns()
     End Sub
+    Private Sub dgvAudio_UserDeletedRow(sender As Object, e As DataGridViewRowEventArgs) Handles dgvAudio.UserDeletedRow
+        If dgvAudio.Rows.Count = dgvAudio.SelectedRows.Count Then
+            dgvAudio.Rows.Clear()
+        End If
+        If dgvAudio.SelectedRows.Count = 0 AndAlso dgvAudio.RowCount > 0 Then
+            dgvAudio.Rows(dgvAudio.RowCount - 1).Selected = True
+        End If
+        For Each r As DataGridViewRow In dgvAudio.Rows
+            r.HeaderCell.Value = (r.Index).ToString
+        Next
+    End Sub
 
     Sub bnAudioUp_Click(sender As Object, e As EventArgs) Handles bnAudioUp.Click
         dgvAudio.MoveSelectionUp
         UpdateControls()
     End Sub
-
     Sub bnAudioDown_Click(sender As Object, e As EventArgs) Handles bnAudioDown.Click
         dgvAudio.MoveSelectionDown
         UpdateControls()
@@ -731,14 +793,17 @@ Public Class AudioConverterForm
         g.Play(DirectCast(AudioBindingSource(dgvAudio.SelectedRows(0).Index), AudioProfile).File)
     End Sub
 
-    Private Sub dgvAudio_SelectionChanged(sender As Object, e As EventArgs) Handles dgvAudio.SelectionChanged
-        laAC.Text = "Pos: " & AudioBindingSource?.Position & "  |  Sel: " & dgvAudio.SelectedRows.Count & " / Tot: " & dgvAudio.Rows.Count
-        UpdateControls()
-    End Sub
-
-    Private Sub laAC_Click(sender As Object, e As EventArgs) Handles laAC.DoubleClick 'Remove this
+    Private Sub laAC_Click(sender As Object, e As EventArgs) Handles laAC.DoubleClick
         'AudioBindingSource.ResetBindings(False)
-        'dgvAudio.Refresh()
+
+        If dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None Then
+            dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+        ElseIf dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill Then
+            dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
+        End If
+
+        Refresh()
+
         AutoResizeColumns()
     End Sub
 
@@ -758,10 +823,10 @@ Public Class AudioConverterForm
 
     Private Sub tcMain_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles tcMain.MouseDoubleClick 'Remove this
         AudioBindingSource.ResetBindings(False)
-        dgvAudio.Refresh()
+
+        Refresh()
+
         AutoResizeColumns()
-        AudioBindingSource.ResetBindings(False)
-        dgvAudio.Refresh()
         dgvAudio.SelectAll()
     End Sub
 

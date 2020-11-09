@@ -2,6 +2,7 @@
 Imports System.ComponentModel
 Imports System.Drawing.Design
 Imports System.Globalization
+Imports System.Runtime
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading
@@ -1117,7 +1118,6 @@ Public Class MainForm
         TargetFileMenu = New ContextMenuStripEx(components)
         SourceFileMenu = New ContextMenuStripEx(components)
         Audio0FileMenu = New ContextMenuStripEx(components)
-        Audio1FileMenu = New ContextMenuStripEx(components)
         Audio1FileMenu = New ContextMenuStripEx(components)
         NextContextMenuStrip = New ContextMenuStripEx(components)
 
@@ -4071,9 +4071,16 @@ Public Class MainForm
     Sub ShowAudioConverter()
         'Dim Oldlog As LogBuilder
         'If Not Log.IsEmpty Then Oldlog = Log
-        Using form As New AudioConverterForm
-            form.ShowDialog()
+        Using aForm As New AudioConverterForm
+            aForm.ShowDialog()
+            Thread.Sleep(100)
         End Using
+
+        'debug tests
+        'Thread.Sleep(100)
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        'GC.Collect()
+        Thread.Sleep(100)
         'If Oldlog IsNot Nothing Then Log = Oldlog
     End Sub
 
@@ -6021,7 +6028,7 @@ Public Class MainForm
     Sub ExecuteAudio(ap As AudioProfile)
         If MsgQuestion("Confirm to process the track.") = DialogResult.OK Then
             Try
-                If p.TempDir = "" OrElse p.TempDir.Contains("%") Then
+                If p.TempDir = "" Then
                     p.TempDir = ap.File.Dir
                 End If
 

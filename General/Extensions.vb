@@ -284,15 +284,6 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function ShortBegEnd(instance As String, Optional StartLen As Integer = 32, Optional EndLen As Integer = 18) As String
-        If instance.Length > StartLen + EndLen + 1 Then
-            Return instance.Substring(0, StartLen) & "_" & instance.Substring(instance.Length - EndLen)
-        Else
-            Return instance
-        End If
-    End Function
-
-    <Extension()>
     Function Dir(instance As String) As String
         If instance = "" Then
             Return ""
@@ -768,6 +759,15 @@ Module StringExtensions
             Clipboard.Clear()
         End If
     End Sub
+
+    <Extension()>
+    Function ShortBegEnd(instance As String, Optional StartLen As Integer = 32, Optional EndLen As Integer = 18) As String
+        If instance.Length > StartLen + EndLen + 1 Then
+            Return instance.Substring(0, StartLen) & "_" & instance.Substring(instance.Length - EndLen)
+        Else
+            Return instance
+        End If
+    End Function
 End Module
 
 Module MiscExtensions

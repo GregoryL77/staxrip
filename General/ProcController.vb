@@ -435,13 +435,13 @@ Public Class ProcController
                                   g.ProcForm.Show()
                                   g.ProcForm.WindowState = FormWindowState.Normal
 
-                                  'If Not BlockActivation Then
-                                  g.ProcForm.Activate()
-                                      '    BlockActivation = True
-                                      'End If
+                                  If Not BlockActivation Then
+                                      g.ProcForm.Activate()
+                                      BlockActivation = True
                                   End If
+                              End If
 
-                              AddProc(proc)
+                                  AddProc(proc)
                               g.ProcForm.UpdateControls()
                           End Sub)
 

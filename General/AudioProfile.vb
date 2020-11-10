@@ -28,7 +28,7 @@ Public MustInherit Class AudioProfile
 
     Overridable Property CommandLines As String
 
-    Public Shared Property AudioEditDialogResult As DialogResult
+    Public Shared AudioEditDialogResult As DialogResult
 
     Sub New(name As String)
         MyBase.New(name)

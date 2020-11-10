@@ -1460,7 +1460,8 @@ Public Class GlobalClass
     End Sub
 
     Function IsDevelopmentPC() As Boolean
-        Return Application.StartupPath.EndsWith("\bin") OrElse Application.StartupPath.EndsWith("\bin-x86")
+        Return Application.StartupPath.EndsWith("\bin") OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
+            FileExists(Application.StartupPath.FixDir & "devel.pc") 'Debug
     End Function
 
     Function Is32Bit() As Boolean

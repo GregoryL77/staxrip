@@ -4069,19 +4069,17 @@ Public Class MainForm
 
     <Command("Audio Converter.")>
     Sub ShowAudioConverter()
-        'Dim Oldlog As LogBuilder
-        'If Not Log.IsEmpty Then Oldlog = Log
+
         Using aForm As New AudioConverterForm
             aForm.ShowDialog()
-            Thread.Sleep(100)
+            'Thread.Sleep(100)
         End Using
 
         'debug tests
         'Thread.Sleep(100)
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         'GC.Collect()
-        Thread.Sleep(100)
-        'If Oldlog IsNot Nothing Then Log = Oldlog
+        'Thread.Sleep(100)
     End Sub
 
     <Command("Dialog to edit filters.")>

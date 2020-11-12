@@ -4072,7 +4072,6 @@ Public Class MainForm
 
         Using aForm As New AudioConverterForm
             aForm.ShowDialog()
-            'Thread.Sleep(100)
         End Using
 
         'debug tests

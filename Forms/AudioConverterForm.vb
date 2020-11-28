@@ -48,6 +48,7 @@ Public Class AudioConverterForm
     Friend WithEvents numThreads As NumEdit
     Friend WithEvents laThreads As Label
     Friend WithEvents bnAudioMediaInfo As ButtonEx
+    Friend WithEvents bnCMD As ButtonEx
     Private components As System.ComponentModel.IContainer
 
     <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
@@ -61,6 +62,7 @@ Public Class AudioConverterForm
         Me.laAC = New System.Windows.Forms.Label()
         Me.bnMenuAudio = New StaxRip.UI.ButtonEx()
         Me.bnAudioMediaInfo = New StaxRip.UI.ButtonEx()
+        Me.bnCMD = New StaxRip.UI.ButtonEx()
         Me.bnAudioPlay = New StaxRip.UI.ButtonEx()
         Me.dgvAudio = New StaxRip.UI.DataGridViewEx()
         Me.tcMain = New System.Windows.Forms.TabControl()
@@ -85,7 +87,7 @@ Public Class AudioConverterForm
         Me.numThreads.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.numThreads.BackColor = System.Drawing.SystemColors.Control
-        Me.numThreads.Location = New System.Drawing.Point(570, 328)
+        Me.numThreads.Location = New System.Drawing.Point(652, 328)
         Me.numThreads.Margin = New System.Windows.Forms.Padding(3, 0, 3, 0)
         Me.numThreads.Maximum = 16.0R
         Me.numThreads.Minimum = 1.0R
@@ -102,7 +104,7 @@ Public Class AudioConverterForm
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.laThreads.AutoSize = True
         Me.laThreads.BackColor = System.Drawing.SystemColors.Control
-        Me.laThreads.Location = New System.Drawing.Point(510, 328)
+        Me.laThreads.Location = New System.Drawing.Point(592, 328)
         Me.laThreads.Margin = New System.Windows.Forms.Padding(3, 0, 3, 2)
         Me.laThreads.Name = "laThreads"
         Me.laThreads.Size = New System.Drawing.Size(54, 18)
@@ -115,69 +117,77 @@ Public Class AudioConverterForm
         '
         Me.bnAudioRemove.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioRemove.Location = New System.Drawing.Point(143, 351)
-        Me.bnAudioRemove.Size = New System.Drawing.Size(89, 26)
-        Me.bnAudioRemove.Text = "  &Remove"
-        Me.TipProvider.SetTipText(Me.bnAudioRemove, "Removes Selection <Delete>")
+        Me.bnAudioRemove.Location = New System.Drawing.Point(144, 351)
+        Me.bnAudioRemove.Size = New System.Drawing.Size(88, 26)
+        Me.bnAudioRemove.Text = "    &Remove"
+        Me.TipProvider.SetTipText(Me.bnAudioRemove, "Remove Selection <Delete>")
         '
         'bnAudioConvert
         '
         Me.bnAudioConvert.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.bnAudioConvert.Location = New System.Drawing.Point(238, 351)
-        Me.bnAudioConvert.Size = New System.Drawing.Size(89, 26)
-        Me.bnAudioConvert.Text = "     &Convert..."
-        Me.TipProvider.SetTipText(Me.bnAudioConvert, "Converts Selection")
+        Me.bnAudioConvert.Size = New System.Drawing.Size(88, 26)
+        Me.bnAudioConvert.Text = "      &Convert..."
+        Me.TipProvider.SetTipText(Me.bnAudioConvert, "Convert Selection")
         '
         'bnAudioEdit
         '
         Me.bnAudioEdit.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioEdit.Location = New System.Drawing.Point(570, 351)
-        Me.bnAudioEdit.Size = New System.Drawing.Size(89, 26)
+        Me.bnAudioEdit.Location = New System.Drawing.Point(562, 351)
+        Me.bnAudioEdit.Size = New System.Drawing.Size(84, 26)
         Me.bnAudioEdit.Text = "    &Edit..."
-        Me.TipProvider.SetTipText(Me.bnAudioEdit, "Edit assigned Audio Profile")
+        Me.TipProvider.SetTipText(Me.bnAudioEdit, "Edit Audio Profile for selection")
         '
         'laAC
         '
         Me.laAC.AutoSize = True
-        Me.tlpMain.SetColumnSpan(Me.laAC, 5)
+        Me.tlpMain.SetColumnSpan(Me.laAC, 6)
         Me.laAC.Dock = System.Windows.Forms.DockStyle.Fill
         Me.laAC.Font = New System.Drawing.Font("Segoe UI", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(238, Byte))
-        Me.laAC.Location = New System.Drawing.Point(48, 328)
+        Me.laAC.Location = New System.Drawing.Point(50, 328)
         Me.laAC.Name = "laAC"
-        Me.laAC.Size = New System.Drawing.Size(421, 20)
+        Me.laAC.Size = New System.Drawing.Size(506, 20)
         Me.laAC.TabIndex = 18
         Me.laAC.Text = "Please add or drag music files..."
-        Me.TipProvider.SetTipText(Me.laAC, "Double Click change resize mode")
+        Me.TipProvider.SetTipText(Me.laAC, "Double Click to change autosize mode")
         '
         'bnMenuAudio
         '
         Me.bnMenuAudio.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnMenuAudio.Location = New System.Drawing.Point(5, 349)
-        Me.bnMenuAudio.Margin = New System.Windows.Forms.Padding(2, 1, 2, 1)
+        Me.bnMenuAudio.Location = New System.Drawing.Point(5, 350)
+        Me.bnMenuAudio.Margin = New System.Windows.Forms.Padding(2)
         Me.bnMenuAudio.ShowMenuSymbol = True
-        Me.bnMenuAudio.Size = New System.Drawing.Size(38, 30)
+        Me.bnMenuAudio.Size = New System.Drawing.Size(40, 28)
         Me.TipProvider.SetTipText(Me.bnMenuAudio, "Click to open menu")
         '
         'bnAudioMediaInfo
         '
         Me.bnAudioMediaInfo.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioMediaInfo.Location = New System.Drawing.Point(665, 351)
-        Me.bnAudioMediaInfo.Size = New System.Drawing.Size(89, 26)
+        Me.bnAudioMediaInfo.Location = New System.Drawing.Point(652, 351)
+        Me.bnAudioMediaInfo.Size = New System.Drawing.Size(84, 26)
         Me.bnAudioMediaInfo.Text = "    &Info..."
-        Me.TipProvider.SetTipText(Me.bnAudioMediaInfo, "Media Info (last selected file)")
+        Me.TipProvider.SetTipText(Me.bnAudioMediaInfo, "Media Info")
+        '
+        'bnCMD
+        '
+        Me.bnCMD.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.bnCMD.Location = New System.Drawing.Point(742, 351)
+        Me.bnCMD.Size = New System.Drawing.Size(84, 26)
+        Me.bnCMD.Text = "     C&MD..."
+        Me.TipProvider.SetTipText(Me.bnCMD, "Show Command Line")
         '
         'bnAudioPlay
         '
         Me.bnAudioPlay.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioPlay.Location = New System.Drawing.Point(475, 351)
-        Me.bnAudioPlay.Size = New System.Drawing.Size(89, 26)
+        Me.bnAudioPlay.Location = New System.Drawing.Point(472, 351)
+        Me.bnAudioPlay.Size = New System.Drawing.Size(84, 26)
         Me.bnAudioPlay.Text = "  &Play"
-        Me.TipProvider.SetTipText(Me.bnAudioPlay, "Plays last selected file in media player")
         '
         'dgvAudio
         '
@@ -187,7 +197,7 @@ Public Class AudioConverterForm
         Me.dgvAudio.Location = New System.Drawing.Point(0, 0)
         Me.dgvAudio.Margin = New System.Windows.Forms.Padding(0)
         Me.dgvAudio.Name = "dgvAudio"
-        Me.dgvAudio.Size = New System.Drawing.Size(742, 299)
+        Me.dgvAudio.Size = New System.Drawing.Size(811, 299)
         Me.dgvAudio.StandardTab = True
         Me.dgvAudio.TabIndex = 1
         '
@@ -200,7 +210,7 @@ Public Class AudioConverterForm
         Me.tcMain.Margin = New System.Windows.Forms.Padding(0)
         Me.tcMain.Name = "tcMain"
         Me.tcMain.SelectedIndex = 0
-        Me.tcMain.Size = New System.Drawing.Size(754, 324)
+        Me.tcMain.Size = New System.Drawing.Size(823, 324)
         Me.tcMain.TabIndex = 5
         Me.tcMain.TabStop = False
         '
@@ -211,7 +221,7 @@ Public Class AudioConverterForm
         Me.tpAudio.Margin = New System.Windows.Forms.Padding(2, 2, 2, 0)
         Me.tpAudio.Name = "tpAudio"
         Me.tpAudio.Padding = New System.Windows.Forms.Padding(2, 2, 2, 0)
-        Me.tpAudio.Size = New System.Drawing.Size(746, 301)
+        Me.tpAudio.Size = New System.Drawing.Size(815, 301)
         Me.tpAudio.TabIndex = 4
         Me.tpAudio.Text = "   Audio   "
         Me.tpAudio.UseVisualStyleBackColor = True
@@ -229,7 +239,7 @@ Public Class AudioConverterForm
         Me.tlpAudio.Name = "tlpAudio"
         Me.tlpAudio.RowCount = 1
         Me.tlpAudio.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpAudio.Size = New System.Drawing.Size(742, 299)
+        Me.tlpAudio.Size = New System.Drawing.Size(811, 299)
         Me.tlpAudio.TabIndex = 7
         '
         'flpAudio
@@ -237,7 +247,7 @@ Public Class AudioConverterForm
         Me.flpAudio.AutoSize = True
         Me.flpAudio.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.flpAudio.FlowDirection = System.Windows.Forms.FlowDirection.TopDown
-        Me.flpAudio.Location = New System.Drawing.Point(742, 0)
+        Me.flpAudio.Location = New System.Drawing.Point(811, 0)
         Me.flpAudio.Margin = New System.Windows.Forms.Padding(0)
         Me.flpAudio.Name = "flpAudio"
         Me.flpAudio.Size = New System.Drawing.Size(0, 0)
@@ -247,29 +257,30 @@ Public Class AudioConverterForm
         '
         Me.bnAudioAdd.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioAdd.Location = New System.Drawing.Point(48, 351)
-        Me.bnAudioAdd.Size = New System.Drawing.Size(89, 26)
+        Me.bnAudioAdd.Location = New System.Drawing.Point(50, 351)
+        Me.bnAudioAdd.Size = New System.Drawing.Size(88, 26)
         Me.bnAudioAdd.Text = "    &Add..."
         '
         'bnAudioUp
         '
         Me.bnAudioUp.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioUp.Location = New System.Drawing.Point(333, 351)
-        Me.bnAudioUp.Size = New System.Drawing.Size(65, 26)
-        Me.bnAudioUp.Text = " &Up"
+        Me.bnAudioUp.Location = New System.Drawing.Point(332, 351)
+        Me.bnAudioUp.Size = New System.Drawing.Size(64, 26)
+        Me.bnAudioUp.Text = "  &Up"
         '
         'bnAudioDown
         '
         Me.bnAudioDown.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.bnAudioDown.Location = New System.Drawing.Point(404, 351)
-        Me.bnAudioDown.Size = New System.Drawing.Size(65, 26)
+        Me.bnAudioDown.Location = New System.Drawing.Point(402, 351)
+        Me.bnAudioDown.Size = New System.Drawing.Size(64, 26)
         Me.bnAudioDown.Text = "     &Down"
         '
         'tlpMain
         '
-        Me.tlpMain.ColumnCount = 9
+        Me.tlpMain.ColumnCount = 10
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
@@ -283,8 +294,6 @@ Public Class AudioConverterForm
         Me.tlpMain.Controls.Add(Me.bnMenuAudio, 0, 2)
         Me.tlpMain.Controls.Add(Me.pnTab, 0, 0)
         Me.tlpMain.Controls.Add(Me.bnAudioRemove, 2, 2)
-        Me.tlpMain.Controls.Add(Me.laThreads, 6, 1)
-        Me.tlpMain.Controls.Add(Me.numThreads, 7, 1)
         Me.tlpMain.Controls.Add(Me.bnAudioConvert, 3, 2)
         Me.tlpMain.Controls.Add(Me.bnAudioUp, 4, 2)
         Me.tlpMain.Controls.Add(Me.bnAudioDown, 5, 2)
@@ -292,6 +301,9 @@ Public Class AudioConverterForm
         Me.tlpMain.Controls.Add(Me.bnAudioPlay, 6, 2)
         Me.tlpMain.Controls.Add(Me.bnAudioMediaInfo, 8, 2)
         Me.tlpMain.Controls.Add(Me.bnAudioAdd, 1, 2)
+        Me.tlpMain.Controls.Add(Me.bnCMD, 9, 2)
+        Me.tlpMain.Controls.Add(Me.numThreads, 8, 1)
+        Me.tlpMain.Controls.Add(Me.laThreads, 7, 1)
         Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlpMain.Location = New System.Drawing.Point(0, 0)
         Me.tlpMain.Margin = New System.Windows.Forms.Padding(1)
@@ -301,7 +313,7 @@ Public Class AudioConverterForm
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.tlpMain.Size = New System.Drawing.Size(759, 383)
+        Me.tlpMain.Size = New System.Drawing.Size(831, 383)
         Me.tlpMain.TabIndex = 2
         Me.tlpMain.TabStop = True
         '
@@ -313,14 +325,14 @@ Public Class AudioConverterForm
         Me.pnTab.Location = New System.Drawing.Point(5, 4)
         Me.pnTab.Margin = New System.Windows.Forms.Padding(2, 2, 1, 0)
         Me.pnTab.Name = "pnTab"
-        Me.pnTab.Size = New System.Drawing.Size(754, 324)
+        Me.pnTab.Size = New System.Drawing.Size(823, 324)
         Me.pnTab.TabIndex = 8
         '
         'AudioConverterForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        Me.ClientSize = New System.Drawing.Size(759, 383)
+        Me.ClientSize = New System.Drawing.Size(831, 383)
         Me.Controls.Add(Me.tlpMain)
         Me.DoubleBuffered = True
         Me.KeyPreview = True
@@ -355,8 +367,8 @@ Public Class AudioConverterForm
         MyBase.New()
         'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         InitializeComponent()
-        SetMinimumSize(40, 16)
-        RestoreClientSize(49, 26)
+        SetMinimumSize(44, 15)
+        RestoreClientSize(53, 29)
 
         'AudioBindingSource.DataSource = ObjectHelp.GetCopy(p.AudioTracks)
         AudioBindingSource.DataSource = AudioSortableBindingList
@@ -401,9 +413,10 @@ Public Class AudioConverterForm
         bnAudioEdit.Image = ImageHelp.GetSymbolImage(Symbol.Repair)
         bnAudioConvert.Image = ImageHelp.GetSymbolImage(Symbol.MusicInfo)
         bnAudioMediaInfo.Image = ImageHelp.GetSymbolImage(Symbol.Info)
+        bnCMD.Image = ImageHelp.GetSymbolImage(Symbol.CommandPrompt)
 
         For Each bn In {bnAudioAdd, bnAudioRemove, bnAudioPlay, bnAudioUp,
-                        bnAudioDown, bnAudioEdit, bnAudioConvert, bnAudioMediaInfo}
+                        bnAudioDown, bnAudioEdit, bnAudioConvert, bnAudioMediaInfo, bnCMD}
 
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
@@ -495,22 +508,12 @@ Public Class AudioConverterForm
         cms.Add("Show Source File", Sub()
                                         dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.SelectedRows(0).Index
                                         g.SelectFileWithExplorer(ap0.File)
-                                    End Sub, rSel AndAlso FileExists(ap0.File), "Open the the source file (last selected) with File Explorer.").SetImage(Symbol.FileExplorer)
+                                    End Sub, rSel AndAlso FileExists(ap0.File), "Open the source file in File Explorer.").SetImage(Symbol.FileExplorer)
 
-        cms.Add("Show Ouput Folder", Sub() g.SelectFileWithExplorer(OutPath), DirExists(OutPath), "Open the Output Folder with File Explorer.").SetImage(Symbol.FileExplorerApp)
+        cms.Add("Show Ouput Folder", Sub() g.SelectFileWithExplorer(OutPath), DirExists(OutPath), "Open output folder in File Explorer.").SetImage(Symbol.FileExplorerApp)
 
         'cms.Add("Show Output File", Sub() g.SelectFileWithExplorer(OutPath & RelativeSubDirRecursive(ap0.File.Dir, 0) & ap0.GetOutputFile),
         'rSel AndAlso FileExists(OutPath & RelativeSubDirRecursive(ap0.File.Dir, 0) & ap0.GetOutputFile), "Open converted file in File explerer").SetImage(Symbol.ShowResults)
-
-        cms.Add("Show Command Line", Sub()
-                                         dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.SelectedRows(0).Index
-                                         Select Case ap0.GetType
-                                             Case GetType(GUIAudioProfile)
-                                                 g.ShowCommandLinePreview("Command Line", (TryCast(ap0, GUIAudioProfile)?.GetCommandLine(True)))
-                                             Case GetType(BatchAudioProfile)
-                                                 g.ShowCommandLinePreview("Command Line", (TryCast(ap0, BatchAudioProfile)?.GetCode))
-                                         End Select
-                                     End Sub, rSel, "Command line for last selected file").SetImage(Symbol.CommandPrompt)
 
         cms.Add("Show LOG", Sub()
                                 SaveConverterLog()
@@ -548,6 +551,7 @@ Public Class AudioConverterForm
         bnAudioMediaInfo.Enabled = srC > 0
         bnAudioRemove.Enabled = srC > 0
         bnAudioEdit.Enabled = srC > 0
+        bnCMD.Enabled = srC > 0
         bnAudioConvert.Enabled = srC > 0
         bnAudioUp.Enabled = srC = 1 AndAlso dgvAudio.CanMoveUp
         bnAudioDown.Enabled = srC = 1 AndAlso dgvAudio.CanMoveDown
@@ -565,9 +569,11 @@ Public Class AudioConverterForm
         StatusText("Auto Resizing Columns...")
         IndexHeaderRows()
         'dgvAudio.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells)
+
         If dgvAudio.AutoSizeColumnsMode <> DataGridViewAutoSizeColumnsMode.Fill Then
             dgvAudio.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells)
         End If
+
         dgvAudio.AutoResizeColumnHeadersHeight()
         UpdateControls()
         AddHandler dgvAudio.SelectionChanged, AddressOf dgvAudio_SelectionChanged
@@ -758,7 +764,7 @@ Public Class AudioConverterForm
                 End Try
 
                 StatusText("Checking results...")
-                Task.Delay(1100).Wait()
+                Task.Delay(1200).Wait()
                 Show()
                 WindowState = FormWindowState.Normal
                 BringToFront()
@@ -863,11 +869,11 @@ Public Class AudioConverterForm
             Dim profileSelection As New SelectionBox(Of AudioProfile)
             profileSelection.Title = "Please select Audio Profile"
 
-            If Not (p.Audio0.IsNullProfile OrElse p.Audio0.IsMuxProfile) Then
+            If Not p.Audio0.IsNullProfile AndAlso Not p.Audio0.IsMuxProfile Then
                 p.Audio0.SourceSamplingRate = 0
                 profileSelection.AddItem("Current Project 1: " & p.Audio0.ToString, p.Audio0)
             End If
-            If Not (p.Audio1.IsNullProfile OrElse p.Audio1.IsMuxProfile) Then
+            If Not p.Audio1.IsNullProfile AndAlso Not p.Audio1.IsMuxProfile Then
                 p.Audio1.SourceSamplingRate = 0
                 profileSelection.AddItem("Current Project 2: " & p.Audio1.ToString, p.Audio1)
             End If
@@ -996,7 +1002,6 @@ Public Class AudioConverterForm
             Dim ap0DelayNonZero As Boolean = ap0.Delay <> 0
 
             If sr.Count > 1 Then
-                'For i = 0 To sr.Count - 2 'First in selecting order is used for editing
                 For i = 1 To sr.Count - 1
                     'Dim ap = DirectCast(AudioBindingSource(sr(i).Index), AudioProfile)
                     Dim ap = AudioSortableBindingList(sr(i).Index)
@@ -1125,12 +1130,25 @@ Public Class AudioConverterForm
     End Sub
     Private Sub bnAudioPlay_Click(sender As Object, e As EventArgs) Handles bnAudioPlay.Click
         dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.SelectedRows(0).Index
-        g.Play(DirectCast(AudioBindingSource(dgvAudio.SelectedRows(0).Index), AudioProfile).File)
+        g.Play(AudioSortableBindingList(dgvAudio.SelectedRows(0).Index).File)
     End Sub
     Private Sub bnAudioMediaInfo_Click(sender As Object, e As EventArgs) Handles bnAudioMediaInfo.Click
         dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.SelectedRows(0).Index
-        g.DefaultCommands.ShowMediaInfo(DirectCast(AudioBindingSource(dgvAudio.SelectedRows(0).Index), AudioProfile).File)
+        g.DefaultCommands.ShowMediaInfo(AudioSortableBindingList(dgvAudio.SelectedRows(0).Index).File)
     End Sub
+
+    Private Sub bnCMD_Click(sender As Object, e As EventArgs) Handles bnCMD.Click
+        Dim ap = AudioSortableBindingList(dgvAudio.SelectedRows(0).Index)
+        dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.SelectedRows(0).Index
+
+        Select Case ap.GetType
+            Case GetType(GUIAudioProfile)
+                g.ShowCommandLinePreview("Command Line", (TryCast(ap, GUIAudioProfile)?.GetCommandLine(True)))
+            Case GetType(BatchAudioProfile)
+                g.ShowCommandLinePreview("Command Line", (TryCast(ap, BatchAudioProfile)?.GetCode))
+        End Select
+    End Sub
+
     Public Shared Function GetCPUCount() As Integer
         Try
             Dim val = Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS")
@@ -1164,6 +1182,7 @@ Public Class AudioConverterForm
     End Sub
     Private Sub tcMain_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles tcMain.MouseDoubleClick 'Debug
 
+        'debug
         dgvAudio.Refresh()
         Refresh()
         CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()

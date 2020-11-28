@@ -1051,11 +1051,11 @@ Public Class GlobalClass
         Dim content = package.CreateHelpfile
 
         If package Is StaxRip.Package.x264 Then
-            Dim match = Regex.Match(content, "Presets:.+Frame-type options:", RegexOptions.Singleline)
 
-        ' Show me help for x264 presets anyway:
+            ' Show me help for x264 presets anyway:
+            'Dim match = Regex.Match(content, "Presets:.+Frame-type options:", RegexOptions.Singleline)
             'If match.Success Then
-                'content = content.Replace(match.Value, BR)
+            'content = content.Replace(match.Value, BR)
             'End If
         End If
 

@@ -13,7 +13,10 @@ Public MustInherit Class AudioProfile
     Property Depth As Integer = 0
     Property StreamName As String = ""
     Property Gain As Double
-    Property GainWasNormalized As Boolean
+
+    ' Property GainWasNormalized As Boolean
+
+
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
     Property [Default] As Boolean
     Property Forced As Boolean
@@ -28,7 +31,7 @@ Public MustInherit Class AudioProfile
 
     Overridable Property CommandLines As String
 
-    Public Shared AudioEditDialogResult As DialogResult
+    Public GainWasNormalized As Boolean
 
     Sub New(name As String)
         MyBase.New(name)
@@ -115,8 +118,7 @@ Public MustInherit Class AudioProfile
     End Property
 
     Private SourceSamplingRateValue As Integer
-
-    Property SourceSamplingRate As Integer
+    Public Property SourceSamplingRate As Integer
         Get
             If SourceSamplingRateValue = 0 Then
                 If Stream Is Nothing Then
@@ -132,7 +134,7 @@ Public MustInherit Class AudioProfile
                 SourceSamplingRateValue = 48000
             End If
 
-            If SourceSamplingRate > 48000 * 512 Then SourceSamplingRate = 48000 * 512
+            If SourceSamplingRate > 48000 * 256 Then SourceSamplingRate = 48000 * 256
 
             Return SourceSamplingRateValue
         End Get
@@ -287,11 +289,18 @@ Public MustInherit Class AudioProfile
         Return TypeOf Me Is MuxAudioProfile
     End Function
 
+    Function IsNullProfile() As Boolean
+        Return TypeOf Me Is NullAudioProfile
+    End Function
+
     Overridable Sub Encode()
     End Sub
 
     Overridable Sub EditProject()
     End Sub
+    Overridable Function EditAudioConv() As DialogResult
+        Return DialogResult.Cancel
+    End Function
 
     Overridable Function HandlesDelay() As Boolean
     End Function
@@ -413,6 +422,16 @@ Public Class BatchAudioProfile
         End Using
     End Function
 
+    Overrides Function EditAudioConv() As DialogResult
+        Using form As New CommandLineAudioEncoderForm(Me)
+            'form.mbLanguage.Enabled = False
+            'form.lLanguage.Enabled = False
+            'form.tbDelay.Enabled = False
+            'form.lDelay.Enabled = False
+            Return form.ShowDialog()
+        End Using
+    End Function
+
     Function GetCode() As String
         Return ExpandMacros(CommandLines).Trim
     End Function
@@ -426,6 +445,15 @@ Public Class BatchAudioProfile
                 Using proc As New Proc
                     proc.Header = "Audio Encoding: " + Name
                     proc.SkipStrings = Proc.GetSkipStrings(CommandLines)
+
+                    'Test this: Progress bar
+                    If ContainsCommand("|") AndAlso CommandLines.ToLowerEx.ContainsAny("qaac", "opusenc", "ffmpeg", "lossywav", "\flac ") Then
+                        Try
+                            proc.Duration = GetDuration()
+                        Catch
+                        End Try
+                    End If
+
                     proc.File = "cmd.exe"
                     proc.Arguments = "/S /C """ + line + """"
 
@@ -457,11 +485,16 @@ Public Class BatchAudioProfile
                 Log.Write("Error", "no output found")
 
                 If Not File.Ext = "wav" Then
+                    'TO DO test this:
+                    Dim OldDecMode = DecodingMode
+                    DecodingMode = AudioDecodingMode.WAVE
                     Audio.Convert(Me)
 
                     If File.Ext = "wav" Then
                         Encode()
                     End If
+
+                    DecodingMode = OldDecMode
                 End If
             End If
         End If
@@ -469,7 +502,7 @@ Public Class BatchAudioProfile
 
     Overrides Sub EditProject()
         Using f As New CommandLineAudioEncoderForm(Me)
-            AudioEditDialogResult = f.ShowDialog()
+            f.ShowDialog()
         End Using
     End Sub
 
@@ -500,8 +533,7 @@ Public Class NullAudioProfile
             n.Config = {0, Integer.MaxValue, 8}
             n.Property = NameOf(Bitrate)
 
-            AudioEditDialogResult = form.ShowDialog()
-            If AudioEditDialogResult = DialogResult.OK Then
+            If form.ShowDialog() = DialogResult.OK Then
                 ui.Save()
             End If
         End Using
@@ -550,6 +582,10 @@ Public Class MuxAudioProfile
 
     Overrides Function Edit() As DialogResult
         Return Edit(False)
+    End Function
+
+    Overrides Function EditAudioConv() As DialogResult
+        Return Edit(True)
     End Function
 
     Overrides Sub EditProject()
@@ -638,7 +674,7 @@ Public Class MuxAudioProfile
             page.ResumeLayout()
 
             Dim ret = form.ShowDialog()
-            AudioEditDialogResult = ret
+
             If ret = DialogResult.OK Then
                 ui.Save()
             End If
@@ -732,7 +768,8 @@ Public Class GUIAudioProfile
                 Return MediaInfo.GetAudio(File, "BitDepth").ToInt
             End If
 
-            Return If({AudioCodec.WAV, AudioCodec.W64}.Contains(Params.Codec), 16, 24)
+            Return 16
+            'Return If({AudioCodec.WAV, AudioCodec.W64}.Contains(Params.Codec), 16, 24)
         End If
 
         Return Depth
@@ -764,16 +801,16 @@ Public Class GUIAudioProfile
                     Return CInt(Bitrate)
                 Case AudioCodec.WavPack
                     'If Params.WavPackMode = 0 Then
-                    Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.55)
+                    Return CInt(TargetSamplingRate / 1000 * 0.55 * GetCalcDepth() * Channels)
                     'End If
             End Select
         End If
 
         Select Case Params.Codec
             Case AudioCodec.FLAC
-                Return CInt(((TargetSamplingRate * GetCalcDepth() * Channels) / 1000) * 0.55)
+                Return CInt(TargetSamplingRate / 1000 * 0.55 * GetCalcDepth() * Channels)
             Case AudioCodec.W64, AudioCodec.WAV
-                Return CInt((TargetSamplingRate * GetCalcDepth() * Channels) / 1000)
+                Return CInt(TargetSamplingRate / 1000 * GetCalcDepth() * Channels)
         End Select
 
         Return CInt(Bitrate)
@@ -849,7 +886,6 @@ Public Class GUIAudioProfile
             End If
         End If
     End Sub
-
     Sub NormalizeFF()
         If Not Params.Normalize OrElse ExtractCore Then 'OrElse ( SupportsNormalize())
             Exit Sub
@@ -939,8 +975,8 @@ Public Class GUIAudioProfile
                 Const UpSampleFactor As Integer = 4   'upsample true peak
                 Dim SRate As Integer = SourceSamplingRate * UpSampleFactor
                 If SRate < 44100 * UpSampleFactor Then SRate = 48000 * UpSampleFactor
-                If SRate > 48000 * 512 Then SRate = 48000 * 512
-                Dim QLogL As String = If(s.FfmpegLogLevel >= 24, " --verbose", "")
+                If SRate > 48000 * 256 Then SRate = 48000 * 256
+                Dim QLogL As String = If(s.FfmpegLogLevel >= 24 OrElse s.FfmpegLogLevel = 0, " --verbose", "")
 
                 sb.Append(s.GetFFLogLevel(FfLogLevel.error) & " -hide_banner -c:a pcm_f32le -f wav - | " &
                           Package.qaac.Path.Escape & " --rate " & SRate & " --peak" & QLogL & " - ")
@@ -982,9 +1018,20 @@ Public Class GUIAudioProfile
     Overrides Sub EditProject()
         Using form As New AudioForm()
             form.LoadProfile(Me)
-            AudioEditDialogResult = form.ShowDialog()
+            form.ShowDialog()
         End Using
     End Sub
+
+    Public Overrides Function EditAudioConv() As DialogResult
+        Using form As New AudioForm()
+            'SourceSamplingRate = 0
+            form.LoadProfile(Me)
+            'form.mbLanguage.Enabled = False
+            'form.numDelay.Enabled = False
+            'form.numGain.Enabled = False
+            Return form.ShowDialog()
+        End Using
+    End Function
 
     Public Overrides Property OutputFileType As String
         Get
@@ -1219,7 +1266,7 @@ Public Class GUIAudioProfile
         If includePaths Then
             If s.FfmpegLogLevel <> 0 AndAlso s.FfmpegLogLevel < 16 Then
                 sb.Append(" -s")
-            ElseIf s.FfmpegLogLevel >= 24 Then
+            ElseIf s.FfmpegLogLevel >= 24 OrElse s.FfmpegLogLevel = 0 Then
                 sb.Append(" --verbose")
             End If
             sb.Append(" " + input + " -o " + GetOutputFile.Escape)
@@ -1306,7 +1353,7 @@ Public Class GUIAudioProfile
             If GetEncoder() = GuiAudioEncoder.WavPack Then
                 sb.Append(s.GetFFLogLevel(FfLogLevel.info)) ' Progress % workaround :(
             Else
-                sb.Append(s.GetFFLogLevel(FfLogLevel.fatal))
+                sb.Append(s.GetFFLogLevel(FfLogLevel.warning))
             End If
             sb.Append(" -hide_banner -f wav - | ")
         End If
@@ -1695,17 +1742,18 @@ Public Class GUIAudioProfile
         Return GetEncoder() = GuiAudioEncoder.eac3to OrElse GetEncoder() = GuiAudioEncoder.qaac
     End Function
     Function IntegerCodec() As Boolean
-        Return {AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.WavPack}.Contains(Params.Codec)
+        Return {AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.WavPack}.Contains(Params.Codec) OrElse (Params.Encoder = GuiAudioEncoder.fdkaac AndAlso Params.Codec = AudioCodec.AAC) ' FDKAAC eats int16 only:(
     End Function
     Function VBRMode() As Boolean
         Dim SR = {GuiAudioEncoder.ffmpeg, GuiAudioEncoder.fdkaac}.Contains(Params.Encoder) AndAlso Params.Codec = AudioCodec.AAC
 
         Return (Params.Codec = AudioCodec.Opus AndAlso Params.ffmpegOpusRateMode = OpusRateMode.VBR) OrElse
                (GetEncoder() = GuiAudioEncoder.qaac AndAlso Params.qaacRateMode = 0) OrElse
+               Params.Codec = AudioCodec.FLAC OrElse
                (Params.Codec = AudioCodec.WavPack AndAlso Params.WavPackMode = 0) OrElse
                (SR AndAlso Params.SimpleRateMode = SimpleAudioRateMode.VBR) OrElse
                ({AudioCodec.MP3, AudioCodec.Vorbis}.Contains(Params.Codec) AndAlso Params.RateMode = AudioRateMode.VBR) OrElse
-               (Params.Encoder = GuiAudioEncoder.eac3to AndAlso Params.Codec = AudioCodec.AAC)
+               (Params.Codec = AudioCodec.AAC AndAlso Params.Encoder = GuiAudioEncoder.eac3to)
     End Function
 
     Public Overrides ReadOnly Property DefaultName As String
@@ -1729,13 +1777,16 @@ Public Class GUIAudioProfile
                     ch += " Mono"
             End Select
 
-            Dim circa = If(VBRMode() OrElse {AudioCodec.FLAC}.Contains(Params.Codec), "~", "")
+            Dim bDepth = If(Depth <> 0, Depth.ToString & "b ", "")
+            Dim pSR = If(Params.SamplingRate <> 0, CInt(Params.SamplingRate / 1000).ToString & "kHz ", "")
+
+            Dim circa = If(VBRMode(), "~", "")
             Dim bitrate = If(VBRMode(), GetBitrate(), Me.Bitrate)
 
             If ExtractCore Then
                 Return "Extract DTS Core"
             Else
-                Return Params.Codec.ToString + ch & " " & circa & bitrate & " Kbps"
+                Return Params.Codec.ToString + ch & " " & bDepth & pSR & circa & bitrate & " Kbps"
             End If
         End Get
     End Property
@@ -1883,6 +1934,9 @@ Public Class GUIAudioProfile
         Property ChannelsMode As ChannelsMode
         Property Codec As AudioCodec
         Property CustomSwitches As String = ""
+
+        'Property DepthMode As Integer = 0
+
         Property eac3toStereoDownmixMode As Integer
         Property Encoder As GuiAudioEncoder
         Property FrameRateMode As AudioFrameRateMode
@@ -1950,7 +2004,7 @@ Public Class GUIAudioProfile
         'Property opusEncComplexity As Integer = 10
         'Property opusEncFramesize As Double = 20
         Property opusEncTuning As OpusEncTune
-        Property opusEncDelay As Integer
+        Property opusEncDelay As Integer = 1000
         Property opusEncNoPhaseInv As Boolean = False
 
         Property ffmpegCompressionLevel As Integer = 1
@@ -2030,6 +2084,7 @@ Public Class GUIAudioProfile
                 'opusEncComplexity = 10
                 'opusEncMode = OpusEncMode.VBR
                 'opusEncNoPhaseInv = False
+                'opusEncDelay = 1000
             End If
 
             '2020

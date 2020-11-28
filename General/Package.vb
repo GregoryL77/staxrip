@@ -119,7 +119,7 @@ Public Class Package
 
     Shared Property ffmpeg_non_free As Package = Add(New Package With {
         .Name = "ffmpeg non-free",
-        .Filename = "ffmpeg.exe",
+        .Filename = "ffmpegnf.exe",
         .WebURL = "http://ffmpeg.org",
         .HelpURL = "http://www.ffmpeg.org/documentation.html",
         .HelpSwitch = "-h",

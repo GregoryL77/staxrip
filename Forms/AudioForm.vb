@@ -855,6 +855,7 @@ Public Class AudioForm
                     Case GuiAudioEncoder.eac3to
                         SetQuality(0.5)
                     Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
+                        If TempProfile.Params.Encoder = GuiAudioEncoder.fdkaac Then TempProfile.Depth = 16 'FDKAAC eats only int16
                         TempProfile.Params.SimpleRateMode = SimpleAudioRateMode.VBR
                         SetQuality(3)
                     Case Else

@@ -1998,7 +1998,7 @@ Namespace UI
     Public Class DataGridViewEx
         Inherits DataGridView
 
-        'DoubleBuffered DGV -  keybord responivness
+        'DoubleBuffered DGV -  keyboard responivness
         Protected Overrides Property DoubleBuffered As Boolean = True
 
         Function AddTextBoxColumn() As DataGridViewTextBoxColumn

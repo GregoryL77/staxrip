@@ -306,6 +306,7 @@ Public Class NVEnc
         Property TweakSaturation As New NumParam With {.Text = "      Saturation", .HelpSwitch = "--vpp-tweak", .Init = 1.0, .Config = {0.0, 3.0, 0.1, 1}}
         Property TweakHue As New NumParam With {.Text = "      Hue", .HelpSwitch = "--vpp-tweak", .Config = {-180.0, 180.0, 0.1, 1}}
         Property TweakBrightness As New NumParam With {.Text = "      Brightness", .HelpSwitch = "--vpp-tweak", .Config = {-1.0, 1.0, 0.1, 1}}
+        Property TweakSwapUV As New BoolParam With {.Text = "Swap UV", .HelpSwitch = "--vpp-tweak", .LeftMargin = g.MainForm.FontHeight * 1.3}
 
         Property Pmd As New BoolParam With {.Switch = "--vpp-pmd", .Text = "Denoise using PMD", .ArgsFunc = AddressOf GetPmdArgs}
         Property PmdApplyCount As New NumParam With {.Text = "      Apply Count", .Init = 2}
@@ -419,6 +420,8 @@ Public Class NVEnc
         Property ColorSpaceHDRContrast As New NumParam With {.Text = "      Reinhard Contrast", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.ValueText = "reinhard", .Init = 0.5, .Config = {0, 10, 0.02, 2}}
 
 
+        'TO DO: Add: --atc-sei, --repeat-headers(check this),  Decimate,  MpDecimate and VFR
+
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
@@ -513,6 +516,7 @@ Public Class NVEnc
                         TweakSaturation,
                         TweakGamma,
                         TweakHue,
+                        TweakSwapUV,
                         Pad,
                         PadLeft,
                         PadTop,
@@ -603,6 +607,7 @@ Public Class NVEnc
                         AfsTimecode,
                         AfsLog)
                     Add("Statistic",
+                        New StringParam With {.Switch = "--vmaf", .Text = "VMAF"},
                         New OptionParam With {.Switch = "--log-level", .Text = "Log Level", .Options = {"Info", "Debug", "Warn", "Error"}},
                         New BoolParam With {.Switch = "--ssim", .Text = "SSIM"},
                         New BoolParam With {.Switch = "--psnr", .Text = "PSNR"})
@@ -693,6 +698,7 @@ Public Class NVEnc
                 TweakGamma.NumEdit.Enabled = Tweak.Value
                 TweakSaturation.NumEdit.Enabled = Tweak.Value
                 TweakHue.NumEdit.Enabled = Tweak.Value
+                TweakSwapUV.CheckBox.Enabled = Tweak.Value
                 TweakBrightness.NumEdit.Enabled = Tweak.Value
 
                 PmdApplyCount.NumEdit.Enabled = Pmd.Value
@@ -903,6 +909,10 @@ Public Class NVEnc
 
                 If TweakHue.Value <> TweakHue.DefaultValue Then
                     ret += ",hue=" & TweakHue.Value.ToInvariantString
+                End If
+
+                If TweakSwapUV.Value Then
+                    ret += ",swapuv=true"
                 End If
 
                 If ret <> "" Then

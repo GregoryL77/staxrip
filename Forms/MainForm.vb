@@ -4075,10 +4075,23 @@ Public Class MainForm
         End Using
 
         'debug tests
-        'Thread.Sleep(100)
+        Refresh()
+        SuspendLayout()
+        Task.Delay(100).Wait()
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        'GC.Collect()
-        'Thread.Sleep(100)
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
+        Thread.Sleep(100)
+        ResumeLayout(True)
+        Me.PerformLayout()
+        Refresh()
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
+        Thread.Sleep(100)
+        Refresh()
+        GC.Collect()
+
     End Sub
 
     <Command("Dialog to edit filters.")>

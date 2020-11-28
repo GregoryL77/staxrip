@@ -593,6 +593,7 @@ Public Class Language
                 l.Add(New Language("de", True))
                 l.Add(New Language("fr", True))
                 l.Add(New Language("it", True))
+                l.Add(New Language("pl", True))
                 l.Add(New Language("ru", True))
                 l.Add(New Language("zh", True))
                 l.Add(New Language("hi", True))
@@ -3858,7 +3859,7 @@ Public Enum FfLogLevel
     <DispName("Default")> panic = 0 'unused according to ffmpgeg manual
     quiet = -8
     fatal = 8
-    error$ = 16
+    [error] = 16
     warning = 24
     info = 32       'ff default
     verbose = 40

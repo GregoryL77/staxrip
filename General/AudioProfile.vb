@@ -13,10 +13,7 @@ Public MustInherit Class AudioProfile
     Property Depth As Integer = 0
     Property StreamName As String = ""
     Property Gain As Double
-
-    ' Property GainWasNormalized As Boolean
-
-
+    Public GainWasNormalized As Boolean
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
     Property [Default] As Boolean
     Property Forced As Boolean
@@ -30,8 +27,6 @@ Public MustInherit Class AudioProfile
     Overridable Property SupportedInput As String()
 
     Overridable Property CommandLines As String
-
-    Public GainWasNormalized As Boolean
 
     Sub New(name As String)
         MyBase.New(name)

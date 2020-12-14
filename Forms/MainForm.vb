@@ -4072,24 +4072,19 @@ Public Class MainForm
 
         Using aForm As New AudioConverterForm
             aForm.ShowDialog()
+            Task.Delay(50).Wait()
         End Using
 
         'debug tests
+        'MediaInfo.ClearCache()
+
         Refresh()
-        SuspendLayout()
-        Task.Delay(100).Wait()
+        Task.Delay(50).Wait()
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
-        Thread.Sleep(100)
-        ResumeLayout(True)
-        Me.PerformLayout()
         Refresh()
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
-        GC.WaitForPendingFinalizers()
-        Thread.Sleep(100)
-        Refresh()
+        Thread.Sleep(50)
         GC.Collect()
 
     End Sub

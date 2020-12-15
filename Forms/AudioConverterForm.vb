@@ -470,7 +470,10 @@ Public Class AudioConverterForm
         dgvAudio.Sort(dgvAudio.Columns(2), ComponentModel.ListSortDirection.Ascending)
         If MaxThreads = 0 Then MaxThreads = s.ParallelProcsNum
         numThreads.Value = MaxThreads
+
         cms = New ContextMenuStripEx(components)
+        cms.Form = Me
+        bnMenuAudio.ClickAction = AddressOf UpdateCMS
         bnMenuAudio.ContextMenuStrip = cms
         AddHandler dgvAudio.SelectionChanged, AddressOf dgvAudio_SelectionChanged
         AddHandler dgvAudio.CurrentCellChanged, AddressOf dgvAudio_SelectionChanged
@@ -478,7 +481,6 @@ Public Class AudioConverterForm
 
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
-        ' bnMenuAudio_Click(Me, e)
         UpdateControls()
         Refresh()
         bnAudioAdd.Select()
@@ -490,20 +492,20 @@ Public Class AudioConverterForm
         PopulateSWatch?.Stop()
         RemoveHandler dgvAudio.SelectionChanged, AddressOf dgvAudio_SelectionChanged
         RemoveHandler dgvAudio.CurrentCellChanged, AddressOf dgvAudio_SelectionChanged
-        MyBase.OnFormClosing(e)
         AudioSBL.Clear()
         dgvAudio.Rows.Clear()
         dgvAudio.Columns.Clear()
+        MyBase.OnFormClosing(e)
     End Sub
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        MyBase.OnFormClosed(e)
         SaveConverterLog()
+        MyBase.OnFormClosed(e)
 
-        Task.Delay(14).Wait()
+        Task.Delay(15).Wait()
 
     End Sub
 
-    Private Sub bnMenuAudio_Click(sender As Object, e As EventArgs) Handles bnMenuAudio.Click
+    Private Sub UpdateCMS() ' Handles bnMenuAudio.Click
         cms.SuspendLayout()
         cms.Items.ClearAndDisplose
         Dim rExist = AudioSBL.Count > 0
@@ -518,6 +520,7 @@ Public Class AudioConverterForm
                                   dgvAudio.Rows.Clear()
                                   AudioSBL.InnerListChanged()
                                   AudioSBL.ResetBindings()
+                                  UpdateControls()
                               End Sub, rExist).SetImage(Symbol.Clear)
 
         cms.Add("Show Source File", Sub()
@@ -542,8 +545,9 @@ Public Class AudioConverterForm
         cms.Add("Opus Help", Sub() Package.OpusEnc.ShowHelp())
         cms.Add("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp())
         cms.Add("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to"))
+        'bnMenuAudio.ContextMenuStrip = cms
         cms.ResumeLayout()
-        cms.Show()
+        'cms.Show(bnMenuAudio, 0, bnMenuAudio.Height)
     End Sub
 
     Public Function OpenAudioConverterDialog() As DialogResult 'Debug
@@ -606,14 +610,14 @@ Public Class AudioConverterForm
     End Sub
 
     Private Sub IndexHeaderRows()
-        If IndexTaskS = True Then
+        If IndexTaskS Then
             Exit Sub
         End If
 
         Dim ta As Action = Sub()
                                IndexTaskS = True
                                Thread.Sleep(100)
-                               If AudioSBL.Count > 0 Then
+                               If AudioSBL?.Count > 0 Then
                                    SyncLock SLock
                                        IndexTaskS = False
                                        Parallel.ForEach(Partitioner.Create(0, AudioSBL.Count), New ParallelOptions With {.MaxDegreeOfParallelism = CInt(CPUs / 2)},
@@ -642,7 +646,7 @@ Public Class AudioConverterForm
                                           Task.Run(Sub() Console.Beep(3000, 200))
                                           Log.Write("Index Task Exceptions: ", ex.ToString & ex.InnerException.ToString & PopulateIter.ToString & PopulateTask.Status.ToString & "-PopulateT|WaitT: " & PopulateTaskW?.Status.ToString & " IndexTS: " & IndexTask.Status.ToString & " IndexTWS: " & IndexTaskW?.Status.ToString & " IndexDelay:" & IndexTaskS)
                                       End Try
-                                      If IndexTaskS = False AndAlso AudioSBL?.Count > 0 Then IndexTask = Task.Run(ta)
+                                      If Not IndexTaskS Then IndexTask = Task.Run(ta)
                                   End Sub)
         End If
     End Sub
@@ -990,13 +994,11 @@ Public Class AudioConverterForm
             End If
 
             dgvAudio.ResumeLayout()
-            'dgvAudio.Refresh()
-            'Refresh()
-
             'g.MainForm.UpdateSizeOrBitrate()
             If AudioSBL.Count > 200 Then dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
             AutoSizeColumns()
             dgvAudio.Select()
+
             If AudioSBL.Count > 0 Then
                 dgvAudio.CurrentCell = dgvAudio.Rows(AudioSBL.Count - 1).Cells(dgvAudio.CurrentCell.ColumnIndex)
                 dgvAudio.Rows(OldLastIDX).Selected = True
@@ -1006,28 +1008,28 @@ Public Class AudioConverterForm
             PopulateCache()
 
 
-            'If StatUpdateTask Is Nothing OrElse StatUpdateTask.IsCompleted Then      'debug
-            '    StatUpdateTask = Task.Run(
-            '        Sub()
-            '            Do While PopulateIter < 299 AndAlso AudioSBL?.Count > 0 AndAlso Me.Visible
-            '                Thread.Sleep(120)
-            '                Me.Invoke(Sub() Me.Text = PopulateTaskS.ToString & PopulateIter.ToString & PopulateTask.Status.ToString & PopulateSWatch?.ElapsedMilliseconds.ToString & "ms-PopulateTime|WaitPT: " & PopulateTaskW?.Status.ToString & " IndexTS: " & IndexTask.Status.ToString & " IndexTWS: " & IndexTaskW?.Status.ToString & " IndexDelay:" & IndexTaskS.ToString)
-            '            Loop
-            '            PopulateSWatch?.Stop()
-            '        End Sub)
-            'End If
+            If StatUpdateTask Is Nothing OrElse StatUpdateTask.IsCompleted Then      'debug
+                StatUpdateTask = Task.Run(
+                    Sub()
+                        Do While PopulateIter < 350 AndAlso AudioSBL?.Count > 0 AndAlso Me.Visible
+                            Thread.Sleep(110)
+                            Me.Invoke(Sub() Me.Text = PopulateTaskS.ToString & PopulateIter.ToString & PopulateTask.Status.ToString & PopulateSWatch?.ElapsedMilliseconds.ToString & "ms-PopulateTime|WaitPT: " & PopulateTaskW?.Status.ToString & " IndexTS: " & IndexTask.Status.ToString & " IndexTWS: " & IndexTaskW?.Status.ToString & " IndexDelay:" & IndexTaskS.ToString)
+                        Loop
+                        PopulateSWatch?.Stop()
+                    End Sub)
+            End If
 
 
         End If
     End Sub
 
 
-    'Dim StatUpdateTask As Task 'debug
+    Dim StatUpdateTask As Task 'debug
 
 
     Public Sub PopulateCache()
         Select Case PopulateIter
-            Case Is > 300
+            Case Is > 350
                 Exit Sub
             Case Is > 250
                 PopulateTaskS = True
@@ -1078,7 +1080,7 @@ Public Class AudioConverterForm
         ElseIf PopulateTaskW Is Nothing OrElse PopulateTaskW.IsCompleted Then
             PopulateTaskW = Task.Run(Sub()
                                          PopulateTask.Wait()
-                                         If PopulateTaskS AndAlso AudioSBL?.Count > 20 AndAlso PopulateIter < 250 Then
+                                         If PopulateTaskS AndAlso PopulateIter < 250 Then
                                              PopulateTask = Task.Factory.StartNew(pTaskA, TaskCreationOptions.LongRunning)
                                          End If
                                      End Sub)
@@ -1157,7 +1159,7 @@ Public Class AudioConverterForm
             'g.MainForm.UpdateSizeOrBitrate()
             StatusText("Applying settings...")
 
-            'PopulateTask?.Wait()
+            dgvAudio.SuspendLayout()
 
             If TypeOf ap0 Is GUIAudioProfile Then
                 ap0.Name = ap0.DefaultName
@@ -1167,7 +1169,6 @@ Public Class AudioConverterForm
             Dim ap0DelayNonZero As Boolean = ap0.Delay <> 0
 
             If sr.Count > 1 Then
-                dgvAudio.SuspendLayout()
                 AudioSBL.RaiseListChangedEvents = False
 
                 'For i = 1 To sr.Count - 1
@@ -1203,8 +1204,6 @@ Public Class AudioConverterForm
 
             AudioSBL.RaiseListChangedEvents = True
             AudioSBL.ResetBindings()
-            'dgvAudio.Refresh()
-            'Refresh()
 
             If dgvAudio.CurrentRow IsNot Nothing Then dgvAudio.CurrentRow.Selected = False
             For Each nRow As DataGridViewRow In dgvAudio.Rows
@@ -1401,8 +1400,8 @@ Public Class AudioConverterForm
     Private Sub tcMain_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles tcMain.MouseDoubleClick 'Debug
         'debug
         PopulateTaskS = True
-        Task.Delay(50).Wait()
         Console.Beep(900, 50)
+        Task.Delay(50).Wait()
 
         MediaInfo.ClearCache()
 
@@ -1426,5 +1425,8 @@ Public Class AudioConverterForm
         PopulateCache()
 
     End Sub
-
 End Class
+
+
+
+

@@ -533,7 +533,7 @@ Namespace UI
         End Sub
 
         Sub Opening(sender As Object, e As CancelEventArgs)
-            If Not EnabledFunc Is Nothing Then
+            If Not EnabledFunc Is Nothing Then ' '  problem with cms dispose opening event
                 Enabled = EnabledFunc.Invoke
             End If
 
@@ -553,11 +553,15 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)
-            MyBase.Dispose(disposing)
-
             If Not Form Is Nothing Then
                 RemoveHandler Form.KeyDown, AddressOf KeyDown
             End If
+
+            If TypeOf Owner Is ToolStripDropDown Then  ' memory leak problem with cms opening event
+                RemoveHandler TryCast(Owner, ToolStripDropDown).Opening, AddressOf Opening
+            End If
+
+            MyBase.Dispose(disposing)
 
             Action = Nothing
             EnabledFunc = Nothing
@@ -624,7 +628,7 @@ Namespace UI
                             Dim item As New ActionMenuItem(a(x) + g.MenuSpace, action, tip)
                             item.SetImage(symbol)
                             l.Add(item)
-                            'l = item.DropDownItems
+                            l = item.DropDownItems ' was remarked, redundand ???
                             Return item
                         End If
                     Else
@@ -777,7 +781,8 @@ Namespace UI
             ret.EnabledFunc = enabledFunc
             ret.Help = help
 
-            AddHandler Opening, AddressOf ret.Opening
+            'If enabledFunc IsNot Nothing Then 'OrElse ret.VisibleFunc IsNot Nothing
+            AddHandler Opening, AddressOf ret.Opening ' add, problem with cms dispose opening event
 
             Return ret
         End Function

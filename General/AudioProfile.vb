@@ -8,12 +8,13 @@ Imports StaxRip.UI
 Public MustInherit Class AudioProfile
     Inherits Profile
 
+    Property RowIdx As Integer
+
     Property Language As New Language
     Property Delay As Integer
     Property Depth As Integer = 0
     Property StreamName As String = ""
     Property Gain As Double
-    Public GainWasNormalized As Boolean
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
     Property [Default] As Boolean
     Property Forced As Boolean
@@ -684,6 +685,8 @@ Public Class GUIAudioProfile
     Inherits AudioProfile
 
     Property Params As New Parameters
+
+    Private GainWasNormalized As Boolean
 
     Sub New(codec As AudioCodec, quality As Single)
         MyBase.New(Nothing)

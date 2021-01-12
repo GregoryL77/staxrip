@@ -1,5 +1,12 @@
 
+Imports System.Runtime
+Imports System.Threading
+Imports System.Threading.Tasks
 Imports StaxRip.UI
+Imports System.Collections.Concurrent
+Imports System.Reflection
+Imports KGySoft.ComponentModel
+Imports KGySoft.CoreLibraries
 
 Public Class AudioForm
     Inherits DialogBase
@@ -1055,16 +1062,71 @@ Public Class AudioForm
         numBitrate.Value = v
     End Sub
 
+
+    Private mbMode As SimpleUI.MenuBlock(Of Integer)
+    Private mbModeH As MenuButton.ValueChangedUserEventHandler
+    Private cbqaacHE As SimpleUI.SimpleUICheckBox
+    Private cbqaacHEH As EventHandler
+    Private mCompressionLevel As SimpleUI.NumBlock
+    Private mCompressionLevelH As NumEdit.ValueChangedEventHandler
+    Private mbWavPackMode As SimpleUI.MenuBlock(Of Integer)
+    Private mbWavPackModeH As MenuButton.ValueChangedUserEventHandler
+
+
     Sub LoadAdvanced()
         RemoveHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
+        If cbqaacHE IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf cbqaacHE.Save
+            RemoveHandler cbqaacHE.CheckedChanged, cbqaacHEH
+            'cbqaacHE.Controls.Clear()
+            cbqaacHE.Dispose()
+        End If
+        If mbMode IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf mbMode.Button.Save
+            RemoveHandler mbMode.Button.ValueChangedUser, mbModeH
+            mbMode.Button.Dispose()
+            mbMode.Dispose()
+        End If
+        If mCompressionLevel IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf mCompressionLevel.NumEdit.Save
+            RemoveHandler mCompressionLevel.NumEdit.ValueChanged, mCompressionLevelH
+            mCompressionLevel.NumEdit.Dispose()
+            mCompressionLevel.Dispose()
+        End If
+        If mbWavPackMode IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf mbWavPackMode.Button.Save
+            RemoveHandler mbWavPackMode.Button.ValueChangedUser, mbWavPackModeH
+            mbWavPackMode.Button.Dispose()
+            mbWavPackMode.Dispose()
+        End If
 
         Dim ui = SimpleUI
         ui.Store = TempProfile.Params
+
+        For Each ct In ui.Host.Controls
+            DirectCast(ct, Control).Dispose()
+            'ct = Nothing
+        Next
+
         ui.Host.Controls.Clear()
 
         If Not ui.ActivePage Is Nothing Then
             DirectCast(ui.ActivePage, Control).Dispose()
+            'ui.ActivePage = Nothing
         End If
+
+        For Each pg In ui.Pages
+            DirectCast(pg, Control).Dispose()
+            'pg = Nothing
+        Next
+        ui.Pages.Clear()
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        'GC.Collect()
+        GC.WaitForPendingFinalizers()
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
+        'Text = ui.Pages.Count.ToString & "pc | hc " & ui.Host.Controls.Count
 
         Dim page = ui.CreateFlowPage()
         page.SuspendLayout()
@@ -1132,23 +1194,25 @@ Public Class AudioForm
                 Select Case TempProfile.Params.Codec
 
                     Case AudioCodec.FLAC, AudioCodec.WavPack
-                        Dim mCompressionLevel = ui.AddNum(page)
+                        mCompressionLevel = ui.AddNum(page)
                         mCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
                             mCompressionLevel.NumEdit.Config = {0, 12}
                             mCompressionLevel.Help = "Over 10 is non-subset"
+                            mCompressionLevelH = Sub()
+                                                     If mCompressionLevel.NumEdit.Value > 10 Then
+                                                         mCompressionLevel.NumEdit.SetColor(Color.Red)
+                                                     Else
+                                                         mCompressionLevel.NumEdit.SetColor(Color.CadetBlue)
+                                                     End If
+                                                 End Sub
+                            AddHandler mCompressionLevel.NumEdit.ValueChanged, mCompressionLevelH
                         Else
                             mCompressionLevel.NumEdit.Config = {0, 8}
                             TempProfile.Params.WavPackMode = 0
                         End If
                         mCompressionLevel.Property = NameOf(TempProfile.Params.ffmpegCompressionLevel)
-                        AddHandler mCompressionLevel.NumEdit.ValueChanged, Sub()
-                                                                               If mCompressionLevel.NumEdit.Value > 10 Then
-                                                                                   mCompressionLevel.NumEdit.SetColor(Color.Red)
-                                                                               Else
-                                                                                   mCompressionLevel.NumEdit.SetColor(Color.CadetBlue)
-                                                                               End If
-                                                                           End Sub
+
 
                     Case AudioCodec.DTS, AudioCodec.AC3, AudioCodec.EAC3
                     Case AudioCodec.AAC
@@ -1363,7 +1427,7 @@ Public Class AudioForm
                 cb.Property = NameOf(TempProfile.Params.fdkaacMoovBeforeMdat)
             Case GuiAudioEncoder.qaac
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.qaac, switch)
-                Dim mbMode = ui.AddMenu(Of Integer)
+                mbMode = ui.AddMenu(Of Integer)
                 mbMode.Text = "Mode"
                 mbMode.Expandet = True
                 mbMode.Add("True VBR", 0)
@@ -1397,26 +1461,28 @@ Public Class AudioForm
                 num.NumEdit.Value = TempProfile.Params.qaacLowpass
                 num.NumEdit.SaveAction = Sub(value) TempProfile.Params.qaacLowpass = CInt(value)
 
-                Dim cbqaacHE = ui.AddBool(page)
+                cbqaacHE = ui.AddBool(page)
                 cbqaacHE.Text = "High Efficiency"
                 cbqaacHE.HelpAction = getHelpAction("--he")
                 cbqaacHE.Property = NameOf(TempProfile.Params.qaacHE)
 
-                AddHandler cbqaacHE.CheckedChanged, Sub()
-                                                        If cbqaacHE.Checked AndAlso mbMode.Button.Value = 0 Then
-                                                            mbMode.Button.Value = 1
-                                                            TempProfile.Params.qaacRateMode = 1
-                                                            'TempProfile.Params.RateMode = AudioRateMode.CBR
-                                                            Dim c21 As Double = If(TempProfile.Channels > 0, TempProfile.Channels * 64 / 2, 160)
-                                                            SetBitrate(CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
-                                                        End If
-                                                    End Sub
+                cbqaacHEH = Sub(sender As Object, e As EventArgs)
+                                If cbqaacHE.Checked AndAlso mbMode.Button.Value = 0 Then
+                                    mbMode.Button.Value = 1
+                                    TempProfile.Params.qaacRateMode = 1
+                                    'TempProfile.Params.RateMode = AudioRateMode.CBR
+                                    Dim c21 As Double = If(TempProfile.Channels > 0, TempProfile.Channels * 64 / 2, 160)
+                                    SetBitrate(CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
+                                End If
+                            End Sub
+                AddHandler cbqaacHE.CheckedChanged, cbqaacHEH
 
-                AddHandler mbMode.Button.ValueChangedUser, Sub()
-                                                               'cbqaacHE.Enabled = mbMode.Button.Value <> 0
-                                                               If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
-                                                               'UpdateControls()
-                                                           End Sub
+                mbModeH = Sub()
+                              'cbqaacHE.Enabled = mbMode.Button.Value <> 0
+                              If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
+                              'UpdateControls()
+                          End Sub
+                AddHandler mbMode.Button.ValueChangedUser, mbModeH
 
                 'AFAIK dither is intended only for wav/ALAC out and depth (-b) param - no effect in Staxrip: 
                 'limiter is quite usefull btw
@@ -1428,7 +1494,8 @@ Public Class AudioForm
 
             Case GuiAudioEncoder.WavPack
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.WavPack, switch)
-                Dim mbWavPackMode = ui.AddMenu(Of Integer)
+
+                mbWavPackMode = ui.AddMenu(Of Integer)
                 mbWavPackMode.Text = "Mode"
                 mbWavPackMode.Expandet = True
                 mbWavPackMode.Add("Lossless", 0)
@@ -1475,18 +1542,20 @@ Public Class AudioForm
                 cbCreateCorrectionWVC.Property = NameOf(TempProfile.Params.WavPackCreateCorrection)
 
                 cbCreateCorrectionWVC.Enabled = mbWavPackMode.Button.Value = 1
-                AddHandler mbWavPackMode.Button.ValueChangedUser, Sub()
-                                                                      If mbWavPackMode.Button.Value = 1 Then
-                                                                          TempProfile.Params.WavPackMode = 1
-                                                                          SetBitrate(CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
-                                                                          cbCreateCorrectionWVC.Enabled = True
-                                                                      Else
-                                                                          'cbCreateCorrectionWVC.Checked = False
-                                                                          cbCreateCorrectionWVC.Enabled = False
-                                                                          TempProfile.Params.WavPackMode = 0
-                                                                          UpdateBitrate()
-                                                                      End If
-                                                                  End Sub
+
+                mbWavPackModeH = Sub()
+                                     If mbWavPackMode.Button.Value = 1 Then
+                                         TempProfile.Params.WavPackMode = 1
+                                         SetBitrate(CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
+                                         cbCreateCorrectionWVC.Enabled = True
+                                     Else
+                                         'cbCreateCorrectionWVC.Checked = False
+                                         cbCreateCorrectionWVC.Enabled = False
+                                         TempProfile.Params.WavPackMode = 0
+                                         UpdateBitrate()
+                                     End If
+                                 End Sub
+                AddHandler mbWavPackMode.Button.ValueChangedUser, mbWavPackModeH
 
             Case GuiAudioEncoder.OpusEnc
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.OpusEnc, switch)

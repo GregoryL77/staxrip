@@ -383,7 +383,7 @@ Public Class MediaInfo
 
     Shared Sub ClearCache()
         For Each i In Cache
-            i.Value.Dispose()
+            If Not i.Equals(Nothing) Then i.Value?.Dispose()
         Next
 
         Cache.Clear()

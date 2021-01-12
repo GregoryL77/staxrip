@@ -4071,22 +4071,26 @@ Public Class MainForm
     Sub ShowAudioConverter()
 
         Using aForm As New AudioConverterForm
+            'Try
             aForm.ShowDialog()
-            Task.Delay(50).Wait()
+            Task.Delay(178).Wait()
         End Using
+        'Catch ex As Exception
+        'Log.Write("AudioConverter Form Exception:", ex.ToString & ex.Message?.ToString & ex.InnerException?.ToString & ex.GetBaseException?.ToString)
+        'Finally
+        'aForm.Dispose()
+        'End Try
 
         'debug tests
         'MediaInfo.ClearCache()
-
-        Refresh()
-        Task.Delay(50).Wait()
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
         Refresh()
-        Thread.Sleep(50)
-        GC.Collect()
-
+        Thread.Sleep(30)
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
     End Sub
 
     <Command("Dialog to edit filters.")>

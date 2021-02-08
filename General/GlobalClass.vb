@@ -974,7 +974,17 @@ Public Class GlobalClass
             Catch
             End Try
 
-            Process.GetCurrentProcess.Kill()
+            Dim noKill As Boolean
+            Try
+                noKill = MsgQuestion("Kill Application ?") <> DialogResult.OK
+            Catch
+            End Try
+
+            If Not noKill Then
+                RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+                Process.GetCurrentProcess.Kill()
+            End If
+
         End If
     End Sub
 
@@ -1100,8 +1110,17 @@ Public Class GlobalClass
         OnException(DirectCast(e.ExceptionObject, Exception))
     End Sub
 
+    'Sub OnUnhandledException(sender As Object, e As Microsoft.VisualBasic.ApplicationServices.UnhandledExceptionEventArgs)
+    '    e.ExitApplication = False
+    '    'OnException(DirectCast(e.ExceptionObject, Exception))
+    'End Sub
+
     Private IconValue As Icon
     Private LastIconFile As String
+
+    Public Sub New()
+
+    End Sub
 
     Public Property Icon As Icon
         Get
@@ -1144,16 +1163,16 @@ Public Class GlobalClass
             logfileOpened = True
         End If
 
-        If MsgQuestion("Bug Report", "Do you want to report an issue or bug?",
-                       TaskDialogButtons.YesNo) = DialogResult.Yes Then
+        'If MsgQuestion("Bug Report", "Do you want to report an issue or bug?",
+        '               TaskDialogButtons.YesNo) = DialogResult.Yes Then
 
-            If Not logfileOpened Then
-                g.ShellExecute(g.GetTextEditorPath(), fp.Escape)
-            End If
+        '    If Not logfileOpened Then
+        '        g.ShellExecute(g.GetTextEditorPath(), fp.Escape)
+        '    End If
 
-            g.SelectFileWithExplorer(fp)
-            g.ShellExecute("https://github.com/staxrip/staxrip/issues")
-        End If
+        '    g.SelectFileWithExplorer(fp)
+        '    'g.ShellExecute("https://github.com/staxrip/staxrip/issues")
+        'End If
     End Sub
 
     Function FileExists(path As String) As Boolean

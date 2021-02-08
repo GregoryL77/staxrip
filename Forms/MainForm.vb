@@ -1073,7 +1073,9 @@ Public Class MainForm
     Private BlockSourceTextBoxTextChanged As Boolean
 
     Sub New()
-        AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+
         g.MainForm = Me
         LoadSettings()
 
@@ -4070,27 +4072,41 @@ Public Class MainForm
     <Command("Audio Converter.")>
     Sub ShowAudioConverter()
 
-        Using aForm As New AudioConverterForm
-            'Try
+        Me.Hide()
+        '   ShowInTaskbar = False
+        Dim aForm As New AudioConverterForm
+        Try
+            AudioConverterForm.AudioConverterMode = True
             aForm.ShowDialog()
-            Task.Delay(178).Wait()
-        End Using
-        'Catch ex As Exception
-        'Log.Write("AudioConverter Form Exception:", ex.ToString & ex.Message?.ToString & ex.InnerException?.ToString & ex.GetBaseException?.ToString)
-        'Finally
-        'aForm.Dispose()
-        'End Try
+            aForm.Dispose()
+        Catch ex As Exception
+            aForm.Dispose()
+            Log.Write("AudioConverter Form Exception:", ex.ToString & ex.Message?.ToString & ex.InnerException?.ToString & ex.GetBaseException?.ToString)
+            Log.Save()
+            g.ShowException(ex, timeout:=90)
+            'Me.Close()
+            'Application.Exit()
+            'Process.GetCurrentProcess.Kill()
+        Finally
+            If Not Me.IsDisposed Then
+                AudioConverterForm.AudioConverterMode = False
+                Me.Show()
+                'Me.BringToFront()
+                'Me.Select()
+                Me.Activate()
+            Else
+                Me.Close()
+                    Application.Exit()
+                'Process.GetCurrentProcess.Kill()
+            End If
+            End Try
 
         'debug tests
         'MediaInfo.ClearCache()
+
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Forced, True, True)
-        GC.WaitForPendingFinalizers()
-        Refresh()
-        Thread.Sleep(30)
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
-        GC.WaitForPendingFinalizers()
+
     End Sub
 
     <Command("Dialog to edit filters.")>
@@ -4823,7 +4839,7 @@ Public Class MainForm
             tbTargetHeight.Text = (CInt(p.TargetWidth / ar / modval) * modval).ToString()
 
             If p.TargetWidth = 1920 AndAlso p.TargetHeight = 1088 Then
-                tbTargetHeight.Text = CStr(1080)
+                tbTargetHeight.Text = 1080.ToInvString
             End If
         Catch
         End Try

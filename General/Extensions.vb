@@ -786,6 +786,11 @@ Module MiscExtensions
     End Function
 
     <Extension()>
+    Function ToInvString(instance As Integer) As String
+        Return instance.ToString(CultureInfo.InvariantCulture)
+    End Function
+
+    <Extension()>
     Function ToInvariantString(instance As Date, format As String) As String
         Return instance.ToString(format, CultureInfo.InvariantCulture)
     End Function

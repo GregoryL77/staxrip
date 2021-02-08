@@ -2538,7 +2538,7 @@ Public Class Package
         Return Name
     End Function
 
-    Function CompareTo(other As Package) As Integer Implements System.IComparable(Of Package).CompareTo
+    Function CompareTo(other As Package) As Integer Implements System.IComparable(Of Package).CompareTo ' Ordinal ???
         Return Name.CompareTo(other.Name)
     End Function
 

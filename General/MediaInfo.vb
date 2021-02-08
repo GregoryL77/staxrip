@@ -1,4 +1,5 @@
 
+Imports System.Globalization
 Imports System.Runtime.InteropServices
 Imports System.Text.RegularExpressions
 
@@ -32,7 +33,7 @@ Public Class MediaInfo
                         at.Index = index
 
                         Dim streamOrder = GetVideo(index, "StreamOrder")
-                        If Not streamOrder.IsInt Then streamOrder = (index + 1).ToString
+                        If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvString
                         at.StreamOrder = streamOrder.ToInt
 
                         at.Format = GetVideo(index, "Format")
@@ -61,7 +62,7 @@ Public Class MediaInfo
                     Dim streamOrder = GetAudio(index, "StreamOrder")
 
                     If Not streamOrder.IsInt Then
-                        streamOrder = (index + 1).ToString
+                        streamOrder = (index + 1).ToInvString
                     End If
 
                     at.StreamOrder = streamOrder.ToInt + offset
@@ -69,7 +70,7 @@ Public Class MediaInfo
                     Dim id = GetAudio(index, "ID")
 
                     If Not id.IsInt Then
-                        id = (index + 2).ToString
+                        id = (index + 2).ToInvString
                     End If
 
                     at.ID = id.ToInt + offset
@@ -339,9 +340,9 @@ Public Class MediaInfo
     Shared Function GetAudioCodecs(path As String) As String
         Dim ret = GetGeneral(path, "Audio_Codec_List")
 
-        If ret.Contains("MPEG-1 Audio layer 2") Then ret = ret.Replace("MPEG-1 Audio layer 2", "MP2")
         If ret.Contains("MPEG-1 Audio layer 3") Then ret = ret.Replace("MPEG-1 Audio layer 3", "MP3")
         If ret.Contains("MPEG-2 Audio layer 3") Then ret = ret.Replace("MPEG-2 Audio layer 3", "MP3")
+        If ret.Contains("MPEG-1 Audio layer 2") Then ret = ret.Replace("MPEG-1 Audio layer 2", "MP2")
 
         Return ret
     End Function
@@ -370,7 +371,7 @@ Public Class MediaInfo
         Return GetMediaInfo(path).GetSubtitleCount
     End Function
 
-    Shared Cache As New Dictionary(Of String, MediaInfo)
+    Shared Cache As New Dictionary(Of String, MediaInfo)(64)
 
     Shared Function GetMediaInfo(path As String) As MediaInfo
         If path = "" Then Return Nothing
@@ -380,6 +381,13 @@ Public Class MediaInfo
         Cache(key) = ret
         Return ret
     End Function
+
+    Shared Sub SetMediaInfoCache(path As String)
+        'If path="" Then Return
+        Dim key = path & File.GetLastWriteTime(path).Ticks
+        If Cache.ContainsKey(key) Then Return
+        Cache(key) = New MediaInfo(path)
+    End Sub
 
     Shared Sub ClearCache()
         For Each i In Cache

@@ -1120,12 +1120,9 @@ Public Class AudioForm
             'pg = Nothing
         Next
         ui.Pages.Clear()
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
-        'GC.Collect()
-        GC.WaitForPendingFinalizers()
+
         GC.Collect()
-        GC.WaitForPendingFinalizers()
+
         'Text = ui.Pages.Count.ToString & "pc | hc " & ui.Host.Controls.Count
 
         Dim page = ui.CreateFlowPage()

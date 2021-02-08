@@ -397,7 +397,7 @@ Public Class Calc
             ElseIf x > 0 Then
                 xval = "+" & x
             Else
-                xval = x.ToString
+                xval = x.ToInvString
             End If
 
             Dim y = h - FixMod16(h)
@@ -408,7 +408,7 @@ Public Class Calc
             ElseIf y > 0 Then
                 yval = "+" & y
             Else
-                yval = y.ToString
+                yval = y.ToInvString
             End If
 
             Return wmod & "/" & hmod & " (" & xval & "/" & yval & ")"
@@ -910,7 +910,11 @@ End Enum
 Public Class Startup
     <STAThread()>
     Shared Sub Main()
+
+        AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
         AddHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
+
         Application.EnableVisualStyles()
         Application.SetCompatibleTextRenderingDefault(False)
 
@@ -928,6 +932,8 @@ Public Class Startup
         End If
 
         Application.Run(New MainForm())
+        RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
     End Sub
 End Class
 
@@ -1010,80 +1016,86 @@ Public Class AudioStream
     Property Forced As Boolean
     Property Lossy As Boolean
 
+    Shared MaxNameSBLen As String = ""
+
     ReadOnly Property Name As String
         Get
-            Dim ret = "#" & Index + 1
+            Dim sb As New StringBuilder(64)
+            Dim isAtmos As Boolean
+            sb.Append("#").Append(Index + 1)
 
-            If FormatProfile.EqualsAny(
-                "TrueHD+Atmos / TrueHD",
-                "E-AC-3+Atmos / E-AC-3",
-                "TrueHD+Atmos / TrueHD / AC-3") Then
-
-                ret += " Atmos"
-            ElseIf FormatString = "TrueHD / AC3" Then
-                ret += " TrueHD"
-            ElseIf FormatString = "MPEG-1 Audio layer 2" Then
-                ret += " MP2"
-            ElseIf FormatString = "MPEG-1 Audio layer 3" Then
-                ret += " MP3"
-            ElseIf FormatString = "MPEG Audio" Then
-                If FormatProfile = "Layer 2" Then ret += " MP2"
-                If FormatProfile = "Layer 3" Then ret += " MP3"
-            ElseIf FormatString = "AC3+" OrElse Format = "E-AC-3" Then
-                ret += " EAC3"
-            ElseIf Format = "MLP FBA" Then
-                ret += " TrueHD"
-            ElseIf FormatString = "DTS XLL" OrElse FormatProfile.StartsWith("MA /") Then
-                ret += " DTSMA"
-            ElseIf FormatString = "DTS XLL X" Then
-                ret += " DTSX"
+            If FormatString.Equals("MPEG Audio") Then
+                If FormatProfile.Equals("Layer 3") Then
+                    sb.Append(" MP3")
+                Else
+                    If FormatProfile.Equals("Layer 2") Then sb.Append(" MP2")
+                End If
+            ElseIf FormatString.Equals("MPEG-1 Audio layer 3") Then
+                sb.Append(" MP3")
+            ElseIf FormatString.Equals("MPEG-1 Audio layer 2") Then
+                sb.Append(" MP2")
+            ElseIf FormatString.Equals("AC-3") Then
+                sb.Append(" AC3")
+            ElseIf FormatString.Equals("TrueHD / AC3") Then
+                sb.Append(" TrueHD")
+            ElseIf FormatString.Equals("AC3+") OrElse Format.Equals("E-AC-3") Then
+                sb.Append(" EAC3")
+            ElseIf FormatProfile.EqualsAny(
+                "TrueHD+Atmos / TrueHD", "E-AC-3+Atmos / E-AC-3", "TrueHD+Atmos / TrueHD / AC-3") Then
+                isAtmos = True
+                sb.Append(" Atmos")
+            ElseIf Format.Equals("MLP FBA") Then
+                sb.Append(" TrueHD")
+            ElseIf FormatString.Equals("DTS XLL") OrElse FormatProfile.StartsWith("MA /") Then
+                sb.Append(" DTSMA")
+            ElseIf FormatString.Equals("DTS XLL X") Then
+                sb.Append(" DTSX")
             ElseIf FormatProfile.StartsWith("HRA /") Then
-                ret += " DTSHRA"
-            ElseIf FormatString = "AC-3" Then
-                ret += " AC3"
+                sb.Append(" DTSHRA")
             Else
-                ret += " " + FormatString
+                sb.Append(" ").Append(FormatString)
             End If
 
-            If Not ret.Contains("Atmos") Then
+            If Not isAtmos Then
                 If Channels <> Channels2 AndAlso Channels > 0 AndAlso Channels2 > 0 Then
-                    ret += " " & Channels & "/" & Channels2 & "ch"
+                    sb.Append(" ").Append(Channels).Append("/").Append(Channels2).Append("ch")
                 ElseIf Channels > 0 Then
-                    ret += " " & Channels & "ch"
+                    sb.Append(" ").Append(Channels).Append("ch")
                 ElseIf Channels2 > 0 Then
-                    ret += " " & Channels2 & "ch"
+                    sb.Append(" ").Append(Channels2).Append("ch")
                 End If
             End If
 
-            If BitDepth > 0 AndAlso Not Lossy Then ret += " " & BitDepth & "Bit"
+            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth).Append("Bit")
 
             If SamplingRate > 0 Then
                 If SamplingRate Mod 1000 = 0 Then
-                    ret += " " & SamplingRate / 1000 & "kHz"
+                    sb.Append(" ").Append(SamplingRate / 1000).Append("kHz")
                 Else
-                    ret += " " & SamplingRate & "Hz"
+                    sb.Append(" ").Append(SamplingRate).Append("Hz")
                 End If
             End If
 
             If Bitrate2 > 0 Then
-                ret += " " & If(Bitrate = 0, "?", Bitrate.ToString) & "/" & Bitrate2 & "Kbps"
+                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvString)).Append("/").Append(Bitrate2).Append("Kbps")
             ElseIf Bitrate > 0 Then
-                ret += " " & Bitrate & "Kbps"
+                sb.Append(" ").Append(Bitrate).Append("Kbps")
             End If
 
             If Delay <> 0 Then
-                ret += " " & Delay & "ms"
+                sb.Append(" ").Append(Delay).Append("ms")
             End If
 
             If Language.TwoLetterCode <> "iv" Then
-                ret += " " + Language.Name
+                sb.Append(" ").Append(Language.Name)
             End If
 
             If Title <> "" AndAlso Title <> " " Then
-                ret += " " + Title
+                sb.Append(" ").Append(Title)
             End If
 
-            Return ret
+            Return sb.ToString
+
         End Get
     End Property
 
@@ -1098,31 +1110,31 @@ Public Class AudioStream
             Select Case FormatString
                 Case "AAC LC", "AAC LC-SBR", "AAC LC-SBR-PS", "AAC LC SBR"
                     Return "m4a"
-                Case "AC3", "AC-3"
-                    Return "ac3"
-                Case "DTS"
-                    Return "dts"
-                Case "DTS-HD", "DTS XLL", "DTS XLL X", "DTS XBR", "DTS ES XLL"
-                    Return "dtshd"
-                Case "PCM", "ADPCM"
-                    Return "wav"
-                Case "MPEG-1 Audio layer 2"
-                    Return "mp2"
                 Case "MPEG-1 Audio layer 3"
                     Return "mp3"
                 Case "MPEG Audio"
                     If FormatProfile = "Layer 2" Then Return "mp2"
                     If FormatProfile = "Layer 3" Then Return "mp3"
-                Case "TrueHD / AC3"
-                    Return "thd"
+                Case "Opus"
+                    Return "opus"
                 Case "FLAC"
                     Return "flac"
                 Case "WavPack"
                     Return "wv"
                 Case "Vorbis"
                     Return "ogg"
-                Case "Opus"
-                    Return "opus"
+                Case "PCM", "ADPCM"
+                    Return "wav"
+                Case "AC3", "AC-3"
+                    Return "ac3"
+                Case "DTS"
+                    Return "dts"
+                Case "DTS-HD", "DTS XLL", "DTS XLL X", "DTS XBR", "DTS ES XLL"
+                    Return "dtshd"
+                Case "MPEG-1 Audio layer 2"
+                    Return "mp2"
+                Case "TrueHD / AC3"
+                    Return "thd"
                 Case "TrueHD", "Atmos / TrueHD", "MLP FBA 16-ch"
                     Return "thd"
                 Case "AC3+", "E-AC-3"
@@ -1154,14 +1166,14 @@ Public Class VideoStream
     ReadOnly Property Ext() As String
         Get
             Select Case Format
-                Case "MPEG Video"
-                    Return "mpg"
                 Case "AVC"
                     Return "h264"
-                Case "MPEG-4 Visual", "JPEG"
-                    Return "avi"
                 Case "HEVC"
                     Return "h265"
+                Case "MPEG Video"
+                    Return "mpg"
+                Case "MPEG-4 Visual", "JPEG"
+                    Return "avi"
                 Case "AV1", "VP8", "VP9"
                     Return "ivf"
                 Case Else
@@ -1499,8 +1511,8 @@ End Enum
 
 Public Class FileTypes
     Shared Property AudioRaw As String() = {"thd", "aac", "ec3", "eac3"}
-    Shared Property Audio As String() = {"flac", "dtshd", "dtsma", "dtshr", "thd", "thd+ac3", "true-hd", "truehd", "aac", "ac3", "dts", "ec3", "eac3", "m4a", "mka", "mp2", "mp3", "mpa", "opus", "wav", "w64", "wv"}
-    Shared Property VideoAudio As String() = {"avi", "mp4", "mkv", "divx", "flv", "mov", "mpeg", "mpg", "ts", "m2ts", "vob", "webm", "wmv", "pva", "ogg", "ogm", "m4v", "3gp"}
+    Shared Property Audio As String() = {"m4a", "mp3", "opus", "flac", "wv", "wav", "w64", "aac", "ac3", "dts", "ec3", "eac3", "thd", "true-hd", "truehd", "thd+ac3", "dtshd", "dtsma", "dtshr", "mka", "mp2", "mpa"}
+    Shared Property VideoAudio As String() = {"mp4", "mkv", "mpeg", "mpg", "flv", "mov", "avi", "ts", "m2ts", "vob", "webm", "wmv", "pva", "ogg", "ogm", "m4v", "3gp", "divx"}
     Shared Property DGDecNVInput As String() = {"264", "h264", "265", "h265", "avc", "hevc", "hvc", "mkv", "mp4", "m4v", "mpg", "vob", "ts", "m2ts", "mts", "m2t", "mpv", "m2v"}
     Shared Property eac3toInput As String() = {"dts", "dtshd", "dtshr", "dtsma", "evo", "vob", "ts", "m2ts", "wav", "w64", "pcm", "raw", "flac", "ac3", "ec3", "eac3", "thd", "thd+ac3", "mlp", "mp2", "mp3", "mpa"}
     Shared Property NicAudioInput As String() = {"wav", "mp2", "mpa", "mp3", "ac3", "dts"}

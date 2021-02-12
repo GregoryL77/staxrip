@@ -7,7 +7,7 @@ Imports System.Management
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
-
+Imports KGySoft.Collections.ObjectModel
 Imports StaxRip.UI
 
 Public Module ShortcutModule
@@ -731,13 +731,21 @@ Public MustInherit Class Profile
     End Sub
 
     Private NameValue As String
-
     Overridable Property Name() As String
         Get
+
             If NameValue = "" Then
                 Return DefaultName
             Else
-                If NameValue = DefaultName Then
+                If NameValue.EqualsOrdinal(DefaultName) Then
+                    'If AudioConverterForm.AudioConverterMode Then
+                    '    If DefaultNameCache.Contains(NameValue) Then 'AudioConverter Opt.
+                    '        NameValue = Nothing
+                    '        Return DefaultNameCache.Item(DefaultNameCache.IndexOf(NameValue))
+                    '    Else
+                    '        DefaultNameCache.Add(NameValue)
+                    '    End If
+                    'End If
                     NameValue = Nothing
                     Return DefaultName
                 End If
@@ -745,8 +753,22 @@ Public MustInherit Class Profile
 
             Return NameValue
         End Get
+
+        'Get
+        '    If NameValue = "" Then
+        '        Return DefaultName
+        '    Else
+        '        If NameValue = DefaultName Then
+        '            NameValue = Nothing
+        '            Return DefaultName
+        '        End If
+        '    End If
+
+        '    Return NameValue
+        'End Get
+
         Set(Value As String)
-            If Value = DefaultName Then
+            If Value.EqualsOrdinal(DefaultName) Then
                 NameValue = Nothing
             Else
                 NameValue = Value
@@ -1016,41 +1038,38 @@ Public Class AudioStream
     Property Forced As Boolean
     Property Lossy As Boolean
 
-    Shared MaxNameSBLen As String = ""
-
     ReadOnly Property Name As String
         Get
             Dim sb As New StringBuilder(64)
             Dim isAtmos As Boolean
             sb.Append("#").Append(Index + 1)
 
-            If FormatString.Equals("MPEG Audio") Then
-                If FormatProfile.Equals("Layer 3") Then
+            If FormatString.EqualsOrdinal("MPEG Audio") Then
+                If FormatProfile.EqualsOrdinal("Layer 3") Then
                     sb.Append(" MP3")
                 Else
-                    If FormatProfile.Equals("Layer 2") Then sb.Append(" MP2")
+                    If FormatProfile.EqualsOrdinal("Layer 2") Then sb.Append(" MP2")
                 End If
-            ElseIf FormatString.Equals("MPEG-1 Audio layer 3") Then
+            ElseIf FormatString.EqualsOrdinal("MPEG-1 Audio layer 3") Then
                 sb.Append(" MP3")
-            ElseIf FormatString.Equals("MPEG-1 Audio layer 2") Then
+            ElseIf FormatString.EqualsOrdinal("MPEG-1 Audio layer 2") Then
                 sb.Append(" MP2")
-            ElseIf FormatString.Equals("AC-3") Then
+            ElseIf FormatString.EqualsOrdinal("AC-3") Then
                 sb.Append(" AC3")
-            ElseIf FormatString.Equals("TrueHD / AC3") Then
+            ElseIf FormatString.EqualsOrdinal("TrueHD / AC3") Then
                 sb.Append(" TrueHD")
-            ElseIf FormatString.Equals("AC3+") OrElse Format.Equals("E-AC-3") Then
+            ElseIf FormatString.EqualsOrdinal("AC3+") OrElse Format.EqualsOrdinal("E-AC-3") Then
                 sb.Append(" EAC3")
-            ElseIf FormatProfile.EqualsAny(
-                "TrueHD+Atmos / TrueHD", "E-AC-3+Atmos / E-AC-3", "TrueHD+Atmos / TrueHD / AC-3") Then
+            ElseIf {"TrueHD+Atmos / TrueHD", "E-AC-3+Atmos / E-AC-3", "TrueHD+Atmos / TrueHD / AC-3"}.Contains(FormatProfile, StringComparer.Ordinal) Then
                 isAtmos = True
                 sb.Append(" Atmos")
-            ElseIf Format.Equals("MLP FBA") Then
+            ElseIf Format.EqualsOrdinal("MLP FBA") Then
                 sb.Append(" TrueHD")
-            ElseIf FormatString.Equals("DTS XLL") OrElse FormatProfile.StartsWith("MA /") Then
+            ElseIf FormatString.EqualsOrdinal("DTS XLL") OrElse FormatProfile.StartsWith("MA /", StringComparison.Ordinal) Then
                 sb.Append(" DTSMA")
-            ElseIf FormatString.Equals("DTS XLL X") Then
+            ElseIf FormatString.EqualsOrdinal("DTS XLL X") Then
                 sb.Append(" DTSX")
-            ElseIf FormatProfile.StartsWith("HRA /") Then
+            ElseIf FormatProfile.StartsWith("HRA /", StringComparison.Ordinal) Then
                 sb.Append(" DTSHRA")
             Else
                 sb.Append(" ").Append(FormatString)
@@ -1086,11 +1105,11 @@ Public Class AudioStream
                 sb.Append(" ").Append(Delay).Append("ms")
             End If
 
-            If Language.TwoLetterCode <> "iv" Then
+            If Not Language.TwoLetterCode.EqualsOrdinal("iv") Then
                 sb.Append(" ").Append(Language.Name)
             End If
 
-            If Title <> "" AndAlso Title <> " " Then
+            If Title <> "" AndAlso Not Title.EqualsOrdinal(" ") Then
                 sb.Append(" ").Append(Title)
             End If
 

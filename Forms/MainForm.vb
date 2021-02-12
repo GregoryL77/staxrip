@@ -1085,7 +1085,7 @@ Public Class MainForm
             "[Reflection.Assembly]::LoadWithPartialName(""StaxRip"")"
 
         If s.WriteDebugLog Then
-            Dim filePath = Folder.Startup + "Debug.log"
+            Dim filePath = Folder.Startup & "Debug.log"
 
             If File.Exists(filePath) Then
                 File.Delete(filePath)
@@ -4090,6 +4090,8 @@ Public Class MainForm
         Finally
             If Not Me.IsDisposed Then
                 AudioConverterForm.AudioConverterMode = False
+                AudioProfile.DisplayNameCache.Clear()
+                'MediaInfo.ClearCache()
                 Me.Show()
                 'Me.BringToFront()
                 'Me.Select()
@@ -4102,7 +4104,6 @@ Public Class MainForm
             End Try
 
         'debug tests
-        'MediaInfo.ClearCache()
 
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Forced, True, True)
@@ -4690,7 +4691,7 @@ Public Class MainForm
 
         ret.Add("Tools|Jobs...", NameOf(ShowJobsDialog), Keys.F6, Symbol.MultiSelectLegacy)
 
-        ret.Add("Tools|Audio Converter...", NameOf(ShowAudioConverter), Keys.F7, Symbol.MusicInfo)
+        ret.Add("Tools|Audio Converter...", NameOf(ShowAudioConverter), Keys.F3, Symbol.MusicInfo)
 
         ret.Add("Tools|Log File", NameOf(g.DefaultCommands.ShowLogFile), Keys.F7, Symbol.Page)
         ret.Add("Tools|Folders", Symbol.Folder)

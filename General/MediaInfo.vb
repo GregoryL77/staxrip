@@ -1,5 +1,3 @@
-
-Imports System.Globalization
 Imports System.Runtime.InteropServices
 Imports System.Text.RegularExpressions
 
@@ -371,22 +369,25 @@ Public Class MediaInfo
         Return GetMediaInfo(path).GetSubtitleCount
     End Function
 
-    Shared Cache As New Dictionary(Of String, MediaInfo)(64)
+    'Shared Cache As New Dictionary(Of String, MediaInfo)(64)
+    Public Shared Cache As New Dictionary(Of Integer, MediaInfo)(64)
 
     Shared Function GetMediaInfo(path As String) As MediaInfo
         If path = "" Then Return Nothing
-        Dim key = path & File.GetLastWriteTime(path).Ticks
+        'Dim key = path & File.GetLastWriteTime(path).Ticks
+        Dim key = path.GetHashCode
         If Cache.ContainsKey(key) Then Return Cache(key)
         Dim ret As New MediaInfo(path)
-        Cache(key) = ret
+        Cache.Item(key) = ret
         Return ret
     End Function
 
     Shared Sub SetMediaInfoCache(path As String)
         'If path="" Then Return
-        Dim key = path & File.GetLastWriteTime(path).Ticks
-        If Cache.ContainsKey(key) Then Return
-        Cache(key) = New MediaInfo(path)
+        'Dim key = path & File.GetLastWriteTime(path).Ticks
+        Dim key = path.GetHashCode
+        If Cache.ContainsKey(key) Then Exit Sub
+        Cache.Item(key) = New MediaInfo(path)
     End Sub
 
     Shared Sub ClearCache()

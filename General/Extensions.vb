@@ -55,14 +55,14 @@ Module StringExtensions
     <Extension>
     Function StartsWithEx(instance As String, value As String) As Boolean
         If instance <> "" AndAlso value <> "" Then
-            Return instance.StartsWith(value)
+            Return instance.StartsWith(value, StringComparison.Ordinal)
         End If
     End Function
 
     <Extension>
     Function EndsWithEx(instance As String, value As String) As Boolean
         If instance <> "" AndAlso value <> "" Then
-            Return instance.EndsWith(value)
+            Return instance.EndsWith(value, StringComparison.Ordinal)
         End If
     End Function
 
@@ -375,7 +375,12 @@ Module StringExtensions
             Return False
         End If
 
-        Return values.Contains(instance)
+        Return values.Contains(instance, StringComparer.Ordinal)
+    End Function
+
+    <Extension()>
+    Public Function EqualsOrdinal(instance As String, value As String) As Boolean
+        Return instance.Equals(value, StringComparison.Ordinal)
     End Function
 
     <Extension()>
@@ -786,13 +791,18 @@ Module MiscExtensions
     End Function
 
     <Extension()>
+    Function ToInvariantString(instance As Date, format As String) As String
+        Return instance.ToString(format, CultureInfo.InvariantCulture)
+    End Function
+
+    <Extension()>
     Function ToInvString(instance As Integer) As String
         Return instance.ToString(CultureInfo.InvariantCulture)
     End Function
 
     <Extension()>
-    Function ToInvariantString(instance As Date, format As String) As String
-        Return instance.ToString(format, CultureInfo.InvariantCulture)
+    Function ToInvString(instance As Long) As String
+        Return instance.ToString(CultureInfo.InvariantCulture)
     End Function
 
     <Extension()>

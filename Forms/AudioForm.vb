@@ -1128,7 +1128,7 @@ Public Class AudioForm
         Dim page = ui.CreateFlowPage()
         page.SuspendLayout()
 
-        If Not {GuiAudioEncoder.eac3to}.Contains(TempProfile.Params.Encoder) Then
+        If TempProfile.Params.Encoder <> GuiAudioEncoder.eac3to Then
             numFFLFEMixLevel = ui.AddNum(page)
             numFFLFEMixLevel.Text = "FF LFE Downmix"
             numFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
@@ -1175,9 +1175,8 @@ Public Class AudioForm
                 mbStereoDownmix.Button.Value = TempProfile.Params.eac3toStereoDownmixMode
                 mbStereoDownmix.Button.SaveAction = Sub(value) TempProfile.Params.eac3toStereoDownmixMode = value
 
-                If (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
-                    (Not TempProfile.Stream Is Nothing AndAlso TempProfile.Stream.Name.Contains("DTS"))) AndAlso
-                    TempProfile.Params.Codec = AudioCodec.DTS Then
+                If TempProfile.Params.Codec = AudioCodec.DTS AndAlso (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
+                    (TempProfile.Stream IsNot Nothing AndAlso TempProfile.Stream.Name.Contains("DTS"))) Then
 
                     cb = ui.AddBool(page)
                     cb.Text = "Extract DTS core"
@@ -1314,10 +1313,8 @@ Public Class AudioForm
                         Exit Select
                 End Select
 
-                If (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
-                        (Not TempProfile.Stream Is Nothing AndAlso
-                        TempProfile.Stream.Name.Contains("DTS"))) AndAlso
-                        TempProfile.Params.Codec = AudioCodec.DTS Then
+                If TempProfile.Params.Codec = AudioCodec.DTS AndAlso (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
+                        (TempProfile.Stream IsNot Nothing AndAlso TempProfile.Stream.Name.Contains("DTS"))) Then
 
                     cb = ui.AddBool(page)
                     cb.Text = "Extract DTS core"

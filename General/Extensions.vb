@@ -15,11 +15,11 @@ Module StringExtensions
 
     <Extension>
     Function TrimTrailingSeparator(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
-        If instance.EndsWith(Separator) AndAlso Not instance.Length <= 3 Then
+        If instance.EndsWith(Separator,StringComparison.Ordinal ) AndAlso Not instance.Length <= 3 Then
             Return instance.TrimEnd(Separator)
         End If
 
@@ -28,7 +28,7 @@ Module StringExtensions
 
     <Extension()>
     Function Parent(path As String) As String
-        If path = "" Then
+        If path.NothingOrEmpty Then
             Return ""
         End If
 
@@ -43,7 +43,7 @@ Module StringExtensions
 
     <Extension>
     Function IndentLines(instance As String, value As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -54,28 +54,28 @@ Module StringExtensions
 
     <Extension>
     Function StartsWithEx(instance As String, value As String) As Boolean
-        If instance <> "" AndAlso value <> "" Then
+        If Not instance.NothingOrEmpty AndAlso Not value.NothingOrEmpty Then
             Return instance.StartsWith(value, StringComparison.Ordinal)
         End If
     End Function
 
     <Extension>
     Function EndsWithEx(instance As String, value As String) As Boolean
-        If instance <> "" AndAlso value <> "" Then
+        If Not instance.NothingOrEmpty AndAlso Not value.NothingOrEmpty Then
             Return instance.EndsWith(value, StringComparison.Ordinal)
         End If
     End Function
 
     <Extension>
     Function ContainsEx(instance As String, value As String) As Boolean
-        If instance <> "" AndAlso value <> "" Then
+        If Not instance.NothingOrEmpty AndAlso Not value.NothingOrEmpty Then
             Return instance.Contains(value)
         End If
     End Function
 
     <Extension>
     Function ToLowerEx(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -84,7 +84,7 @@ Module StringExtensions
 
     <Extension>
     Function TrimEx(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -93,7 +93,7 @@ Module StringExtensions
 
     <Extension>
     Function PathStartsWith(instance As String, value As String) As Boolean
-        If instance <> "" AndAlso value <> "" Then
+        If Not instance.NothingOrEmpty AndAlso Not value.NothingOrEmpty Then
             Return instance.ToLower.StartsWith(value.ToLower)
         End If
     End Function
@@ -122,7 +122,7 @@ Module StringExtensions
 
     <Extension>
     Function IsValidFileName(instance As String) As Boolean
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return False
         End If
 
@@ -143,7 +143,7 @@ Module StringExtensions
 
     <Extension>
     Function IsDosCompatible(instance As String) As Boolean
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return True
         End If
 
@@ -153,7 +153,7 @@ Module StringExtensions
 
     <Extension>
     Function IsANSICompatible(instance As String) As Boolean
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return True
         End If
 
@@ -163,7 +163,7 @@ Module StringExtensions
 
     <Extension()>
     Function FileName(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -178,27 +178,27 @@ Module StringExtensions
 
     <Extension()>
     Function Upper(instance As String) As String
-        If instance = "" Then Return ""
+        If instance.NothingOrEmpty Then Return ""
         Return instance.ToUpperInvariant
     End Function
 
     <Extension()>
     Function Lower(instance As String) As String
-        If instance = "" Then Return ""
+        If instance.NothingOrEmpty Then Return ""
         Return instance.ToLowerInvariant
     End Function
 
     <Extension()>
     Function ChangeExt(instance As String, value As String) As String
-        If instance = "" Then Return ""
-        If value = "" Then Return instance
+        If instance.NothingOrEmpty Then Return ""
+        If value.NothingOrEmpty Then Return instance
         If Not value.StartsWith(".") Then value = "." + value
         Return instance.DirAndBase + value.ToLower
     End Function
 
     <Extension()>
     Function Escape(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -229,7 +229,7 @@ Module StringExtensions
 
     <Extension()>
     Function DirExists(instance As String) As Boolean
-        If instance <> "" Then
+        If Not instance.NothingOrEmpty Then
             Return Directory.Exists(instance)
         End If
     End Function
@@ -245,7 +245,7 @@ Module StringExtensions
     End Function
 
     Function GetExt(filepath As String, includeDot As Boolean) As String
-        If filepath = "" Then
+        If filepath.NothingOrEmpty Then
             Return ""
         End If
 
@@ -266,7 +266,7 @@ Module StringExtensions
 
     <Extension()>
     Function Base(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -285,7 +285,7 @@ Module StringExtensions
 
     <Extension()>
     Function Dir(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -298,7 +298,7 @@ Module StringExtensions
 
     <Extension()>
     Function LongPathPrefix(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -314,7 +314,7 @@ Module StringExtensions
 
     <Extension()>
     Function ToShortFilePath(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -342,7 +342,7 @@ Module StringExtensions
 
     <Extension()>
     Function DirName(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
@@ -357,21 +357,21 @@ Module StringExtensions
 
     <Extension()>
     Function ContainsAll(instance As String, ParamArray all As String()) As Boolean
-        If instance <> "" Then
+        If Not instance.NothingOrEmpty Then
             Return all.All(Function(arg) instance.Contains(arg))
         End If
     End Function
 
     <Extension()>
     Function ContainsAny(instance As String, ParamArray any As String()) As Boolean
-        If instance <> "" AndAlso Not any.NothingOrEmpty Then
+        If Not instance.NothingOrEmpty AndAlso Not any.NothingOrEmpty Then
             Return any.Any(Function(arg) instance.Contains(arg))
         End If
     End Function
 
     <Extension()>
     Function EqualsAny(instance As String, ParamArray values As String()) As Boolean
-        If instance = "" OrElse values.NothingOrEmpty Then
+        If instance.NothingOrEmpty OrElse values.NothingOrEmpty Then
             Return False
         End If
 
@@ -379,21 +379,21 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Public Function EqualsOrdinal(instance As String, value As String) As Boolean
-        Return instance.Equals(value, StringComparison.Ordinal)
+    Public Function NothingOrEmpty(instance As String) As Boolean
+        Return instance Is Nothing OrElse instance Is String.Empty
     End Function
 
     <Extension()>
     Function FixDir(instance As String) As String
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return ""
         End If
 
-        While instance.EndsWith(Separator + Separator)
+        While instance.EndsWith(Separator + Separator, StringComparison.Ordinal)
             instance = instance.Substring(0, instance.Length - 1)
         End While
 
-        If instance.EndsWith(Separator) Then
+        If instance.EndsWith(Separator, StringComparison.Ordinal) Then
             Return instance
         End If
 
@@ -420,16 +420,22 @@ Module StringExtensions
 
     <Extension()>
     Function ToInt(value As String, Optional defaultValue As Integer = 0) As Integer
-        If Not Integer.TryParse(value, Nothing) Then
-            Return defaultValue
-        End If
+        'If Not Integer.TryParse(value, Nothing) Then
+        '    Return defaultValue
+        'End If
 
-        Return CInt(value)
+        'Return CInt(value)
+
+        Dim ret As Integer
+        If Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, ret) Then
+            Return ret
+        End If
+        Return defaultValue
     End Function
 
     <Extension()>
     Function IsSingle(value As String) As Boolean
-        If value <> "" Then
+        If Not value.NothingOrEmpty Then
             If value.Contains(",") Then value = value.Replace(",", ".")
 
             Return Single.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, Nothing)
@@ -438,7 +444,7 @@ Module StringExtensions
 
     <Extension()>
     Function ToSingle(value As String, Optional defaultValue As Single = 0) As Single
-        If value <> "" Then
+        If Not value.NothingOrEmpty Then
             If value.Contains(",") Then value = value.Replace(",", ".")
 
             Dim ret As Single
@@ -453,7 +459,7 @@ Module StringExtensions
 
     <Extension()>
     Function IsDouble(value As String) As Boolean
-        If value <> "" Then
+        If Not value.NothingOrEmpty Then
             If value.Contains(",") Then
                 value = value.Replace(",", ".")
             End If
@@ -464,7 +470,7 @@ Module StringExtensions
 
     <Extension()>
     Function ToDouble(value As String, Optional defaultValue As Single = 0) As Double
-        If value <> "" Then
+        If Not value.NothingOrEmpty Then
             If value.Contains(",") Then
                 value = value.Replace(",", ".")
             End If
@@ -481,7 +487,7 @@ Module StringExtensions
 
     <Extension()>
     Function FormatColumn(value As String, delimiter As String) As String
-        If value = "" Then Return ""
+        If value.NothingOrEmpty Then Return ""
         Dim lines = value.SplitKeepEmpty(BR)
         Dim leftSides As New List(Of String)
 
@@ -555,7 +561,7 @@ Module StringExtensions
 
     <Extension()>
     Function Left(value As String, index As Integer) As String
-        If value = "" OrElse index < 0 Then
+        If value.NothingOrEmpty OrElse index < 0 Then
             Return ""
         End If
 
@@ -568,7 +574,7 @@ Module StringExtensions
 
     <Extension()>
     Function Left(value As String, start As String) As String
-        If value = "" OrElse start = "" Then
+        If value.NothingOrEmpty OrElse start.NothingOrEmpty Then
             Return ""
         End If
 
@@ -590,7 +596,7 @@ Module StringExtensions
 
     <Extension()>
     Function Right(value As String, start As String) As String
-        If value = "" OrElse start = "" Then
+        If value.NothingOrEmpty OrElse start.NothingOrEmpty Then
             Return ""
         End If
 
@@ -603,7 +609,7 @@ Module StringExtensions
 
     <Extension()>
     Function RightLast(value As String, start As String) As String
-        If value = "" OrElse start = "" Then
+        If value.NothingOrEmpty OrElse start.NothingOrEmpty Then
             Return ""
         End If
 
@@ -621,7 +627,7 @@ Module StringExtensions
 
     <Extension()>
     Function Shorten(value As String, maxLength As Integer) As String
-        If value = "" OrElse value.Length <= maxLength Then
+        If value.NothingOrEmpty OrElse value.Length <= maxLength Then
             Return value
         End If
 
@@ -630,7 +636,7 @@ Module StringExtensions
 
     <Extension()>
     Function IsValidFileSystemName(instance As String) As Boolean
-        If instance = "" Then
+        If instance.NothingOrEmpty Then
             Return False
         End If
 
@@ -656,7 +662,7 @@ Module StringExtensions
 
     <Extension()>
     Function EscapeIllegalFileSysChars(value As String) As String
-        If value = "" Then Return ""
+        If value.NothingOrEmpty Then Return ""
 
         For Each i In value
             If Not IsValidFileSystemName(i) Then
@@ -669,7 +675,7 @@ Module StringExtensions
 
     <Extension()>
     Function UnescapeIllegalFileSysChars(value As String) As String
-        If value = "" Then
+        If value.NothingOrEmpty Then
             Return ""
         End If
 
@@ -692,7 +698,7 @@ Module StringExtensions
 
     <Extension()>
     Function SplitNoEmptyAndWhiteSpace(value As String, ParamArray delimiters As String()) As String()
-        If value = "" Then
+        If value.NothingOrEmpty Then
             Return {}
         End If
 
@@ -736,7 +742,7 @@ Module StringExtensions
 
     <Extension()>
     Function ReplaceRecursive(value As String, find As String, replace As String) As String
-        If value = "" Then
+        If value.NothingOrEmpty Then
             Return ""
         End If
 
@@ -758,7 +764,7 @@ Module StringExtensions
 
     <Extension()>
     Sub ToClipboard(value As String)
-        If value <> "" Then
+        If Not value.NothingOrEmpty Then
             Clipboard.SetText(value)
         Else
             Clipboard.Clear()
@@ -834,14 +840,14 @@ Module MiscExtensions
         Dim containsEmpty As Boolean
 
         For Each item In instance
-            If item = "" Then
+            If item.NothingOrEmpty Then
                 containsEmpty = True
                 Exit For
             End If
         Next
 
         If containsEmpty AndAlso removeEmpty Then
-            instance = instance.Where(Function(arg) arg <> "")
+            instance = instance.Where(Function(arg) Not arg.NothingOrEmpty)
         End If
 
         Return String.Join(delimiter, instance)
@@ -887,7 +893,7 @@ Module MiscExtensions
         End If
 
         For Each i In strings
-            If i = "" Then Return True
+            If i.NothingOrEmpty Then Return True
         Next
     End Function
 

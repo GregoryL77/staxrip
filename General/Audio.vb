@@ -1,6 +1,7 @@
 ﻿
 Imports System.Text
 Imports System.Globalization
+Imports KGySoft.CoreLibraries
 
 Public Class Audio
     Shared Sub Process(ap As AudioProfile)
@@ -13,7 +14,7 @@ Public Class Audio
         End If
 
         If ap.File <> p.SourceFile Then
-            Log.Write("Media Info Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File))
+            Log.Write("Media Info Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File, ap.FileKeyHash))
         End If
 
         If TypeOf ap Is GUIAudioProfile Then
@@ -195,7 +196,7 @@ Public Class Audio
 
         If g.FileExists(wavPath) Then
             ap.File = wavPath
-            Log.WriteLine(MediaInfo.GetSummary(wavPath))
+            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -242,7 +243,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -329,7 +330,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -372,8 +373,8 @@ Public Class Audio
             args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
         End If
 
-        If gap?.Params.ffmpegDither <> "Disabled" Then
-            args += " -dither_method " & gap.Params.ffmpegDither
+        If gap?.Params.ffmpegDither <> FFDither.Disabled Then
+            args += " -dither_method " & [Enum](Of FFDither).ToString(gap.Params.ffmpegDither)
         End If
 
         If gap?.Params.ffmpegResampSOX Then
@@ -500,7 +501,7 @@ Public Class Audio
             'End If
 
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -576,7 +577,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -621,7 +622,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -663,7 +664,7 @@ Public Class Audio
 
         If g.FileExists(wavPath) Then
             ap.File = wavPath
-            Log.WriteLine(MediaInfo.GetSummary(wavPath))
+            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -707,7 +708,7 @@ Public Class Audio
 
         If g.FileExists(wavPath) Then
             ap.File = wavPath
-            Log.WriteLine(MediaInfo.GetSummary(wavPath))
+            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHash))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -740,7 +741,7 @@ Public Class Audio
         If Not File.Exists(aviPath) Then
             Throw New ErrorAbortException("Error", "Output file missing")
         Else
-            Log.WriteLine(MediaInfo.GetSummary(aviPath))
+            Log.WriteLine(MediaInfo.GetSummary(aviPath, ap.FileKeyHash))
         End If
 
         Dim mkvPath = p.TempDir + ap.File.Base + "_cut_.mkv"
@@ -762,8 +763,8 @@ Public Class Audio
         Dim fail As Boolean
 
         If File.Exists(mkvPath) Then
-            Log.WriteLine(MediaInfo.GetSummary(mkvPath))
-            Dim streams = MediaInfo.GetAudioStreams(mkvPath)
+            Log.WriteLine(MediaInfo.GetSummary(mkvPath, ap.FileKeyHash))
+            Dim streams = MediaInfo.GetAudioStreams(mkvPath, ap.FileKeyHash)
 
             If streams.Count > 0 Then
                 mkvDemuxer.Demux(mkvPath, {streams(0)}, Nothing, ap, p, False, False, True)
@@ -874,11 +875,11 @@ Public Enum CuttingMode
     NicAudio
 End Enum
 
-Public Enum ffNormalizeMode
-    <UI.DispName("(true)peak based")> peak
-    loudnorm
-    dynaudnorm
-End Enum
+'Public Enum ffNormalizeMode
+'    <UI.DispName("(true)peak based")> peak
+'    loudnorm
+'    dynaudnorm
+'End Enum
 
 Public Enum ffmpegNormalizeMode
     <UI.DispName("(true)peak based")> peak

@@ -1,12 +1,5 @@
-
-Imports System.Runtime
-Imports System.Threading
-Imports System.Threading.Tasks
-Imports StaxRip.UI
-Imports System.Collections.Concurrent
-Imports System.Reflection
-Imports KGySoft.ComponentModel
 Imports KGySoft.CoreLibraries
+Imports StaxRip.UI
 
 Public Class AudioForm
     Inherits DialogBase
@@ -700,7 +693,7 @@ Public Class AudioForm
         mbSamplingRate.Add("96000 Hz", 96000)
 
         numBitrate.Minimum = 1
-        numBitrate.Maximum = 16000
+        numBitrate.Maximum = 25000
         numGain.DecimalPlaces = 1
         numGain.Increment = 0.5
 
@@ -763,6 +756,7 @@ Public Class AudioForm
         gap.Bitrate = TempProfile.Bitrate
         gap.Language = TempProfile.Language
         gap.Delay = TempProfile.Delay
+        gap.DefaultnameValue = Nothing
         gap.Name = TempProfile.Name
         gap.StreamName = TempProfile.StreamName
         gap.Gain = TempProfile.Gain
@@ -842,6 +836,7 @@ Public Class AudioForm
         cbNormalize.Enabled = Not TempProfile.ExtractCore
         numGain.Enabled = Not TempProfile.ExtractCore
         numBitrate.Increment = If({AudioCodec.AC3, AudioCodec.EAC3}.Contains(TempProfile.Params.Codec), 32D, 8D)
+        TempProfile.DefaultnameValue = Nothing
         tbProfileName.SendMessageCue(TempProfile.Name, False)
         rtbCommandLine.SetText(TempProfile.GetCommandLine(False))
         rtbCommandLine.UpdateHeight()
@@ -867,7 +862,7 @@ Public Class AudioForm
                         SetQuality(3)
                     Case Else
                         SetQuality(54)
-                        TempProfile.Params.qaacQuality = 2
+                        'TempProfile.Params.qaacQuality = 2
                         TempProfile.Params.qaacLowpass = 0
                         TempProfile.Params.qaacRateMode = 0
                         TempProfile.Params.qaacHE = False
@@ -926,15 +921,15 @@ Public Class AudioForm
                 numBitrate.Value = If(TempProfile.Channels = 6, 256, TempProfile.Channels * 96 / 2)
                 'TempProfile.Params.RateMode = AudioRateMode.VBR
                 TempProfile.Params.opusEncNoPhaseInv = False
-                TempProfile.Params.ffmpegOpusCompress = 10
+                'TempProfile.Params.ffmpegOpusCompress = 10
                 TempProfile.Params.ffmpegOpusRateMode = OpusRateMode.VBR
-                TempProfile.Params.ffmpegOpusApp = OpusApp.audio
+                'TempProfile.Params.ffmpegOpusApp = OpusApp.audio
                 TempProfile.Params.ffmpegOpusFrame = 20
-                TempProfile.Params.ffmpegOpusPacket = 0
+                'TempProfile.Params.ffmpegOpusPacket = 0
                 Dim C12 = If(TempProfile.Channels > 0, 0, -1)
                 TempProfile.Params.ffmpegOpusMap = If(TempProfile.Channels > 5, 1, C12)
-                TempProfile.Params.opusEncTuning = OpusEncTune.auto
-                TempProfile.Params.opusEncDelay = 1000
+                'TempProfile.Params.opusEncTuning = OpusEncTune.auto
+                'TempProfile.Params.opusEncDelay = 1000
                 'Opus workaround for side channels
                 If TempProfile.Params.Encoder = GuiAudioEncoder.ffmpeg Then
                     ChannelsModeToChannel = TempProfile.Channels
@@ -1011,6 +1006,7 @@ Public Class AudioForm
     End Sub
 
     Sub SaveProfile()
+        TempProfile.DefaultnameValue = Nothing
         Dim gap = ObjectHelp.GetCopy(Of GUIAudioProfile)(TempProfile)
         Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
 
@@ -1022,6 +1018,7 @@ Public Class AudioForm
     End Sub
 
     Sub LoadProfile(gap As GUIAudioProfile)
+        gap.DefaultnameValue = Nothing
         Profile = gap
         TempProfile = ObjectHelp.GetCopy(Of GUIAudioProfile)(gap)
         LoadProfile()
@@ -1714,19 +1711,19 @@ Public Class AudioForm
             ffmpegNormalize.Text = "Normalize Method:"
             ffmpegNormalize.Property = NameOf(TempProfile.Params.ffmpegNormalizeMode)
 
-            Dim mb = ui.AddMenu(Of String)
-            mb.Text = "Dither type"
-            mb.Add("Disabled")
-            mb.Add("rectangular")
-            mb.Add("triangular")
-            mb.Add("triangular_hp")
-            mb.Add("lipshitz")
-            mb.Add("shibata")
-            mb.Add("low_shibata")
-            mb.Add("high_shibata")
-            mb.Add("f_weighted")
-            mb.Add("modified_e_weighted")
-            mb.Add("improved_e_weighted")
+            Dim mb = ui.AddMenu(Of FFDither)
+            'mb.Text = "Dither type"
+            'mb.Add("Disabled")
+            'mb.Add("rectangular")
+            'mb.Add("triangular")
+            'mb.Add("triangular_hp")
+            'mb.Add("lipshitz")
+            'mb.Add("shibata")
+            'mb.Add("low_shibata")
+            'mb.Add("high_shibata")
+            'mb.Add("f_weighted")
+            'mb.Add("modified_e_weighted")
+            'mb.Add("improved_e_weighted")
             mb.Property = NameOf(TempProfile.Params.ffmpegDither)
 
             Dim b = ui.AddBool()

@@ -4078,6 +4078,7 @@ Public Class MainForm
         Try
             AudioConverterForm.AudioConverterMode = True
             aForm.ShowDialog()
+            AudioConverterForm.AudioConverterMode = False
             aForm.Dispose()
         Catch ex As Exception
             aForm.Dispose()
@@ -4090,7 +4091,7 @@ Public Class MainForm
         Finally
             If Not Me.IsDisposed Then
                 AudioConverterForm.AudioConverterMode = False
-                AudioProfile.DisplayNameCache.Clear()
+                'AudioConverterForm.DisplayNameCache.Clear()
                 'MediaInfo.ClearCache()
                 Me.Show()
                 'Me.BringToFront()
@@ -4099,7 +4100,7 @@ Public Class MainForm
             Else
                 Me.Close()
                     Application.Exit()
-                'Process.GetCurrentProcess.Kill()
+                Process.GetCurrentProcess.Kill()
             End If
             End Try
 

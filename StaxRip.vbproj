@@ -42,7 +42,7 @@
     </TargetFrameworkProfile>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>ftp://planetdvb.net/staxrip/</PublishUrl>
+    <PublishUrl>ftp://1planetdvb.net/staxrip/</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
     <UpdateEnabled>true</UpdateEnabled>
@@ -52,7 +52,7 @@
     <UpdatePeriodically>true</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <InstallUrl>http://www.planetdvb.net/staxrip/</InstallUrl>
+    <InstallUrl>http://www.1planetdvb.net/staxrip/</InstallUrl>
     <TargetCulture>en</TargetCulture>
     <ProductName>StaxRip</ProductName>
     <PublisherName>stax</PublisherName>
@@ -74,11 +74,12 @@
     <WarningLevel>1</WarningLevel>
     <NoWarn>
     </NoWarn>
-    <DebugType>Full</DebugType>
+    <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42024,42032,42036,42099</WarningsAsErrors>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>C:\inetpub\Staxrip\</OutputPath>

@@ -85,8 +85,8 @@ Public Class MediaInfo
 
                     Dim lm = GetAudio(index, "Language_More")
 
-                    If lm <> "" Then
-                        If at.Title = "" Then
+                    If Not lm.NothingOrEmpty Then
+                        If at.Title.NothingOrEmpty Then
                             at.Title = lm
                         Else
                             at.Title += " - " + lm
@@ -158,7 +158,7 @@ Public Class MediaInfo
                     subtitle.Index = index
                     Dim streamOrder = GetText(index, "StreamOrder")
 
-                    If streamOrder <> "" Then
+                    If Not streamOrder.NothingOrEmpty Then
                         If streamOrder.Contains("-") Then
                             subtitle.StreamOrder = streamOrder.Right("-").ToInt + offset
                         Else
@@ -171,7 +171,7 @@ Public Class MediaInfo
                     subtitle.ID = GetText(index, "ID").ToInt
                     subtitle.Title = GetText(index, "Title").Trim
                     subtitle.CodecString = GetText(index, "Codec/String")
-                    If subtitle.CodecString = "" Then subtitle.CodecString = GetText(index, "Format")
+                    If subtitle.CodecString.NothingOrEmpty Then subtitle.CodecString = GetText(index, "Format")
                     subtitle.Format = GetText(index, "Format")
                     subtitle.Size = GetText(index, "StreamSize").ToInt
 
@@ -186,20 +186,20 @@ Public Class MediaInfo
         End Get
     End Property
 
-    Shared Function GetAudioStreams(path As String) As List(Of AudioStream)
-        Return GetMediaInfo(path).AudioStreams
+    Shared Function GetAudioStreams(path As String, Optional Key As Long = Long.MinValue) As List(Of AudioStream)
+        Return GetMediaInfo(path, Key).AudioStreams
     End Function
 
-    Shared Function GetVideoStreams(path As String) As List(Of VideoStream)
-        Return GetMediaInfo(path).VideoStreams
+    Shared Function GetVideoStreams(path As String, Optional Key As Long = Long.MinValue) As List(Of VideoStream)
+        Return GetMediaInfo(path, Key).VideoStreams
     End Function
 
-    Shared Function GetSubtitles(path As String) As List(Of Subtitle)
-        Return GetMediaInfo(path).Subtitles
+    Shared Function GetSubtitles(path As String, Optional Key As Long = Long.MinValue) As List(Of Subtitle)
+        Return GetMediaInfo(path, Key).Subtitles
     End Function
 
-    Shared Function GetSummary(path As String) As String
-        Dim mi = GetMediaInfo(path)
+    Shared Function GetSummary(path As String, Optional Key As Long = Long.MinValue) As String
+        Dim mi = GetMediaInfo(path, Key)
         MediaInfo_Option(mi.Handle, "Complete", "0")
         Dim ret = Marshal.PtrToStringUni(MediaInfo_Inform(mi.Handle, 0))
         If ret.Contains("UniqueID/String") Then ret = Regex.Replace(ret, "UniqueID/String +: .+\n", "")
@@ -210,8 +210,8 @@ Public Class MediaInfo
         Return ret.FormatColumn(":").Trim
     End Function
 
-    Shared Function GetCompleteSummary(path As String) As String
-        Dim mi = GetMediaInfo(path)
+    Shared Function GetCompleteSummary(path As String, Optional Key As Long = Long.MinValue) As String
+        Dim mi = GetMediaInfo(path, Key)
         MediaInfo_Option(mi.Handle, "Complete", "1")
         Return Marshal.PtrToStringUni(MediaInfo_Inform(mi.Handle, 0))
     End Function
@@ -232,17 +232,17 @@ Public Class MediaInfo
         Return Marshal.PtrToStringUni(MediaInfo_Get(Handle, streamKind, streamNumber, parameter, MediaInfoInfoKind.Text, MediaInfoInfoKind.Name))
     End Function
 
-    Shared Function GetInfo(path As String, streamKind As MediaInfoStreamKind, parameter As String) As String
-        If path = "" Then Return ""
-        Return GetMediaInfo(path).GetInfo(streamKind, parameter)
+    Shared Function GetInfo(path As String, streamKind As MediaInfoStreamKind, parameter As String, Optional Key As Long = Long.MinValue) As String
+        If path.NothingOrEmpty Then Return ""
+        Return GetMediaInfo(path, Key).GetInfo(streamKind, parameter)
     End Function
 
     Shared Function GetMenu(path As String, parameter As String) As String
         Return GetInfo(path, MediaInfoStreamKind.Menu, parameter)
     End Function
 
-    Shared Function GetAudio(path As String, parameter As String) As String
-        Return GetInfo(path, MediaInfoStreamKind.Audio, parameter)
+    Shared Function GetAudio(path As String, parameter As String, Optional Key As Long = Long.MinValue) As String
+        Return GetInfo(path, MediaInfoStreamKind.Audio, parameter, Key)
     End Function
 
     Function GetVideo(parameter As String) As String
@@ -309,8 +309,8 @@ Public Class MediaInfo
         Return defaultValue
     End Function
 
-    Shared Function GetFrameRate(path As String, Optional defaultValue As Double = 25) As Double
-        Return GetMediaInfo(path).GetFrameRate(defaultValue)
+    Shared Function GetFrameRate(path As String, Optional defaultValue As Double = 25, Optional Key As Long = Long.MinValue) As Double
+        Return GetMediaInfo(path, Key).GetFrameRate(defaultValue)
     End Function
 
     Function GetChannels() As Integer
@@ -331,8 +331,8 @@ Public Class MediaInfo
         Return ret
     End Function
 
-    Shared Function GetChannels(path As String) As Integer
-        Return GetMediaInfo(path).GetChannels
+    Shared Function GetChannels(path As String, Optional Key As Long = Long.MinValue) As Integer
+        Return GetMediaInfo(path, Key).GetChannels
     End Function
 
     Shared Function GetAudioCodecs(path As String) As String
@@ -349,45 +349,58 @@ Public Class MediaInfo
         Return MediaInfo_Count_Get(Handle, MediaInfoStreamKind.Video, -1)
     End Function
 
-    Shared Function GetVideoCount(Path As String) As Integer
-        Return GetMediaInfo(Path).GetVideoCount
+    Shared Function GetVideoCount(Path As String, Optional Key As Long = Long.MinValue) As Integer
+        Return GetMediaInfo(Path, Key).GetVideoCount
     End Function
 
     Function GetAudioCount() As Integer
         Return MediaInfo_Count_Get(Handle, MediaInfoStreamKind.Audio, -1)
     End Function
 
-    Shared Function GetAudioCount(path As String) As Integer
-        Return GetMediaInfo(path).GetAudioCount
+    Shared Function GetAudioCount(path As String, Optional Key As Long = Long.MinValue) As Integer
+        Return GetMediaInfo(path, Key).GetAudioCount
     End Function
 
     Function GetSubtitleCount() As Integer
         Return MediaInfo_Count_Get(Handle, MediaInfoStreamKind.Text, -1)
     End Function
 
-    Shared Function GetSubtitleCount(path As String) As Integer
-        Return GetMediaInfo(path).GetSubtitleCount
+    Shared Function GetSubtitleCount(path As String, Optional Key As Long = Long.MinValue) As Integer
+        Return GetMediaInfo(path, Key).GetSubtitleCount
     End Function
 
     'Shared Cache As New Dictionary(Of String, MediaInfo)(64)
-    Public Shared Cache As New Dictionary(Of Integer, MediaInfo)(64)
+    Public Shared Cache As New Dictionary(Of Long, MediaInfo)(64)
 
-    Shared Function GetMediaInfo(path As String) As MediaInfo
-        If path = "" Then Return Nothing
+    Shared Function GetMediaInfo(path As String, Optional Key As Long = Long.MinValue) As MediaInfo
+        If path.NothingOrEmpty Then Return Nothing
         'Dim key = path & File.GetLastWriteTime(path).Ticks
-        Dim key = path.GetHashCode
-        If Cache.ContainsKey(key) Then Return Cache(key)
+
+        If Key = Long.MinValue Then Key = path.GetHashCode + File.GetLastWriteTime(path).Ticks
+        If Cache.ContainsKey(Key) Then Return Cache(Key)
+
         Dim ret As New MediaInfo(path)
-        Cache.Item(key) = ret
+
+        '  SyncLock Cache
+        '   If Not Cache.ContainsKey(key) Then 
+        Cache.Item(Key) = ret
+        '    End SyncLock
         Return ret
     End Function
 
-    Shared Sub SetMediaInfoCache(path As String)
+    Shared Sub SetMediaInfoCache(path As String, Key As Long)
         'If path="" Then Return
         'Dim key = path & File.GetLastWriteTime(path).Ticks
-        Dim key = path.GetHashCode
+        'Dim key = path.GetHashCode
         If Cache.ContainsKey(key) Then Exit Sub
-        Cache.Item(key) = New MediaInfo(path)
+
+        Dim mi = New MediaInfo(path)
+        ' SyncLock Cache
+        'If Not Cache.ContainsKey(key) Then
+        Cache.Item(key) = mi
+        'End If
+        '  End SyncLock
+
     End Sub
 
     Shared Sub ClearCache()

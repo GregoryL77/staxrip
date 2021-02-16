@@ -264,12 +264,14 @@ Namespace UI
         End Function
 
         Function GetText(form As Form) As String
-            If TypeOf form Is HelpForm Then
+            If TypeOf form Is AudioConverterForm Then
+                Return "AudioConverter"
+            ElseIf TypeOf form Is MainForm Then
+                Return "StaxRip"
+            ElseIf TypeOf form Is HelpForm Then
                 Return "Help"
             ElseIf TypeOf form Is PreviewForm Then
                 Return "Preview"
-            ElseIf TypeOf form Is MainForm Then
-                Return "StaxRip"
             End If
 
             Return form.Text

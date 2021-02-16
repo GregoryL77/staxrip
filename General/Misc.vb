@@ -103,8 +103,8 @@ Public Class Calc
 
         If {"avi", "divx"}.Contains(p.VideoEncoder.Muxer.OutputExt) Then
             ret += frames * 0.024
-            If p.Audio0.File <> "" Then ret += frames * 0.04
-            If p.Audio1.File <> "" Then ret += frames * 0.04
+            If Not p.Audio0.File.NothingOrEmpty Then ret += frames * 0.04
+            If Not p.Audio1.File.NothingOrEmpty Then ret += frames * 0.04
         ElseIf p.VideoEncoder.Muxer.OutputExt = "mp4" Then
             ret += 10.4 / 1024 * frames
         ElseIf p.VideoEncoder.Muxer.OutputExt = "mkv" Then
@@ -121,15 +121,15 @@ Public Class Calc
     Shared Function GetAudioBitrate() As Double
         Dim b0, b1 As Double
 
-        If p.Audio0.File <> "" Then b0 = p.Audio0.Bitrate
-        If p.Audio1.File <> "" Then b1 = p.Audio1.Bitrate
+        If Not p.Audio0.File.NothingOrEmpty Then b0 = p.Audio0.Bitrate
+        If Not p.Audio1.File.NothingOrEmpty Then b1 = p.Audio1.Bitrate
 
         Return b0 + b1 + p.AudioTracks.Sum(Function(arg) arg.Bitrate)
     End Function
 
     Shared Function GetBitrateFromFile(path As String, seconds As Integer) As Double
         Try
-            If path = "" OrElse seconds = 0 Then Return 0
+            If path.NothingOrEmpty OrElse seconds = 0 Then Return 0
             Dim kBits = New FileInfo(path).Length * 8 / 1000
             Return kBits / seconds
         Catch ex As Exception
@@ -180,7 +180,7 @@ Public Class Calc
     End Function
 
     Shared Function ParseCustomAR(value As String, defaultX As Integer, defaultY As Integer) As Point
-        If value <> "" AndAlso (value.Contains(":") OrElse value.Contains("/")) Then
+        If Not value.NothingOrEmpty AndAlso (value.Contains(":") OrElse value.Contains("/")) Then
             Dim a = value.Split(":/".ToCharArray)
 
             If a.Length = 2 AndAlso a(0).IsInt AndAlso a(1).IsInt Then
@@ -211,7 +211,7 @@ Public Class Calc
     End Function
 
     Shared Function GetSourcePAR() As Point
-        If p.CustomSourcePAR <> "" Then
+        If Not p.CustomSourcePAR.NothingOrEmpty Then
             Dim val = ParseCustomAR(p.CustomSourcePAR, 0, 0)
 
             If val.X <> 0 Then
@@ -219,7 +219,7 @@ Public Class Calc
             End If
         End If
 
-        If p.CustomSourceDAR <> "" Then
+        If Not p.CustomSourceDAR.NothingOrEmpty Then
             Dim val = ParseCustomAR(p.CustomSourceDAR, 0, 0)
 
             If val.X <> 0 Then
@@ -272,7 +272,7 @@ Public Class Calc
 
     Shared Function GetTargetPAR() As Point
         Try
-            If p.CustomTargetPAR <> "" Then
+            If Not p.CustomTargetPAR.NothingOrEmpty Then
                 Dim val = ParseCustomAR(p.CustomTargetPAR, 0, 0)
 
                 If val.X <> 0 Then
@@ -289,7 +289,7 @@ Public Class Calc
                 croppedHeight -= p.CropTop + p.CropBottom
             End If
 
-            If p.CustomTargetDAR <> "" Then
+            If Not p.CustomTargetDAR.NothingOrEmpty Then
                 Dim val = ParseCustomAR(p.CustomTargetDAR, 0, 0)
 
                 If val.X <> 0 Then
@@ -311,7 +311,7 @@ Public Class Calc
     End Function
 
     Shared Function GetTargetDAR() As Double
-        If p.CustomTargetDAR <> "" Then
+        If Not p.CustomTargetDAR.NothingOrEmpty Then
             Dim val = ParseCustomAR(p.CustomTargetDAR, 0, 0)
 
             If val.X <> 0 AndAlso val.Y <> 0 Then
@@ -327,7 +327,7 @@ Public Class Calc
             croph = h - p.CropTop - p.CropBottom
         End If
 
-        If p.CustomTargetPAR <> "" Then
+        If Not p.CustomTargetPAR.NothingOrEmpty Then
             Dim val = ParseCustomAR(p.CustomTargetPAR, 0, 0)
             If val.X <> 0 Then Return (val.X * cropw) / (val.Y * croph)
         End If
@@ -734,18 +734,10 @@ Public MustInherit Class Profile
     Overridable Property Name() As String
         Get
 
-            If NameValue = "" Then
+            If NameValue.NothingOrEmpty Then
                 Return DefaultName
             Else
-                If NameValue.EqualsOrdinal(DefaultName) Then
-                    'If AudioConverterForm.AudioConverterMode Then
-                    '    If DefaultNameCache.Contains(NameValue) Then 'AudioConverter Opt.
-                    '        NameValue = Nothing
-                    '        Return DefaultNameCache.Item(DefaultNameCache.IndexOf(NameValue))
-                    '    Else
-                    '        DefaultNameCache.Add(NameValue)
-                    '    End If
-                    'End If
+                If String.Equals(NameValue, DefaultName) Then
                     NameValue = Nothing
                     Return DefaultName
                 End If
@@ -768,7 +760,7 @@ Public MustInherit Class Profile
         'End Get
 
         Set(Value As String)
-            If Value.EqualsOrdinal(DefaultName) Then
+            If String.Equals(Value, DefaultName) Then
                 NameValue = Nothing
             Else
                 NameValue = Value
@@ -1007,7 +999,7 @@ Public Class M2TSStream
         If IsAudio Then
             ret += "  ->  " + OutputType
 
-            If Options <> "" Then
+            If Not Options.NothingOrEmpty Then
                 ret += ": " + Options
             End If
         End If
@@ -1038,78 +1030,78 @@ Public Class AudioStream
     Property Forced As Boolean
     Property Lossy As Boolean
 
-    ReadOnly Property Name As String
+    ReadOnly Property Name(Optional NoLeadIndex As Boolean = False) As String
         Get
             Dim sb As New StringBuilder(64)
             Dim isAtmos As Boolean
-            sb.Append("#").Append(Index + 1)
+            If Not NoLeadIndex Then sb.Append("#").Append((Index + 1).ToInvString).Append(" ") ' Subs 3 Comunicate to AudioStream, Not add if stream nothing
 
-            If FormatString.EqualsOrdinal("MPEG Audio") Then
-                If FormatProfile.EqualsOrdinal("Layer 3") Then
-                    sb.Append(" MP3")
+            If String.Equals(FormatString, "MPEG Audio") Then
+                If String.Equals(FormatProfile, "Layer 3") Then
+                    sb.Append("MP3")
                 Else
-                    If FormatProfile.EqualsOrdinal("Layer 2") Then sb.Append(" MP2")
+                    If String.Equals(FormatProfile, "Layer 2") Then sb.Append("MP2")
                 End If
-            ElseIf FormatString.EqualsOrdinal("MPEG-1 Audio layer 3") Then
-                sb.Append(" MP3")
-            ElseIf FormatString.EqualsOrdinal("MPEG-1 Audio layer 2") Then
-                sb.Append(" MP2")
-            ElseIf FormatString.EqualsOrdinal("AC-3") Then
-                sb.Append(" AC3")
-            ElseIf FormatString.EqualsOrdinal("TrueHD / AC3") Then
-                sb.Append(" TrueHD")
-            ElseIf FormatString.EqualsOrdinal("AC3+") OrElse Format.EqualsOrdinal("E-AC-3") Then
-                sb.Append(" EAC3")
+            ElseIf String.Equals(FormatString, "MPEG-1 Audio layer 3") Then
+                sb.Append("MP3")
+            ElseIf String.Equals(FormatString, "MPEG-1 Audio layer 2") Then
+                sb.Append("MP2")
+            ElseIf String.Equals(FormatString, "AC-3") Then
+                sb.Append("AC3")
+            ElseIf String.Equals(FormatString, "TrueHD / AC3") Then
+                sb.Append("TrueHD")
+            ElseIf String.Equals(FormatString, "AC3+") OrElse String.Equals(Format, "E-AC-3") Then
+                sb.Append("EAC3")
             ElseIf {"TrueHD+Atmos / TrueHD", "E-AC-3+Atmos / E-AC-3", "TrueHD+Atmos / TrueHD / AC-3"}.Contains(FormatProfile, StringComparer.Ordinal) Then
                 isAtmos = True
-                sb.Append(" Atmos")
-            ElseIf Format.EqualsOrdinal("MLP FBA") Then
-                sb.Append(" TrueHD")
-            ElseIf FormatString.EqualsOrdinal("DTS XLL") OrElse FormatProfile.StartsWith("MA /", StringComparison.Ordinal) Then
-                sb.Append(" DTSMA")
-            ElseIf FormatString.EqualsOrdinal("DTS XLL X") Then
-                sb.Append(" DTSX")
+                sb.Append("Atmos")
+            ElseIf String.Equals(Format, "MLP FBA") Then
+                sb.Append("TrueHD")
+            ElseIf String.Equals(FormatString, "DTS XLL") OrElse FormatProfile.StartsWith("MA /", StringComparison.Ordinal) Then
+                sb.Append("DTSMA")
+            ElseIf String.Equals(FormatString, "DTS XLL X") Then
+                sb.Append("DTSX")
             ElseIf FormatProfile.StartsWith("HRA /", StringComparison.Ordinal) Then
-                sb.Append(" DTSHRA")
+                sb.Append("DTSHRA")
             Else
-                sb.Append(" ").Append(FormatString)
+                sb.Append(FormatString)
             End If
 
             If Not isAtmos Then
                 If Channels <> Channels2 AndAlso Channels > 0 AndAlso Channels2 > 0 Then
-                    sb.Append(" ").Append(Channels).Append("/").Append(Channels2).Append("ch")
+                    sb.Append(" ").Append(Channels.ToInvString).Append("/").Append(Channels2.ToInvString).Append("ch")
                 ElseIf Channels > 0 Then
-                    sb.Append(" ").Append(Channels).Append("ch")
+                    sb.Append(" ").Append(Channels.ToInvString).Append("ch")
                 ElseIf Channels2 > 0 Then
-                    sb.Append(" ").Append(Channels2).Append("ch")
+                    sb.Append(" ").Append(Channels2.ToInvString).Append("ch")
                 End If
             End If
 
-            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth).Append("Bit")
+            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth.ToInvString).Append("Bit")
 
             If SamplingRate > 0 Then
                 If SamplingRate Mod 1000 = 0 Then
-                    sb.Append(" ").Append(SamplingRate / 1000).Append("kHz")
+                    sb.Append(" ").Append((SamplingRate \ 1000).ToInvString).Append("kHz")
                 Else
-                    sb.Append(" ").Append(SamplingRate).Append("Hz")
+                    sb.Append(" ").Append(SamplingRate.ToInvString).Append("Hz")
                 End If
             End If
 
             If Bitrate2 > 0 Then
-                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvString)).Append("/").Append(Bitrate2).Append("Kbps")
+                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvString)).Append("/").Append(Bitrate2.ToInvString).Append("Kbps")
             ElseIf Bitrate > 0 Then
-                sb.Append(" ").Append(Bitrate).Append("Kbps")
+                sb.Append(" ").Append(Bitrate.ToInvString).Append("Kbps")
             End If
 
             If Delay <> 0 Then
-                sb.Append(" ").Append(Delay).Append("ms")
+                sb.Append(" ").Append(Delay.ToInvString).Append("ms")
             End If
 
-            If Not Language.TwoLetterCode.EqualsOrdinal("iv") Then
+            If Not String.Equals(Language.TwoLetterCode, "iv") Then
                 sb.Append(" ").Append(Language.Name)
             End If
 
-            If Title <> "" AndAlso Not Title.EqualsOrdinal(" ") Then
+            If Not Title.NothingOrEmpty AndAlso Not String.Equals(Title, " ") Then
                 sb.Append(" ").Append(Title)
             End If
 
@@ -1237,7 +1229,7 @@ Public Class Subtitle
             Dim ret = "ID" & (StreamOrder + 1)
             ret += " " + Language.Name
 
-            If Title <> "" AndAlso Title <> " " AndAlso p.SourceFile <> "" Then
+            If Not Title.NothingOrEmpty AndAlso Title <> " " AndAlso Not p.SourceFile.NothingOrEmpty Then
                 ret += " {" + Title.Shorten(50).EscapeIllegalFileSysChars + "}"
             End If
 
@@ -1275,7 +1267,7 @@ Public Class Subtitle
     ReadOnly Property TypeName As String
         Get
             Dim ret = ExtFull
-            If ret = "" Then ret = Path.ExtFull
+            If ret.NothingOrEmpty Then ret = Path.ExtFull
             Return ret.TrimStart("."c).ToUpper.Replace("SUP", "PGS").Replace("IDX", "VobSub")
         End Get
     End Property
@@ -1384,7 +1376,7 @@ Public Class Subtitle
         End Select
 
         For Each st In ret
-            If p.SubtitleName <> "" Then
+            If Not p.SubtitleName.NothingOrEmpty Then
                 st.Title = p.SubtitleName
             End If
         Next

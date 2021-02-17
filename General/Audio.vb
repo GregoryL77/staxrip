@@ -14,7 +14,7 @@ Public Class Audio
         End If
 
         If ap.File <> p.SourceFile Then
-            Log.Write("Media Info Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File, ap.FileKeyHash))
+            Log.Write("Media Info Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File, ap.FileKeyHashValue))
         End If
 
         If TypeOf ap Is GUIAudioProfile Then
@@ -196,7 +196,7 @@ Public Class Audio
 
         If g.FileExists(wavPath) Then
             ap.File = wavPath
-            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -243,7 +243,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -330,7 +330,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -501,7 +501,7 @@ Public Class Audio
             'End If
 
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -577,7 +577,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -622,7 +622,7 @@ Public Class Audio
 
         If g.FileExists(outPath) Then
             ap.File = outPath
-            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(outPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -664,7 +664,7 @@ Public Class Audio
 
         If g.FileExists(wavPath) Then
             ap.File = wavPath
-            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -708,7 +708,7 @@ Public Class Audio
 
         If g.FileExists(wavPath) Then
             ap.File = wavPath
-            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(wavPath, ap.FileKeyHashValue))
         Else
             Log.Write("Error", "no output found")
         End If
@@ -741,7 +741,7 @@ Public Class Audio
         If Not File.Exists(aviPath) Then
             Throw New ErrorAbortException("Error", "Output file missing")
         Else
-            Log.WriteLine(MediaInfo.GetSummary(aviPath, ap.FileKeyHash))
+            Log.WriteLine(MediaInfo.GetSummary(aviPath, ap.FileKeyHashValue))
         End If
 
         Dim mkvPath = p.TempDir + ap.File.Base + "_cut_.mkv"
@@ -763,8 +763,8 @@ Public Class Audio
         Dim fail As Boolean
 
         If File.Exists(mkvPath) Then
-            Log.WriteLine(MediaInfo.GetSummary(mkvPath, ap.FileKeyHash))
-            Dim streams = MediaInfo.GetAudioStreams(mkvPath, ap.FileKeyHash)
+            Log.WriteLine(MediaInfo.GetSummary(mkvPath, ap.FileKeyHashValue))
+            Dim streams = MediaInfo.GetAudioStreams(mkvPath, ap.FileKeyHashValue)
 
             If streams.Count > 0 Then
                 mkvDemuxer.Demux(mkvPath, {streams(0)}, Nothing, ap, p, False, False, True)

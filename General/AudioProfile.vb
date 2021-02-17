@@ -12,7 +12,7 @@ Public MustInherit Class AudioProfile
     'Property RowIdx As Integer
     Property Language As New Language
     Property Delay As Integer
-    Property Depth As Integer = 0
+    Property Depth As Integer
     Property StreamName As String = ""
     Property Gain As Double
     Property Streams As List(Of AudioStream) = New List(Of AudioStream)
@@ -47,8 +47,19 @@ Public MustInherit Class AudioProfile
         OutputFileType = fileType
     End Sub
 
-    <NonSerialized()>
-    Public FileKeyHash As Long = Long.MinValue
+    Public FileKeyHashValue As Long = Long.MinValue
+    'Public Property FileKeyHash As Long
+    '    Get
+    '        If FileKeyHashValue = Long.MinValue AndAlso Not File.NothingOrEmpty Then
+    '            Return File.GetHashCode + IO.File.GetLastWriteTime(File).Ticks
+    '        End If
+    '        Return FileKeyHash
+    '    End Get
+    '    Set(value As Long)
+    '        FileKeyHashValue = value
+    '    End Set
+    'End Property
+
     Private FileValue As String = ""
 
     Property File As String
@@ -56,12 +67,12 @@ Public MustInherit Class AudioProfile
             Return FileValue
         End Get
         Set(value As String)
-            If Not String.Equals(FileValue, value) OrElse Not value.NothingOrEmpty Then
+            If Not String.Equals(FileValue, value) AndAlso value IsNot Nothing Then
                 FileValue = value
                 Stream = Nothing
 
                 DisplayNameValue = Nothing
-                FileKeyHash = Long.MinValue
+                FileKeyHashValue = Long.MinValue
                 If Not AudioConverterForm.AudioConverterMode Then 'AudioConverter Opt.
                     OnFileChanged()
                 End If
@@ -101,10 +112,10 @@ Public MustInherit Class AudioProfile
     Public Sub SetDisplayNameCache() 'Is This Needed
         If DisplayNameValue IsNot Nothing Then Exit Sub
         Dim ret As String
-        '    If FileKeyHash = Long.MinValue OrElse AudioConverterForm.DisplayNameCache.ContainsKey(FileKeyHash) Then Exit Sub
+        '    If FileKeyHashValue = Long.MinValue OrElse AudioConverterForm.DisplayNameCache.ContainsKey(FileKeyHashValue) Then Exit Sub
 
         If Stream Is Nothing Then
-            Dim streams = MediaInfo.GetAudioStreams(File, FileKeyHash)
+            Dim streams = MediaInfo.GetAudioStreams(File, FileKeyHashValue)
             If streams.Count > 0 Then
                 ret = streams(0).Name(True) & " (" & File.FileName & ")"
             Else
@@ -118,30 +129,30 @@ Public MustInherit Class AudioProfile
         DisplayNameValue = ret
         '  End SyncLock
         'SyncLock AudioConverterForm.DisplayNameCache
-        'If Not AudioConverterForm.DisplayNameCache.ContainsKey(FileKeyHash) Then
-        '     AudioConverterForm.DisplayNameCache.Item(FileKeyHash) = DisplayNameValue
+        'If Not AudioConverterForm.DisplayNameCache.ContainsKey(FileKeyHashValue) Then
+        '     AudioConverterForm.DisplayNameCache.Item(FileKeyHashValue) = DisplayNameValue
         'End If
         ' End SyncLock
     End Sub
 
     '<NonSerialized()>
     'Private SLock As New Object
+
     <NonSerialized()>
-    Private DisplayNameValue As String
+    Public DisplayNameValue As String
     Property DisplayName As String
         Get
             If DisplayNameValue IsNot Nothing Then Return DisplayNameValue
             Dim ret As String
-            'If FileKeyHash <> Long.MinValue AndAlso AudioConverterForm.AudioConverterMode Then 'AndAlso Not File.NothingOrEmpty Then 'AudioConverter Opt.
-            '    If AudioConverterForm.DisplayNameCache.ContainsKey(FileKeyHash) Then Return AudioConverterForm.DisplayNameCache.Item(FileKeyHash)
+            'If FileKeyHashValue <> Long.MinValue AndAlso AudioConverterForm.AudioConverterMode Then 'AndAlso Not File.NothingOrEmpty Then 'AudioConverter Opt.
+            '    If AudioConverterForm.DisplayNameCache.ContainsKey(FileKeyHashValue) Then Return AudioConverterForm.DisplayNameCache.Item(FileKeyHashValue)
             'End If
 
             If Stream Is Nothing Then
-                Dim streams = MediaInfo.GetAudioStreams(File, FileKeyHash)
+                Dim streams = MediaInfo.GetAudioStreams(File, FileKeyHashValue)
 
                 If streams.Count > 0 Then
                     If AudioConverterForm.AudioConverterMode Then   'AudioConverter Opt.
-
                         ret = streams(0).Name(True) & " (" & File.FileName & ")" ' No Substring 3 Comunicate to AudioStream
                     Else
                         ret = GetAudioText(streams(0), File)
@@ -153,8 +164,8 @@ Public MustInherit Class AudioProfile
                 ret = Stream.Name & " (" & File.Ext & ")"
             End If
 
-            'If FileKeyHash <> Long.MinValue AndAlso AudioConverterForm.AudioConverterMode Then 'AndAlso DisplayNameValue IsNot String.Empty  'AudioConverter Opt.
-            '    AudioConverterForm.DisplayNameCache.Item(FileKeyHash) = DisplayNameValue
+            'If FileKeyHashValue <> Long.MinValue AndAlso AudioConverterForm.AudioConverterMode Then 'AndAlso DisplayNameValue IsNot String.Empty  'AudioConverter Opt.
+            '    AudioConverterForm.DisplayNameCache.Item(FileKeyHashValue) = DisplayNameValue
             'End If
             ' SyncLock SLock
             DisplayNameValue = ret
@@ -173,7 +184,7 @@ Public MustInherit Class AudioProfile
             If SourceSamplingRateValue <= 0 Then
                 If Stream Is Nothing Then
                     If (AudioConverterForm.AudioConverterMode AndAlso Not File.NothingOrEmpty) OrElse IO.File.Exists(File) Then ' 'AudioConverter Opt.
-                        SourceSamplingRateValue = Math.Abs(MediaInfo.GetAudio(File, "SamplingRate", FileKeyHash).ToInt(48000))
+                        SourceSamplingRateValue = Math.Abs(MediaInfo.GetAudio(File, "SamplingRate", FileKeyHashValue).ToInt(48000))
                     End If
                 Else
                     SourceSamplingRateValue = Math.Abs(Stream.SamplingRate)
@@ -198,13 +209,11 @@ Public MustInherit Class AudioProfile
     End Property
 
     Overridable Sub Migrate()
-        'FileValue = nothing or "" ????
-        FileKeyHash = Long.MinValue
+        ' FileValue = "" ' or Nothing Or "" ????
+        FileKeyHashValue = Long.MinValue
         DisplayNameValue = Nothing
-        StreamValue = Nothing
         'Debug todo: Remove some of it: ???
         SourceSamplingRateValue = 0
-        Delay = 0
 
         'If Depth <> 32 Then
         'Depth = 0
@@ -290,7 +299,7 @@ Public MustInherit Class AudioProfile
     Function GetDuration() As TimeSpan
         If AudioConverterForm.AudioConverterMode OrElse IO.File.Exists(File) Then 'AudioConverter Opt.
             If Stream Is Nothing Then
-                Return TimeSpan.FromMilliseconds(MediaInfo.GetAudio(File, "Duration", FileKeyHash).ToDouble)
+                Return TimeSpan.FromMilliseconds(MediaInfo.GetAudio(File, "Duration", FileKeyHashValue).ToDouble)
             Else
                 Using mi As New MediaInfo(File)
                     Return TimeSpan.FromMilliseconds(mi.GetAudio(Stream.Index, "Duration").ToDouble)
@@ -558,7 +567,7 @@ Public Class BatchAudioProfile
                     End If
                 End If
 
-                Log.WriteLine(MediaInfo.GetSummary(File, FileKeyHash))
+                Log.WriteLine(MediaInfo.GetSummary(File, FileKeyHashValue))
             Else
                 Log.Write("Error", "no output found")
 
@@ -782,7 +791,7 @@ Public Class GUIAudioProfile
         Params.Quality = quality
 
         Select Case codec
-            Case AudioCodec.AC3, AudioCodec.DTS,  AudioCodec.EAC3
+            Case AudioCodec.AC3, AudioCodec.DTS, AudioCodec.EAC3
                 Params.RateMode = AudioRateMode.CBR
             Case Else
                 Params.RateMode = AudioRateMode.VBR
@@ -801,7 +810,7 @@ Public Class GUIAudioProfile
                             SourceChannels = Math.Abs(If(Stream.Channels > Stream.Channels2, Stream.Channels, Stream.Channels2))
                         Else
                             If (AudioConverterForm.AudioConverterMode AndAlso Not File.NothingOrEmpty) OrElse IO.File.Exists(File) Then 'AudioConverter Opt.
-                                SourceChannels = Math.Abs(MediaInfo.GetChannels(File, FileKeyHash))
+                                SourceChannels = Math.Abs(MediaInfo.GetChannels(File, FileKeyHashValue))
                             End If
                         End If
                     End If
@@ -842,10 +851,7 @@ Public Class GUIAudioProfile
         DefaultnameValue = Nothing
         SourceDepth = 0
         SourceChannels = 0
-
         If Params.Codec <> AudioCodec.DTS Then ExtractDTSCore = False
-        '    _CommandLines = Nothing
-        CommandLines = Nothing
     End Sub
 
     Private Function GetCalcDepth() As Integer
@@ -861,7 +867,7 @@ Public Class GUIAudioProfile
                 SourceDepth = Math.Abs(Stream.BitDepth)
             Else
                 If (AudioConverterForm.AudioConverterMode AndAlso Not File.NothingOrEmpty) OrElse IO.File.Exists(File) Then
-                    SourceDepth = Math.Abs(MediaInfo.GetAudio(File, "BitDepth", FileKeyHash).ToInt)
+                    SourceDepth = Math.Abs(MediaInfo.GetAudio(File, "BitDepth", FileKeyHashValue).ToInt)
                 End If
             End If
         End If
@@ -977,7 +983,7 @@ Public Class GUIAudioProfile
                     End If
                 End If
 
-                Log.WriteLine(MediaInfo.GetSummary(File, FileKeyHash))
+                Log.WriteLine(MediaInfo.GetSummary(File, FileKeyHashValue))
             Else
                 Throw New ErrorAbortException("Error audio encoding", "The output file is missing")
             End If
@@ -1883,7 +1889,7 @@ Public Class GUIAudioProfile
             If Params Is Nothing Then
                 Exit Property
             End If
-            If Not DefaultnameValue IsNot Nothing AndAlso AudioConverterForm.AudioConverterMode Then Return DefaultnameValue
+            If DefaultnameValue IsNot Nothing AndAlso AudioConverterForm.AudioConverterMode Then Return DefaultnameValue
 
             Dim sb As New StringBuilder(32)
             sb.Append([Enum](Of AudioCodec).ToString(Params.Codec))
@@ -1934,14 +1940,11 @@ Public Class GUIAudioProfile
         End Get
     End Property
 
-    ' <NonSerialized()>
-    'Public _CommandLines As String ' Test and delate this ???
     Overrides Property CommandLines() As String
         Get
             Return GetCommandLine(True)
         End Get
         Set(Value As String)
-            '     _CommandLines = Value
         End Set
     End Property
 

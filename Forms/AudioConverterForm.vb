@@ -522,95 +522,88 @@ Public Class AudioConverterForm
     'End Property
 
     Private Sub UpdateCMS(sender As Object, e As CancelEventArgs) Handles CMS.Opening
-        ''Dim rC = AudioCL.Count
-        ''Dim srC = dgvAudio.Rows.GetRowCount(DataGridViewElementStates.Selected)
-        ''Dim crI As Integer = dgvAudio.CurrentCellAddress.Y
+        '''Dim rC = AudioCL.Count
+        '''Dim srC = dgvAudio.Rows.GetRowCount(DataGridViewElementStates.Selected)
+        '''Dim crI As Integer = dgvAudio.CurrentCellAddress.Y
 
-        ''If rC > 0 Then
-        RemoveHandlersDGV(True)
-        tlpMain.SuspendLayout()
-        SuspendLayout()
-        AudioSBL.RemoveSort()
-        dgvAudio.DataSource = Nothing
-        AudioSBL.RaiseListChangedEvents = False
-        'DisplayNameCache.Clear()
-        'Dim clt = AudioSBL.ToCircularList
-        Dim iterations = 1000000
-        Dim t1 As String = " u sdgsdfgh34t6456$%&^CFHdfhxdfghfcgjFGHDFJibjk897uhgjhjkunjioji87y7y8jijiJKLjkJIIiJ8w469*(8*(&@#$%^&efgmdklfgriodrfhdriotklrthkoKJNfgskod o"
-        Dim t2 As String = ""
-        Dim t3 As String = Nothing
-        Dim w1 As Boolean
-        Dim w2 As Boolean
-        Dim w3 As Boolean
-        Dim r1 As Boolean
-        Dim r2 As Boolean
-        Dim r3 As Boolean
+        '''If rC > 0 Then
+        'RemoveHandlersDGV(True)
+        'tlpMain.SuspendLayout()
+        'SuspendLayout()
+        'AudioSBL.RemoveSort()
+        'dgvAudio.DataSource = Nothing
+        'AudioSBL.RaiseListChangedEvents = False
+        ''DisplayNameCache.Clear()
+        ''Dim clt = AudioSBL.ToCircularList
+        'Dim iterations = 100000000
+        'Dim t1 As String = " u sdgsdfgh34t6456$%&sdfg er 834 t934 dfbdx e r i r9bdrfpbfg df   df9e r9034  0 45iod fd fo^CFHdfhxdfghfcgjFGHDFJibjk897uhgjhjkunjioji87y7y8jijiJKLjkJIIiJ8w469*(8*(&@#$%^&efgmdklfgriodrfhdriotklrthkoKJNfgskod o"
+        'Dim t2 As String = "1d345rdg RR Hdrth rdt erg ei oiser sergsrtigsergsdc2345dfg edx gds ffg df dfg f drt fdg456cgnfgn  eagjsergiose  rooer gperoperi er grrgoje fgopxeiroper g0450w45ty90w dfbgdui sdif giY uy ui7^  e rfgo3 498seufg uidfuier hdfui gdfuedfui  dfuid f uidfd f uiodf dfjhijkdxf"
+        'Dim r1 As Integer
+        'Dim r2 As Integer
 
-        For n = 1 To 8
-            Thread.Sleep(15)
-            GC.Collect()
-            GC.WaitForPendingFinalizers()
-            Task.Delay(15).Wait()
-            Application.DoEvents()
-            Task.Delay(10).Wait()
-        Next n
+        'For n = 1 To 8
+        '    Thread.Sleep(15)
+        '    GC.Collect()
+        '    GC.WaitForPendingFinalizers()
+        '    Task.Delay(15).Wait()
+        '    Application.DoEvents()
+        '    Task.Delay(10).Wait()
+        'Next n
 
-        SWt.Restart()
-        For i = 1 To iterations
-            w1 = Not t1.NothingOrEmpty
-            w2 = Not t2.NothingOrEmpty
-            w3 = Not t3.NothingOrEmpty
+        'SWt.Restart()
+        'For i = 1 To iterations
 
-            'StatTextSB.Clear()
-            'StatTextSB.Append("Pos: ").Append(i + 2).Append("  |  Sel: ").Append(i - 500000).Append(" / Tot: ").Append(rC * 3)
-            '    If i > 10 Then
-            '        t1 = PopulateIter.ToInvString & PopulateTask?.Status.ToString & PopulateWSW.ElapsedTicks / 10000 & "msW " & PopulateTaskS.ToInvString & "PopTS " & PopulateRSW.ElapsedTicks / 10000 & "msR WaitPT"
-            '        t1 &= PopulateTaskW?.Status.ToString & IndexSWatch.ElapsedTicks / 10000 & "msIx SwT" & SWt.ElapsedTicks / 10000 ' & "VC" & CellVNeededCount.ToInvString
-            '        t1 &= "DC " & DisplayNameCache.Count & "MC" & MediaInfo.Cache.Count
-            '    End If
-        Next i
-        SWt.Stop()
+        '    If t1.Length < i Then
+        '        r1 = t2.Length
+        '    End If
 
-        Dim tt1 = SWt.ElapsedTicks / 10000
+        '    'StatTextSB.Clear()
+        '    'StatTextSB.Append("Pos: ").Append(i + 2).Append("  |  Sel: ").Append(i - 500000).Append(" / Tot: ").Append(rC * 3)
+        '    '    If i > 10 Then
+        '    '        t1 = PopulateIter.ToInvString & PopulateTask?.Status.ToString & PopulateWSW.ElapsedTicks / 10000 & "msW " & PopulateTaskS.ToInvString & "PopTS " & PopulateRSW.ElapsedTicks / 10000 & "msR WaitPT"
+        '    '        t1 &= PopulateTaskW?.Status.ToString & IndexSWatch.ElapsedTicks / 10000 & "msIx SwT" & SWt.ElapsedTicks / 10000 ' & "VC" & CellVNeededCount.ToInvString
+        '    '        t1 &= "DC " & DisplayNameCache.Count & "MC" & MediaInfo.Cache.Count
+        '    '    End If
+        'Next i
+        'SWt.Stop()
 
-        For n = 1 To 8
-            Thread.Sleep(15)
-            GC.Collect()
-            GC.WaitForPendingFinalizers()
-            Task.Delay(15).Wait()
-            Application.DoEvents()
-            Task.Delay(10).Wait()
-        Next n
+        'Dim tt1 = SWt.ElapsedTicks / 10000
 
-        SWt.Restart()
-        For n = 1 To iterations
+        'For n = 1 To 8
+        '    Thread.Sleep(15)
+        '    GC.Collect()
+        '    GC.WaitForPendingFinalizers()
+        '    Task.Delay(15).Wait()
+        '    Application.DoEvents()
+        '    Task.Delay(10).Wait()
+        'Next n
 
-            r1 = Not String.IsNullOrEmpty(t1)
-            r2 = Not String.IsNullOrEmpty(t2)
-            r3 = Not String.IsNullOrEmpty(t3)
+        'SWt.Restart()
+        'For n = 1 To iterations
+        '    r2 = AudioSBL.Count
 
-            'If PopulateIter > -10 Then r2 = EnumExtensions.ToString(DirectCast(AudioCL(0), GUIAudioProfile).Params.Codec)
-            'Integer.TryParse(t1, r2)
-            '    StatTextSB.Clear()
-            '    StatTextSB.Append("Pos: ").Append(n + 2).Append("  |  Sel: ").Append(n - 500000).Append(" / Tot: ").Append(n * 3)
-            '    t2 = StatTextSB.ToString()
-            'End If
-        Next n
-        SWt.Stop()
+        '    'If PopulateIter > -10 Then r2 = EnumExtensions.ToString(DirectCast(AudioCL(0), GUIAudioProfile).Params.Codec)
+        '    'Integer.TryParse(t1, r2)
+        '    '    StatTextSB.Clear()
+        '    '    StatTextSB.Append("Pos: ").Append(n + 2).Append("  |  Sel: ").Append(n - 500000).Append(" / Tot: ").Append(n * 3)
+        '    '    t2 = StatTextSB.ToString()
+        '    'End If
+        'Next n
+        'SWt.Stop()
 
 
-        AudioSBL.InnerListChanged()
-        AudioSBL.RaiseListChangedEvents = True
-        dgvAudio.DataSource = AudioSBL
-        AudioSBL.ResetBindings()
-        tlpMain.ResumeLayout(True)
-        ResumeLayout(True)
-        dgvAudio.Refresh()
-        Refresh()
-        AddHandlersDGV()
-        Task.Delay(15).Wait()
-        MsgInfo($"{iterations:N0}it.IsNothMy {tt1}ms", $"StringNullEmpt: {SWt.ElapsedTicks / 10000}ms| {t1}| {t1} |{t3}| {r1 = w1}| {r2 = w2}| {r3 = w3} ")
-        ''End If
+        'AudioSBL.InnerListChanged()
+        'AudioSBL.RaiseListChangedEvents = True
+        'dgvAudio.DataSource = AudioSBL
+        'AudioSBL.ResetBindings()
+        'tlpMain.ResumeLayout(True)
+        'ResumeLayout(True)
+        'dgvAudio.Refresh()
+        'Refresh()
+        'AddHandlersDGV()
+        'Task.Delay(15).Wait()
+        'MsgInfo($"{iterations:N0}it.StringLen {tt1}ms", $"Gethash: {SWt.ElapsedTicks / 10000}ms| {t1} {t1} | {r1}|{r2}")
+        '''End If
 
 
         CMS.SuspendLayout()
@@ -1098,8 +1091,20 @@ Public Class AudioConverterForm
         End If
     End Sub
 
+    Public Shared FilesDictindex As Integer
     Private Sub ProcessInputAudioFiles(Files As String())
         Dim fC As Integer = Files.Length
+
+        'Dim ap1 As AudioProfile
+        'ap1 = p.Audio0
+        'Dim ap2 = ObjectHelp.GetCopy(ap1)
+        'ap2.File = Files(0)
+        'ap2.FileKeyHashValue = 1234
+        'ap2.SourceSamplingRateValue = 4321
+        'DirectCast(ap2, GUIAudioProfile).DisplayNameValue = "qaz"
+        'ap2.DisplayNameValue = "zxc"
+        'Dim ap3 = ObjectHelp.GetCopy(ap2)
+
 
         Dim filesHash(fC - 1) As Long
         Dim fSortHashT = Task.Run(Sub()
@@ -1149,7 +1154,7 @@ Public Class AudioConverterForm
 
         Dim ap As AudioProfile = ObjectHelp.GetCopy(profileSelection.SelectedValue)
         ap.File = Nothing
-        ap.DisplayName = Nothing
+        ap.DisplayNameValue = Nothing
         ap.SourceSamplingRateValue = 0
         ap.Stream = Nothing
         ap.StreamName = ""
@@ -1171,6 +1176,10 @@ Public Class AudioConverterForm
 
         If Not fSortHashT.IsCompleted Then fSortHashT.Wait()
 
+        Dim uc As Integer
+        uc = filesHash.Union(filesHash).Count()
+        If uc <> filesHash.Length Then MsgInfo("Hash Collision!", uc & " | " & filesHash.Count)
+
         SWt.Stop()
         Dim sw2 = SWt.ElapsedTicks / 10000
         SWt.Restart()
@@ -1182,7 +1191,7 @@ Public Class AudioConverterForm
                              Dim apN = ObjectHelp.GetCopy(ap)
                              apN.File = Files(i)
 
-                             apN.FileKeyHash = filesHash(i)
+                             apN.FileKeyHashValue = filesHash(i)
 
                              Dim fExt As String = apN.File.Ext
                              If FileTypes.VideoAudio.Contains(fExt, StringComparer.Ordinal) Then
@@ -1230,7 +1239,6 @@ Public Class AudioConverterForm
                              apTS(i) = apN
 
                              'clth.Add(ObjectHelp.GetCopy(apN))
-
                          End Sub)
 
         SWt.Stop()
@@ -1351,8 +1359,10 @@ Public Class AudioConverterForm
                                                                                          pls.Stop()
                                                                                          Return
                                                                                      Else
-                                                                                         MediaInfo.SetMediaInfoCache(arP(i).File, arP(i).FileKeyHash)
+                                                                                         'MediaInfo.SetMediaInfoCache(arP(i).File, arP(i).FileKeyHashValue)
                                                                                          'arP(i).SetDisplayNameCache()
+                                                                                         If arP(i).DisplayName IsNot Nothing Then
+                                                                                         End If
                                                                                      End If
                                                                                  End Sub)
 
@@ -1489,7 +1499,7 @@ Public Class AudioConverterForm
                 Dim apNoLangChange As Boolean = ap.Language.Equals(OldLang)
                 Dim apDelayNonZero As Boolean = ap.Delay <> 0
 
-                ap.DisplayName = Nothing
+                ap.DisplayNameValue = Nothing
                 'DisplayNameCache.Clear()
 
                 Dim srCache(rC - 1) As Boolean
@@ -1500,16 +1510,13 @@ Public Class AudioConverterForm
                                             Dim ap0 As AudioProfile = ObjectHelp.GetCopy(ap)
                                             Dim apn As AudioProfile = AudioSBL.Item(r)
                                             ap0.File = apn.File
-                                            ap0.FileKeyHash = apn.FileKeyHash
-                                            ap0.DisplayName = apn.DisplayName
+                                            ap0.FileKeyHashValue = apn.FileKeyHashValue
+                                            ap0.DisplayNameValue = apn.DisplayNameValue
                                             ap0.SourceSamplingRateValue = apn.SourceSamplingRateValue
 
                                             If isGap Then
                                                 Dim gap0 = DirectCast(ap0, GUIAudioProfile)
                                                 Dim gapn = DirectCast(apn, GUIAudioProfile)
-
-                                                '    If gapn._CommandLines IsNot Nothing Then Console.Beep(4000, 500) ' Debug Test this!!!
-
                                                 gap0.SourceDepth = gapn.SourceDepth
                                                 gap0.SourceChannels = gapn.SourceChannels
                                             End If
@@ -1517,7 +1524,7 @@ Public Class AudioConverterForm
                                             If apDelayNonZero Then ap0.Delay = apn.Delay Else ap0.Delay = 0 'needed?
                                             If apNoLangChange Then ap0.Language = apn.Language 'needed?
                                             ap0.StreamName = apn.StreamName
-                                            ap0.Stream = apn.Stream
+                                            ap0.Stream = apn.Stream ' Forced,Default if stream can be problem???
                                             ap0.Streams = apn.Streams
 
                                             srCache(r) = True
@@ -1526,9 +1533,7 @@ Public Class AudioConverterForm
                                     End Sub)
                 StatusText("Restoring selection...")
                 AudioSBL.Clear()
-
                 'AudioConverterForm.DisplayNameCache.Clear() 
-
                 AudioSBL.AddRange(arr)
                 AudioSBL.RaiseListChangedEvents = True
                 AudioSBL.ResetBindings()
@@ -1961,25 +1966,50 @@ Public Class AudioConverterForm
             dgvAudio.Select()
             LastKeyDown = -1
             SelectChangeES = False
+            Dim rC = AudioCL.Count
             Dim occ As Point = dgvAudio.CurrentCellAddress
-            Dim ocF As String = If(AudioCL.Count > 0 AndAlso occ.Y >= 0, AudioSBL.Item(occ.Y).File, Nothing)
+            Dim ocF As String = If(rC > 0 AndAlso occ.Y >= 0, AudioSBL.Item(occ.Y).File, Nothing)
             AudioSBL.RemoveSort()
             AudioSBL.RaiseListChangedEvents = False
+            Console.Beep(700, 60)
+
+            IndexSWatch.Restart()
+
+            Dim isGAP = rC > 0 AndAlso TypeOf AudioCL.Item(0) Is GUIAudioProfile
+            If Not PopulateTask.IsCompleted AndAlso Not PopulateWSW.IsRunning Then MsgInfo("Populate still running !") 'PopulateTask.Wait()
+            Dim miT = Task.Run(Sub() MediaInfo.ClearCache())
             dgvAudio.DataSource = Nothing
             dgvAudio.DataBindings.Clear()
             dgvAudio.Rows.Clear()
-            Console.Beep(700, 60)
             Text = "AudioConverter"
-            PopulateTask?.Wait()
             Dim uAR = AudioCL.Union(AudioCL, New AudioProfileComparer).ToArray
-            MediaInfo.ClearCache()
             ' DisplayNameCache.Clear()
             AudioSBL.Clear()
             AudioCL.Clear()
             AudioCL.Capacity = uAR.Length + 4
+
+            IndexSWatch.Stop()
+            Dim sw1 = IndexSWatch.ElapsedTicks / 10000
+            IndexSWatch.Restart()
+
+            If rC > 0 Then Parallel.For(0, uAR.Length, Sub(i)
+                                                           uAR(i).DisplayNameValue = Nothing
+                                                           uAR(i).SourceSamplingRateValue = 0
+                                                           If isGAP Then
+                                                               DirectCast(uAR(i), GUIAudioProfile).DefaultnameValue = Nothing
+                                                               DirectCast(uAR(i), GUIAudioProfile).SourceChannels = 0
+                                                               DirectCast(uAR(i), GUIAudioProfile).SourceDepth = 0
+                                                           End If
+                                                       End Sub)
+            IndexSWatch.Stop()
+            Dim sw2 = IndexSWatch.ElapsedTicks / 10000
+            Console.Beep(900, 60)
+
+            IndexSWatch.Restart()
+
             AudioCL.AddRange(uAR)
             AudioSBL.InnerListChanged()
-            Task.Delay(15).Wait()
+            If Not miT.IsCompleted Then miT.Wait()
 
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
             GC.Collect(2, GCCollectionMode.Forced, True, True)
@@ -2001,10 +2031,12 @@ Public Class AudioConverterForm
             UpdateControls()
             PopulateIter = 2
             PopulateCache(4000000)
-            Console.Beep(900, 45)
             dgvAudio.Refresh()
             Refresh()
             AddHandlersDGV()
+
+            IndexSWatch.Stop()
+            laThreads.Text = ($"{sw1} {sw2} {IndexSWatch.ElapsedTicks / 10000}")
 
             If Not StatUpdateTask?.IsCompleted Then StatUpdateTask.Wait(120)
             If StatUpdateTask Is Nothing OrElse StatUpdateTask.IsCompleted Then      'debug

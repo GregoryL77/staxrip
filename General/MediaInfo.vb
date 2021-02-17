@@ -371,6 +371,7 @@ Public Class MediaInfo
 
     'Shared Cache As New Dictionary(Of String, MediaInfo)(64)
     Public Shared Cache As New Dictionary(Of Long, MediaInfo)(64)
+    'Public FileKeyHashValue As Integer
 
     Shared Function GetMediaInfo(path As String, Optional Key As Long = Long.MinValue) As MediaInfo
         If path.NothingOrEmpty Then Return Nothing

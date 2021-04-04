@@ -173,28 +173,28 @@ Public Class QSVEnc
         Property Quality As New NumParam With {
             .Text = "Quality",
             .Init = 23,
-            .VisibleFunc = Function() {"icq", "la-icq", "qvbr-q"}.Contains(Mode.ValueText),
+            .VisibleFunc = Function() {"icq", "la-icq", "qvbr-q"}.ContainsString(Mode.ValueText),
             .Config = {0, 51}}
 
         Property QPI As New NumParam With {
             .Switches = {"--cqp"},
             .Text = "QP I",
             .Init = 24,
-            .VisibleFunc = Function() {"cqp"}.Contains(Mode.ValueText),
+            .VisibleFunc = Function() {"cqp"}.ContainsString(Mode.ValueText),
             .Config = {0, 51}}
 
         Property QPP As New NumParam With {
             .Switches = {"--cqp"},
             .Text = "QP P",
             .Init = 26,
-            .VisibleFunc = Function() {"cqp"}.Contains(Mode.ValueText),
+            .VisibleFunc = Function() {"cqp"}.ContainsString(Mode.ValueText),
             .Config = {0, 51}}
 
         Property QPB As New NumParam With {
             .Switches = {"--cqp"},
             .Text = "QP B",
             .Init = 27,
-            .VisibleFunc = Function() {"cqp"}.Contains(Mode.ValueText),
+            .VisibleFunc = Function() {"cqp"}.ContainsString(Mode.ValueText),
             .Config = {0, 51}}
 
         Property mctf As New BoolParam With {
@@ -223,7 +223,7 @@ Public Class QSVEnc
             .Config = {0, Integer.MaxValue, 50},
             .ArgsFunc = Function() If(MaxCLL.Value <> 0 OrElse MaxFALL.Value <> 0, "--max-cll """ & MaxCLL.Value & "," & MaxFALL.Value & """", ""),
             .ImportAction = Sub(param, arg)
-                                If arg = "" Then
+                                If arg.NullOrEmptyS Then
                                     Exit Sub
                                 End If
 
@@ -241,7 +241,7 @@ Public Class QSVEnc
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
-                    ItemsValue = New List(Of CommandLineParam)
+                    ItemsValue = New List(Of CommandLineParam)(96)
 
                     Add("Basic", Mode, Decoder, Codec,
                         New OptionParam With {.Switch = "--quality", .Text = "Preset", .Options = {"Best", "Higher", "High", "Balanced", "Fast", "Faster", "Fastest"}, .Init = 3},
@@ -333,7 +333,7 @@ Public Class QSVEnc
                         New BoolParam With {.Switch = "--lowlatency", .Text = "Low Latency"})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch <> "" Then
+                        If item.HelpSwitch.NotNullOrEmptyS Then
                             Continue For
                         End If
 
@@ -420,9 +420,9 @@ Public Class QSVEnc
                     End If
             End Select
 
-            Dim q = From i In Items Where i.GetArgs <> ""
+            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
 
-            If q.Count > 0 Then
+            If q.Any Then
                 ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")
             End If
 
@@ -439,18 +439,18 @@ Public Class QSVEnc
 
             If CInt(p.CropLeft Or p.CropTop Or p.CropRight Or p.CropBottom) <> 0 AndAlso
                 (p.Script.IsFilterActive("Crop", "Hardware Encoder") OrElse
-                (Decoder.ValueText <> "avs" AndAlso p.Script.IsFilterActive("Crop"))) Then
+               (Not String.Equals(Decoder.ValueText, "avs") AndAlso p.Script.IsFilterActive("Crop"))) Then
 
                 ret += " --crop " & p.CropLeft & "," & p.CropTop & "," & p.CropRight & "," & p.CropBottom
             End If
 
             If p.Script.IsFilterActive("Resize", "Hardware Encoder") OrElse
-                (Decoder.ValueText <> "avs" AndAlso p.Script.IsFilterActive("Resize")) Then
+                (Not String.Equals(Decoder.ValueText, "avs") AndAlso p.Script.IsFilterActive("Resize")) Then
 
                 ret += " --output-res " & p.TargetWidth & "x" & p.TargetHeight
             End If
 
-            If Decoder.ValueText <> "avs" Then
+            If Not String.Equals(Decoder.ValueText, "avs") Then
                 If p.Ranges.Count > 0 Then
                     ret += " --trim " + p.Ranges.Select(Function(range) range.Start & ":" & range.End).Join(",")
                 End If
@@ -475,7 +475,7 @@ Public Class QSVEnc
                     ret += "" & mctfval.Value
                 End If
 
-                If ret <> "" Then
+                If ret.NotNullOrEmptyS Then
                     Return "--vpp-mctf " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-mctf"

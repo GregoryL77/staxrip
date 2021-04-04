@@ -132,7 +132,7 @@ Public Class SimpleUI
     Sub SelectLast(id As String)
         Dim last = s.Storage.GetString(id)
 
-        If last <> "" Then
+        If last.NotNullOrEmptyS Then
             ShowPage(last)
         ElseIf Pages.Count > 0 Then
             ShowPage(Pages(0))
@@ -154,7 +154,7 @@ Public Class SimpleUI
     End Function
 
     Function GetFlowPage(path As String) As FlowPage
-        If path = "" Then
+        If path.NullOrEmptyS Then
             path = "unknown"
         End If
 
@@ -400,6 +400,7 @@ Public Class SimpleUI
 
             MyBase.OnCreateControl()
         End Sub
+
     End Class
 
     Public Class SimpleUILineControl
@@ -449,9 +450,9 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Checked)
 
-            If Field <> "" Then
+            If Field.NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetField(Field).SetValue(SimpleUI.Store, Checked)
-            ElseIf [Property] <> "" Then
+            ElseIf [Property].NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Checked)
             End If
         End Sub
@@ -544,10 +545,10 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Value)
 
-            If Field <> "" Then
+            If Field.NotNullOrEmptyS Then
                 Dim field = SimpleUI.Store.GetType.GetField(Me.Field)
                 field.SetValue(SimpleUI.Store, Convert.ChangeType(Value, field.FieldType))
-            ElseIf [Property] <> "" Then
+            ElseIf [Property].NotNullOrEmptyS Then
                 Dim prop = SimpleUI.Store.GetType.GetProperty([Property])
                 prop.SetValue(SimpleUI.Store, Convert.ChangeType(Value, prop.PropertyType))
             End If
@@ -642,9 +643,9 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Text)
 
-            If Field <> "" Then
+            If Field.NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetField(Field).SetValue(SimpleUI.Store, Text)
-            ElseIf [Property] <> "" Then
+            ElseIf [Property].NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Text)
             End If
         End Sub
@@ -751,10 +752,10 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Value)
 
-            If Field <> "" Then
+            If Field.NotNullOrEmptyS Then
                 Dim field = SimpleUI.Store.GetType.GetField(Me.Field)
                 field.SetValue(SimpleUI.Store, Convert.ChangeType(Value, field.FieldType))
-            ElseIf [Property] <> "" Then
+            ElseIf [Property].NotNullOrEmptyS Then
                 Dim prop = SimpleUI.Store.GetType.GetProperty([Property])
                 prop.SetValue(SimpleUI.Store, Convert.ChangeType(Value, prop.PropertyType))
             End If
@@ -1045,7 +1046,7 @@ Public Class SimpleUI
             Dim action = Sub()
                              Dim v = menuFunc.Invoke
 
-                             If v <> "" Then
+                             If v.NotNullOrEmptyS Then
                                  Edit.Text = v
                              End If
                          End Sub
@@ -1092,9 +1093,9 @@ Public Class SimpleUI
         End Sub
 
         Sub Save()
-            If Field <> "" Then
+            If Field.NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetField(Field).SetValue(SimpleUI.Store, Color)
-            ElseIf [Property] <> "" Then
+            ElseIf [Property].NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Color)
             End If
         End Sub
@@ -1149,7 +1150,7 @@ Public Class SimpleUI
                                      Using dia As New OpenFileDialog
                                          dia.Filter = filter
 
-                                         If initDir = "" OrElse Not Directory.Exists(initDir) Then
+                                         If initDir.NullOrEmptyS OrElse Not Directory.Exists(initDir) Then
                                              initDir = p.TempDir
                                          End If
 

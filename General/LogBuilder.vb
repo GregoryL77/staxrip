@@ -6,25 +6,25 @@ Imports Microsoft.Win32
 <Serializable>
 Public Class LogBuilder
     Private StartTime As DateTime
-    Private Log As New StringBuilder
+    Private Log As New StringBuilder(1024)
     Private Last As String
 
     Sub Append(content As String)
         SyncLock Log
             Log.Append(content)
 
-            If content <> "" Then
+            If content.NotNullOrEmptyS Then
                 Last = content
             End If
         End SyncLock
     End Sub
 
     Function EndsWith(value As String) As Boolean
-        If Last = "" Then
+        If Last.NullOrEmptyS Then
             Return False
         End If
 
-        Return Last.EndsWith(value)
+        Return Last.EndsWith(value, StringComparison.Ordinal)
     End Function
 
     Private Shared WriteLock As New Object
@@ -39,7 +39,7 @@ Public Class LogBuilder
 
             Append(FormatHeader(title))
 
-            If content <> "" Then
+            If content.NotNullOrEmptyS Then
                 If content.EndsWith(BR) Then
                     Append(content)
                 Else
@@ -50,7 +50,7 @@ Public Class LogBuilder
     End Sub
 
     Sub WriteLine(value As String)
-        If value <> "" Then
+        If value.NotNullOrEmptyS Then
             If value.EndsWith(BR) Then
                 Append(value)
             Else
@@ -68,7 +68,7 @@ Public Class LogBuilder
     End Property
 
     Sub WriteHeader(value As String)
-        If value <> "" Then
+        If value.NotNullOrEmptyS Then
             StartTime = DateTime.Now
 
             If Not EndsWith(BR2) Then
@@ -93,12 +93,12 @@ Public Class LogBuilder
 
         WriteHeader("System Environment")
 
-        If EnvironmentString = "" Then EnvironmentString =
+        If EnvironmentString.NullOrEmptyS Then EnvironmentString =
             "StaxRip:" + Application.ProductVersion + BR +
             "Windows:" + Registry.LocalMachine.GetString("SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName") + " " + Registry.LocalMachine.GetString("SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId") + BR +
             "Language:" + CultureInfo.CurrentCulture.EnglishName + BR +
             "CPU:" + Registry.LocalMachine.GetString("HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString") + BR +
-            "GPU:" + String.Join(", ", OS.VideoControllers) + BR +
+            "GPU:" + String.Join(", ", OS.VideoControllers) + BR + 'OS.VideoControllers.Item2) + BR +
             "Resolution:" & Screen.PrimaryScreen.Bounds.Width & " x " & Screen.PrimaryScreen.Bounds.Height & BR +
             "DPI:" & g.DPI
 
@@ -114,7 +114,7 @@ Public Class LogBuilder
 
         WriteHeader("Configuration")
 
-        If ConfigurationString = "" Then ConfigurationString =
+        If ConfigurationString.NullOrEmptyS Then ConfigurationString =
             $"Template: {p.TemplateName}{BR}" +
             $"Video Encoder Profile: {p.VideoEncoder.Name}{BR}" +
             $"Container/Muxer Profile: {p.VideoEncoder.Muxer.Name}{BR}"
@@ -165,9 +165,9 @@ Public Class LogBuilder
             proj = p
         End If
 
-        If proj.SourceFile = "" Then
+        If proj.SourceFile.NullOrEmptyS Then
             Return Folder.Temp + "staxrip.log"
-        ElseIf proj.TempDir = "" Then
+        ElseIf proj.TempDir.NullOrEmptyS Then
             Return proj.SourceFile.Dir + proj.SourceFile.Base + "_staxrip.log"
         Else
             Return proj.TempDir + proj.TargetFile.Base + "_staxrip.log"

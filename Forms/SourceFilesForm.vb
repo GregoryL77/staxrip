@@ -1,4 +1,5 @@
 
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class SourceFilesForm
@@ -204,7 +205,7 @@ Public Class SourceFilesForm
 
             If dialog.ShowDialog() = DialogResult.OK Then
                 s.LastSourceDir = dialog.FileName.Dir
-                lb.Items.AddRange(dialog.FileNames.Sort.ToArray)
+                lb.Items.AddRange(dialog.FileNames.Sort)
                 lb.SelectedIndex = lb.Items.Count - 1
             End If
         End Using
@@ -229,13 +230,13 @@ Public Class SourceFilesForm
                             Dim subfolders = Directory.GetDirectories(dialog.SelectedPath)
                             Dim opt = SearchOption.TopDirectoryOnly
 
-                            If Directory.GetDirectories(dialog.SelectedPath).Count > 0 Then
+                            If Directory.GetDirectories(dialog.SelectedPath).Length > 0 Then
                                 If MsgQuestion("Include sub folders?", TaskDialogButtons.YesNo) = DialogResult.Yes Then
                                     opt = SearchOption.AllDirectories
                                 End If
                             End If
 
-                            lb.Items.AddRange(Directory.GetFiles(dialog.SelectedPath, "*.*", opt).Where(Function(val) FileTypes.Video.Contains(val.Ext)).ToArray)
+                            lb.Items.AddRange(Directory.GetFiles(dialog.SelectedPath, "*.*", opt).WhereF(Function(val) FileTypes.Video.ContainsString(val.Ext)))
                             lb.SelectedIndex = lb.Items.Count - 1
                         End If
                     End Using
@@ -264,7 +265,7 @@ Public Class SourceFilesForm
 
         If Not items.NothingOrEmpty Then
             Array.Sort(items)
-            lb.Items.AddRange(items.Where(Function(val) File.Exists(val)).ToArray)
+            lb.Items.AddRange(items.WhereF(Function(val) File.Exists(val)))
         End If
     End Sub
 

@@ -440,20 +440,20 @@ Public Class AppsForm
         Headers("Title").Text = CurrentPackage.Name
 
         SetupButton.Text = "Install " + CurrentPackage.Name
-        SetupButton.Visible = Not CurrentPackage.SetupAction Is Nothing AndAlso CurrentPackage.GetStatus <> ""
+        SetupButton.Visible = Not CurrentPackage.SetupAction Is Nothing AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
 
         DownloadButton.Text = "Download and install " + CurrentPackage.Name
-        DownloadButton.Visible = CurrentPackage.DownloadURL <> "" AndAlso CurrentPackage.GetStatus <> ""
+        DownloadButton.Visible = CurrentPackage.DownloadURL.NotNullOrEmptyS AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
 
-        tsbExplore.Enabled = path <> ""
-        tsbLaunch.Enabled = Not CurrentPackage.LaunchAction Is Nothing AndAlso CurrentPackage.GetStatus = ""
-        tsbWebsite.Enabled = CurrentPackage.URL <> ""
-        tsbDownload.Enabled = CurrentPackage.DownloadURL <> ""
+        tsbExplore.Enabled = path.NotNullOrEmptyS
+        tsbLaunch.Enabled = Not CurrentPackage.LaunchAction Is Nothing AndAlso CurrentPackage.GetStatus.NullOrEmptyS
+        tsbWebsite.Enabled = CurrentPackage.URL.NotNullOrEmptyS
+        tsbDownload.Enabled = CurrentPackage.DownloadURL.NotNullOrEmptyS
 
-        tsbVersion.Enabled = CurrentPackage.Path.FileExists AndAlso
+        tsbVersion.Enabled = path.FileExists AndAlso
             Not (CurrentPackage.IsVersionOld() AndAlso Not CurrentPackage.VersionAllowOld)
 
-        miEditPath.Enabled = CurrentPackage.IsCustomPathAllowed
+        miEditPath.Enabled = Not path.StartsWithEx(Folder.System) AndAlso Not path.ContainsEx("FrameServer")
         miFindPath.Enabled = miEditPath.Enabled
         miClearPaths.Enabled = miEditPath.Enabled
 
@@ -461,19 +461,19 @@ Public Class AppsForm
 
         flp.SuspendLayout()
 
-        Contents("Location").Text = If(path = "", "Not found", path)
+        Contents("Location").Text = If(path.NullOrEmptyS, "Not found", path)
         Contents("Description").Text = CurrentPackage.Description
 
-        If File.Exists(CurrentPackage.Path) Then
+        If File.Exists(path) Then
             Contents("Version").Text = If(CurrentPackage.IsVersionCorrect, CurrentPackage.Version, "Unknown")
-            Contents("Version").Text += " (" + File.GetLastWriteTimeUtc(CurrentPackage.Path).ToShortDateString() + ")"
+            Contents("Version").Text += " (" + File.GetLastWriteTimeUtc(path).ToShortDateString() + ")"
         Else
             Contents("Version").Text = "-"
         End If
 
         Contents("Status").Text = CurrentPackage.GetStatusDisplay()
 
-        If CurrentPackage.GetStatus <> "" AndAlso CurrentPackage.Required Then
+        If CurrentPackage.GetStatus.NotNullOrEmptyS AndAlso CurrentPackage.Required Then
             Contents("Status").ForeColor = Color.Red
         Else
             Contents("Status").ForeColor = Color.Black
@@ -614,9 +614,9 @@ Public Class AppsForm
             Dim searchString = pack.Name + pack.Description + pack.Version + pack.WebURL +
                 plugin?.VSFilterNames.Join(" ") + pack.Path + plugin?.AvsFilterNames.Join(" ")
 
-            If searchString?.ToLower.Contains(SearchTextBox.Text?.ToLower) Then
+            If searchString?.ToLowerInvariant.Contains(SearchTextBox.Text?.ToLowerInvariant) Then
                 If plugin Is Nothing Then
-                    If pack.TreePath <> "" Then
+                    If pack.TreePath.NotNullOrEmptyS Then
                         Dim n = tv.AddNode(pack.TreePath + "|" + pack.Name)
                         Nodes.Add(n)
                         n.Tag = pack
@@ -641,14 +641,16 @@ Public Class AppsForm
             End If
         Next
 
-        If tv.Nodes.Count > 0 Then
+        Dim tvNC As Integer = tv.Nodes.Count
+
+        If tvNC > 0 Then
             tv.SelectedNode = tv.Nodes(0)
         End If
 
-        ToolStrip.Enabled = tv.Nodes.Count > 0
-        flp.Enabled = tv.Nodes.Count > 0
+        ToolStrip.Enabled = tvNC > 0
+        flp.Enabled = tvNC > 0
 
-        If SearchTextBox.Text <> "" Then
+        If SearchTextBox.Text.NotNullOrEmptyS Then
             tv.ExpandAll()
         Else
             ShowPackage(current)
@@ -702,7 +704,7 @@ Public Class AppsForm
 
         Dim input = InputBox.Show(msg, "StaxRip", CurrentPackage.Version)
 
-        If input <> "" Then
+        If input.NotNullOrEmptyS Then
             CurrentPackage.SetVersion(input.Replace(";", "_"))
             ShowActivePackage()
             g.DefaultCommands.TestAndDynamicFileCreation()
@@ -754,12 +756,12 @@ Public Class AppsForm
         For Each pair In Package.Items
             Dim pack = pair.Value
 
-            If pack.Required AndAlso pack.GetStatus <> "" Then
+            If pack.Required AndAlso pack.GetStatus.NotNullOrEmptyS Then
                 txt += pack.Name + ": " + pack.GetStatus + BR2
             End If
         Next
 
-        If txt = "" Then
+        If txt.NullOrEmptyS Then
             MsgInfo("OK!", "All tools have OK status!")
         Else
             MsgInfo(txt)
@@ -787,9 +789,9 @@ Public Class AppsForm
     End Sub
 
     Sub miClearCustomPath_Click(sender As Object, e As EventArgs) Handles miClearPaths.Click
-        Dim packs = Package.Items.Values.Where(Function(pack) pack.GetStoredPath() <> "")
+        Dim packs = Package.Items.Values.Where(Function(pack) pack.GetStoredPath().NotNullOrEmptyS).ToArray
 
-        If packs.Count > 0 Then
+        If packs.Length > 0 Then
             Using td As New TaskDialog(Of Package)
                 td.MainInstruction = "Choose a path to be cleared."
 

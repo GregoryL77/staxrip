@@ -7,7 +7,7 @@ Imports System.Management
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
-Imports KGySoft.Collections.ObjectModel
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Module ShortcutModule
@@ -44,7 +44,7 @@ Public Class Calc
     End Function
 
     Shared Function GetYFromTwoPointForm(x1 As Single, y1 As Single, x2 As Single, y2 As Single, x As Single) As Integer
-        Return CInt((((y2 - y1) / (x2 - x1)) * (x - x1)) + y1)
+        Return CInt(Microsoft.VisualBasic.Fix((((y2 - y1) / (x2 - x1)) * (x - x1)) + y1))
     End Function
 
     Shared Function GetPercent() As Double
@@ -101,10 +101,10 @@ Public Class Calc
         Dim ret As Double
         Dim frames = p.Script.GetFrameCount
 
-        If {"avi", "divx"}.Contains(p.VideoEncoder.Muxer.OutputExt) Then
+        If {"avi", "divx"}.ContainsString(p.VideoEncoder.Muxer.OutputExt) Then
             ret += frames * 0.024
-            If Not p.Audio0.File.NothingOrEmpty Then ret += frames * 0.04
-            If Not p.Audio1.File.NothingOrEmpty Then ret += frames * 0.04
+            If p.Audio0.File.NotNullOrEmptyS Then ret += frames * 0.04
+            If p.Audio1.File.NotNullOrEmptyS Then ret += frames * 0.04
         ElseIf p.VideoEncoder.Muxer.OutputExt = "mp4" Then
             ret += 10.4 / 1024 * frames
         ElseIf p.VideoEncoder.Muxer.OutputExt = "mkv" Then
@@ -121,15 +121,15 @@ Public Class Calc
     Shared Function GetAudioBitrate() As Double
         Dim b0, b1 As Double
 
-        If Not p.Audio0.File.NothingOrEmpty Then b0 = p.Audio0.Bitrate
-        If Not p.Audio1.File.NothingOrEmpty Then b1 = p.Audio1.Bitrate
+        If p.Audio0.File.NotNullOrEmptyS Then b0 = p.Audio0.Bitrate
+        If p.Audio1.File.NotNullOrEmptyS Then b1 = p.Audio1.Bitrate
 
         Return b0 + b1 + p.AudioTracks.Sum(Function(arg) arg.Bitrate)
     End Function
 
     Shared Function GetBitrateFromFile(path As String, seconds As Integer) As Double
         Try
-            If path.NothingOrEmpty OrElse seconds = 0 Then Return 0
+            If path.NullOrEmptyS OrElse seconds = 0 Then Return 0
             Dim kBits = New FileInfo(path).Length * 8 / 1000
             Return kBits / seconds
         Catch ex As Exception
@@ -180,7 +180,7 @@ Public Class Calc
     End Function
 
     Shared Function ParseCustomAR(value As String, defaultX As Integer, defaultY As Integer) As Point
-        If Not value.NothingOrEmpty AndAlso (value.Contains(":") OrElse value.Contains("/")) Then
+        If value.NotNullOrEmptyS AndAlso (value.Contains(":") OrElse value.Contains("/")) Then
             Dim a = value.Split(":/".ToCharArray)
 
             If a.Length = 2 AndAlso a(0).IsInt AndAlso a(1).IsInt Then
@@ -211,7 +211,7 @@ Public Class Calc
     End Function
 
     Shared Function GetSourcePAR() As Point
-        If Not p.CustomSourcePAR.NothingOrEmpty Then
+        If p.CustomSourcePAR.NotNullOrEmptyS Then
             Dim val = ParseCustomAR(p.CustomSourcePAR, 0, 0)
 
             If val.X <> 0 Then
@@ -219,7 +219,7 @@ Public Class Calc
             End If
         End If
 
-        If Not p.CustomSourceDAR.NothingOrEmpty Then
+        If p.CustomSourceDAR.NotNullOrEmptyS Then
             Dim val = ParseCustomAR(p.CustomSourceDAR, 0, 0)
 
             If val.X <> 0 Then
@@ -272,7 +272,7 @@ Public Class Calc
 
     Shared Function GetTargetPAR() As Point
         Try
-            If Not p.CustomTargetPAR.NothingOrEmpty Then
+            If p.CustomTargetPAR.NotNullOrEmptyS Then
                 Dim val = ParseCustomAR(p.CustomTargetPAR, 0, 0)
 
                 If val.X <> 0 Then
@@ -289,7 +289,7 @@ Public Class Calc
                 croppedHeight -= p.CropTop + p.CropBottom
             End If
 
-            If Not p.CustomTargetDAR.NothingOrEmpty Then
+            If p.CustomTargetDAR.NotNullOrEmptyS Then
                 Dim val = ParseCustomAR(p.CustomTargetDAR, 0, 0)
 
                 If val.X <> 0 Then
@@ -311,7 +311,7 @@ Public Class Calc
     End Function
 
     Shared Function GetTargetDAR() As Double
-        If Not p.CustomTargetDAR.NothingOrEmpty Then
+        If p.CustomTargetDAR.NotNullOrEmptyS Then
             Dim val = ParseCustomAR(p.CustomTargetDAR, 0, 0)
 
             If val.X <> 0 AndAlso val.Y <> 0 Then
@@ -327,7 +327,7 @@ Public Class Calc
             croph = h - p.CropTop - p.CropBottom
         End If
 
-        If Not p.CustomTargetPAR.NothingOrEmpty Then
+        If p.CustomTargetPAR.NotNullOrEmptyS Then
             Dim val = ParseCustomAR(p.CustomTargetPAR, 0, 0)
             If val.X <> 0 Then Return (val.X * cropw) / (val.Y * croph)
         End If
@@ -397,7 +397,7 @@ Public Class Calc
             ElseIf x > 0 Then
                 xval = "+" & x
             Else
-                xval = x.ToInvString
+                xval = x.ToInvariantString
             End If
 
             Dim y = h - FixMod16(h)
@@ -408,7 +408,7 @@ Public Class Calc
             ElseIf y > 0 Then
                 yval = "+" & y
             Else
-                yval = y.ToInvString
+                yval = y.ToInvariantString
             End If
 
             Return wmod & "/" & hmod & " (" & xval & "/" & yval & ")"
@@ -531,7 +531,7 @@ Public Class Language
     ReadOnly Property ThreeLetterCode() As String
         Get
             If ThreeLetterCodeValue Is Nothing Then
-                If CultureInfo.TwoLetterISOLanguageName = "iv" Then
+                If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
                     ThreeLetterCodeValue = "und"
                 Else
                     Select Case CultureInfo.ThreeLetterISOLanguageName
@@ -541,26 +541,26 @@ Public Class Language
                             ThreeLetterCodeValue = "cze"
                         Case "zho"
                             ThreeLetterCodeValue = "chi"
-                        Case "nld"
-                            ThreeLetterCodeValue = "dut"
+                        'Case "nld"
+                        '    ThreeLetterCodeValue = "dut"
                         Case "ell"
                             ThreeLetterCodeValue = "gre"
-                        Case "fra"
-                            ThreeLetterCodeValue = "fre"
+                        'Case "fra"
+                        '    ThreeLetterCodeValue = "fre"
                         Case "sqi"
                             ThreeLetterCodeValue = "alb"
                         Case "hye"
                             ThreeLetterCodeValue = "arm"
-                        Case "eus"
-                            ThreeLetterCodeValue = "baq"
+                        'Case "eus"
+                        '    ThreeLetterCodeValue = "baq"
                         Case "mya"
                             ThreeLetterCodeValue = "bur"
-                        Case "kat"
-                            ThreeLetterCodeValue = "geo"
-                        Case "isl"
-                            ThreeLetterCodeValue = "ice"
-                        Case "bng"
-                            ThreeLetterCodeValue = "ben"
+                            'Case "kat"
+                            '    ThreeLetterCodeValue = "geo"
+                            'Case "isl"
+                            '    ThreeLetterCodeValue = "ice"
+                            'Case "bng"
+                            '    ThreeLetterCodeValue = "ben"
                         Case Else
                             ThreeLetterCodeValue = CultureInfo.ThreeLetterISOLanguageName
                     End Select
@@ -573,7 +573,7 @@ Public Class Language
 
     ReadOnly Property Name() As String
         Get
-            If CultureInfo.TwoLetterISOLanguageName = "iv" Then
+            If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
                 Return "Undetermined"
             Else
                 Return CultureInfo.EnglishName
@@ -586,28 +586,28 @@ Public Class Language
     Shared ReadOnly Property Languages() As List(Of Language)
         Get
             If LanguagesValue Is Nothing Then
-                Dim l As New List(Of Language)
+                Dim l As New List(Of Language)(304)
 
-                l.Add(New Language("en", True))
-                l.Add(New Language("es", True))
-                l.Add(New Language("de", True))
-                l.Add(New Language("fr", True))
-                l.Add(New Language("it", True))
-                l.Add(New Language("pl", True))
-                l.Add(New Language("ru", True))
                 l.Add(New Language("zh", True))
-                l.Add(New Language("hi", True))
+                l.Add(New Language("en", True))
+                l.Add(New Language("fr", True))
+                l.Add(New Language("de", True))
+                l.Add(New Language("it", True))
                 l.Add(New Language("ja", True))
+                l.Add(New Language("pl", True))
                 l.Add(New Language("pt", True))
-                l.Add(New Language("ar", True))
-                l.Add(New Language("bn", True))
-                l.Add(New Language("pa", True))
-                l.Add(New Language("ms", True))
-                l.Add(New Language("ko", True))
+                l.Add(New Language("ru", True))
+                l.Add(New Language("es", True))
+                'l.Add(New Language("hi", True))
+                'l.Add(New Language("ar", True))
+                'l.Add(New Language("bn", True))
+                'l.Add(New Language("pa", True))
+                'l.Add(New Language("ms", True))
+                'l.Add(New Language("ko", True))
 
                 l.Add(New Language(CultureInfo.InvariantCulture, True))
 
-                Dim current = l.Where(Function(a) a.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName).FirstOrDefault
+                Dim current = l.FindLast(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
 
                 If current Is Nothing Then
                     l.Add(CurrentCulture)
@@ -615,7 +615,7 @@ Public Class Language
 
                 l.Sort()
 
-                Dim l2 As New List(Of Language)
+                Dim l2 As New List(Of Language)(296)
 
                 For Each i In CultureInfo.GetCultures(CultureTypes.NeutralCultures)
                     l2.Add(New Language(i))
@@ -642,7 +642,8 @@ Public Class Language
     End Function
 
     Function CompareTo(other As Language) As Integer Implements System.IComparable(Of Language).CompareTo
-        Return Name.CompareTo(other.Name)
+        Return String.Compare(Name, other.Name, StringComparison.Ordinal)
+        'Return Name.CompareTo(other.Name)
     End Function
 
     Overrides Function Equals(o As Object) As Boolean
@@ -733,8 +734,7 @@ Public MustInherit Class Profile
     Private NameValue As String
     Overridable Property Name() As String
         Get
-
-            If NameValue.NothingOrEmpty Then
+            If NameValue.NullOrEmptyS Then
                 Return DefaultName
             Else
                 If String.Equals(NameValue, DefaultName) Then
@@ -745,19 +745,6 @@ Public MustInherit Class Profile
 
             Return NameValue
         End Get
-
-        'Get
-        '    If NameValue = "" Then
-        '        Return DefaultName
-        '    Else
-        '        If NameValue = DefaultName Then
-        '            NameValue = Nothing
-        '            Return DefaultName
-        '        End If
-        '    End If
-
-        '    Return NameValue
-        'End Get
 
         Set(Value As String)
             If String.Equals(Value, DefaultName) Then
@@ -934,7 +921,7 @@ Public Class Startup
 
         Dim args = Environment.GetCommandLineArgs
 
-        If args.Count > 2 AndAlso args(1) = "--create-soft-links" Then
+        If args.Length > 2 AndAlso args(1) = "--create-soft-links" Then
             Try
                 SoftLink.CreateLinksElevated(args.Skip(2))
             Catch ex As Exception
@@ -991,16 +978,16 @@ Public Class M2TSStream
     Public Overrides Function ToString() As String
         Dim ret = Text
 
-        If ret.Contains("TrueHD/AC3") Then ret = ret.Replace("TrueHD/AC3", "THD+AC3")
-        If ret.Contains("DTS Master Audio") Then ret = ret.Replace("DTS Master Audio", "DTS-MA")
-        If ret.Contains("DTS Hi-Res") Then ret = ret.Replace("DTS Hi-Res", "DTS-HRA")
-        If ret.Contains("DTS Express") Then ret = ret.Replace("DTS Express", "DTS-EX")
+        ret = ret.Replace("TrueHD/AC3", "THD+AC3")
+        ret = ret.Replace("DTS Master Audio", "DTS-MA")
+        ret = ret.Replace("DTS Hi-Res", "DTS-HRA")
+        ret = ret.Replace("DTS Express", "DTS-EX")
 
         If IsAudio Then
-            ret += "  ->  " + OutputType
+            ret += "  ->  " & OutputType
 
-            If Not Options.NothingOrEmpty Then
-                ret += ": " + Options
+            If Options.NotNullOrEmptyS Then
+                ret += ": " & Options
             End If
         End If
 
@@ -1034,7 +1021,7 @@ Public Class AudioStream
         Get
             Dim sb As New StringBuilder(64)
             Dim isAtmos As Boolean
-            If Not NoLeadIndex Then sb.Append("#").Append((Index + 1).ToInvString).Append(" ") ' Subs 3 Comunicate to AudioStream, Not add if stream nothing
+            If Not NoLeadIndex Then sb.Append("#").Append((Index + 1).ToInvariantString).Append(" ") ' Subs 3 Comunicate to AudioStream, Not add if stream nothing
 
             If String.Equals(FormatString, "MPEG Audio") Then
                 If String.Equals(FormatProfile, "Layer 3") Then
@@ -1052,7 +1039,7 @@ Public Class AudioStream
                 sb.Append("TrueHD")
             ElseIf String.Equals(FormatString, "AC3+") OrElse String.Equals(Format, "E-AC-3") Then
                 sb.Append("EAC3")
-            ElseIf {"TrueHD+Atmos / TrueHD", "E-AC-3+Atmos / E-AC-3", "TrueHD+Atmos / TrueHD / AC-3"}.Contains(FormatProfile, StringComparer.Ordinal) Then
+            ElseIf {"E-AC-3+Atmos / E-AC-3", "TrueHD+Atmos / TrueHD", "TrueHD+Atmos / TrueHD / AC-3"}.ContainsString(FormatProfile) Then
                 isAtmos = True
                 sb.Append("Atmos")
             ElseIf String.Equals(Format, "MLP FBA") Then
@@ -1069,39 +1056,39 @@ Public Class AudioStream
 
             If Not isAtmos Then
                 If Channels <> Channels2 AndAlso Channels > 0 AndAlso Channels2 > 0 Then
-                    sb.Append(" ").Append(Channels.ToInvString).Append("/").Append(Channels2.ToInvString).Append("ch")
+                    sb.Append(" ").Append(Channels.ToInvariantString).Append("/").Append(Channels2.ToInvariantString).Append("ch")
                 ElseIf Channels > 0 Then
-                    sb.Append(" ").Append(Channels.ToInvString).Append("ch")
+                    sb.Append(" ").Append(Channels.ToInvariantString).Append("ch")
                 ElseIf Channels2 > 0 Then
-                    sb.Append(" ").Append(Channels2.ToInvString).Append("ch")
+                    sb.Append(" ").Append(Channels2.ToInvariantString).Append("ch")
                 End If
             End If
 
-            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth.ToInvString).Append("Bit")
+            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth.ToInvariantString).Append("Bit")
 
             If SamplingRate > 0 Then
                 If SamplingRate Mod 1000 = 0 Then
-                    sb.Append(" ").Append((SamplingRate \ 1000).ToInvString).Append("kHz")
+                    sb.Append(" ").Append((SamplingRate \ 1000).ToInvariantString).Append("kHz")
                 Else
-                    sb.Append(" ").Append(SamplingRate.ToInvString).Append("Hz")
+                    sb.Append(" ").Append(SamplingRate.ToInvariantString).Append("Hz")
                 End If
             End If
 
             If Bitrate2 > 0 Then
-                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvString)).Append("/").Append(Bitrate2.ToInvString).Append("Kbps")
+                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvariantString)).Append("/").Append(Bitrate2.ToInvariantString).Append("Kbps")
             ElseIf Bitrate > 0 Then
-                sb.Append(" ").Append(Bitrate.ToInvString).Append("Kbps")
+                sb.Append(" ").Append(Bitrate.ToInvariantString).Append("Kbps")
             End If
 
             If Delay <> 0 Then
-                sb.Append(" ").Append(Delay.ToInvString).Append("ms")
+                sb.Append(" ").Append(Delay.ToInvariantString).Append("ms")
             End If
 
             If Not String.Equals(Language.TwoLetterCode, "iv") Then
                 sb.Append(" ").Append(Language.Name)
             End If
 
-            If Not Title.NothingOrEmpty AndAlso Not String.Equals(Title, " ") Then
+            If Title.NotNullOrEmptyS AndAlso Not String.Equals(Title, " ") Then
                 sb.Append(" ").Append(Title)
             End If
 
@@ -1229,7 +1216,7 @@ Public Class Subtitle
             Dim ret = "ID" & (StreamOrder + 1)
             ret += " " + Language.Name
 
-            If Not Title.NothingOrEmpty AndAlso Title <> " " AndAlso Not p.SourceFile.NothingOrEmpty Then
+            If Title.NotNullOrEmptyS AndAlso Not Title.Equals(" ") AndAlso p.SourceFile.NotNullOrEmptyS Then
                 ret += " {" + Title.Shorten(50).EscapeIllegalFileSysChars + "}"
             End If
 
@@ -1267,7 +1254,7 @@ Public Class Subtitle
     ReadOnly Property TypeName As String
         Get
             Dim ret = ExtFull
-            If ret.NothingOrEmpty Then ret = Path.ExtFull
+            If ret.NullOrEmptyS Then ret = Path.ExtFull
             Return ret.TrimStart("."c).ToUpper.Replace("SUP", "PGS").Replace("IDX", "VobSub")
         End Get
     End Property
@@ -1279,12 +1266,12 @@ Public Class Subtitle
             Return ret
         End If
 
-        If path.Ext = "idx" Then
+        If path.Ext.Equals("idx") Then
             Dim indexData As Integer
             Dim st As Subtitle = Nothing
 
             For Each line In path.ReadAllText.SplitLinesNoEmpty
-                If line.StartsWith("id: ") AndAlso line Like "id: ??, index: *" Then
+                If line.StartsWith("id: ", StringComparison.Ordinal) AndAlso line Like "id: ??, index: *" Then
                     st = New Subtitle
 
                     If path.Contains("forced") Then st.Forced = True
@@ -1362,11 +1349,11 @@ Public Class Subtitle
 
         Select Case p.DefaultSubtitle
             Case DefaultSubtitleMode.Single
-                If enabledSubs.Count = 1 Then
+                If enabledSubs.Any Then
                     enabledSubs(0).Default = True
                 End If
             Case DefaultSubtitleMode.First
-                If enabledSubs.Count > 0 Then
+                If enabledSubs.Any Then
                     enabledSubs(0).Default = True
                 End If
             Case DefaultSubtitleMode.Second
@@ -1376,7 +1363,7 @@ Public Class Subtitle
         End Select
 
         For Each st In ret
-            If Not p.SubtitleName.NothingOrEmpty Then
+            If p.SubtitleName.NotNullOrEmptyS Then
                 st.Title = p.SubtitleName
             End If
         Next
@@ -1434,15 +1421,15 @@ Public Class Subtitle
                 Log.WriteLine(MediaInfo.GetSummary(aviPath))
             End If
 
-            Dim id = If(FileTypes.SubtitleSingle.Contains(inSub.Path.Ext), 0, inSub.StreamOrder)
+            Dim id = If(FileTypes.SubtitleSingle.ContainsString(inSub.Path.Ext), 0, inSub.StreamOrder)
             Dim mkvPath = p.TempDir + inSub.Path.Base + " ID" & id & "_cut_sub.mkv"
             args = "-o " + mkvPath.Escape + " " + aviPath.Escape
 
-            If Not FileTypes.SubtitleExludingContainers.Contains(inSub.Path.Ext) Then
+            If Not FileTypes.SubtitleExludingContainers.ContainsString(inSub.Path.Ext) Then
                 args += " --no-audio --no-video --no-chapters --no-attachments --no-track-tags --no-global-tags"
             End If
 
-            If Not FileTypes.SubtitleSingle.Contains(inSub.Path.Ext) Then args += " --subtitle-tracks " & id
+            If Not FileTypes.SubtitleSingle.ContainsString(inSub.Path.Ext) Then args += " --subtitle-tracks " & id
             args += " " + inSub.Path.Escape
             args += " --split parts-frames:" + p.Ranges.Select(Function(v) v.Start & "-" & v.End).Join(",+")
             args += " --ui-language en"
@@ -1567,19 +1554,25 @@ Public Class OS
         "USERDOMAIN_ROAMINGPROFILE", "USERNAME", "USERPROFILE", "WINDIR"}
 
     Private Shared VideoControllersValue As String()
+    'Private Shared GPUType As UInteger  '2-Intel,4-Nvidia,6-Nvidia+Intel, 128 Error
 
-    Public Shared ReadOnly Property VideoControllers As String()
+    Public Shared ReadOnly Property VideoControllers As String() '(UInteger, String())
+
         Get
             If VideoControllersValue Is Nothing Then
                 Try 'bug report received
                     Dim mc As New ManagementClass("Win32_VideoController")
                     VideoControllersValue = mc.GetInstances().OfType(Of ManagementBaseObject)().Select(Function(val) CStr(val("Caption"))).ToArray
+                    'Array.ForEach(Of String)(VideoControllersValue, Sub(val As String)
+                    '                                                    If val.Contains("Intel") Then GPUType = GPUType Or 2UI
+                    '                                                    If val.Contains("NVIDIA") Then GPUType = GPUType Or 4UI
+                    '                                                End Sub)
                 Catch ex As Exception
-                    Return {"WMI Error"}
+                    Return {"WMI Error"} '(128, {"WMI Error"})
                 End Try
             End If
 
-            Return VideoControllersValue
+            Return VideoControllersValue '(GPUType, VideoControllersValue)
         End Get
     End Property
 End Class

@@ -64,7 +64,7 @@ Namespace CommandLine
         Function GetSAR() As String
             Dim param = GetStringParam("--sar")
 
-            If Not param Is Nothing AndAlso param.Value <> "" Then
+            If Not param Is Nothing AndAlso param.Value.NotNullOrEmptyS Then
                 Dim targetPAR = Calc.GetTargetPAR
                 Dim val = Calc.ParseCustomAR(param.Value, targetPAR.X, targetPAR.Y)
                 Dim isInTolerance = val = targetPAR AndAlso Not Calc.IsARSignalingRequired
@@ -121,13 +121,13 @@ Namespace CommandLine
         Function GetSwitches() As HashSet(Of String)
             Dim ret As New HashSet(Of String)
 
-            If Switch <> "" Then ret.Add(Switch)
-            If NoSwitch <> "" Then ret.Add(NoSwitch)
-            If HelpSwitch <> "" Then ret.Add(HelpSwitch)
+            If Switch.NotNullOrEmptyS Then ret.Add(Switch)
+            If NoSwitch.NotNullOrEmptyS Then ret.Add(NoSwitch)
+            If HelpSwitch.NotNullOrEmptyS Then ret.Add(HelpSwitch)
 
             If Not Switches.NothingOrEmpty Then
                 For Each i In Switches
-                    If i <> "" Then
+                    If i.NotNullOrEmptyS Then
                         ret.Add(i)
                     End If
                 Next
@@ -164,15 +164,15 @@ Namespace CommandLine
         End Property
 
         Function GetKey() As String
-            If Name <> "" Then
+            If Name.NotNullOrEmptyS Then
                 Return Name
             End If
 
-            If Switch <> "" Then
+            If Switch.NotNullOrEmptyS Then
                 Return Switch
             End If
 
-            If HelpSwitch <> "" Then
+            If HelpSwitch.NotNullOrEmptyS Then
                 Return Text + HelpSwitch
             End If
 
@@ -212,7 +212,7 @@ Namespace CommandLine
         End Sub
 
         Overrides Function GetArgs() As String
-            If Switch = "" AndAlso NoSwitch = "" AndAlso ArgsFunc Is Nothing Then
+            If Switch.NullOrEmptyS AndAlso NoSwitch.NullOrEmptyS AndAlso ArgsFunc Is Nothing Then
                 Return Nothing
             End If
 
@@ -223,13 +223,13 @@ Namespace CommandLine
             If ArgsFunc Is Nothing Then
                 If Value AndAlso DefaultValue = False Then
                     If IntegerValue Then
-                        Return Switch + Params.Separator + "1"
+                        Return Switch & Params.Separator & "1"
                     Else
                         Return Switch
                     End If
                 ElseIf Not Value AndAlso DefaultValue Then
                     If IntegerValue Then
-                        Return Switch + Params.Separator + "0"
+                        Return Switch & Params.Separator & "0"
                     Else
                         Return NoSwitch
                     End If
@@ -350,7 +350,7 @@ Namespace CommandLine
 
         Overrides Function GetArgs() As String
             If Not Visible Then Return Nothing
-            If Switch = "" AndAlso ArgsFunc Is Nothing Then Return Nothing
+            If Switch.NullOrEmptyS AndAlso ArgsFunc Is Nothing Then Return Nothing
 
             If ArgsFunc Is Nothing Then
                 If Value <> DefaultValue OrElse AlwaysOn Then
@@ -457,12 +457,12 @@ Namespace CommandLine
             If ArgsFunc Is Nothing Then
                 If Value <> DefaultValue OrElse AlwaysOn Then
                     If Not Values Is Nothing Then
-                        If Values(Value).StartsWith("--") Then
+                        If Values(Value).StartsWith("--", StringComparison.Ordinal) Then
                             Return Values(Value)
-                        ElseIf Switch <> "" Then
+                        ElseIf Switch.NotNullOrEmptyS Then
                             Return Switch + Params.Separator & Values(Value)
                         End If
-                    ElseIf Switch <> "" Then
+                    ElseIf Switch.NotNullOrEmptyS Then
                         If IntegerValue Then
                             Return Switch + Params.Separator & Value
                         Else
@@ -537,12 +537,12 @@ Namespace CommandLine
             Else
                 Dim val = Value
 
-                If RemoveSpace AndAlso val?.Contains(" ") Then
+                If RemoveSpace AndAlso val IsNot Nothing Then
                     val = val.Replace(" ", "")
                 End If
 
-                If val <> DefaultValue AndAlso val <> "" Then
-                    If Switch = "" Then
+                If Not String.Equals(val, DefaultValue) AndAlso val.NotNullOrEmptyS Then
+                    If Switch.NullOrEmptyS Then
                         If AlwaysOn Then
                             If Quotes = QuotesMode.Always Then
                                 Return """" + val + """"

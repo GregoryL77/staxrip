@@ -1,4 +1,8 @@
+Imports System.Threading
+Imports System.Threading.Tasks
+Imports Force.DeepCloner
 Imports KGySoft.CoreLibraries
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class AudioForm
@@ -248,6 +252,13 @@ Public Class AudioForm
         Me.mbSamplingRate.ShowMenuSymbol = True
         Me.mbSamplingRate.Size = New System.Drawing.Size(293, 70)
         Me.mbSamplingRate.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        Me.mbSamplingRate.Add("Original", 0)
+        Me.mbSamplingRate.Add("11025 Hz", 11025)
+        Me.mbSamplingRate.Add("22050 Hz", 22050)
+        Me.mbSamplingRate.Add("44100 Hz", 44100)
+        Me.mbSamplingRate.Add("48000 Hz", 48000)
+        Me.mbSamplingRate.Add("88200 Hz", 88200)
+        Me.mbSamplingRate.Add("96000 Hz", 96000)
         '
         'lLanguage
         '
@@ -291,6 +302,8 @@ Public Class AudioForm
         Me.numBitrate.Name = "numBitrate"
         Me.numBitrate.Size = New System.Drawing.Size(193, 70)
         Me.numBitrate.TabIndex = 17
+        Me.numBitrate.Minimum = 1
+        Me.numBitrate.Maximum = 25000
         '
         'Label2
         '
@@ -383,6 +396,8 @@ Public Class AudioForm
         Me.cbDefaultTrack.Size = New System.Drawing.Size(272, 52)
         Me.cbDefaultTrack.Text = "Default Track"
         Me.cbDefaultTrack.UseVisualStyleBackColor = True
+        Me.cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
+        Me.cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
         '
         'cbForcedTrack
         '
@@ -455,6 +470,8 @@ Public Class AudioForm
         Me.numGain.Name = "numGain"
         Me.numGain.Size = New System.Drawing.Size(193, 70)
         Me.numGain.TabIndex = 37
+        Me.numGain.DecimalPlaces = 1
+        Me.numGain.Increment = 0.5
         '
         'cbNormalize
         '
@@ -563,7 +580,7 @@ Public Class AudioForm
         Me.FlowLayoutPanel1.Location = New System.Drawing.Point(22, 1268)
         Me.FlowLayoutPanel1.Margin = New System.Windows.Forms.Padding(5)
         Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
-        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(0, 0)
+        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(900, 600)
         Me.FlowLayoutPanel1.TabIndex = 4
         '
         'tlpMain
@@ -625,7 +642,7 @@ Public Class AudioForm
         Me.tlpRTB.Name = "tlpRTB"
         Me.tlpRTB.RowCount = 1
         Me.tlpRTB.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.tlpRTB.Size = New System.Drawing.Size(1836, 60)
+        Me.tlpRTB.Size = New System.Drawing.Size(1836, 66)
         Me.tlpRTB.TabIndex = 12
         '
         'rtbCommandLine
@@ -640,19 +657,20 @@ Public Class AudioForm
         Me.rtbCommandLine.Size = New System.Drawing.Size(1836, 60)
         Me.rtbCommandLine.TabIndex = 45
         Me.rtbCommandLine.Text = ""
+        Me.rtbCommandLine.ReadOnly = True
         '
         'AudioForm
         '
         Me.AcceptButton = Me.bnOK
         Me.AutoScaleDimensions = New System.Drawing.SizeF(256.0!, 256.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        Me.AutoSize = True
+        ' Me.AutoSize = True
         Me.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(1866, 1206)
         Me.Controls.Add(Me.tlpMain)
         Me.Controls.Add(Me.FlowLayoutPanel1)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(7)
         Me.MaximizeBox = True
@@ -670,36 +688,39 @@ Public Class AudioForm
         Me.tlpRTB.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
-
+        Me.Height = 480
     End Sub
 
 #End Region
 
     Private Profile, TempProfile As GUIAudioProfile
-    Private numFFLFEMixLevel As SimpleUI.NumBlock
+    Private NumFFLFEMixLevel As SimpleUI.NumBlock
+    Private MbMode As SimpleUI.MenuBlock(Of Integer)
+    Private MbModeH As MenuButton.ValueChangedUserEventHandler
+    Private CbQaacHE As SimpleUI.SimpleUICheckBox
+    Private CbQaacHEH As EventHandler
+    Private MbCompressionLevel As SimpleUI.NumBlock
+    Private MbCompressionLevelH As NumEdit.ValueChangedEventHandler
+    Private MbWavPackMode As SimpleUI.MenuBlock(Of Integer)
+    Private MbWavPackModeH As MenuButton.ValueChangedUserEventHandler
 
     Sub New()
         MyBase.New()
         InitializeComponent()
-
-        rtbCommandLine.ReadOnly = True
-
-        mbSamplingRate.Add("Original", 0)
-        mbSamplingRate.Add("11025 Hz", 11025)
-        mbSamplingRate.Add("22050 Hz", 22050)
-        mbSamplingRate.Add("44100 Hz", 44100)
-        mbSamplingRate.Add("48000 Hz", 48000)
-        mbSamplingRate.Add("88200 Hz", 88200)
-        mbSamplingRate.Add("96000 Hz", 96000)
-
-        numBitrate.Minimum = 1
-        numBitrate.Maximum = 25000
-        numGain.DecimalPlaces = 1
-        numGain.Increment = 0.5
-
-        cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
-        cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
-
+        'rtbCommandLine.ReadOnly = True
+        'mbSamplingRate.Add("Original", 0)
+        'mbSamplingRate.Add("11025 Hz", 11025)
+        'mbSamplingRate.Add("22050 Hz", 22050)
+        'mbSamplingRate.Add("44100 Hz", 44100)
+        'mbSamplingRate.Add("48000 Hz", 48000)
+        'mbSamplingRate.Add("88200 Hz", 88200)
+        'mbSamplingRate.Add("96000 Hz", 96000)
+        'numBitrate.Minimum = 1
+        'numBitrate.Maximum = 25000
+        'numGain.DecimalPlaces = 1
+        'numGain.Increment = 0.5
+        'cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
+        'cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
         If components Is Nothing Then
             components = New System.ComponentModel.Container
         End If
@@ -707,8 +728,8 @@ Public Class AudioForm
         rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
 
         Dim cms As New ContextMenuStripEx(components)
+        cms.SuspendLayout()
         bnMenu.ContextMenuStrip = cms
-
         cms.Add("Copy Command Line", Sub() Clipboard.SetText(TempProfile.GetCommandLine(True))).SetImage(Symbol.Copy)
         cms.Add("Execute Command Line", AddressOf Execute).SetImage(Symbol.fa_terminal)
         cms.Add("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Line", TempProfile.GetCommandLine(True)))
@@ -721,6 +742,7 @@ Public Class AudioForm
         cms.Add("qaac Help", Sub() Package.qaac.ShowHelp())
         cms.Add("qaac Formats", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.qaac.Path, "--formats")))
         cms.Add("Opus Help", Sub() Package.OpusEnc.ShowHelp())
+        cms.ResumeLayout(False)
 
         TipProvider.SetTip("Defines which decoder to use and forces decoding even if not necessary.", laDecoder, mbDecoder)
         TipProvider.SetTip("Profile name that is auto generated when undefined.", laProfileName)
@@ -730,6 +752,19 @@ Public Class AudioForm
         TipProvider.SetTip("Custom command line arguments.", tbCustom, laCustom)
         TipProvider.SetTip("Default MKV Track.", cbDefaultTrack)
         TipProvider.SetTip("Forced MKV Track.", cbForcedTrack)
+
+        mbLanguage.Menu.SuspendLayout()
+        Dim sb As New Text.StringBuilder(40)
+        For Each lng In Language.Languages
+            If lng.IsCommon Then
+                sb.Clear()
+                sb.Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+                mbLanguage.Add(sb.ToString, lng)
+                'mbLanguage.Add(lng.ToString + " (" + lng.TwoLetterCode + ", " + lng.ThreeLetterCode + ")", lng)
+            End If
+        Next lng
+        mbLanguage.Menu.ResumeLayout(False)
+
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
@@ -739,17 +774,25 @@ Public Class AudioForm
     End Sub
 
     Protected Overrides Sub OnShown(e As EventArgs)
-        UpdateControls()
-        Refresh()
-        ActiveControl = mbCodec
+        Task.Run(Sub()
+                     Thread.Sleep(60)
+                     BeginInvoke(Sub()
+                                     UpdateControlsA()
+                                     ActiveControl = mbCodec
+                                         Dim sb As New Text.StringBuilder(64)
+                                         For Each lng In Language.Languages
+                                             If Not lng.IsCommon Then
+                                                 sb.Clear()
+                                                 sb.Append("More | ").Append(lng.ToString.Substring(0, 1).ToUpperInvariant).Append(" | ").Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+                                                 mbLanguage.Add(sb.ToString, lng)
+                                                 'mbLanguage.Add("More | " + lng.ToString.Substring(0, 1).ToUpper + " | " + lng.ToString + " (" + lng.TwoLetterCode + ", " + lng.ThreeLetterCode + ")", lng)
+                                             End If
+                                         Next lng
 
-        For Each lng In Language.Languages
-            If lng.IsCommon Then
-                mbLanguage.Add(lng.ToString + " (" + lng.TwoLetterCode + ", " + lng.ThreeLetterCode + ")", lng)
-            Else
-                mbLanguage.Add("More | " + lng.ToString.Substring(0, 1).ToUpper + " | " + lng.ToString + " (" + lng.TwoLetterCode + ", " + lng.ThreeLetterCode + ")", lng)
-            End If
-        Next
+                                         mbLanguage.Invalidate(True)
+                                         Refresh()
+                                 End Sub)
+                 End Sub)
     End Sub
 
     Sub SetValues(gap As GUIAudioProfile)
@@ -794,7 +837,7 @@ Public Class AudioForm
     End Sub
 
     Sub numGain_ValueChanged(numEdit As NumEdit) Handles numGain.ValueChanged
-        TempProfile.Gain = numGain.Value
+        TempProfile.Gain = Math.Round(numGain.Value, 1)
         UpdateControls()
     End Sub
 
@@ -804,9 +847,17 @@ Public Class AudioForm
     End Sub
 
     Sub UpdateControls()
+        If IsHandleCreated Then
+            BeginInvoke(Sub() UpdateControlsA())
+        Else
+            UpdateControlsA()
+        End If
+    End Sub
+    Sub UpdateControlsA()
         If TempProfile.ExtractCore Then
             numQuality.Enabled = False
             numBitrate.Enabled = False
+            If NumFFLFEMixLevel IsNot Nothing Then NumFFLFEMixLevel.Enabled = False
         Else
             Select Case TempProfile.Params.Codec
                 Case AudioCodec.Opus, AudioCodec.FLAC, AudioCodec.W64, AudioCodec.WAV, AudioCodec.DTS, AudioCodec.WavPack
@@ -823,11 +874,10 @@ Public Class AudioForm
                 Case Else
                     numBitrate.Enabled = Not numQuality.Enabled
             End Select
-        End If
 
-        If Not numFFLFEMixLevel Is Nothing Then
-            numFFLFEMixLevel.Enabled = Not TempProfile.ExtractCore AndAlso
-                    {1, 2}.Contains(TempProfile.Params.ChannelsMode)
+            If NumFFLFEMixLevel IsNot Nothing Then
+                NumFFLFEMixLevel.Enabled = TempProfile.Params.ChannelsMode = 2 OrElse TempProfile.Params.ChannelsMode = 1
+            End If
         End If
 
         mbDecoder.Enabled = Not TempProfile.ExtractCore
@@ -835,11 +885,20 @@ Public Class AudioForm
         mbSamplingRate.Enabled = Not TempProfile.ExtractCore
         cbNormalize.Enabled = Not TempProfile.ExtractCore
         numGain.Enabled = Not TempProfile.ExtractCore
-        numBitrate.Increment = If({AudioCodec.AC3, AudioCodec.EAC3}.Contains(TempProfile.Params.Codec), 32D, 8D)
+        numBitrate.Increment = If(TempProfile.Params.Codec = AudioCodec.AC3 OrElse TempProfile.Params.Codec = AudioCodec.EAC3, 32D, 8D)
         TempProfile.DefaultnameValue = Nothing
         tbProfileName.SendMessageCue(TempProfile.Name, False)
-        rtbCommandLine.SetText(TempProfile.GetCommandLine(False))
-        rtbCommandLine.UpdateHeight()
+
+        Dim t As String = TempProfile.GetCommandLine(False)
+        rtbCommandLine.SetText(t)
+        Dim sh As Integer = (t.Length \ 84 + 1) * 16 + 2
+        Dim rh = rtbCommandLine.Height + 1
+
+        If rh < sh OrElse t.Length < 150 AndAlso rh > 36 Then
+            rtbCommandLine.Size = New Size(rtbCommandLine.Width, sh)
+        End If
+        'rtbCommandLine.UpdateHeight()
+        'Text = t.Length.ToInvariantString & "stringl|h:" & rtbCommandLine.Height & "|CalH:" & sh
     End Sub
 
     Sub mbCodec_ValueChangedUser() Handles mbCodec.ValueChangedUser
@@ -848,15 +907,9 @@ Public Class AudioForm
         Select Case TempProfile.Params.Codec
             Case AudioCodec.AAC
                 Select Case TempProfile.Params.Encoder
-                   'Case GuiAudioEncoder.qaac, GuiAudioEncoder.Automatic
-                        'SetQuality(54)
-                        'TempProfile.Params.qaacQuality = 2
-                        'TempProfile.Params.qaacLowpass = 0
-                        'TempProfile.Params.qaacRateMode = 0
-                        'TempProfile.Params.qaacHE = False
                     Case GuiAudioEncoder.eac3to
                         SetQuality(0.5)
-                    Case GuiAudioEncoder.fdkaac, GuiAudioEncoder.ffmpeg
+                    Case GuiAudioEncoder.ffmpeg, GuiAudioEncoder.fdkaac
                         If TempProfile.Params.Encoder = GuiAudioEncoder.fdkaac Then TempProfile.Depth = 16 'FDKAAC eats only int16
                         TempProfile.Params.SimpleRateMode = SimpleAudioRateMode.VBR
                         SetQuality(3)
@@ -907,6 +960,7 @@ Public Class AudioForm
                 Else
                     numBitrate.Value = 768
                 End If
+                TempProfile.ExtractDTSCore = False
 
                 'TempProfile.Params.RateMode = AudioRateMode.CBR
             Case AudioCodec.MP3
@@ -932,7 +986,7 @@ Public Class AudioForm
                 'TempProfile.Params.opusEncDelay = 1000
                 'Opus workaround for side channels
                 If TempProfile.Params.Encoder = GuiAudioEncoder.ffmpeg Then
-                    ChannelsModeToChannel = TempProfile.Channels
+                    ChannelsModeToChannel(TempProfile.Channels)
                 End If
         End Select
 
@@ -1007,10 +1061,10 @@ Public Class AudioForm
 
     Sub SaveProfile()
         TempProfile.DefaultnameValue = Nothing
-        Dim gap = ObjectHelp.GetCopy(Of GUIAudioProfile)(TempProfile)
+        Dim gap = TempProfile.DeepClone
         Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
 
-        If name <> "" Then
+        If name.NotNullOrEmptyS Then
             gap.Name = name
             s.AudioProfiles.Add(gap)
             MsgInfo("The profile was saved.")
@@ -1020,7 +1074,7 @@ Public Class AudioForm
     Sub LoadProfile(gap As GUIAudioProfile)
         gap.DefaultnameValue = Nothing
         Profile = gap
-        TempProfile = ObjectHelp.GetCopy(Of GUIAudioProfile)(gap)
+        TempProfile = gap.DeepClone
         LoadProfile()
     End Sub
 
@@ -1059,81 +1113,69 @@ Public Class AudioForm
         numBitrate.Value = v
     End Sub
 
-
-    Private mbMode As SimpleUI.MenuBlock(Of Integer)
-    Private mbModeH As MenuButton.ValueChangedUserEventHandler
-    Private cbqaacHE As SimpleUI.SimpleUICheckBox
-    Private cbqaacHEH As EventHandler
-    Private mCompressionLevel As SimpleUI.NumBlock
-    Private mCompressionLevelH As NumEdit.ValueChangedEventHandler
-    Private mbWavPackMode As SimpleUI.MenuBlock(Of Integer)
-    Private mbWavPackModeH As MenuButton.ValueChangedUserEventHandler
-
-
     Sub LoadAdvanced()
         RemoveHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
-        If cbqaacHE IsNot Nothing Then
-            RemoveHandler SimpleUI.SaveValues, AddressOf cbqaacHE.Save
-            RemoveHandler cbqaacHE.CheckedChanged, cbqaacHEH
-            'cbqaacHE.Controls.Clear()
-            cbqaacHE.Dispose()
+
+        If MbCompressionLevel IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf NumFFLFEMixLevel.NumEdit.Save
+            NumFFLFEMixLevel.NumEdit.Dispose()
+            NumFFLFEMixLevel.Dispose()
         End If
-        If mbMode IsNot Nothing Then
-            RemoveHandler SimpleUI.SaveValues, AddressOf mbMode.Button.Save
-            RemoveHandler mbMode.Button.ValueChangedUser, mbModeH
-            mbMode.Button.Dispose()
-            mbMode.Dispose()
+        If CbQaacHE IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf CbQaacHE.Save
+            RemoveHandler CbQaacHE.CheckedChanged, CbQaacHEH
+            'CbQaacHE.Controls.Clear()
+            CbQaacHE.Dispose()
         End If
-        If mCompressionLevel IsNot Nothing Then
-            RemoveHandler SimpleUI.SaveValues, AddressOf mCompressionLevel.NumEdit.Save
-            RemoveHandler mCompressionLevel.NumEdit.ValueChanged, mCompressionLevelH
-            mCompressionLevel.NumEdit.Dispose()
-            mCompressionLevel.Dispose()
+        If MbMode IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf MbMode.Button.Save
+            RemoveHandler MbMode.Button.ValueChangedUser, MbModeH
+            MbMode.Button.Dispose()
+            MbMode.Dispose()
         End If
-        If mbWavPackMode IsNot Nothing Then
-            RemoveHandler SimpleUI.SaveValues, AddressOf mbWavPackMode.Button.Save
-            RemoveHandler mbWavPackMode.Button.ValueChangedUser, mbWavPackModeH
-            mbWavPackMode.Button.Dispose()
-            mbWavPackMode.Dispose()
+        If MbCompressionLevel IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf MbCompressionLevel.NumEdit.Save
+            RemoveHandler MbCompressionLevel.NumEdit.ValueChanged, MbCompressionLevelH
+            MbCompressionLevel.NumEdit.Dispose()
+            MbCompressionLevel.Dispose()
+        End If
+        If MbWavPackMode IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf MbWavPackMode.Button.Save
+            RemoveHandler MbWavPackMode.Button.ValueChangedUser, MbWavPackModeH
+            MbWavPackMode.Button.Dispose()
+            MbWavPackMode.Dispose()
         End If
 
         Dim ui = SimpleUI
         ui.Store = TempProfile.Params
 
-        For Each ct In ui.Host.Controls
-            DirectCast(ct, Control).Dispose()
-            'ct = Nothing
-        Next
-
+        'For Each ct In ui.Host.Controls
+        '    DirectCast(ct, Control).Dispose()
+        '    ct = Nothing
+        'Next
         ui.Host.Controls.Clear()
 
-        If Not ui.ActivePage Is Nothing Then
+        If ui.ActivePage IsNot Nothing Then
             DirectCast(ui.ActivePage, Control).Dispose()
-            'ui.ActivePage = Nothing
         End If
 
         For Each pg In ui.Pages
-            DirectCast(pg, Control).Dispose()
-            'pg = Nothing
+            DirectCast(pg, SimpleUI.FlowPage).Dispose()
         Next
         ui.Pages.Clear()
 
-        GC.Collect()
-
-        'Text = ui.Pages.Count.ToString & "pc | hc " & ui.Host.Controls.Count
-
         Dim page = ui.CreateFlowPage()
+        '   Text = ui.Pages.Count.ToString & "pc | hc " & ui.Host.Controls.Count
+
         page.SuspendLayout()
 
         If TempProfile.Params.Encoder <> GuiAudioEncoder.eac3to Then
-            numFFLFEMixLevel = ui.AddNum(page)
-            numFFLFEMixLevel.Text = "FF LFE Downmix"
-            numFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
-            numFFLFEMixLevel.Help = "Value 1.0 sets LFE matrix coef. equal to other channels,  ffmpeg default 0 means no LFE in downmix"
-            numFFLFEMixLevel.NumEdit.Value = TempProfile.Params.ffmpegLFEMixLevel
-            numFFLFEMixLevel.NumEdit.SaveAction = Sub(value)
-                                                      TempProfile.Params.ffmpegLFEMixLevel = Math.Round(value, 3)
-                                                  End Sub
+            NumFFLFEMixLevel = ui.AddNum(page)
+            NumFFLFEMixLevel.Text = "FF LFE Downmix"
+            NumFFLFEMixLevel.NumEdit.Config = {-31, 31, 0.1, 3}
+            NumFFLFEMixLevel.Help = "Value 1.0 sets LFE matrix coef. equal to other channels,  ffmpeg default 0 means no LFE in downmix"
+            NumFFLFEMixLevel.NumEdit.Value = TempProfile.Params.ffmpegLFEMixLevel
+            NumFFLFEMixLevel.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffmpegLFEMixLevel = Math.Round(value, 3)
         End If
 
         If TempProfile.IntegerCodec() Then
@@ -1143,7 +1185,7 @@ Public Class AudioForm
             mDepth.Add("Default", 0)
             mDepth.Add("16", 16)
             mDepth.Add("24", 24)
-            If {AudioCodec.WAV, AudioCodec.WavPack, AudioCodec.W64}.Contains(TempProfile.Params.Codec) Then
+            If TempProfile.Params.Codec <> AudioCodec.FLAC Then
                 mDepth.Add("32 FP", 32)
             End If
             mDepth.Button.Value = TempProfile.Depth
@@ -1172,9 +1214,8 @@ Public Class AudioForm
                 mbStereoDownmix.Button.Value = TempProfile.Params.eac3toStereoDownmixMode
                 mbStereoDownmix.Button.SaveAction = Sub(value) TempProfile.Params.eac3toStereoDownmixMode = value
 
-                If TempProfile.Params.Codec = AudioCodec.DTS AndAlso (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
+                If TempProfile.Params.Codec = AudioCodec.DTS AndAlso (TempProfile.File.NullOrEmptyS OrElse TempProfile.File.ToLower.Contains("dts") OrElse
                     (TempProfile.Stream IsNot Nothing AndAlso TempProfile.Stream.Name.Contains("DTS"))) Then
-
                     cb = ui.AddBool(page)
                     cb.Text = "Extract DTS core"
                     cb.Checked = TempProfile.ExtractDTSCore
@@ -1187,27 +1228,26 @@ Public Class AudioForm
                 Select Case TempProfile.Params.Codec
 
                     Case AudioCodec.FLAC, AudioCodec.WavPack
-                        mCompressionLevel = ui.AddNum(page)
-                        mCompressionLevel.Text = "Compression Level"
+                        MbCompressionLevel = ui.AddNum(page)
+                        MbCompressionLevel.Text = "Compression Level"
                         If TempProfile.Params.Codec = AudioCodec.FLAC Then
-                            mCompressionLevel.NumEdit.Config = {0, 12}
-                            mCompressionLevel.Help = "Over 10 is non-subset"
-                            mCompressionLevelH = Sub()
-                                                     If mCompressionLevel.NumEdit.Value > 10 Then
-                                                         mCompressionLevel.NumEdit.SetColor(Color.Red)
-                                                     Else
-                                                         mCompressionLevel.NumEdit.SetColor(Color.CadetBlue)
-                                                     End If
-                                                 End Sub
-                            AddHandler mCompressionLevel.NumEdit.ValueChanged, mCompressionLevelH
+                            MbCompressionLevel.NumEdit.Config = {0, 12}
+                            MbCompressionLevel.Help = "Over 10 is non-subset"
+                            MbCompressionLevelH = Sub()
+                                                      If MbCompressionLevel.NumEdit.Value > 10 Then
+                                                          MbCompressionLevel.NumEdit.SetColor(Color.Red)
+                                                      Else
+                                                          MbCompressionLevel.NumEdit.SetColor(Color.CadetBlue)
+                                                      End If
+                                                  End Sub
+                            AddHandler MbCompressionLevel.NumEdit.ValueChanged, MbCompressionLevelH
                         Else
-                            mCompressionLevel.NumEdit.Config = {0, 8}
+                            MbCompressionLevel.NumEdit.Config = {0, 8}
                             TempProfile.Params.WavPackMode = 0
                         End If
-                        mCompressionLevel.Property = NameOf(TempProfile.Params.ffmpegCompressionLevel)
+                        MbCompressionLevel.NumEdit.Value = TempProfile.Params.ffmpegCompressionLevel
+                        MbCompressionLevel.NumEdit.SaveAction = Sub(value) TempProfile.Params.ffmpegCompressionLevel = CInt(value)
 
-
-                    Case AudioCodec.DTS, AudioCodec.AC3, AudioCodec.EAC3
                     Case AudioCodec.AAC
                         Dim mbRateMode = ui.AddMenu(Of SimpleAudioRateMode)
                         mbRateMode.Text = "Rate Mode"
@@ -1292,7 +1332,7 @@ Public Class AudioForm
                         mbRateMode.Expandet = True
                         mbRateMode.Button.Value = TempProfile.Params.RateMode
                         mbRateMode.Button.SaveAction = Sub(value)
-                                                           If {AudioCodec.MP3, AudioCodec.Vorbis}.Contains(TempProfile.Params.Codec) Then
+                                                           If {AudioCodec.MP3, AudioCodec.Vorbis}.ContainsF(TempProfile.Params.Codec) Then
                                                                TempProfile.Params.RateMode = value
                                                                UpdateBitrate()
                                                            End If
@@ -1306,21 +1346,20 @@ Public Class AudioForm
                         End If
                         num.Property = NameOf(TempProfile.Params.ffmpegMp3Cutoff)
 
-                    Case Else
-                        Exit Select
+                    Case AudioCodec.AC3, AudioCodec.EAC3
+                    Case AudioCodec.DTS
+                        If TempProfile.File.NullOrEmptyS OrElse TempProfile.File.ToLower.Contains("dts") OrElse
+                            (TempProfile.Stream IsNot Nothing AndAlso TempProfile.Stream.Name.Contains("DTS")) Then
+                            cb = ui.AddBool(page)
+                            cb.Text = "Extract DTS core"
+                            cb.Checked = TempProfile.ExtractDTSCore
+                            cb.SaveAction = Sub(value)
+                                                TempProfile.ExtractDTSCore = value
+                                                UpdateControls()
+                                            End Sub
+                        End If
                 End Select
 
-                If TempProfile.Params.Codec = AudioCodec.DTS AndAlso (TempProfile.File = "" OrElse TempProfile.File.ToLower.Contains("dts") OrElse
-                        (TempProfile.Stream IsNot Nothing AndAlso TempProfile.Stream.Name.Contains("DTS"))) Then
-
-                    cb = ui.AddBool(page)
-                    cb.Text = "Extract DTS core"
-                    cb.Checked = TempProfile.ExtractDTSCore
-                    cb.SaveAction = Sub(value)
-                                        TempProfile.ExtractDTSCore = value
-                                        UpdateControls()
-                                    End Sub
-                End If
             Case GuiAudioEncoder.fdkaac
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.fdkaac, switch)
 
@@ -1418,16 +1457,16 @@ Public Class AudioForm
                 cb.Property = NameOf(TempProfile.Params.fdkaacMoovBeforeMdat)
             Case GuiAudioEncoder.qaac
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.qaac, switch)
-                mbMode = ui.AddMenu(Of Integer)
-                mbMode.Text = "Mode"
-                mbMode.Expandet = True
-                mbMode.Add("True VBR", 0)
-                mbMode.Add("Constrained VBR", 1)
-                mbMode.Add("ABR", 2)
-                mbMode.Add("CBR", 3)
-                mbMode.Help = "https://github.com/nu774/qaac/wiki/Encoder-configuration#tvbr-quality-steps"
-                mbMode.Button.Value = TempProfile.Params.qaacRateMode
-                mbMode.Button.SaveAction = Sub(value)
+                MbMode = ui.AddMenu(Of Integer)
+                MbMode.Text = "Mode"
+                MbMode.Expandet = True
+                MbMode.Add("True VBR", 0)
+                MbMode.Add("Constrained VBR", 1)
+                MbMode.Add("ABR", 2)
+                MbMode.Add("CBR", 3)
+                MbMode.Help = "https://github.com/nu774/qaac/wiki/Encoder-configuration#tvbr-quality-steps"
+                MbMode.Button.Value = TempProfile.Params.qaacRateMode
+                MbMode.Button.SaveAction = Sub(value)
                                                If TempProfile.Params.Codec = AudioCodec.AAC AndAlso TempProfile.GetEncoder() = GuiAudioEncoder.qaac Then
                                                    TempProfile.Params.qaacRateMode = value
                                                    'TempProfile.Params.RateMode = If(TempProfile.Params.qaacRateMode = 0, AudioRateMode.VBR, AudioRateMode.CBR)
@@ -1452,28 +1491,28 @@ Public Class AudioForm
                 num.NumEdit.Value = TempProfile.Params.qaacLowpass
                 num.NumEdit.SaveAction = Sub(value) TempProfile.Params.qaacLowpass = CInt(value)
 
-                cbqaacHE = ui.AddBool(page)
-                cbqaacHE.Text = "High Efficiency"
-                cbqaacHE.HelpAction = getHelpAction("--he")
-                cbqaacHE.Property = NameOf(TempProfile.Params.qaacHE)
+                CbQaacHE = ui.AddBool(page)
+                CbQaacHE.Text = "High Efficiency"
+                CbQaacHE.HelpAction = getHelpAction("--he")
+                CbQaacHE.Property = NameOf(TempProfile.Params.qaacHE)
 
-                cbqaacHEH = Sub(sender As Object, e As EventArgs)
-                                If cbqaacHE.Checked AndAlso mbMode.Button.Value = 0 Then
-                                    mbMode.Button.Value = 1
+                CbQaacHEH = Sub(sender As Object, e As EventArgs)
+                                If CbQaacHE.Checked AndAlso MbMode.Button.Value = 0 Then
+                                    MbMode.Button.Value = 1
                                     TempProfile.Params.qaacRateMode = 1
                                     'TempProfile.Params.RateMode = AudioRateMode.CBR
                                     Dim c21 As Double = If(TempProfile.Channels > 0, TempProfile.Channels * 64 / 2, 160)
                                     SetBitrate(CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
                                 End If
                             End Sub
-                AddHandler cbqaacHE.CheckedChanged, cbqaacHEH
+                AddHandler CbQaacHE.CheckedChanged, CbQaacHEH
 
-                mbModeH = Sub()
-                              'cbqaacHE.Enabled = mbMode.Button.Value <> 0
-                              If mbMode.Button.Value = 0 Then cbqaacHE.Checked = False
+                MbModeH = Sub()
+                              'CbQaacHE.Enabled = MbMode.Button.Value <> 0
+                              If MbMode.Button.Value = 0 Then CbQaacHE.Checked = False
                               'UpdateControls()
                           End Sub
-                AddHandler mbMode.Button.ValueChangedUser, mbModeH
+                AddHandler MbMode.Button.ValueChangedUser, MbModeH
 
                 'AFAIK dither is intended only for wav/ALAC out and depth (-b) param - no effect in Staxrip: 
                 'limiter is quite usefull btw
@@ -1486,13 +1525,13 @@ Public Class AudioForm
             Case GuiAudioEncoder.WavPack
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.WavPack, switch)
 
-                mbWavPackMode = ui.AddMenu(Of Integer)
-                mbWavPackMode.Text = "Mode"
-                mbWavPackMode.Expandet = True
-                mbWavPackMode.Add("Lossless", 0)
-                mbWavPackMode.Add("Lossy CBR", 1)
-                mbWavPackMode.Button.Value = TempProfile.Params.WavPackMode
-                mbWavPackMode.Button.SaveAction =
+                MbWavPackMode = ui.AddMenu(Of Integer)
+                MbWavPackMode.Text = "Mode"
+                MbWavPackMode.Expandet = True
+                MbWavPackMode.Add("Lossless", 0)
+                MbWavPackMode.Add("Lossy CBR", 1)
+                MbWavPackMode.Button.Value = TempProfile.Params.WavPackMode
+                MbWavPackMode.Button.SaveAction =
                     Sub(value)
                         If TempProfile.Params.Codec = AudioCodec.WavPack AndAlso TempProfile.GetEncoder() = GuiAudioEncoder.WavPack Then
                             TempProfile.Params.WavPackMode = value
@@ -1532,10 +1571,10 @@ Public Class AudioForm
                 cbCreateCorrectionWVC.HelpAction = getHelpAction("create correction file")
                 cbCreateCorrectionWVC.Property = NameOf(TempProfile.Params.WavPackCreateCorrection)
 
-                cbCreateCorrectionWVC.Enabled = mbWavPackMode.Button.Value = 1
+                cbCreateCorrectionWVC.Enabled = MbWavPackMode.Button.Value = 1
 
-                mbWavPackModeH = Sub()
-                                     If mbWavPackMode.Button.Value = 1 Then
+                MbWavPackModeH = Sub()
+                                     If MbWavPackMode.Button.Value = 1 Then
                                          TempProfile.Params.WavPackMode = 1
                                          SetBitrate(CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
                                          cbCreateCorrectionWVC.Enabled = True
@@ -1546,7 +1585,7 @@ Public Class AudioForm
                                          UpdateBitrate()
                                      End If
                                  End Sub
-                AddHandler mbWavPackMode.Button.ValueChangedUser, mbWavPackModeH
+                AddHandler MbWavPackMode.Button.ValueChangedUser, MbWavPackModeH
 
             Case GuiAudioEncoder.OpusEnc
                 Dim getHelpAction = Function(switch As String) Sub() g.ShowCommandLineHelp(Package.OpusEnc, switch)
@@ -1612,8 +1651,9 @@ Public Class AudioForm
 
         End Select
 
-        page.ResumeLayout(True)
+        page.ResumeLayout()
         AddHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
+        GC.Collect(2, GCCollectionMode.Optimized)
     End Sub
 
     Sub nudBitrate_KeyUp(sender As Object, e As KeyEventArgs) Handles numBitrate.KeyUp
@@ -1636,7 +1676,7 @@ Public Class AudioForm
     End Sub
 
     Sub Execute()
-        If TempProfile.File <> "" Then
+        If TempProfile.File.NotNullOrEmptyS Then
             If Not TempProfile.IsInputSupported AndAlso Not TempProfile.DecodingMode = AudioDecodingMode.Pipe Then
                 MsgWarn("The input format isn't supported by the current encoder," + BR + "convert to WAV or WV first or enable piping in the options.")
             Else
@@ -1705,25 +1745,15 @@ Public Class AudioForm
             convFormat.Button.Value = TempProfile.DecodingMode
             convFormat.Button.SaveAction = Sub(val) TempProfile.DecodingMode = val
 
-            ui.CreateFlowPage("ffmpeg", True)
+            Dim pageFF = ui.CreateFlowPage("ffmpeg", True)
+            pageFF.SuspendLayout()
 
             Dim ffmpegNormalize = ui.AddMenu(Of ffmpegNormalizeMode)
             ffmpegNormalize.Text = "Normalize Method:"
             ffmpegNormalize.Property = NameOf(TempProfile.Params.ffmpegNormalizeMode)
 
             Dim mb = ui.AddMenu(Of FFDither)
-            'mb.Text = "Dither type"
-            'mb.Add("Disabled")
-            'mb.Add("rectangular")
-            'mb.Add("triangular")
-            'mb.Add("triangular_hp")
-            'mb.Add("lipshitz")
-            'mb.Add("shibata")
-            'mb.Add("low_shibata")
-            'mb.Add("high_shibata")
-            'mb.Add("f_weighted")
-            'mb.Add("modified_e_weighted")
-            'mb.Add("improved_e_weighted")
+            mb.Text = "Dither type"
             mb.Property = NameOf(TempProfile.Params.ffmpegDither)
 
             Dim b = ui.AddBool()
@@ -1740,6 +1770,7 @@ Public Class AudioForm
             n.Config = {1, 999, 5}
             n.Property = NameOf(TempProfile.Params.AnalyzeDuration)
 
+            pageFF.ResumeLayout(False)
             ui.CreateFlowPage("ffmpeg | loudnorm", True)
 
             ui.AddLabel("EBU R128 Loudness Normalization")
@@ -1764,8 +1795,8 @@ Public Class AudioForm
             n.Config = {1, 20, 0.5, 1}
             n.Property = NameOf(TempProfile.Params.ffmpegLoudnormLRA)
 
-            ui.CreateFlowPage("ffmpeg | dynaudnorm", True)
-
+            Dim pageFFDN = ui.CreateFlowPage("ffmpeg | dynaudnorm", True)
+            pageFFDN.SuspendLayout()
             ui.AddLabel("Dynamic Audio Normalizer")
 
             helpUrl = "https://www.ffmpeg.org/ffmpeg-filters.html#dynaudnorm"
@@ -1822,11 +1853,14 @@ Public Class AudioForm
             b.Property = NameOf(TempProfile.Params.ffmpegDynaudnormB)
 
             ui.SelectLast("last advanced audio options page")
+            pageFFDN.ResumeLayout(False)
 
             If form.ShowDialog() = DialogResult.OK Then
                 ui.Save()
             End If
 
+            pageFF.Dispose()
+            pageFFDN.Dispose()
             LoadAdvanced()
             UpdateControls()
             ui.SaveLast("last advanced audio options page")
@@ -1842,14 +1876,12 @@ Public Class AudioForm
         ShowHelp()
     End Sub
 
-    Private WriteOnly Property ChannelsModeToChannel As Integer
-        Set(value As Integer)
-            Select Case value
-                Case 1, 2, 6, 7, 8
-                    Dim channV = [Enum].Parse(GetType(ChannelsMode), "_" & value)
-                    TempProfile.Params.ChannelsMode = CType(channV, ChannelsMode)
-                    mbChannels.Value = channV
-            End Select
-        End Set
-    End Property
+    Private Sub ChannelsModeToChannel(Channels As Integer)
+        Select Case Channels
+            Case 1, 2, 6 To 8
+                Dim channV = [Enum](Of ChannelsMode).Parse("_" & Channels)
+                TempProfile.Params.ChannelsMode = channV
+                mbChannels.Value = channV
+        End Select
+    End Sub
 End Class

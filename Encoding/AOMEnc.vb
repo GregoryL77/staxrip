@@ -142,7 +142,7 @@ Public Class AV1Params
     Overrides ReadOnly Property Items As List(Of CommandLineParam)
         Get
             If ItemsValue Is Nothing Then
-                ItemsValue = New List(Of CommandLineParam)
+                ItemsValue = New List(Of CommandLineParam)(128)
                 AddParameters()
             End If
 
@@ -332,7 +332,7 @@ Public Class AV1Params
     End Sub
 
     Shadows Sub Add(item As CommandLineParam)
-        If item.HelpSwitch = "" Then
+        If item.HelpSwitch.NullOrEmptyS Then
             Dim switches = item.GetSwitches
 
             If Not switches.NothingOrEmpty Then
@@ -358,13 +358,13 @@ Public Class AV1Params
         includePaths As Boolean,
         includeExecutable As Boolean) As String
 
-        Dim sb As New StringBuilder
+        Dim sb As New StringBuilder(512)
 
         If includePaths AndAlso includeExecutable Then
             If p.Script.Engine = ScriptEngine.VapourSynth Then
-                sb.Append(Package.vspipe.Path.Escape + " " + script.Path.Escape + " - --y4m | " + Package.aomenc.Path.Escape + " -")
+                sb.Append(Package.vspipe.Path.Escape).Append(" ").Append(script.Path.Escape).Append(" - --y4m | ").Append(Package.aomenc.Path.Escape).Append(" -")
             Else
-                sb.Append(Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + Package.aomenc.Path.Escape + " -")
+                sb.Append(Package.ffmpeg.Path.Escape).Append(" -i ").Append(script.Path.Escape).Append(" -f yuv4mpegpipe").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ").Append(Package.aomenc.Path.Escape).Append(" -")
             End If
         End If
 
@@ -372,25 +372,25 @@ Public Class AV1Params
             Case 0
                 sb.Append(" --passes=1")
             Case 1
-                sb.Append(" --passes=2 --pass=" & pass)
+                sb.Append(" --passes=2 --pass=").Append(pass)
         End Select
 
         If Not RateMode.OptionText.EqualsAny("CQ", "Q") Then
-            sb.Append(" --target-bitrate=" & p.VideoBitrate)
+            sb.Append(" --target-bitrate=").Append(p.VideoBitrate)
         End If
 
-        Dim q = From i In Items Where i.GetArgs <> ""
+        Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
 
-        If q.Count > 0 Then
-            sb.Append(" " + q.Select(Function(item) item.GetArgs).Join(" "))
+        If q.Any Then
+            sb.Append(" ").Append(q.Select(Function(item) item.GetArgs).Join(" "))
         End If
 
         If includePaths Then
             If Mode.Value = 1 Then
-                sb.Append(" --fpf=" + (p.TempDir + p.TargetFile.Base + ".txt").Escape)
+                sb.Append(" --fpf=").Append((p.TempDir + p.TargetFile.Base + ".txt").Escape)
             End If
 
-            sb.Append(" -o " + targetPath.Escape)
+            sb.Append(" -o ").Append(targetPath.Escape)
         End If
 
         Return Macro.Expand(sb.ToString.Trim.FixBreak.Replace(BR, " "))

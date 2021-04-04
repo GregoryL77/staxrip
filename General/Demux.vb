@@ -167,7 +167,7 @@ Public Class CommandLineDemuxer
 
     Overrides Sub Run(proj As Project)
         Using proc As New Proc
-            Dim test = Macro.Expand(Command + Arguments).ToLowerEx.RemoveChars(" ")
+            Dim test = Macro.Expand(Command + Arguments).ToLowerEx.Replace(" ", "")
 
             'DGIndexNV Back Back
             If Command?.Contains("DGIndexNV") OrElse Arguments?.Contains("DGIndexNV") OrElse test.Contains("dgindexnv")  Then
@@ -322,7 +322,7 @@ Public Class ffmpegDemuxer
     Shared Sub DemuxVideo(proj As Project, overrideExisting As Boolean)
         Dim streams = MediaInfo.GetVideoStreams(proj.SourceFile)
 
-        If streams.Count = 0 OrElse streams(0).Ext = "" Then
+        If streams.Count = 0 OrElse streams(0).Ext.NullOrEmptyS Then
             Exit Sub
         End If
 
@@ -598,7 +598,7 @@ Public Class MP4BoxDemuxer
     Shared Sub DemuxVideo(proj As Project, overrideExisting As Boolean)
         Dim streams = MediaInfo.GetVideoStreams(proj.SourceFile)
 
-        If streams.Count = 0 OrElse streams(0).Ext = "" Then
+        If streams.Count = 0 OrElse streams(0).Ext.NullOrEmptyS Then
             Exit Sub
         End If
 
@@ -676,7 +676,7 @@ Public Class MP4BoxDemuxer
         End Using
 
         If File.Exists(outPath) Then
-            If MediaInfo.GetAudio(outPath, "Format") = "" Then
+            If MediaInfo.GetAudio(outPath, "Format").NullOrEmptyS Then
                 proj.Log.Write("Error", "No format detected by MediaInfo.")
                 ffmpegDemuxer.DemuxAudio(sourcefile, stream, ap, proj, overrideExisting)
             Else
@@ -692,7 +692,7 @@ Public Class MP4BoxDemuxer
     Function GetAttachments(sourceFilePath As String) As List(Of Attachment)
         Dim cover = MediaInfo.GetGeneral(sourceFilePath, "Cover")
 
-        If cover <> "" Then
+        If cover.NotNullOrEmptyS Then
             Return New List(Of Attachment) From {New Attachment With {.Name = "Cover"}}
         End If
     End Function
@@ -857,7 +857,7 @@ Public Class mkvDemuxer
 
         subtitles = subtitles.Where(Function(subtitle) subtitle.Enabled)
 
-        If audioStreams.Count = 0 AndAlso subtitles.Count = 0 AndAlso Not videoDemuxing Then
+        If Not audioStreams.Any AndAlso Not subtitles.Any AndAlso Not videoDemuxing Then
             Exit Sub
         End If
 
@@ -873,7 +873,7 @@ Public Class mkvDemuxer
             If videoStreams.Count > 0 Then
                 Dim outPath = proj.TempDir + sourcefile.Base + videoStreams(0).ExtFull
 
-                If outPath <> sourcefile Then
+                If Not outPath.Equals(sourcefile) Then
                     args += " " & id & ":" + outPath.Escape
                     outPaths.Add(outPath)
 
@@ -904,7 +904,7 @@ Public Class mkvDemuxer
         For Each stream In audioStreams
             Dim ext = stream.Ext
 
-            If ext = "m4a" Then
+            If ext.Equals("m4a") Then
                 ext = "aac"
             End If
 
@@ -913,7 +913,7 @@ Public Class mkvDemuxer
             outPaths.Add(outPath)
             args += " " & stream.StreamOrder & ":" + outPath.Escape
 
-            If outPath.Ext = "aac" Then
+            If outPath.Ext.Equals("aac") Then
                 outPath = outPath.ChangeExt("m4a")
             End If
 
@@ -948,7 +948,7 @@ Public Class mkvDemuxer
 
                 proj.Log.WriteLine(MediaInfo.GetSummary(outPath) + BR)
 
-                If outPath.Ext = "aac" Then
+                If outPath.Ext.Equals("aac") Then
                     Dim newOutPath = outPath.ChangeExt("m4a")
                     outPaths.Add(newOutPath)
 

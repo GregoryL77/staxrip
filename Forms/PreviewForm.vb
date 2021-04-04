@@ -554,7 +554,7 @@ Public Class PreviewForm
         d = d.AddSeconds(Renderer.Position / FrameServer.FrameRate)
         Dim value = InputBox.Show("Time:", "Go To Time", d.ToString("HH:mm:ss.fff"))
 
-        If value <> "" Then
+        If value.NotNullOrEmptyS Then
             SetPos(CInt((TimeSpan.Parse(value).TotalMilliseconds / 1000) * FrameServer.FrameRate))
         End If
     End Sub
@@ -838,7 +838,7 @@ Public Class PreviewForm
                 End If
             Next
 
-            If td.Show() <> "" Then
+            If td.Show().NotNullOrEmptyS Then
                 SetPos(CInt((TimeSpan.Parse(td.SelectedValue).TotalMilliseconds / 1000) * FrameServer.FrameRate))
             End If
         End Using
@@ -966,14 +966,14 @@ Public Class PreviewForm
         Dim ret As String
 
         For Each i In p.Ranges
-            If ret <> "" Then
+            If ret.NotNullOrEmptyS Then
                 ret += " + "
             End If
 
             If PreviewScript.Engine = ScriptEngine.AviSynth Then
                 ret += "Trim(" & i.Start & ", " & i.End & ")"
 
-                If p.TrimCode <> "" Then
+                If p.TrimCode.NotNullOrEmptyS Then
                     ret += "." + p.TrimCode.TrimStart("."c)
                 End If
             Else

@@ -3,6 +3,7 @@ Imports System.ComponentModel
 Imports System.Net
 Imports System.Net.Http
 Imports System.Text.RegularExpressions
+Imports JM.LinqFaster
 
 Public Class StaxRipUpdate
     Shared HttpClient As New HttpClient
@@ -91,7 +92,7 @@ Public Class StaxRipUpdate
                 If latestVersions.Count > 0 Then
                     Dim latestVersion = latestVersions.OrderBy(Function(x) x.Version).Last()
 
-                    If latestVersion.Version > currentVersion AndAlso (s.CheckForUpdatesDismissed = "" OrElse
+                    If latestVersion.Version > currentVersion AndAlso (s.CheckForUpdatesDismissed.NullOrEmptyS OrElse
                         Version.Parse(s.CheckForUpdatesDismissed) <> latestVersion.Version OrElse force) Then
 
                         Using td As New TaskDialog(Of String)
@@ -104,9 +105,9 @@ Public Class StaxRipUpdate
                                 Dim splits = Regex.Split(changelogContent, "\n\n\n")
 
                                 If splits.Any() Then
-                                    Dim split = splits.Where(Function(x) x.Contains(latestVersion.Version.ToString()))?.LastOrDefault()
+                                    Dim split = splits.WhereF(Function(x) x.Contains(latestVersion.Version.ToString()))?.LastOrDefault()
 
-                                    If split <> "" Then
+                                    If split.NotNullOrEmptyS Then
                                         Dim changes = 0
 
                                         td.Content += "Changes in this version:" + BR
@@ -115,7 +116,7 @@ Public Class StaxRipUpdate
                                             If changes >= 20 Then
                                                 td.Content += "..."
                                                 Exit For
-                                            ElseIf line.StartsWith("-") Then
+                                            ElseIf line.StartsWith("-", StringComparison.Ordinal) Then
                                                 td.Content += line + BR
                                                 changes += 1
                                             End If

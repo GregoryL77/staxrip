@@ -1,7 +1,5 @@
 
-$ErrorActionPreference = 'Stop'
-
-Get-ChildItem (Join-Path $PSScriptRoot bin) AviSynth.dll -Recurse | where Length -eq 0 | Remove-Item
+$output32bit = $false
 
 $include = @(
     '*.config',
@@ -46,11 +44,13 @@ $versionInfo = [Diagnostics.FileVersionInfo]::GetVersionInfo($exeFile)
 $vsDir       = 'C:\Program Files (x86)\Microsoft Visual Studio\2019'
 $msBuild     = $vsDir + '\Community\MSBuild\Current\Bin\MSBuild.exe'
 
-& $msBuild ($PSScriptRoot + '\StaxRip.sln') -t:Rebuild -p:Configuration=Release -p:Platform=x86
+if ($output32bit) {
+    & $msBuild ($PSScriptRoot + '\StaxRip.sln') -t:Rebuild -p:Configuration=Release -p:Platform=x86
 
-if ($LastExitCode)
-{
-    throw $LastExitCode
+    if ($LastExitCode)
+    {
+        throw $LastExitCode
+    }
 }
 
 & $msBuild ($PSScriptRoot + '\StaxRip.sln') -t:Rebuild -p:Configuration=Release -p:Platform=x64
@@ -76,9 +76,15 @@ else
     $downloadURL = 'https://staxrip.readthedocs.io/introduction.html#stable'
 }
 
-$desktopDir    = [Environment]::GetFolderPath('Desktop')
-$targetDir     = $desktopDir + '\StaxRip-x64-' + $versionInfo.FileVersion + '-' + $releaseType
-$targetDir32   = $desktopDir + '\StaxRip-x86-' + $versionInfo.FileVersion + '-' + $releaseType + "-Experimental"
+$tempDir = 'D:\Work'
+
+if (-not (Test-Path $tempDir))
+{
+    $tempDir = [Environment]::GetFolderPath('Desktop')
+}
+
+$targetDir     = $tempDir + '\StaxRip-x64-' + $versionInfo.FileVersion + '-' + $releaseType
+$targetDir32   = $tempDir + '\StaxRip-x86-' + $versionInfo.FileVersion + '-' + $releaseType + "-Experimental"
 
 if (Test-Path $targetDir)
 {
@@ -90,8 +96,11 @@ if (Test-Path $targetDir32)
     Remove-Item $targetDir32 -Recurse
 }
 
-Copy-Item ($PSScriptRoot + '\bin')     $targetDir   -Recurse
-Copy-Item ($PSScriptRoot + '\bin-x86') $targetDir32 -Recurse
+Copy-Item ($PSScriptRoot + '\bin') $targetDir -Recurse
+
+if ($output32bit) {
+    Copy-Item ($PSScriptRoot + '\bin-x86') $targetDir32 -Recurse
+}
 
 $patterns = @(
     '*\_StaxRip.log',
@@ -147,11 +156,13 @@ if ($LastExitCode)
     throw $LastExitCode
 }
 
-& $7z a -t7z -mx9 "$targetDir32.7z" -r "$targetDir32\*"
+if ($output32bit) {
+    & $7z a -t7z -mx9 "$targetDir32.7z" -r "$targetDir32\*"
 
-if ($LastExitCode)
-{
-    throw $LastExitCode
+    if ($LastExitCode)
+    {
+        throw $LastExitCode
+    }
 }
 
 if ($releaseType -eq 'Beta' -or $releaseType -eq 'beta-without-apps')
@@ -176,13 +187,18 @@ if ($releaseType -eq 'Beta' -or $releaseType -eq 'beta-without-apps')
                 throw $targetFile
             }
 
-            if (Test-Path $targetFile32)
-            {
-                throw $targetFile32
+            if ($output32bit) {
+                if (Test-Path $targetFile32) {
+                    throw $targetFile32
+                }
             }
 
             Copy-Item "$targetDir.7z"   $targetFile
-            Copy-Item "$targetDir32.7z" $targetFile32
+
+            if ($output32bit) {
+                Copy-Item "$targetDir32.7z" $targetFile32
+            }
+
             Invoke-Item $outputDirectory
         }
     }

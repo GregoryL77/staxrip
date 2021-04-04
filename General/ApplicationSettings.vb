@@ -106,7 +106,7 @@ Public Class ApplicationSettings
             If VideoEncoderProfiles Is Nothing Then
                 VideoEncoderProfiles = VideoEncoder.GetDefaults()
             Else
-                Dim profiles As New List(Of VideoEncoder)
+                Dim profiles As New List(Of VideoEncoder)(32)
 
                 Try
                     For Each i In VideoEncoderProfiles
@@ -127,7 +127,7 @@ Public Class ApplicationSettings
             If AudioProfiles Is Nothing Then
                 AudioProfiles = AudioProfile.GetDefaults()
             Else
-                Dim l As New List(Of AudioProfile)
+                Dim l As New List(Of AudioProfile)(16)
 
                 For Each i In AudioProfiles
                     If Not i.Name.Contains("Backup") Then
@@ -233,7 +233,7 @@ Public Class ApplicationSettings
             CmdlPresetsMP4 = "iPod = -ipod"
         End If
 
-        If Check(CmdlPresetsX264, "x264 custom command line menu presets", 6) OrElse CmdlPresetsX264 = "" Then
+        If Check(CmdlPresetsX264, "x264 custom command line menu presets", 6) OrElse CmdlPresetsX264.NullOrEmptyS Then
             CmdlPresetsX264 = "SAR | PAL | 4:3 = --sar 12:11" + BR +
                               "SAR | PAL | 16:9 = --sar 16:11" + BR +
                               "SAR | NTSC | 4:3 = --sar 10:11" + BR +
@@ -293,7 +293,7 @@ Public Class ApplicationSettings
                 Dim unknown = current.Where(Function(filter) Not defaultScripts.Contains(filter.Script))
 
                 For Each i In unknown
-                    If Not i.Path?.StartsWith("Backup | ") Then
+                    If Not i.Path?.StartsWith("Backup | ", StringComparison.Ordinal) Then
                         i.Path = "Backup | " + i.Path
                     End If
 
@@ -313,7 +313,7 @@ Public Class ApplicationSettings
                 Dim unknown = current.Where(Function(filter) Not defaultScripts.Contains(filter.Script))
 
                 For Each i In unknown
-                    If Not i.Path?.StartsWith("Backup | ") Then
+                    If Not i.Path?.StartsWith("Backup | ", StringComparison.Ordinal) Then
                         i.Path = "Backup | " + i.Path
                     End If
 
@@ -326,7 +326,7 @@ Public Class ApplicationSettings
             FilterSetupProfiles = VideoScript.GetDefaults
         End If
 
-        If LastSourceDir = "" Then
+        If LastSourceDir.NullOrEmptyS Then
             LastSourceDir = ""
         End If
 
@@ -442,8 +442,8 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
 
     Sub UpdateRecentProjects(path As String)
         Dim skip = Not File.Exists(path) OrElse
-            path.StartsWith(Folder.Template) OrElse
-            path.EndsWith("recovery.srip") OrElse
+            path.StartsWith(Folder.Template, StringComparison.Ordinal) OrElse
+            path.EndsWith("recovery.srip", StringComparison.Ordinal) OrElse
             path.Ext = "bin"
 
         Dim list As New List(Of String)
@@ -453,7 +453,7 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
         End If
 
         For Each i In s.RecentProjects
-            If i <> path AndAlso File.Exists(i) Then
+            If Not i.EqualsEx(path) AndAlso File.Exists(i) Then
                 list.Add(i)
             End If
         Next
@@ -468,9 +468,9 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
     Public Function GetFFLogLevel(DefaultVal As FfLogLevel) As String
 
         If FfmpegLogLevel = FfLogLevel.panic Then 'panic as placeholder for default
-            Return If(DefaultVal = FfLogLevel.info, "", " -loglevel " & DefaultVal.ToString)
+            Return If(DefaultVal = FfLogLevel.info, "", " -loglevel " & KGySoft.CoreLibraries.[Enum](Of FfLogLevel).ToString(DefaultVal))
         Else
-            Return If(FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & FfmpegLogLevel.ToString)
+            Return If(FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & KGySoft.CoreLibraries.[Enum](Of FfLogLevel).ToString(FfmpegLogLevel))
         End If
 
     End Function

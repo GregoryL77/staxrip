@@ -23,7 +23,7 @@ Public Class CommandLineForm
         Dim singleList As New List(Of String)
 
         For Each param In params.Items
-            If param.GetKey = "" OrElse singleList.Contains(param.GetKey) Then
+            If param.GetKey.NullOrEmptyS OrElse singleList.Contains(param.GetKey) Then
                 Throw New Exception("key found twice: " + param.GetKey)
             End If
 
@@ -42,7 +42,7 @@ Public Class CommandLineForm
         cbGoTo.SendMessageCue("Search")
         cbGoTo.Select()
 
-        cms.Add("Execute Command Line", Sub() params.Execute(), p.SourceFile <> "").SetImage(Symbol.fa_terminal)
+        cms.Add("Execute Command Line", Sub() params.Execute(), p.SourceFile.NotNullOrEmptyS).SetImage(Symbol.fa_terminal)
 
         cms.Add("Copy Command Line", Sub()
                                          Clipboard.SetText(params.GetCommandLine(True, True))
@@ -84,15 +84,15 @@ Public Class CommandLineForm
 
             Dim help As String = Nothing
 
-            If param.Switch <> "" Then
+            If param.Switch.NotNullOrEmptyS Then
                 help += param.Switch + BR
             End If
 
-            If param.HelpSwitch <> "" Then
+            If param.HelpSwitch.NotNullOrEmptyS Then
                 help += param.HelpSwitch + BR
             End If
 
-            If param.NoSwitch <> "" Then
+            If param.NoSwitch.NotNullOrEmptyS Then
                 help += param.NoSwitch + BR
             End If
 
@@ -122,21 +122,19 @@ Public Class CommandLineForm
                 help += String.Join(BR, param.URLs.Select(Function(val) "[" + val + " " + val + "]"))
             End If
 
-            If param.Help <> "" Then
+            If param.Help.NotNullOrEmptyS Then
                 help += param.Help
             End If
 
-            If help <> "" Then
-                If help.Contains(BR2 + BR) Then
-                    help = help.Replace(BR2 + BR, BR2)
-                End If
+            If help.NotNullOrEmptyS Then
+                help = help.Replace(BR2 + BR, BR2)
 
-                If help.EndsWith(BR) Then
+                If help.EndsWith(BR, StringComparison.Ordinal) Then
                     help = help.Trim
                 End If
             End If
 
-            If param.Label <> "" Then
+            If param.Label.NotNullOrEmptyS Then
                 SimpleUI.AddLabel(parent, param.Label).MarginTop = FontHeight \ 2
             End If
 
@@ -144,7 +142,7 @@ Public Class CommandLineForm
                 Dim checkBox = SimpleUI.AddBool(parent)
                 checkBox.Text = param.Text
 
-                If param.HelpSwitch <> "" Then
+                If param.HelpSwitch.NotNullOrEmptyS Then
                     Dim helpID = param.HelpSwitch
                     checkBox.HelpAction = Sub() Params.ShowHelp(helpID)
                 Else
@@ -158,9 +156,9 @@ Public Class CommandLineForm
                 Dim tempNumParam = DirectCast(param, NumParam)
                 Dim nParam = DirectCast(param, NumParam)
                 Dim numBlock = SimpleUI.AddNum(parent)
-                numBlock.Label.Text = If(param.Text.EndsWith(":"), param.Text, param.Text + ":")
+                numBlock.Label.Text = If(param.Text.EndsWith(":", StringComparison.Ordinal), param.Text, param.Text & ":")
 
-                If param.HelpSwitch <> "" Then
+                If param.HelpSwitch.NotNullOrEmptyS Then
                     Dim helpID = param.HelpSwitch
                     numBlock.Label.HelpAction = Sub() Params.ShowHelp(helpID)
                 Else
@@ -175,9 +173,9 @@ Public Class CommandLineForm
                 Dim tempOptionParam = DirectCast(param, OptionParam)
                 Dim oParam = DirectCast(param, OptionParam)
                 Dim menuBlock = SimpleUI.AddMenu(Of Integer)(parent)
-                menuBlock.Label.Text = If(param.Text.EndsWith(":"), param.Text, param.Text + ":")
+                menuBlock.Label.Text = If(param.Text.EndsWith(":", StringComparison.Ordinal), param.Text, param.Text + ":")
 
-                If param.HelpSwitch <> "" Then
+                If param.HelpSwitch.NotNullOrEmptyS Then
                     Dim helpID = param.HelpSwitch
                     menuBlock.Label.HelpAction = Sub() Params.ShowHelp(helpID)
                     menuBlock.Button.HelpAction = Sub() Params.ShowHelp(helpID)
@@ -201,11 +199,11 @@ Public Class CommandLineForm
                 Dim tempItem = DirectCast(param, StringParam)
                 Dim textBlock As SimpleUI.TextBlock
 
-                If tempItem.BrowseFileFilter <> "" Then
+                If tempItem.BrowseFileFilter.NotNullOrEmptyS Then
                     Dim textButtonBlock = SimpleUI.AddTextButton(parent)
                     textButtonBlock.BrowseFile(tempItem.BrowseFileFilter)
                     textBlock = textButtonBlock
-                ElseIf tempItem.Menu <> "" Then
+                ElseIf tempItem.Menu.NotNullOrEmptyS Then
                     Dim textMenuBlock = SimpleUI.AddTextMenu(parent)
                     textMenuBlock.AddMenu(tempItem.Menu)
                     textBlock = textMenuBlock
@@ -213,9 +211,9 @@ Public Class CommandLineForm
                     textBlock = SimpleUI.AddText(parent)
                 End If
 
-                textBlock.Label.Text = If(param.Text.EndsWith(":"), param.Text, param.Text + ":")
+                textBlock.Label.Text = If(param.Text.EndsWith(":", StringComparison.Ordinal), param.Text, param.Text + ":")
 
-                If param.HelpSwitch <> "" Then
+                If param.HelpSwitch.NotNullOrEmptyS Then
                     Dim helpID = param.HelpSwitch
                     textBlock.Label.HelpAction = Sub() Params.ShowHelp(helpID)
                 Else
@@ -274,7 +272,7 @@ Public Class CommandLineForm
         form.Doc.WriteParagraph("The context help is shown with a right-click on a label, dropdown menu or checkbox.")
         form.Doc.WriteParagraph("The command line preview at the bottom of the dialog has a context menu that allows to quickly find and show options.")
 
-        If HTMLHelp <> "" Then
+        If HTMLHelp.NotNullOrEmptyS Then
             form.Doc.Writer.WriteRaw(HTMLHelp)
         End If
 
@@ -301,9 +299,9 @@ Public Class CommandLineForm
             HighlightedControl = Nothing
         End If
 
-        Dim find = cbGoTo.Text.ToLower
+        Dim find = cbGoTo.Text.ToLowerInvariant
         Dim findNoSpace = find.Replace(" ", "")
-        Dim matchedItems As New HashSet(Of Item)
+        Dim matchedItems As New HashSet(Of Item)(64)
 
         If find.Length > 1 Then
             For Each item In Items
@@ -335,7 +333,7 @@ Public Class CommandLineForm
 
                 If Not item.Param.Switches Is Nothing Then
                     For Each switch In item.Param.Switches
-                        If switch.ToLower.Contains(find) Then
+                        If switch.ToLowerInvariant.Contains(find) Then
                             matchedItems.Add(item)
                         End If
                     Next
@@ -348,19 +346,19 @@ Public Class CommandLineForm
                         For Each value In param.Options
                             Dim valueNoSpace = value.Replace(" ", "")
 
-                            If value.ToLower.Contains(find) Then
+                            If value.ToLowerInvariant.Contains(find) Then
                                 matchedItems.Add(item)
                             End If
 
-                            If valueNoSpace.ToLower.Contains(findNoSpace) Then
+                            If valueNoSpace.ToLowerInvariant.Contains(findNoSpace) Then
                                 matchedItems.Add(item)
                             End If
 
-                            If value.ToLower.Contains(findNoSpace) Then
+                            If value.ToLowerInvariant.Contains(findNoSpace) Then
                                 matchedItems.Add(item)
                             End If
 
-                            If valueNoSpace.ToLower.Contains(find) Then
+                            If valueNoSpace.ToLowerInvariant.Contains(find) Then
                                 matchedItems.Add(item)
                             End If
                         Next
@@ -370,19 +368,19 @@ Public Class CommandLineForm
                         For Each value In param.Values
                             Dim valueNoSpace = value.Replace(" ", "")
 
-                            If value.ToLower.Contains(find) Then
+                            If value.ToLowerInvariant.Contains(find) Then
                                 matchedItems.Add(item)
                             End If
 
-                            If valueNoSpace.ToLower.Contains(findNoSpace) Then
+                            If valueNoSpace.ToLowerInvariant.Contains(findNoSpace) Then
                                 matchedItems.Add(item)
                             End If
 
-                            If value.ToLower.Contains(findNoSpace) Then
+                            If value.ToLowerInvariant.Contains(findNoSpace) Then
                                 matchedItems.Add(item)
                             End If
 
-                            If valueNoSpace.ToLower.Contains(find) Then
+                            If valueNoSpace.ToLowerInvariant.Contains(find) Then
                                 matchedItems.Add(item)
                             End If
                         Next
@@ -390,10 +388,10 @@ Public Class CommandLineForm
                 End If
             Next
 
-            Dim visibleItems = matchedItems.Where(Function(arg) arg.Param.Visible)
+            Dim visibleItems = matchedItems.Where(Function(arg) arg.Param.Visible).ToArray
 
-            If visibleItems.Count > 0 Then
-                If SearchIndex >= visibleItems.Count Then
+            If visibleItems.Length > 0 Then
+                If SearchIndex >= visibleItems.Length Then
                     SearchIndex = 0
                 End If
 
@@ -405,7 +403,6 @@ Public Class CommandLineForm
             End If
         End If
     End Sub
-
     Sub UpdateSearchComboBox()
         cbGoTo.Items.Clear()
 
@@ -419,15 +416,15 @@ Public Class CommandLineForm
                     Next
                 End If
 
-                If i.Param.Switch <> "" AndAlso Not cbGoTo.Items.Contains(i.Param.Switch) Then
+                If i.Param.Switch.NotNullOrEmptyS AndAlso Not cbGoTo.Items.Contains(i.Param.Switch) Then
                     cbGoTo.Items.Add(i.Param.Switch)
                 End If
 
-                If i.Param.NoSwitch <> "" AndAlso Not cbGoTo.Items.Contains(i.Param.NoSwitch) Then
+                If i.Param.NoSwitch.NotNullOrEmptyS AndAlso Not cbGoTo.Items.Contains(i.Param.NoSwitch) Then
                     cbGoTo.Items.Add(i.Param.NoSwitch)
                 End If
 
-                If i.Param.HelpSwitch <> "" AndAlso Not cbGoTo.Items.Contains(i.Param.HelpSwitch) Then
+                If i.Param.HelpSwitch.NotNullOrEmptyS AndAlso Not cbGoTo.Items.Contains(i.Param.HelpSwitch) Then
                     cbGoTo.Items.Add(i.Param.HelpSwitch)
                 End If
             End If
@@ -453,10 +450,10 @@ Public Class CommandLineForm
             If find.Length = 0 Then
                 Dim pos = rtbCommandLine.SelectionStart
                 Dim leftString = rtbCommandLine.Text.Substring(0, pos)
-                Dim left = leftString.LastIndexOf(" ") + 1
+                Dim left = leftString.LastIndexOf(" ", StringComparison.Ordinal) + 1
                 Dim right = rtbCommandLine.Text.Length
                 Dim rightString = rtbCommandLine.Text.Substring(pos)
-                Dim index = rightString.IndexOf(" ")
+                Dim index = rightString.IndexOf(" ", StringComparison.Ordinal)
 
                 If index > -1 Then
                     right = pos + index
@@ -483,7 +480,7 @@ Public Class CommandLineForm
     End Sub
 
     Sub rtbCommandLine_MouseDown(sender As Object, e As MouseEventArgs) Handles rtbCommandLine.MouseDown
-        If e.Button = MouseButtons.Right AndAlso rtbCommandLine.SelectedText = "" Then
+        If e.Button = MouseButtons.Right AndAlso rtbCommandLine.SelectedText.NullOrEmptyS Then
             rtbCommandLine.SelectionStart = rtbCommandLine.GetCharIndexFromPosition(e.Location)
         End If
     End Sub

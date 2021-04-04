@@ -164,7 +164,7 @@ Namespace UI
             Dim ret As TreeNode = Nothing
 
             For Each iNodeName In pathElements
-                If currentPath <> "" Then
+                If currentPath.NotNullOrEmptyS Then
                     currentPath += "|"
                 End If
 
@@ -291,7 +291,7 @@ Namespace UI
             Dim textOffset As Integer
             Dim lineHeight = CInt(Height / 2)
 
-            If Text <> "" Then
+            If Text.NotNullOrEmptyS Then
                 Dim textSize = e.Graphics.MeasureString(Text, Font)
                 textOffset = CInt(textSize.Width)
 
@@ -344,7 +344,7 @@ Namespace UI
         Protected Overrides Sub OnCreateControl()
             MyBase.OnCreateControl()
 
-            If Note <> "" Then
+            If Note.NotNullOrEmptyS Then
                 Text += BR2 + Note
             End If
         End Sub
@@ -499,7 +499,7 @@ Namespace UI
             AddHandler cms.Opening, Sub()
                                         cutItem.Visible = SelectionLength > 0 AndAlso Not Me.ReadOnly
                                         copyItem.Visible = SelectionLength > 0
-                                        pasteItem.Visible = Clipboard.GetText <> "" AndAlso Not Me.ReadOnly
+                                        pasteItem.Visible = Clipboard.GetText.NotNullOrEmptyS AndAlso Not Me.ReadOnly
                                     End Sub
 
             ContextMenuStrip = cms
@@ -685,7 +685,7 @@ Namespace UI
         End Sub
 
         Sub SetHelpHeight()
-            If Description <> "" Then
+            If Description.NotNullOrEmptyS Then
                 HelpVisible = True
 
                 Dim lines = CInt(Math.Ceiling(CreateGraphics.MeasureString(
@@ -757,7 +757,7 @@ Namespace UI
                 Return Label.Text
             End Get
             Set(value As String)
-                If Not value.EndsWith(" ") Then
+                If Not value.EndsWith(" ", StringComparison.Ordinal) Then
                     value += " "
                 End If
 
@@ -834,7 +834,7 @@ Namespace UI
                     Next
                 End If
 
-                If Text = "" AndAlso Not value Is Nothing Then Text = value.ToString
+                If Text.NullOrEmptyS AndAlso Not value Is Nothing Then Text = value.ToString
 
                 ValueValue = value
             End Set
@@ -867,12 +867,28 @@ Namespace UI
         Function Add(path As String, obj As Object, Optional tip As String = Nothing) As ActionMenuItem
             Items.Add(obj)
             Dim name = path
-            If path.Contains("|") Then name = path.RightLast("|").Trim
+            'If path.Contains("|") Then name = path.RightLast("|").Trim
+            Dim rp = path.RightLast("|")
+            If rp IsNot "" Then name = rp.Trim
             Dim ret = ActionMenuItem.Add(Menu.Items, path, Sub(o As Object) OnAction(name, o), obj, tip)
             ret.Tag = obj
             Return ret
         End Function
-
+        'Function AddRange(path As List(Of String), obj As List(Of Object), Optional tip As List(Of String) = Nothing) As ActionMenuItem()
+        '    Dim retr(path.Count - 1) As ActionMenuItem
+        '    Dim i As Integer
+        '    For itr = 0 To path.Count - 1
+        '        i = itr
+        '        Items.Add(obj(i))
+        '        Dim name = path(i)
+        '        Dim rp = path(i).RightLast("|")
+        '        If rp IsNot "" Then name = rp.Trim
+        '        Dim ret = ActionMenuItem.Add(Menu.Items, path(i), Sub(o As Object) OnAction(name(i), o), obj(i), tip?(i))
+        '        ret.Tag = obj(i)
+        '        retr(i) = ret
+        '    Next itr
+        '    Return retr
+        'End Function
         Sub Clear()
             Items.Clear()
             Menu.Items.ClearAndDisplose
@@ -904,11 +920,11 @@ Namespace UI
         Property LastCommandLine As String
 
         Sub SetText(commandLine As String)
-            If commandLine = LastCommandLine Then
+            If String.Equals(commandLine, LastCommandLine) Then
                 Exit Sub
             End If
 
-            If commandLine = "" Then
+            If commandLine.NullOrEmptyS Then
                 Text = ""
                 LastCommandLine = ""
                 Exit Sub
@@ -920,7 +936,7 @@ Namespace UI
             SelectionColor = ForeColor
             SelectionFont = New Font(Font, FontStyle.Regular)
 
-            If LastCommandLine <> "" Then
+            If LastCommandLine.NotNullOrEmptyS Then
                 Dim selStart = GetCompareIndex(commandLine, LastCommandLine)
                 Dim selEnd = commandLine.Length - GetCompareIndex(ReverseString(commandLine), ReverseString(LastCommandLine))
 
@@ -947,7 +963,8 @@ Namespace UI
 
             SelectionStart = commandLine.Length
             BlockPaint = False
-            Refresh()
+            'Refresh()
+            Invalidate()
             LastCommandLine = commandLine
         End Sub
 
@@ -1047,7 +1064,7 @@ Namespace UI
 
             Dim labelBlocks = From block In Controls.OfType(Of SimpleUI.LabelBlock)() Where block.Label.Offset = 0
 
-            If labelBlocks.Count > 0 Then
+            If labelBlocks.Any Then
                 Dim hMax = Aggregate i In labelBlocks Into Max(TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
 
                 For Each lb In labelBlocks
@@ -1142,7 +1159,7 @@ Namespace UI
                 Dim h = CInt(Font.Height * 0.3)
                 Dim w = h * 2
 
-                Dim x1 = If(Text = "", Width \ 2 - w \ 2, Width - w - CInt(w * 0.7))
+                Dim x1 = If(Text.NullOrEmptyS, Width \ 2 - w \ 2, Width - w - CInt(w * 0.7))
                 Dim y1 = CInt(Height / 2 - h / 2)
 
                 Dim x2 = CInt(x1 + w / 2)
@@ -1324,9 +1341,9 @@ Namespace UI
         Sub ShowBold()
             SetFontStyle(FontStyle.Bold)
 
-            For i = 0 To 20
+            For i = 0 To 10
                 Application.DoEvents()
-                Thread.Sleep(10)
+                Thread.Sleep(30)
             Next
 
             SetFontStyle(FontStyle.Regular)
@@ -1443,7 +1460,7 @@ Namespace UI
 
             Dim caption As String = Nothing
 
-            If DisplayMember <> "" Then
+            If DisplayMember.NotNullOrEmptyS Then
                 Try
                     caption = Items(e.Index).GetType.GetProperty(DisplayMember).GetValue(Items(e.Index), Nothing).ToString
                 Catch ex As Exception
@@ -1582,27 +1599,30 @@ Namespace UI
         End Sub
 
         Sub UpdateControls()
+            Dim itmC As Integer = Items.Count
+            Dim selIdx As Integer = SelectedIndex
+
             If Not RemoveButton Is Nothing Then
-                RemoveButton.Enabled = Not SelectedItem Is Nothing
+                RemoveButton.Enabled = selIdx >= 0
             End If
 
             If Not UpButton Is Nothing Then
-                UpButton.Enabled = SelectedIndex > 0
+                UpButton.Enabled = selIdx > 0
             End If
 
             If Not DownButton Is Nothing Then
-                DownButton.Enabled = SelectedIndex > -1 AndAlso SelectedIndex < Items.Count - 1
+                DownButton.Enabled = selIdx > -1 AndAlso selIdx < itmC - 1
             End If
 
             If Not Button1 Is Nothing Then
-                Button1.Enabled = Not SelectedItem Is Nothing
+                Button1.Enabled = selIdx >= 0
             End If
 
             If Not Button2 Is Nothing Then
-                Button2.Enabled = Not SelectedItem Is Nothing
+                Button2.Enabled = selIdx >= 0
             End If
 
-            If SelectedIndex = -1 AndAlso Items.Count > 0 Then
+            If selIdx = -1 AndAlso itmC > 0 Then
                 SelectedIndex = 0
             End If
         End Sub

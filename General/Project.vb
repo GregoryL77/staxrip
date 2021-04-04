@@ -124,7 +124,7 @@ Public Class Project
         If TargetFile Is Nothing Then TargetFile = ""
 
         If Check(PreferredSubtitles, "Automatically Included Subtitles", 2) Then
-            If Language.CurrentCulture.TwoLetterCode = "en" Then
+            If Language.CurrentCulture.TwoLetterCode.Equals("en") Then
                 PreferredSubtitles = "eng und"
             Else
                 PreferredSubtitles = Language.CurrentCulture.ThreeLetterCode + " eng und"
@@ -132,7 +132,7 @@ Public Class Project
         End If
 
         If Check(PreferredAudio, "Preferred Audio Languages", 1) Then
-            If Language.CurrentCulture.TwoLetterCode = "en" Then
+            If Language.CurrentCulture.TwoLetterCode.Equals("en") Then
                 PreferredAudio = "eng und"
             Else
                 PreferredAudio = Language.CurrentCulture.ThreeLetterCode + " eng und"
@@ -227,14 +227,14 @@ Public Class Project
             Return TargetFileValue
         End Get
         Set(ByVal value As String)
-            If value <> TargetFileValue Then
-                If value <> "" AndAlso Not value.FileName.IsValidFileName Then
+            If Not EqualsEx(value, TargetFileValue) Then
+                If value.NotNullOrEmptyS AndAlso Not value.FileName.IsValidFileName Then
                     MsgWarn("Filename contains invalid characters.")
                     Exit Property
                 End If
 
                 If Text.Encoding.Default.CodePage <> 65001 AndAlso
-                    Not value.IsANSICompatible AndAlso Script.Engine = ScriptEngine.AviSynth Then
+                     Script.Engine = ScriptEngine.AviSynth AndAlso Not value.IsANSICompatible Then
 
                     MsgWarn(Strings.NoUnicode)
                     Exit Property

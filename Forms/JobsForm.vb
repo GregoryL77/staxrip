@@ -1,7 +1,7 @@
 
 Imports System.Threading
 Imports System.Threading.Tasks
-
+Imports KGySoft.Collections
 Imports StaxRip.UI
 
 Friend Class JobsForm
@@ -349,7 +349,7 @@ Friend Class JobsForm
             Exit Sub
         End If
 
-        Dim jobs As New List(Of Job)
+        Dim jobs As New CircularList(Of Job)
 
         For Each item As ListViewItem In lv.Items
             If Not item Is Nothing Then

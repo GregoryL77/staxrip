@@ -1,7 +1,6 @@
 ﻿
 Imports System.Net.Http
 Imports System.Text.RegularExpressions
-
 Imports Microsoft.VisualBasic
 Imports StaxRip.UI
 
@@ -32,7 +31,7 @@ Public Class ToolUpdate
                 Continue For
             End If
 
-            If Package.Include <> "" AndAlso Not url.Contains(Package.Include) Then
+            If Package.Include.NotNullOrEmptyS AndAlso Not url.Contains(Package.Include) Then
                 Continue For
             End If
 
@@ -71,7 +70,7 @@ Public Class ToolUpdate
     End Sub
 
     Sub Extract()
-        If DownloadFile.Ext <> "7z" AndAlso DownloadFile.Ext <> "zip" Then
+        If Not DownloadFile.Ext.Equals("7z") AndAlso Not DownloadFile.Ext.Equals("zip") Then
             Exit Sub
         End If
 
@@ -199,9 +198,7 @@ Public Class ToolUpdate
         Dim base = DownloadFile.Base
 
         For Each i In {"_x64", "_x86", "-64-bit-", "-32-bit-"}
-            If base.Contains(i) Then
-                base = base.Replace(i, "")
-            End If
+            base = base.Replace(i, "")
         Next
 
         For Each i In base
@@ -213,7 +210,7 @@ Public Class ToolUpdate
         UpdatePackageDialog()
         Dim input = InputBox.Show(msg, "StaxRip", value)
 
-        If input <> "" Then
+        If input.NotNullOrEmptyS Then
             Package.SetVersion(input.Replace(";", "_"))
             UpdatePackageDialog()
             g.DefaultCommands.TestAndDynamicFileCreation()

@@ -268,6 +268,8 @@ Namespace UI
                 Return "AudioConverter"
             ElseIf TypeOf form Is MainForm Then
                 Return "StaxRip"
+            ElseIf TypeOf form Is AudioForm Then
+                Return "Audio Settings"
             ElseIf TypeOf form Is HelpForm Then
                 Return "Help"
             ElseIf TypeOf form Is PreviewForm Then

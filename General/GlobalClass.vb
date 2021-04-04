@@ -13,6 +13,7 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms.VisualStyles
 
+Imports JM.LinqFaster
 Imports Microsoft.Win32
 Imports StaxRip.UI
 Imports VB6 = Microsoft.VisualBasic
@@ -108,7 +109,7 @@ Public Class GlobalClass
         info.UseShellExecute = False
         info.FileName = fileName
 
-        If arguments <> "" Then
+        If arguments.NotNullOrEmptyS Then
             info.Arguments = arguments
         End If
 
@@ -121,7 +122,7 @@ Public Class GlobalClass
 
     Sub ShellExecute(fileName As String, Optional arguments As String = Nothing)
         Try
-            If Not fileName.StartsWith("http") AndAlso fileName.Ext.EqualsAny("htm", "html") Then
+            If Not fileName.StartsWith("http", StringComparison.Ordinal) AndAlso fileName.Ext.EqualsAny("htm", "html") Then
                 Dim browser = g.GetAppPathForExtension("htm", "html")
 
                 If Not browser.FileName.EqualsAny("chrome.exe", "firefox.exe") Then
@@ -153,19 +154,19 @@ Public Class GlobalClass
         Dim newPath = path
 
         For Each d In dirs
-            If d.DirExists AndAlso Not d.StartsWith(Folder.System) AndAlso Not path.Contains(d + ";") Then
+            If d.DirExists AndAlso Not d.StartsWith(Folder.System, StringComparison.Ordinal) AndAlso Not path.Contains(d + ";") Then
                 newPath = d + ";" + newPath
             End If
         Next
 
-        If newPath <> path Then
+        If Not newPath.Equals(path) Then
             Environment.SetEnvironmentVariable("path", newPath)
         End If
     End Sub
 
     Function IsFixedDrive(path As String) As Boolean
         Try
-            If path <> "" Then
+            If path.NotNullOrEmptyS Then
                 Return New DriveInfo(path).DriveType = DriveType.Fixed
             End If
         Catch
@@ -175,7 +176,7 @@ Public Class GlobalClass
     Sub ProcessJobs()
         Dim jobs = JobManager.ActiveJobs
 
-        If jobs.Count = 0 Then
+        If Not jobs.Any Then
             Exit Sub
         End If
 
@@ -193,13 +194,13 @@ Public Class GlobalClass
             ProcessJob(jobPath)
             jobs = JobManager.GetJobs
 
-            If jobs.Count = 0 Then
+            If Not jobs.Any Then
                 g.RaiseAppEvent(ApplicationEvent.JobsProcessed)
                 g.ShutdownPC()
-            ElseIf JobManager.ActiveJobs.Count = 0 OrElse g.StopAfterCurrentJob Then
+            ElseIf Not JobManager.ActiveJobs.Any OrElse g.StopAfterCurrentJob Then
                 g.RaiseAppEvent(ApplicationEvent.JobsProcessed)
 
-                If Process.GetProcessesByName("StaxRip").Count = 1 Then
+                If Process.GetProcessesByName("StaxRip").Length = 1 Then
                     g.ShutdownPC()
                 End If
             Else
@@ -250,7 +251,7 @@ Public Class GlobalClass
 
             Dim err = p.Script.GetError
 
-            If err <> "" Then
+            If err.NotNullOrEmptyS Then
                 Throw New ErrorAbortException($"{p.Script.Engine} Script Error", err)
             End If
 
@@ -341,7 +342,7 @@ Public Class GlobalClass
             g.RaiseAppEvent(ApplicationEvent.JobProcessed)
             JobManager.RemoveJob(jobPath)
 
-            If jobPath.StartsWith(Folder.Settings + "Batch Projects\") Then
+            If jobPath.StartsWith(Folder.Settings + "Batch Projects\", StringComparison.Ordinal) Then
                 File.Delete(jobPath)
             End If
         Catch ex As SkipException
@@ -361,7 +362,7 @@ Public Class GlobalClass
     End Function
 
     Sub DeleteTempFiles()
-        If s.DeleteTempFilesMode <> DeleteMode.Disabled AndAlso p.TempDir.EndsWith("_temp\") Then
+        If s.DeleteTempFilesMode <> DeleteMode.Disabled AndAlso p.TempDir.EndsWith("_temp\", StringComparison.Ordinal) Then
             Try
                 Dim moreJobsToProcessInTempDir = JobManager.GetJobs.Where(Function(a) a.Active AndAlso a.Path.Contains(p.TempDir))
 
@@ -432,7 +433,7 @@ Public Class GlobalClass
     Function VerifySource(files As IEnumerable(Of String)) As Boolean
         For Each file In files
             If Encoding.Default.CodePage <> 65001 AndAlso
-                Not file.IsANSICompatible AndAlso p.Script.Engine = ScriptEngine.AviSynth Then
+                 p.Script.Engine = ScriptEngine.AviSynth AndAlso Not file.IsANSICompatible Then
 
                 MsgError(Strings.NoUnicode)
                 Return False
@@ -488,7 +489,7 @@ Public Class GlobalClass
 
         Dim args As String
 
-        If cliArgs <> "" Then
+        If cliArgs.NotNullOrEmptyS Then
             args += " " + cliArgs
         End If
 
@@ -516,7 +517,7 @@ Public Class GlobalClass
             args += " --demuxer-lavf-format=vapoursynth"
         End If
 
-        If cliArgs <> "" Then
+        If cliArgs.NotNullOrEmptyS Then
             args += " " + cliArgs
         End If
 
@@ -558,7 +559,7 @@ Public Class GlobalClass
     End Sub
 
     Sub ShowHelp(title As String, content As String)
-        If title <> "" Then
+        If title.NotNullOrEmptyS Then
             title = title.TrimEnd("."c, ":"c)
         End If
 
@@ -637,7 +638,7 @@ Public Class GlobalClass
     Function GetTextEditorPath() As String
         Dim ret = GetAppPathForExtension("txt")
 
-        If ret <> "" Then
+        If ret.NotNullOrEmptyS Then
             Return ret
         End If
 
@@ -646,7 +647,7 @@ Public Class GlobalClass
 
     Function GetAppPathForExtension(ParamArray extensions As String()) As String
         For Each extension In extensions
-            If Not extension.StartsWith(".") Then
+            If Not extension.StartsWith(".", StringComparison.Ordinal) Then
                 extension = "." + extension
             End If
 
@@ -782,7 +783,7 @@ Public Class GlobalClass
 
                     Dim command = g.MainForm.CustomMainMenu.CommandManager.GetCommand(ec.CommandParameters.MethodName)
 
-                    If s.LogEventCommand AndAlso p.SourceFile <> "" Then
+                    If s.LogEventCommand AndAlso p.SourceFile.NotNullOrEmptyS Then
                         Log.WriteHeader("Event Command: " + ec.Name)
                         Log.WriteLine("Event: " + DispNameAttribute.GetValueForEnum(ec.Event))
                         Log.WriteLine("Command: " + command.MethodInfo.Name)
@@ -796,11 +797,11 @@ Public Class GlobalClass
     End Sub
 
     Sub SetTempDir()
-        If p.SourceFile <> "" Then
+        If p.SourceFile.NotNullOrEmptyS Then
             p.TempDir = Macro.Expand(p.TempDir)
 
-            If p.TempDir = "" Then
-                If p.SourceFile.Dir.EndsWith("_temp\") Then
+            If p.TempDir.NullOrEmptyS Then
+                If p.SourceFile.Dir.EndsWith("_temp\", StringComparison.Ordinal) Then
                     p.TempDir = p.SourceFile.Dir
                 Else
                     p.TempDir = p.SourceFile.Dir + p.SourceFile.Base + "_temp\"
@@ -873,7 +874,7 @@ Public Class GlobalClass
             Return False
         End If
 
-        If p.SourceScript.GetError <> "" Then
+        If p.SourceScript.GetError.NotNullOrEmptyS Then
             MsgError("Script Error", p.SourceScript.GetError)
             Return False
         End If
@@ -890,11 +891,11 @@ Public Class GlobalClass
     End Function
 
     Function IsSourceSame(path As String) As Boolean
-        Return path.Base.StartsWith(p.SourceFile.Base) OrElse path.StartsWithEx(p.TempDir)
+        Return path.Base.StartsWith(p.SourceFile.Base, StringComparison.Ordinal) OrElse path.StartsWithEx(p.TempDir)
     End Function
 
     Function GetAudioProfiles() As List(Of AudioProfile)
-        Dim ret As New List(Of AudioProfile)
+        Dim ret As New List(Of AudioProfile)(8)
 
         ret.Add(p.Audio0)
         ret.Add(p.Audio1)
@@ -907,11 +908,11 @@ Public Class GlobalClass
         Dim ret As New List(Of String)
         Dim dirs As New HashSet(Of String)
 
-        If p.TempDir <> "" Then
+        If p.TempDir.NotNullOrEmptyS Then
             dirs.Add(p.TempDir)
         End If
 
-        If p.TempDir?.EndsWith("_temp\") Then
+        If p.TempDir?.EndsWith("_temp\", StringComparison.Ordinal) Then
             dirs.Add(p.TempDir.Parent)
         End If
 
@@ -928,18 +929,18 @@ Public Class GlobalClass
         If p.SourceFile.Contains("_") Then
             Dim sourceBase = p.SourceFile.Base
 
-            While sourceBase.Length > 2 AndAlso sourceBase.ToCharArray.Last.IsDigit
+            While sourceBase.Length > 2 AndAlso sourceBase.ToCharArray.LastF.IsDigitEx
                 sourceBase = sourceBase.DeleteRight(1)
             End While
 
-            If sourceBase.EndsWith("_") AndAlso path.Base.StartsWith(sourceBase.TrimEnd("_"c)) Then
+            If sourceBase.EndsWith("_", StringComparison.Ordinal) AndAlso path.Base.StartsWith(sourceBase.TrimEnd({"_"c}), StringComparison.Ordinal) Then
                 Return True
             End If
         End If
     End Function
 
     Function IsCulture(twoLetterCode As String) As Boolean
-        Return CultureInfo.CurrentCulture.TwoLetterISOLanguageName = twoLetterCode
+        Return CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals(twoLetterCode)
     End Function
 
     Private ExceptionHandled As Boolean
@@ -956,7 +957,7 @@ Public Class GlobalClass
                 If File.Exists(p.SourceFile) Then
                     Dim name = p.TargetFile.Base
 
-                    If name = "" Then
+                    If name.NullOrEmptyS Then
                         name = p.SourceFile.Base
                     End If
 
@@ -981,8 +982,13 @@ Public Class GlobalClass
             End Try
 
             If Not noKill Then
-                RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-                Process.GetCurrentProcess.Kill()
+                Try
+                    g.MainForm?.Close()
+                    Application.Exit()
+                    RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+                Finally
+                    Process.GetCurrentProcess.Kill()
+                End Try
             End If
 
         End If
@@ -996,7 +1002,7 @@ Public Class GlobalClass
 
         Try
             Using td As New TaskDialog(Of String)
-                If mainInstruction = "" Then
+                If mainInstruction.NullOrEmptyS Then
                     If TypeOf ex Is ErrorAbortException Then
                         td.MainInstruction = DirectCast(ex, ErrorAbortException).Title + $" ({Application.ProductVersion})"
                     Else
@@ -1089,7 +1095,7 @@ Public Class GlobalClass
             find = switch
         End If
 
-        If find = "" Then
+        If find.NullOrEmptyS Then
             Exit Sub
         End If
 
@@ -1252,7 +1258,7 @@ Public Class GlobalClass
 
     Sub ShowScriptInfo(script As VideoScript)
         script.Synchronize()
-        Dim text = If(script.Error = "", script.Info.GetInfoText(-1), script.Error)
+        Dim text = If(script.Error.NullOrEmptyS, script.Info.GetInfoText(-1), script.Error)
         text = BR + "  " + text.FixBreak.Replace(BR, BR + "  ") + BR
 
         Using form As New StringEditorForm
@@ -1362,7 +1368,7 @@ Public Class GlobalClass
 
             Dim newar = p.AutoSmartOvercrop
             Dim croph = p.SourceHeight - p.CropTop - p.CropBottom
-            g.MainForm.tbTargetHeight.Text = Calc.FixMod16(CInt(p.TargetWidth / newar)).ToString
+            g.MainForm.tbTargetHeight.Text = Calc.FixMod16(CInt(p.TargetWidth / newar)).ToInvariantString
             newar = CSng(p.TargetWidth / p.TargetHeight)
             Dim cropw = (newar / Calc.GetSourceDAR * (croph / p.SourceHeight)) * p.SourceWidth
             p.CropLeft = CInt((p.SourceWidth - cropw) / 2)
@@ -1378,11 +1384,11 @@ Public Class GlobalClass
     End Sub
 
     Function ConvertPath(value As String) As String
-        If value = "" Then Return ""
+        If value.NullOrEmptyS Then Return ""
         If value.Length > 30 AndAlso value.Contains("|") Then value = value.RightLast("|")
-        If value.Contains("Constant Quality") Then value = value.Replace("Constant Quality", "CQ")
-        If value.Contains(" | ") Then value = value.Replace(" | ", " - ")
-        If value.Contains("  ") Then value = value.Replace("  ", " ")
+        value = value.Replace("Constant Quality", "CQ")
+        value = value.Replace(" | ", " - ")
+        value = value.Replace("  ", " ")
         Return value.Trim
     End Function
 
@@ -1465,7 +1471,7 @@ Public Class GlobalClass
                         infoScript.AddFilter(New VideoFilter(infoCode))
                         infoScript.Path = (p.TempDir + p.TargetFile.Base + $"_info." + script.FileType).ToShortFilePath
 
-                        If infoScript.GetError() <> "" Then
+                        If infoScript.GetError().NotNullOrEmptyS Then
                             MsgError("Script Error", infoScript.GetError())
                             Exit Sub
                         End If
@@ -1479,8 +1485,8 @@ Public Class GlobalClass
     End Sub
 
     Function IsDevelopmentPC() As Boolean
-        Return Application.StartupPath.EndsWith("\bin") OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
-            FileExists(Application.StartupPath.FixDir & "devel.pc") 'Debug
+        ' Return Application.StartupPath.EndsWith("\bin") OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
+        Return File.Exists(Application.StartupPath & "\devel.pc") 'Debug
     End Function
 
     Function Is32Bit() As Boolean

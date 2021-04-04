@@ -48,7 +48,7 @@ Namespace UI
             End Get
             Set(value As String)
                 For Each i As TCondition In System.Enum.GetValues(GetType(TCondition))
-                    If DispNameAttribute.GetValueForEnum(i) = value Then Condition = i
+                    If DispNameAttribute.GetValueForEnum(i).EqualsEx(value) Then Condition = i
                 Next
             End Set
         End Property
@@ -101,9 +101,9 @@ Namespace UI
                 Case StringCondition.DoesntContain
                     Return Not PropertyValue.Lower.Contains(Value.Lower)
                 Case StringCondition.Is
-                    Return PropertyValue.Lower = Value.Lower
+                    Return PropertyValue.Lower.Equals(Value.Lower)
                 Case StringCondition.IsNot
-                    Return PropertyValue.Lower <> Value.Lower
+                    Return Not PropertyValue.Lower.Equals(Value.Lower)
             End Select
         End Function
 
@@ -148,7 +148,7 @@ Namespace UI
                 Return Value.ToString
             End Get
             Set(value As String)
-                If Not value Is Nothing AndAlso value.ToUpper = "TRUE" Then
+                If Not value Is Nothing AndAlso value.ToUpperInvariant.Equals("TRUE") Then
                     Me.Value = True
                 Else
                     Me.Value = False
@@ -161,7 +161,7 @@ Namespace UI
                 Return Value.ToString
             End Get
             Set(value As String)
-                If Not value Is Nothing AndAlso value.ToUpper = "TRUE" Then
+                If Not value Is Nothing AndAlso value.ToUpperInvariant.Equals("TRUE") Then
                     PropertyValue = True
                 Else
                     PropertyValue = False

@@ -1,6 +1,7 @@
 ﻿
 Imports System.Globalization
 
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class StreamDemuxForm
@@ -46,15 +47,15 @@ Public Class StreamDemuxForm
         gbSubtitles.Enabled = Subtitles.Count > 0
         gbAttachments.Enabled = Not attachments.NothingOrEmpty
 
-        bnAudioEnglish.Enabled = AudioStreams.Where(Function(stream) stream.Language.TwoLetterCode = "en").Count > 0
-        bnAudioNative.Visible = CultureInfo.CurrentCulture.TwoLetterISOLanguageName <> "en"
+        bnAudioEnglish.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals("en"))
+        bnAudioNative.Visible = Not CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals("en")
         bnAudioNative.Text = CultureInfo.CurrentCulture.NeutralCulture.EnglishName
-        bnAudioNative.Enabled = AudioStreams.Where(Function(stream) stream.Language.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName).Count > 0
+        bnAudioNative.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
 
-        bnSubtitleEnglish.Enabled = Subtitles.Where(Function(stream) stream.Language.TwoLetterCode = "en").Count > 0
-        bnSubtitleNative.Visible = CultureInfo.CurrentCulture.TwoLetterISOLanguageName <> "en"
+        bnSubtitleEnglish.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals("en"))
+        bnSubtitleNative.Visible = Not CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals("en")
         bnSubtitleNative.Text = CultureInfo.CurrentCulture.NeutralCulture.EnglishName
-        bnSubtitleNative.Enabled = Subtitles.Where(Function(stream) stream.Language.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName).Count > 0
+        bnSubtitleNative.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
 
         For Each audioStream In AudioStreams
             Dim item = lvAudio.Items.Add(audioStream.Name)
@@ -63,7 +64,7 @@ Public Class StreamDemuxForm
         Next
 
         For Each subtitle In Subtitles
-            Dim text = subtitle.Language.ToString + " (" + subtitle.TypeName + ")" + If(subtitle.Title <> "", " - " + subtitle.Title, "")
+            Dim text = subtitle.Language.ToString + " (" + subtitle.TypeName + ")" + If(subtitle.Title.NotNullOrEmptyS, " - " + subtitle.Title, "")
             Dim item = lvSubtitles.Items.Add(text)
             item.Tag = subtitle
             item.Checked = subtitle.Enabled

@@ -29,7 +29,7 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <GenerateManifests>false</GenerateManifests>
     <SignManifests>false</SignManifests>
     <ManifestCertificateThumbprint>B078FD33BBCE3920206E3C0C0490CA18E86315AF</ManifestCertificateThumbprint>
@@ -42,7 +42,7 @@
     </TargetFrameworkProfile>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>ftp://1planetdvb.net/staxrip/</PublishUrl>
+    <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
     <UpdateEnabled>true</UpdateEnabled>
@@ -52,7 +52,6 @@
     <UpdatePeriodically>true</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <InstallUrl>http://www.1planetdvb.net/staxrip/</InstallUrl>
     <TargetCulture>en</TargetCulture>
     <ProductName>StaxRip</ProductName>
     <PublisherName>stax</PublisherName>
@@ -62,8 +61,6 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
-  <PropertyGroup />
-  <PropertyGroup />
   <PropertyGroup>
     <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -80,6 +77,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
     <DebugSymbols>true</DebugSymbols>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>C:\inetpub\Staxrip\</OutputPath>
@@ -92,6 +91,8 @@
     <Prefer32Bit>false</Prefer32Bit>
     <RemoveIntegerChecks>true</RemoveIntegerChecks>
     <Optimize>true</Optimize>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DefineDebug>true</DefineDebug>
@@ -117,17 +118,44 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DeepCloner, Version=0.10.0.0, Culture=neutral, PublicKeyToken=dc0b95cf99bf4e99, processorArchitecture=MSIL">
+      <HintPath>packages\DeepCloner.0.10.2\lib\net40\DeepCloner.dll</HintPath>
+    </Reference>
     <Reference Include="DirectN, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\DirectN.1.9.0\lib\net451\DirectN.dll</HintPath>
     </Reference>
+    <Reference Include="JM.LinqFaster, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\JM.LinqFaster.1.1.2\lib\net461\JM.LinqFaster.dll</HintPath>
+    </Reference>
     <Reference Include="KGySoft.CoreLibraries, Version=5.5.0.0, Culture=neutral, PublicKeyToken=b45eba277439ddfe, processorArchitecture=MSIL">
       <HintPath>packages\KGySoft.CoreLibraries.5.5.0\lib\net472\KGySoft.CoreLibraries.dll</HintPath>
+    </Reference>
+    <Reference Include="LinqFasterer, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\LinqFasterer.2.1.0\lib\netstandard2.0\LinqFasterer.dll</HintPath>
+    </Reference>
+    <Reference Include="LinqFasterParallel, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\LinqFaster.Parallel.1.0.2\lib\net461\LinqFasterParallel.dll</HintPath>
+    </Reference>
+    <Reference Include="LinqFasterParallelSIMD, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\LinqFaster.SIMD.Parallel.1.0.2\lib\net461\LinqFasterParallelSIMD.dll</HintPath>
+    </Reference>
+    <Reference Include="LinqFasterSIMD, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\LinqFaster.SIMD.1.0.3\lib\netstandard2.0\LinqFasterSIMD.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Bcl.HashCode.1.1.1\lib\net461\Microsoft.Bcl.HashCode.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Toolkit.HighPerformance, Version=7.0.0.0, Culture=neutral, PublicKeyToken=4aff67a105548ee2, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Toolkit.HighPerformance.7.0.0\lib\netstandard2.0\Microsoft.Toolkit.HighPerformance.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic">
       <Name>Microsoft.VisualBasic</Name>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Configuration" />
@@ -145,10 +173,22 @@
     <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.PowerShell.5.ReferenceAssemblies.1.1.0\lib\net4\System.Management.Automation.dll</HintPath>
     </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="System.Security">
       <Name>System.Security</Name>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
@@ -177,6 +217,7 @@
     <Import Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApplicationEvents.vb" />
     <Compile Include="Controls\PreprocessingControl.vb">
       <SubType>UserControl</SubType>
     </Compile>
@@ -650,6 +691,9 @@
   <ItemGroup>
     <Folder Include="My Project\DataSources\" />
     <Folder Include="Tools\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
   <PropertyGroup>

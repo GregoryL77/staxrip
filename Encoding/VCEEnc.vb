@@ -161,7 +161,7 @@ Public Class VCEEnc
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
-                    ItemsValue = New List(Of CommandLineParam)
+                    ItemsValue = New List(Of CommandLineParam)(48)
                     Add("Basic", Decoder, Mode, Codec,
                         New OptionParam With {.Switch = "--quality", .Text = "Preset", .Options = {"Fast", "Balanced", "Slow"}, .Init = 1},
                         New OptionParam With {.Switch = "--profile", .Name = "profile264", .VisibleFunc = Function() Codec.ValueText = "h264", .Text = "Profile", .Options = {"Automatic", "Baseline", "Main", "High"}},
@@ -201,7 +201,7 @@ Public Class VCEEnc
                         New BoolParam With {.Switch = "--filler", .Text = "Use filler data"})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch <> "" Then
+                        If item.HelpSwitch.NotNullOrEmptyS Then
                             Continue For
                         End If
 
@@ -264,7 +264,7 @@ Public Class VCEEnc
                     ret += " --avhw"
             End Select
 
-            Dim q = From i In Items Where i.GetArgs <> ""
+            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
 
             If q.Count > 0 Then
                 ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")

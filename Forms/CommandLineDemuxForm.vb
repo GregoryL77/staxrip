@@ -356,13 +356,8 @@ Public Class CommandLineDemuxForm
     End Sub
 
     Function ConvertFormat(input As String) As String
-        If input.Contains("MPEG Video") Then
-            input = input.Replace("MPEG Video", "mpeg2")
-        End If
-
-        If input.Contains("VC-1") Then
-            input = input.Replace("VC-1", "vc1")
-        End If
+        input = input.Replace("MPEG Video", "mpeg2")
+        input = input.Replace("VC-1", "vc1")
 
         Return input.ToLower
     End Function

@@ -49,7 +49,7 @@ Public Class GlobalCommands
             page.ResumeLayout()
 
             Dim textChanged = Sub()
-                                  If outputFolder.Edit.Text = "" AndAlso
+                                  If outputFolder.Edit.Text.NullOrEmptyS AndAlso
                                       File.Exists(sourceFile.Edit.Text) Then
 
                                       outputFolder.Edit.Text = sourceFile.Edit.Text.Dir
@@ -209,10 +209,10 @@ Public Class GlobalCommands
             End If
 
             If pack.IsIncluded Then
-                If pack.Path = "" Then
+                If pack.Path.NullOrEmptyS Then
                     msg += BR2 + "# path missing for " + pack.Name
                 ElseIf Not pack.VersionAllowAny Then
-                    If pack.Version = "" Then
+                    If pack.Version.NullOrEmptyS Then
                         msg += BR2 + "# version missing for " + pack.Name
                     ElseIf Not pack.IsVersionValid Then
                         msg += BR2 + "# wrong version for " + pack.Name
@@ -220,7 +220,7 @@ Public Class GlobalCommands
                 End If
 
                 'does help file exist?
-                If pack.Path <> "" AndAlso pack.HelpFilename <> "" Then
+                If pack.Path.NotNullOrEmptyS AndAlso pack.HelpFilename.NotNullOrEmptyS Then
                     If Not File.Exists(pack.Directory + pack.HelpFilename) Then
                         msg += BR2 + $"# Help file of {pack.Name} don't exist!"
                     End If
@@ -228,7 +228,7 @@ Public Class GlobalCommands
             End If
         Next
 
-        If msg <> "" Then
+        If msg.NotNullOrEmptyS Then
             Dim fs = Folder.Temp + "staxrip test.txt"
             File.WriteAllText(fs, BR + msg.Trim + BR)
             g.ShellExecute(fs)
@@ -371,9 +371,7 @@ Public Class GlobalCommands
         filter As String)
 
         For Each i In ",;*"
-            If filter.Contains(i) Then
-                filter = filter.Replace(i, " ")
-            End If
+            filter = filter.Replace(i, " ")
         Next
 
         Try

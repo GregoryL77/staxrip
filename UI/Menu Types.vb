@@ -87,7 +87,7 @@ Namespace UI
 
                 For Each iItem In l
                     If i < pathArray.Length - 1 Then
-                        If iItem.Text = pathArray(i) Then
+                        If EqualsEx(iItem.Text, pathArray(i)) Then
                             found = True
                             l = iItem.SubItems
                         End If
@@ -176,10 +176,10 @@ Namespace UI
             Dim ret As New StringPairList
 
             For Each i As MenuItemEx In MenuItems
-                If i.ShortcutKeyDisplayString <> "" Then
+                If i.ShortcutKeyDisplayString.NotNullOrEmptyS Then
                     Dim sp As New StringPair
 
-                    If i.Text.EndsWith("...") Then
+                    If i.Text.EndsWith("...", StringComparison.Ordinal) Then
                         sp.Name = i.Text.TrimEnd("."c)
                     Else
                         sp.Name = i.Text
@@ -234,7 +234,7 @@ Namespace UI
         End Sub
 
         Sub OnCommand(item As CustomMenuItem)
-            If item.MethodName <> "" Then
+            If item.MethodName.NotNullOrEmptyS Then
                 Dim e As New CustomMenuItemEventArgs(item)
                 RaiseEvent Command(e)
 
@@ -267,7 +267,7 @@ Namespace UI
                 cmi.CustomMenu = Me
                 Dim tsi As ToolStripItem
 
-                If cmi.Text = "-" Then
+                If String.Equals(cmi.Text, "-") Then
                     tsi = New ToolStripSeparator
                 Else
                     Dim mi As New MenuItemEx()
@@ -277,7 +277,7 @@ Namespace UI
 
                     Dim keys = KeysHelp.GetKeyString(cmi.KeyData)
 
-                    If keys <> "" Then
+                    If keys.NotNullOrEmptyS Then
                         mi.ShortcutKeyDisplayString = keys
                     End If
 
@@ -285,7 +285,7 @@ Namespace UI
                         mi.ShortcutKeyDisplayString += ""
                     End If
 
-                    If Not mi.ShortcutKeyDisplayString.EndsWith(" ") Then
+                    If Not mi.ShortcutKeyDisplayString.EndsWith(" ", StringComparison.Ordinal) Then
                         mi.ShortcutKeyDisplayString += g.MenuSpace
                     End If
 
@@ -372,10 +372,10 @@ Namespace UI
 
                 Dim command = CustomMenuItem.CustomMenu.CommandManager.GetCommand(CustomMenuItem.MethodName)
 
-                If command.Attribute.Description <> "" Then
+                If command.Attribute.Description.NotNullOrEmptyS Then
                     Dim ret As New StringPair
 
-                    If Text.EndsWith("...") Then
+                    If Text.EndsWith("...", StringComparison.Ordinal) Then
                         ret.Name = Text.TrimEnd("."c)
                     Else
                         ret.Name = Text
@@ -383,7 +383,7 @@ Namespace UI
 
                     ret.Value = command.Attribute.Description
                     Dim paramHelp = command.GetParameterHelp(CustomMenuItem.Parameters)
-                    If paramHelp <> "" Then ret.Value += " (" + paramHelp + ")"
+                    If paramHelp.NotNullOrEmptyS Then ret.Value += " (" + paramHelp + ")"
 
                     Return ret
                 End If
@@ -407,8 +407,8 @@ Namespace UI
 
                     Dim c = CustomMenuItem.CustomMenu.CommandManager.GetCommand(CustomMenuItem.MethodName)
 
-                    If c.MethodInfo.Name <> "DynamicMenuItem" Then
-                        If c.MethodInfo.Name = "ExecuteCommandLine" Then
+                    If Not String.Equals(c.MethodInfo.Name, "DynamicMenuItem") Then
+                        If String.Equals(c.MethodInfo.Name, "ExecuteCommandLine") Then
                             Help = CustomMenuItem.Parameters(0).ToString.Trim(""""c)
                         Else
                             Help = c.Attribute.Description
@@ -419,7 +419,7 @@ Namespace UI
         End Property
 
         Private Function ShouldSerializeHelpText() As Boolean
-            Return HelpValue <> ""
+            Return HelpValue.NotNullOrEmptyS
         End Function
 
         Private HelpValue As String
@@ -434,7 +434,7 @@ Namespace UI
                 HelpValue = Value
 
                 If UseTooltips Then
-                    If HelpValue <> "" Then
+                    If HelpValue.NotNullOrEmptyS Then
                         If HelpValue.Length < 80 Then
                             ToolTipText = HelpValue.TrimEnd("."c)
                         Else
@@ -446,7 +446,7 @@ Namespace UI
         End Property
 
         Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
-            If e.Button = MouseButtons.Right AndAlso Help <> "" Then
+            If e.Button = MouseButtons.Right AndAlso Help.NotNullOrEmptyS Then
                 CloseAll(Me)
                 g.ShowHelp(Text, Help)
             End If
@@ -610,10 +610,11 @@ Namespace UI
 
             For x = 0 To a.Length - 1
                 Dim found = False
+                Dim textMS As String = a(x) & g.MenuSpace
 
                 For Each i In l.OfType(Of ToolStripMenuItem)()
                     If x < a.Length - 1 Then
-                        If i.Text = a(x) + g.MenuSpace Then
+                        If i.Text.EqualsEx(textMS) Then
                             found = True
                             l = i.DropDownItems
                         End If
@@ -622,10 +623,10 @@ Namespace UI
 
                 If Not found Then
                     If x = a.Length - 1 Then
-                        If a(x) = "-" Then
+                        If String.Equals(a(x), "-") Then
                             l.Add(New ToolStripSeparator)
                         Else
-                            Dim item As New ActionMenuItem(a(x) + g.MenuSpace, action, tip)
+                            Dim item As New ActionMenuItem(textMS, action, tip)
                             item.SetImage(symbol)
                             l.Add(item)
                             l = item.DropDownItems
@@ -633,7 +634,7 @@ Namespace UI
                         End If
                     Else
                         Dim item As New ActionMenuItem()
-                        item.Text = a(x) + g.MenuSpace
+                        item.Text = textMS
                         l.Add(item)
                         l = item.DropDownItems
                     End If
@@ -650,7 +651,7 @@ Namespace UI
                 dialog.MacroEditorControl.rtbDefaults.Text = defaults
                 dialog.Text = "Menu Editor"
 
-                If defaults <> "" Then
+                If defaults.NotNullOrEmptyS Then
                     dialog.bnContext.Text = " Restore Defaults... "
                     dialog.bnContext.Visible = True
                     dialog.bnContext.AddClickAction(Sub() If MsgOK("Restore defaults?") Then dialog.MacroEditorControl.Value = defaults)
@@ -675,19 +676,20 @@ Namespace UI
             End If
 
             Dim ret = DirectCast(owner.ContextMenuStrip, ContextMenuStripEx)
+            ret.SuspendLayout()
             ret.Items.ClearAndDisplose
 
             For Each i In definition.SplitKeepEmpty(BR)
-                If i.Contains("=") Then
-                    Dim arg = i.Right("=").Trim
-                    ActionMenuItem.Add(ret.Items, i.Left("=").Trim, action, arg, Nothing)
-                ElseIf i.EndsWith("-") Then
+                Dim ir As String = i.Right("=")
+                If ir IsNot "" Then
+                    ActionMenuItem.Add(ret.Items, i.Left("=").Trim, action, ir.Trim, Nothing)
+                ElseIf i.EndsWith("-", StringComparison.Ordinal) Then
                     ActionMenuItem.Add(ret.Items, i)
-                ElseIf i = "" Then
+                Else
                     ret.Items.Add(New ToolStripSeparator)
                 End If
             Next
-
+            ret.ResumeLayout(False)
             Return ret
         End Function
     End Class
@@ -791,10 +793,10 @@ Namespace UI
             Dim ret As New StringPairList
 
             For Each i In GetItems.OfType(Of ActionMenuItem)()
-                If i.Help <> "" Then
+                If i.Help.NotNullOrEmptyS Then
                     Dim pair As New StringPair
 
-                    If i.Text.EndsWith("...") Then
+                    If i.Text.EndsWith("...", StringComparison.Ordinal) Then
                         pair.Name = i.Text.TrimEnd("."c)
                     Else
                         pair.Name = i.Text
@@ -812,10 +814,10 @@ Namespace UI
             Dim ret As New StringPairList
 
             For Each mi In GetItems.OfType(Of ActionMenuItem)()
-                If mi.ShortcutKeyDisplayString <> "" Then
+                If mi.ShortcutKeyDisplayString.NotNullOrEmptyS Then
                     Dim sp As New StringPair
 
-                    If mi.Text.EndsWith("...") Then
+                    If mi.Text.EndsWith("...", StringComparison.Ordinal) Then
                         sp.Name = mi.Text.TrimEnd("."c)
                     Else
                         sp.Name = mi.Text

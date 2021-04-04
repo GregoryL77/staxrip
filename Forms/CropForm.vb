@@ -241,7 +241,7 @@ Public Class CropForm
 
         Dim err = p.Script.GetError
 
-        If err <> "" Then
+        If err.NotNullOrEmptyS Then
             Using td As New TaskDialog(Of String)
                 td.MainInstruction = "Script Error"
                 td.Content = err

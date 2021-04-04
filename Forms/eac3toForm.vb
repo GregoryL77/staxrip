@@ -767,26 +767,21 @@ Public Class eac3toForm
             ctrl.Enabled = True
         Next
 
-        If Output = "" Then
+        If Output.NullOrEmptyS Then
             MsgWarn("eac3to output was empty")
             Cancel()
         ElseIf Output.ContainsAll("left eye", "right eye") Then
             MsgError("3D demuxing isn't supported.")
             Cancel()
-        ElseIf Output <> "" Then
+        ElseIf Output.NotNullOrEmptyS Then
             Project.Log.WriteLine(Output)
-
-            If Output.Contains(BR + "   (embedded: ") Then
-                Output = Output.Replace(BR + "   (embedded: ", "(embedded: ")
-            End If
+            Output = Output.Replace(BR + "   (embedded: ", "(embedded: ")
 
             While Output.Contains("  (embedded: ")
                 Output = Output.Replace("  (embedded: ", " (embedded: ")
             End While
 
-            If Output.Contains(BR + "   (core: ") Then
-                Output = Output.Replace(BR + "   (core: ", "(core: ")
-            End If
+            Output = Output.Replace(BR + "   (core: ", "(core: ")
 
             While Output.Contains("  (core: ")
                 Output = Output.Replace("  (core: ", " (core: ")
@@ -951,7 +946,7 @@ Public Class eac3toForm
                 outFiles.Add(outFile)
                 ret += " " & stream.ID & ": " + outFile.Escape
 
-                If stream.Options <> "" Then
+                If stream.Options.NotNullOrEmptyS Then
                     ret += " " + stream.Options.Trim
                 End If
             End If
@@ -1005,18 +1000,18 @@ Public Class eac3toForm
             Case "h264/AVC"
                 cbVideoOutput.Items.Add("H264")
                 cbVideoOutput.Items.Add("MKV")
-                cbVideoOutput.Text = If(M2TSFile = "", "H264", "Nothing")
+                cbVideoOutput.Text = If(M2TSFile.NullOrEmptyS, "H264", "Nothing")
             Case "h265/HEVC"
                 cbVideoOutput.Items.Add("H265")
-                cbVideoOutput.Text = If(M2TSFile = "", "H265", "Nothing")
+                cbVideoOutput.Text = If(M2TSFile.NullOrEmptyS, "H265", "Nothing")
             Case "VC-1"
                 cbVideoOutput.Items.Add("MKV")
                 cbVideoOutput.Items.Add("VC1")
-                cbVideoOutput.Text = If(M2TSFile = "", "VC1", "Nothing")
+                cbVideoOutput.Text = If(M2TSFile.NullOrEmptyS, "VC1", "Nothing")
             Case "MPEG2"
                 cbVideoOutput.Items.Add("M2V")
                 cbVideoOutput.Items.Add("MKV")
-                cbVideoOutput.Text = If(M2TSFile = "", "M2V", "Nothing")
+                cbVideoOutput.Text = If(M2TSFile.NullOrEmptyS, "M2V", "Nothing")
         End Select
     End Sub
 
@@ -1026,18 +1021,18 @@ Public Class eac3toForm
             ms.OutputType = cbAudioOutput.SelectedItem.ToString
             ms.ListViewItem.Text = ms.ToString
 
-            If ms.OutputType = "dts" AndAlso {"DTS Master Audio", "DTS Hi-Res"}.Contains(ms.Codec) AndAlso Not ms.Options.Contains("-core") Then
-                If ms.Options = "" Then
+            If ms.OutputType = "dts" AndAlso {"DTS Master Audio", "DTS Hi-Res"}.ContainsString(ms.Codec) AndAlso Not ms.Options.Contains("-core") Then
+                If ms.Options.NullOrEmptyS Then
                     ms.Options = "-core"
                 End If
 
                 ms.UpdateListViewItem()
                 cmdlOptions.tb.Text = ms.Options
-            ElseIf {"dtsma", "dtshr"}.Contains(ms.OutputType) AndAlso ms.Options.Contains("-core") Then
+            ElseIf {"dtsma", "dtshr"}.ContainsString(ms.OutputType) AndAlso ms.Options.Contains("-core") Then
                 ms.Options = ms.Options.Replace(" -core ", "").Replace(" -core", "").Replace("-core ", "").Replace("-core", "")
                 ms.UpdateListViewItem()
                 cmdlOptions.tb.Text = ms.Options
-            ElseIf ms.OutputType <> "dts" AndAlso ms.Options.Contains("-core") Then
+            ElseIf Not ms.OutputType.Equals("dts") AndAlso ms.Options.Contains("-core") Then
                 ms.Options = ms.Options.Replace(" -core ", "").Replace(" -core", "").Replace("-core ", "").Replace("-core", "")
                 ms.UpdateListViewItem()
                 cmdlOptions.tb.Text = ms.Options
@@ -1052,7 +1047,7 @@ Public Class eac3toForm
             If Not ms Is Nothing Then
                 ms.Options = value
 
-                If ms.Options <> "" Then
+                If ms.Options.NotNullOrEmptyS Then
                     ms.ListViewItem.Checked = True
                 End If
 
@@ -1163,9 +1158,9 @@ Public Class eac3toForm
 
         For Each str In Streams
             If str.Checked AndAlso str.IsAudio Then
-                If {"dtsma", "dtshr"}.Contains(str.OutputType) Then
+                If {"dtsma", "dtshr"}.ContainsString(str.OutputType) Then
                     hdCounter += 1
-                ElseIf str.OutputType = "dts" AndAlso {"DTS Master Audio", "DTS Hi-Res"}.Contains(str.Codec) Then
+                ElseIf str.OutputType = "dts" AndAlso {"DTS Master Audio", "DTS Hi-Res"}.ContainsString(str.Codec) Then
                     hdCounter -= 1
                 End If
             End If

@@ -210,7 +210,7 @@ Public Class PreprocessingControl
                 Dim muxer = DirectCast(i.Tag, CommandLineDemuxer)
                 Dim help = muxer.GetHelp
 
-                If help <> "" Then
+                If help.NotNullOrEmptyS Then
                     ret.Add(muxer.Name, help)
                 End If
             End If

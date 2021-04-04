@@ -1,6 +1,7 @@
 
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports JM.LinqFaster
 Imports StaxRip
 
 <Serializable()>
@@ -35,14 +36,14 @@ Public Class VideoScript
     Overridable Function GetScript(skipCategory As String) As String
         Dim sb As New StringBuilder()
 
-        If p.CodeAtTop <> "" Then
+        If p.CodeAtTop.NotNullOrEmptyS Then
             sb.AppendLine(p.CodeAtTop)
         End If
 
         For Each filter As VideoFilter In Filters
             If filter.Active Then
-                If skipCategory Is Nothing OrElse filter.Category <> skipCategory Then
-                    sb.Append(filter.Script + BR)
+                If skipCategory Is Nothing OrElse Not filter.Category.Equals(skipCategory) Then
+                    sb.Append(filter.Script).Append(BR)
                 End If
             End If
         Next
@@ -56,7 +57,7 @@ Public Class VideoScript
 
     Sub RemoveFilter(category As String, Optional name As String = Nothing)
         For Each i In Filters.ToArray
-            If i.Category = category AndAlso (name = "" OrElse i.Path = name) Then
+            If i.Category.Equals(category) AndAlso (name.NullOrEmptyS OrElse i.Path.Equals(name)) Then
                 Filters.Remove(i)
                 RaiseChanged()
             End If
@@ -116,10 +117,10 @@ Public Class VideoScript
     End Sub
 
     Function Contains(category As String, search As String) As Boolean
-        If category = "" OrElse search = "" Then Return False
+        If category.NullOrEmptyS OrElse search.NullOrEmptyS Then Return False
         Dim filter = GetFilter(category)
 
-        If filter?.Script?.ToLower.Contains(search.ToLower) AndAlso filter?.Active Then
+        If filter?.Script?.ToLowerInvariant.Contains(search.ToLowerInvariant) AndAlso filter?.Active Then
             Return True
         End If
     End Function
@@ -161,7 +162,7 @@ Public Class VideoScript
 
     Function GetFilter(category As String) As VideoFilter
         For Each filter In Filters
-            If filter.Category = category Then
+            If EqualsEx(filter.Category, category) Then
                 Return filter
             End If
         Next
@@ -174,7 +175,7 @@ Public Class VideoScript
                     Optional comparePath As Boolean = True,
                     Optional flipVertical As Boolean = False)
 
-        If Path = "" Then
+        If Path.NullOrEmptyS Then
             Exit Sub
         End If
 
@@ -230,7 +231,7 @@ clipname.set_output()
             End If
         End If
 
-        If Me.Error <> "" OrElse code <> LastCode OrElse (comparePath AndAlso Path <> LastPath) Then
+        If Me.Error.NotNullOrEmptyS OrElse Not code.Equals(LastCode) OrElse (comparePath AndAlso Not Path.Equals(LastPath)) Then
             If Path.Dir.DirExists Then
                 If Engine = ScriptEngine.VapourSynth Then
                     ModifyScript(code, Engine).WriteFile(Path, Encoding.UTF8)
@@ -316,14 +317,14 @@ clipname.set_output()
 
         Dim clip As String
 
-        If code <> "" Then
+        If code.NotNullOrEmptyS Then
             clip = code + script
         Else
             clip = script
         End If
 
         If Not clip.Contains(".set_output(") Then
-            If clip.EndsWith(BR) Then
+            If clip.EndsWith(BR, StringComparison.Ordinal) Then
                 clip += "clip.set_output()"
             Else
                 clip += BR + "clip.set_output()"
@@ -337,7 +338,7 @@ clipname.set_output()
         For Each plugin In Package.Items.Values.OfType(Of PluginPackage)()
             Dim fp = plugin.Path
 
-            If fp <> "" Then
+            If fp.NotNullOrEmptyS Then
                 If Not plugin.VSFilterNames Is Nothing Then
                     For Each filterName In plugin.VSFilterNames
                         If script.Contains(filterName) Then
@@ -369,7 +370,7 @@ clipname.set_output()
         ByRef filterName As String,
         plugin As PluginPackage)
 
-        If plugin.Filename.Ext = "py" Then
+        If plugin.Filename.Ext.Equals("py") Then
             Dim line = plugin.Name + " = importlib.machinery.SourceFileLoader('" +
                 plugin.Name + "', r""" + plugin.Path + """).load_module()"
 
@@ -433,36 +434,36 @@ clipname.set_output()
     End Function
 
     Shared Function GetAVSLoadCode(script As String, scriptAlready As String) As String
-        Dim scriptLower = script.ToLower
+        Dim scriptLower = script.ToLowerInvariant
         Dim loadCode = ""
         Dim plugins = Package.Items.Values.OfType(Of PluginPackage)()
 
         For Each plugin In plugins
             Dim fp = plugin.Path
 
-            If fp <> "" Then
+            If fp.NotNullOrEmptyS Then
                 If Not plugin.AvsFilterNames Is Nothing Then
                     For Each filterName In plugin.AvsFilterNames
                         If s.LoadAviSynthPlugins AndAlso
                             Not IsAvsPluginInAutoLoadFolder(plugin.Filename) AndAlso
-                            scriptLower.Contains(filterName.ToLower) Then
+                            scriptLower.Contains(filterName.ToLowerInvariant) Then
 
-                            If plugin.Filename.Ext = "dll" Then
+                            If plugin.Filename.Ext.Equals("dll") Then
                                 Dim load = "LoadPlugin(""" + fp + """)" + BR
 
-                                If Not scriptLower.Contains(load.ToLower) AndAlso
-                                    Not loadCode.ToLower.Contains(load.ToLower) AndAlso
-                                    Not scriptAlready.ToLower.Contains(load.ToLower) Then
+                                If Not scriptLower.Contains(load.ToLowerInvariant) AndAlso
+                                    Not loadCode.ToLowerInvariant.Contains(load.ToLowerInvariant) AndAlso
+                                    Not scriptAlready.ToLowerInvariant.Contains(load.ToLowerInvariant) Then
 
                                     loadCode += load
                                 End If
 
-                            ElseIf plugin.Filename.Ext = "avsi" Then
+                            ElseIf plugin.Filename.Ext.Equals("avsi") Then
                                 Dim avsiImport = "Import(""" + fp + """)" + BR
 
-                                If Not scriptLower.Contains(avsiImport.ToLower) AndAlso
+                                If Not scriptLower.Contains(avsiImport.ToLowerInvariant) AndAlso
                                     Not loadCode.Contains(avsiImport) AndAlso
-                                    Not scriptAlready.Contains(avsiImport.ToLower) Then
+                                    Not scriptAlready.Contains(avsiImport.ToLowerInvariant) Then
 
                                     loadCode += avsiImport
                                 End If
@@ -477,7 +478,7 @@ clipname.set_output()
     End Function
 
     Shared Function GetAVSLoadCodeFromImports(code As String) As String
-        code = code.ToLower
+        code = code.ToLowerInvariant
         Dim ret = ""
 
         For Each line In code.SplitLinesNoEmpty
@@ -574,15 +575,13 @@ clipname.set_output()
 
         Return ret
     End Function
-
     Overrides Function Edit() As DialogResult
         Using f As New CodeEditor(Me)
             f.StartPosition = FormStartPosition.CenterParent
-
             If f.ShowDialog() = DialogResult.OK Then
                 Filters = f.GetFilters
 
-                If Filters.Count = 0 OrElse Filters(0).Category <> "Source" Then
+                If Filters.Count = 0 OrElse Not String.Equals(Filters(0).Category, "Source") Then
                     MsgError("The first filter must be a source filter.")
                     Filters = GetDefaults(0).Filters
                 End If
@@ -606,7 +605,7 @@ Public Class TargetVideoScript
 
     Overrides Property Path() As String
         Get
-            If p.SourceFile = "" OrElse p.TargetFile = "" Then
+            If p.SourceFile.NullOrEmptyS OrElse p.TargetFile.NullOrEmptyS Then
                 Return ""
             End If
 
@@ -623,7 +622,7 @@ Public Class SourceVideoScript
 
     Overrides Property Path() As String
         Get
-            If p.SourceFile = "" Then
+            If p.SourceFile.NullOrEmptyS Then
                 Return ""
             End If
 
@@ -697,7 +696,7 @@ Public Class VideoFilter
     End Function
 
     Shared Function GetDefault(category As String, name As String) As VideoFilter
-        Return FilterCategory.GetAviSynthDefaults.First(Function(val) val.Name = category).Filters.First(Function(val) val.Name = name)
+        Return FilterCategory.GetAviSynthDefaults.FirstF(Function(val) val.Name = category).Filters.FirstF(Function(val) val.Name = name)
     End Function
 End Class
 
@@ -723,7 +722,7 @@ Public Class FilterCategory
     End Function
 
     Shared Sub AddFilter(filter As VideoFilter, list As List(Of FilterCategory))
-        Dim matchingCategory = list.Where(Function(category) category.Name = filter.Category).FirstOrDefault
+        Dim matchingCategory = list.FirstOrDefaultF(Function(category) category.Name = filter.Category)
 
         If matchingCategory Is Nothing Then
             Dim newCategory As New FilterCategory(filter.Category)
@@ -746,7 +745,7 @@ Public Class FilterCategory
 
             If Not filters Is Nothing Then
                 For Each iFilter In filters
-                    Dim matchingCategory = list.Where(Function(category) category.Name = iFilter.Category).FirstOrDefault
+                    Dim matchingCategory = list.FirstOrDefaultF(Function(category) category.Name.EqualsEx(iFilter.Category))
 
                     If matchingCategory Is Nothing Then
                         Dim newCategory As New FilterCategory(iFilter.Category)

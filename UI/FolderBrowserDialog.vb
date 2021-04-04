@@ -141,7 +141,7 @@ Public Class FolderBrowserDialog
     End Sub
 
     Sub SetDialogProperties(dialog As IFileDialog)
-        If _description <> "" Then
+        If _description.NotNullOrEmptyS Then
             If UseDescriptionForTitle Then
                 dialog.SetTitle(_description)
             Else
@@ -153,7 +153,7 @@ Public Class FolderBrowserDialog
                           NativeMethods.FOS.FOS_FORCEFILESYSTEM Or
                           NativeMethods.FOS.FOS_FILEMUSTEXIST)
 
-        If _selectedPath <> "" Then
+        If _selectedPath.NotNullOrEmptyS Then
             If Path.GetDirectoryName(_selectedPath) Is Nothing OrElse Not Directory.Exists(Path.GetDirectoryName(_selectedPath)) Then
                 dialog.SetFileName(_selectedPath)
             Else

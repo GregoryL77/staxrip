@@ -92,7 +92,7 @@ Public Class HelpForm
     End Sub
 
     Sub Browser_Navigated(sender As Object, e As WebBrowserNavigatedEventArgs) Handles Browser.Navigated
-        If Browser.DocumentTitle <> "" Then
+        If Browser.DocumentTitle.NotNullOrEmptyS Then
             Text = Browser.DocumentTitle
         ElseIf File.Exists(e.Url.LocalPath) Then
             Text = e.Url.LocalPath.Base

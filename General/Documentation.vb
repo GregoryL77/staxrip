@@ -21,7 +21,7 @@ Public Class Documentation
         commands.Sort()
 
         For Each command In commands
-            If command.Attribute.Description.StartsWith("This command is obsolete") Then
+            If command.Attribute.Description.StartsWith("This command is obsolete", StringComparison.Ordinal) Then
                 Continue For
             End If
 
@@ -38,19 +38,19 @@ Public Class Documentation
                 title = title.TrimEnd(",:".ToCharArray)
             End If
 
-            sb.Append(".. option:: " + title + BR2)
-            sb.Append(command.Attribute.Description.IndentLines("    ") + BR2)
+            sb.Append(".. option:: ").Append(title).Append(BR2)
+            sb.Append(command.Attribute.Description.IndentLines("    ")).Append(BR2)
 
             If params.Length > 0 Then
-                sb.Append(".. list-table::" + BR)
-                sb.Append("    :widths: auto" + BR2)
+                sb.Append(".. list-table::" & BR)
+                sb.Append("    :widths: auto" & BR2)
 
                 Dim hasDescription = False
 
                 For Each param In params
                     Dim descAttrib = param.GetCustomAttribute(Of DescriptionAttribute)
 
-                    If Not descAttrib Is Nothing AndAlso descAttrib.Description <> "" Then
+                    If Not descAttrib Is Nothing AndAlso descAttrib.Description.NotNullOrEmptyS Then
                         hasDescription = True
                     End If
 
@@ -64,10 +64,10 @@ Public Class Documentation
                 Next
 
                 For Each param In params
-                    sb.Append($"    * - {param.Name} <{param.ParameterType.Name.ToLower.Replace("int32", "integer")}>{BR}")
+                    sb.Append("    * - ").Append(param.Name).Append(" <").Append(param.ParameterType.Name.ToLower.Replace("int32", "integer")).Append(">").Append({BR})
 
                     If hasDescription OrElse param.ParameterType.IsEnum Then
-                        sb.Append($"      - ")
+                        sb.Append("      - ")
 
                         Dim nameAttrib = param.GetCustomAttribute(Of DispNameAttribute)
                         Dim hasName = False
@@ -90,7 +90,7 @@ Public Class Documentation
                         End If
 
                         If param.ParameterType.IsEnum Then
-                            sb.Append(" " + System.Enum.GetNames(param.ParameterType).Join(", "))
+                            sb.Append(" ").Append(System.Enum.GetNames(param.ParameterType).Join(", "))
                         End If
 
                         sb.Append(BR)
@@ -116,7 +116,7 @@ Public Class Documentation
 
     Shared Sub GenerateToolFile()
         Dim sb As New StringBuilder
-        sb.Append("Tools" + BR + "=====" + BR2)
+        sb.Append("Tools" & BR & "=====" & BR2)
 
         Dim rows As New List(Of Object)
 
@@ -145,97 +145,97 @@ Public Class Documentation
             "    :widths: auto" + BR2 +
             "    " + g.ConvertToCSV(",", rows).Right(BR).Right(BR).Replace(BR, BR + "    ")
 
-        sb.Append(text + BR2)
+        sb.Append(text).Append(BR2)
 
-        sb.Append("Console App" + BR + "-----------" + BR)
+        sb.Append("Console App" & BR & "-----------" & BR)
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "Console App" Then
-                sb.Append(pack.Name + BR + "~".Multiply(pack.Name.Length) + BR2)
-                sb.Append(pack.Description + BR2)
-                sb.Append(pack.WebURL + BR2 + BR)
+                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Description).Append(BR2)
+                sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
         Next
 
-        sb.Append("GUI App" + BR + "-------" + BR)
+        sb.Append("GUI App" & BR & "-------" & BR)
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "GUI App" Then
-                sb.Append(pack.Name + BR + "~".Multiply(pack.Name.Length) + BR2)
-                sb.Append(pack.Description + BR2)
-                sb.Append(pack.WebURL + BR2 + BR)
+                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Description).Append(BR2)
+                sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
         Next
 
-        sb.Append("AviSynth Plugin" + BR + "---------------" + BR)
+        sb.Append("AviSynth Plugin" & BR & "---------------" & BR)
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "AviSynth Plugin" Then
-                sb.Append(pack.Name + BR + "~".Multiply(pack.Name.Length) + BR2)
-                sb.Append(pack.Description + BR2)
+                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
 
                 If Not plugin.AvsFilterNames.NothingOrEmpty Then
-                    sb.Append("Filters: " + plugin.AvsFilterNames.Join(", ") + BR2)
+                    sb.Append("Filters: ").Append(plugin.AvsFilterNames.Join(", ")).Append(BR2)
                 End If
 
-                sb.Append(pack.WebURL + BR2 + BR)
+                sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
         Next
 
-        sb.Append("AviSynth Script" + BR + "---------------" + BR)
+        sb.Append("AviSynth Script" & BR & "---------------" & BR)
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "AviSynth Script" Then
-                sb.Append(pack.Name + BR + "~".Multiply(pack.Name.Length) + BR2)
-                sb.Append(pack.Description + BR2)
+                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
 
                 If Not plugin.AvsFilterNames.NothingOrEmpty Then
-                    sb.Append("Filters: " + plugin.AvsFilterNames.Join(", ") + BR2)
+                    sb.Append("Filters: ").Append(plugin.AvsFilterNames.Join(", ")).Append(BR2)
                 End If
 
-                sb.Append(pack.WebURL + BR2 + BR)
+                sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
         Next
 
-        sb.Append("VapourSynth Plugin" + BR + "------------------" + BR)
+        sb.Append("VapourSynth Plugin" & BR & "------------------" & BR)
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "VapourSynth Plugin" Then
-                sb.Append(pack.Name + BR + "~".Multiply(pack.Name.Length) + BR2)
-                sb.Append(pack.Description + BR2)
+                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
 
                 If Not plugin.VSFilterNames.NothingOrEmpty Then
-                    sb.Append("Filters: " + plugin.VSFilterNames.Join(", ") + BR2)
+                    sb.Append("Filters: ").Append(plugin.VSFilterNames.Join(", ")).Append(BR2)
                 End If
 
-                sb.Append(pack.WebURL + BR2 + BR)
+                sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
         Next
 
-        sb.Append("VapourSynth Script" + BR + "------------------" + BR)
+        sb.Append("VapourSynth Script" & BR & "------------------" & BR)
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "VapourSynth Script" Then
-                sb.Append(pack.Name + BR + "~".Multiply(pack.Name.Length) + BR2)
-                sb.Append(pack.Description + BR2)
+                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
 
                 If Not plugin.VSFilterNames.NothingOrEmpty Then
-                    sb.Append("Filters: " + plugin.VSFilterNames.Join(", ") + BR2)
+                    sb.Append("Filters: ").Append(plugin.VSFilterNames.Join(", ")).Append(BR2)
                 End If
 
-                sb.Append(pack.WebURL + BR2 + BR)
+                sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
         Next
 
-        UpdateFile(Folder.Startup + "..\docs\generated\tools.rst", sb.ToString)
+        UpdateFile(Folder.Startup & "..\docs\generated\tools.rst", sb.ToString)
     End Sub
 
     Shared Sub GenerateScreenshotsFile()

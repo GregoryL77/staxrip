@@ -61,12 +61,12 @@ Namespace UI
                 form.Text = Title
                 form.StartPosition = StartPosition
 
-                If CheckBoxText <> "" Then
+                If CheckBoxText.NotNullOrEmptyS Then
                     form.cb.Checked = Checked
                     form.cb.Text = CheckBoxText
                 End If
 
-                form.cb.Visible = CheckBoxText <> ""
+                form.cb.Visible = CheckBoxText.NotNullOrEmptyS
 
                 Dim ret As DialogResult
 

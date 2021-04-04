@@ -117,7 +117,7 @@ Public Class SVTAV1
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
-                    ItemsValue = New List(Of CommandLineParam)
+                    ItemsValue = New List(Of CommandLineParam)(16)
 
                     Add("Basic",
                         New StringParam With {.Text = "Custom", .Quotes = QuotesMode.Never, .AlwaysOn = True},
@@ -130,7 +130,7 @@ Public Class SVTAV1
                         New NumParam With {.Switch = "-q", .Text = "QP", .Init = 50, .Config = {0, 63, 1}})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch <> "" Then
+                        If item.HelpSwitch.NotNullOrEmptyS Then
                             Continue For
                         End If
 
@@ -168,7 +168,7 @@ Public Class SVTAV1
                     Package.SVTAV1.Path.Escape
             End If
 
-            Dim q = From i In Items Where i.GetArgs <> ""
+            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
 
             If q.Count > 0 Then
                 ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")

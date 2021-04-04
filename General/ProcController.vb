@@ -57,28 +57,28 @@ Public Class ProcController
     End Sub
 
     Sub DataReceived(value As String)
-        If value = "" Then
+        If value.NullOrEmptyS Then
             Exit Sub
         End If
 
         Dim ret = Proc.ProcessData(value)
 
-        If ret.Data = "" Then
+        If ret.Data.NullOrEmptyS Then
             Exit Sub
         End If
 
         If ret.Skip Then
             If Proc.IntegerFrameOutput AndAlso Proc.FrameCount > 0 AndAlso ret.Data.IsInt Then
-                ret.Data = "Progress: " + (ret.Data.ToInt / Proc.FrameCount * 100).ToString("0.00") + "%"
+                ret.Data = "Progress: " & (ret.Data.ToInt / Proc.FrameCount * 100).ToString("0.00") & "%"
             End If
 
             If Proc.IntegerPercentOutput AndAlso ret.Data.IsInt Then
-                ret.Data = "Progress: " + ret.Data + "%"
+                ret.Data = "Progress: " & ret.Data & "%"
             End If
 
             ProcForm.BeginInvoke(StatusAction, {ret.Data})
         Else
-            If ret.Data.Trim <> "" Then
+            If ret.Data.Trim.NotNullOrEmptyS Then
                 Proc.Log.WriteLine(ret.Data)
             End If
 
@@ -287,7 +287,7 @@ Public Class ProcController
         For Each procButton In Procs.ToArray
             If procButton.Proc.Process.ProcessName = "cmd" Then
                 For Each process In ProcessHelp.GetChilds(procButton.Proc.Process)
-                    If {"conhost", "vspipe"}.Contains(process.ProcessName) Then
+                    If {"conhost", "vspipe"}.ContainsString(process.ProcessName) Then
                         Continue For
                     End If
 

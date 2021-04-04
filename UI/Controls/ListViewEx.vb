@@ -89,7 +89,7 @@ Namespace UI
         End Sub
 
         Sub RefreshItem(index As Integer)
-            If ItemCheckProperty <> "" Then
+            If ItemCheckProperty.NotNullOrEmptyS Then
                 Items(index).Checked = CBool(Items(index).Tag.GetType.GetProperty(ItemCheckProperty).GetValue(Items(index).Tag))
             End If
 
@@ -148,13 +148,13 @@ Namespace UI
         Sub MoveSelectionTop()
             If CanMoveUp() Then
                 BeginUpdate()
-                Dim selected = SelectedItems.OfType(Of ListViewItem).ToList
+                Dim selected = SelectedItems.OfType(Of ListViewItem).ToArray
 
                 For Each i In selected
                     Items.Remove(i)
                 Next
 
-                For x = 0 To selected.Count - 1
+                For x = 0 To selected.Length - 1
                     Items.Insert(x, selected(x))
                 Next
 
@@ -519,7 +519,7 @@ Namespace UI
                 RemoveButton.AddClickAction(AddressOf RemoveSelection)
             End If
 
-            If ItemCheckProperty <> "" Then
+            If ItemCheckProperty.NotNullOrEmptyS Then
                 AddHandler ItemCheck, Sub(sender As Object, e2 As ItemCheckEventArgs)
                                           Items(e2.Index).Tag.GetType.GetProperty(ItemCheckProperty).SetValue(Items(e2.Index).Tag, e2.NewValue = CheckState.Checked)
                                           OnItemsChanged()

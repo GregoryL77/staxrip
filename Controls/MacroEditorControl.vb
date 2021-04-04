@@ -331,7 +331,7 @@ Public Class MacroEditorControl
         UpdateWrapMode(rtbEdit)
         UpdateWrapMode(rtbPreview)
 
-        If rtbDefaults.Text = "" Then
+        If rtbDefaults.Text.NullOrEmptyS Then
             Controls.Remove(tpDefaults)
             tpDefaults.Dispose()
         End If
@@ -360,7 +360,7 @@ Public Class MacroEditorControl
             End If
         Next
 
-        If caption <> "" Then
+        If caption.NotNullOrEmptyS Then
             llHelp.Text = "Help (" + caption.Trim(", ".ToCharArray) + ")"
         End If
 

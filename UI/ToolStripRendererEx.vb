@@ -353,8 +353,7 @@ Public Class ToolStripRendererEx
         If RenderMode = ToolStripRenderModeEx.Win10Default Then Return True
         If RenderMode = ToolStripRenderModeEx.Win10Auto Then Return True
 
-        If (RenderMode = ToolStripRenderModeEx.SystemDefault OrElse
-            RenderMode = ToolStripRenderModeEx.SystemAuto) AndAlso
-            OSVersion.Current >= OSVersion.Windows8 Then Return True
+        If (RenderMode = ToolStripRenderModeEx.SystemDefault OrElse RenderMode = ToolStripRenderModeEx.SystemAuto) Then Return True
+        'AndAlso OSVersion.Current >= OSVersion.Windows8 Then Return True 'Opt. Assume W10 Only!!!
     End Function
 End Class

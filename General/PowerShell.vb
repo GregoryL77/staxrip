@@ -22,13 +22,13 @@ Public Class PowerShell
         cmd.Parameters.Add("Scope", "Process")
         pipeline.Commands.Add(cmd)
 
-        If InitCode <> "" Then
+        If InitCode.NotNullOrEmptyS Then
             pipeline.Commands.AddScript(InitCode)
         End If
 
         pipeline.Commands.AddScript(code)
 
-        If varName <> "" Then
+        If varName.NotNullOrEmptyS Then
             runspace.SessionStateProxy.SetVariable(varName, varValue)
         End If
 

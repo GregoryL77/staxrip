@@ -49,7 +49,7 @@ Public Class FiltersListView
             item.Checked = filter.Active
             item.SubItems.Add(filter.Category)
 
-            If filter.Name = "" Then
+            If filter.Name.NullOrEmptyS Then
                 item.SubItems.Add(filter.Script)
             Else
                 item.SubItems.Add(filter.Name)
@@ -108,8 +108,8 @@ Public Class FiltersListView
 
         Menu.Add("Edit Code...", AddressOf ShowEditor, "Dialog to edit filters.").SetImage(Symbol.Code)
         Menu.Add("Preview Code...", Sub() g.CodePreview(p.Script.GetFullScript), "Script code preview.")
-        Menu.Add("Info...", Sub() g.ShowScriptInfo(p.Script), Function() p.SourceFile <> "", "Shows script parameters.").SetImage(Symbol.Info)
-        Menu.Add("Play", Sub() g.PlayScript(p.Script), Function() p.SourceFile <> "", "Plays the script with the AVI player.").SetImage(Symbol.Play)
+        Menu.Add("Info...", Sub() g.ShowScriptInfo(p.Script), Function() p.SourceFile.NotNullOrEmptyS, "Shows script parameters.").SetImage(Symbol.Info)
+        Menu.Add("Play", Sub() g.PlayScript(p.Script), Function() p.SourceFile.NotNullOrEmptyS, "Plays the script with the AVI player.").SetImage(Symbol.Play)
         Menu.Add("Profiles...", AddressOf g.MainForm.ShowFilterProfilesDialog, "Dialog to edit profiles.").SetImage(Symbol.FavoriteStar)
 
         Menu.Add("-")
@@ -199,7 +199,7 @@ Public Class FiltersListView
             Exit Sub
         End If
 
-        If val.Value <> filter.Script AndAlso val.Caption <> "" Then
+        If val.Caption.NotNullOrEmptyS AndAlso Not val.Value.Equals(filter.Script) Then
             Dim path = filter.Path.Replace("...", "")
 
             If val.Caption.EndsWith(path) Then
@@ -223,7 +223,7 @@ Public Class FiltersListView
             Exit Sub
         End If
 
-        If val.Value <> filter.Script AndAlso val.Caption <> "" Then
+        If val.Caption.NotNullOrEmptyS AndAlso Not val.Value.Equals(filter.Script) Then
             Dim path = filter.Path.Replace("...", "")
 
             If val.Caption.EndsWith(path) Then
@@ -247,7 +247,7 @@ Public Class FiltersListView
             Exit Sub
         End If
 
-        If val.Value <> filter.Script AndAlso val.Caption <> "" Then
+        If val.Caption.NotNullOrEmptyS AndAlso Not val.Value.Equals(filter.Script) Then
             Dim path = filter.Path.Replace("...", "")
 
             If val.Caption.EndsWith(path) Then

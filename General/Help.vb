@@ -3,11 +3,10 @@ Imports System.ComponentModel
 Imports System.Globalization
 Imports System.Management
 Imports System.Reflection
-Imports System.Runtime.Serialization.Formatters.Binary
 Imports System.Text
 Imports System.Text.RegularExpressions
-
 Imports Microsoft.VisualBasic.FileIO
+Imports Force.DeepCloner
 
 Public Class ObjectHelp
     Shared Function GetCompareString(obj As Object) As String
@@ -38,7 +37,7 @@ Public Class ObjectHelp
 
                             If IsGoodType(o) Then
                                 If IsToString(o) Then
-                                    sb.Append(i.Name + "=" + o.ToString + BR)
+                                    sb.Append(i.Name).Append("=").Append(o.ToString).Append(BR)
                                 Else
                                     If Not o Is declaringObj Then
                                         ParseCompareString(o, obj, sb)
@@ -75,18 +74,19 @@ Public Class ObjectHelp
 
     <DebuggerHidden()>
     Shared Function GetCopy(Of T)(o As T) As T
-        Using ms As New MemoryStream
-            Dim bf As New BinaryFormatter
-            bf.Serialize(ms, o)
-            ms.Position = 0
-            Return DirectCast(bf.Deserialize(ms), T)
-        End Using
+        'Using ms As New MemoryStream
+        '    Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+        '    bf.Serialize(ms, o)
+        '    ms.Position = 0
+        '    Return DirectCast(bf.Deserialize(ms), T)
+        'End Using
+        Return DeepClonerExtensions.DeepClone(Of T)(o)  '+ Imports Force.DeepCloner
     End Function
 End Class
 
 Public Class FolderHelp
     Shared Function HasFiles(path As String, Optional searchPattern As String = "*") As Boolean
-        Return Directory.Exists(path) AndAlso Directory.GetFiles(path, searchPattern).Count > 0
+        Return Directory.Exists(path) AndAlso Directory.GetFiles(path, searchPattern).Length > 0
     End Function
 
     Shared Sub Create(path As String)
@@ -240,7 +240,7 @@ End Class
 
 Public Class CommandLineHelp
     Shared Function ConvertText(val As String) As String
-        If val = "" Then Return ""
+        If val.NullOrEmptyS Then Return ""
         Return Macro.Expand(val).Replace("""", "'").Trim
     End Function
 End Class

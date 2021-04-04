@@ -783,7 +783,7 @@ Public Class x264Params
     Overrides ReadOnly Property Items As List(Of CommandLineParam)
         Get
             If ItemsValue Is Nothing Then
-                ItemsValue = New List(Of CommandLineParam)
+                ItemsValue = New List(Of CommandLineParam)(160)
 
                 Add("Basic",
                     Mode,
@@ -952,7 +952,7 @@ Public Class x264Params
                     CustomSecondPass)
 
                 For Each item In ItemsValue
-                    If item.HelpSwitch <> "" Then
+                    If item.HelpSwitch.NotNullOrEmptyS Then
                         Continue For
                     End If
 
@@ -1024,7 +1024,7 @@ Public Class x264Params
         If includePaths AndAlso includeExecutable Then
             Dim pipeCmd = ""
 
-            If pipeTool = "automatic" Then
+            If pipeTool.Equals("automatic") Then
                 If p.Script.Engine = ScriptEngine.AviSynth Then
                     pipeTool = "none"
                 Else
@@ -1081,11 +1081,11 @@ Public Class x264Params
             args += " --pass " & pass
 
             If pass = 1 Then
-                If CustomFirstPass.Value <> "" Then
+                If CustomFirstPass.Value.NotNullOrEmptyS Then
                     args += " " + CustomFirstPass.Value
                 End If
             Else
-                If CustomSecondPass.Value <> "" Then
+                If CustomSecondPass.Value.NotNullOrEmptyS Then
                     args += " " + CustomSecondPass.Value
                 End If
             End If
@@ -1109,27 +1109,27 @@ Public Class x264Params
             End If
         End If
 
-        Dim q = From i In Items Where i.GetArgs <> "" AndAlso Not IsCustom(pass, i.Switch)
+        Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS AndAlso Not IsCustom(pass, i.Switch)
 
-        If q.Count > 0 Then
+        If q.Any Then
             args += " " + q.Select(Function(item) item.GetArgs).Join(" ")
         End If
 
         If includePaths Then
-            Dim input = If(pipeTool = "none", script.Path.ToShortFilePath.Escape, "-")
+            Dim input = If(String.Equals(pipeTool, "none"), script.Path.ToShortFilePath.Escape, "-")
             Dim dmx = Demuxer.ValueText
 
             If dmx = "automatic" Then
-                If pipeTool = "none" Then
+                If String.Equals(pipeTool, "none") Then
                     dmx = ""
-                ElseIf pipeTool.EndsWith(" y4m") Then
+                ElseIf pipeTool.EndsWith(" y4m", StringComparison.Ordinal) Then
                     dmx = "y4m"
-                ElseIf pipeTool.EndsWith(" raw") Then
+                ElseIf pipeTool.EndsWith(" raw", StringComparison.Ordinal) Then
                     dmx = "raw"
                 End If
             End If
 
-            If dmx <> "" Then
+            If dmx.NotNullOrEmptyS Then
                 Dim info = script.GetInfo
 
                 args += $" --demuxer {dmx} --frames " & info.FrameCount
@@ -1181,31 +1181,31 @@ Public Class x264Params
         If P8x8.Value Then partitions += "p8x8,"
         If B8x8.Value Then partitions += "b8x8"
 
-        If partitions <> "" Then
+        If partitions.NotNullOrEmptyS Then
             Return "--partitions " + partitions.TrimEnd(","c)
         End If
     End Function
 
     Function IsCustom(pass As Integer, switch As String) As Boolean
-        If switch = "" Then
+        If switch.NullOrEmptyS Then
             Return False
         End If
 
         If Mode.Value = x264RateMode.TwoPass OrElse Mode.Value = x264RateMode.ThreePass Then
             If pass = 1 Then
                 If CustomFirstPass.Value?.Contains(switch + " ") OrElse
-                    CustomFirstPass.Value?.EndsWith(switch) Then
+                    CustomFirstPass.Value?.EndsWith(switch, StringComparison.Ordinal) Then
                     Return True
                 End If
             Else
                 If CustomSecondPass.Value?.Contains(switch + " ") OrElse
-                    CustomSecondPass.Value?.EndsWith(switch) Then
+                    CustomSecondPass.Value?.EndsWith(switch, StringComparison.Ordinal) Then
                     Return True
                 End If
             End If
         End If
 
-        If Custom.Value?.Contains(switch + " ") OrElse Custom.Value?.EndsWith(switch) Then
+        If Custom.Value?.Contains(switch + " ") OrElse Custom.Value?.EndsWith(switch, StringComparison.Ordinal) Then
             Return True
         End If
     End Function

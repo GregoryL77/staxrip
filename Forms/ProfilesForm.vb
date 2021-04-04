@@ -425,7 +425,7 @@ Public Class ProfilesForm
                 Dim remove As Profile = Nothing
 
                 For Each i As Profile In lbMain.Items
-                    If i.Name = pm.Name Then
+                    If i.Name.EqualsEx(pm.Name) Then
                         If MsgOK("There is already a profile with this name, overwrite?") Then
                             remove = i
                         Else
@@ -506,7 +506,7 @@ Public Class ProfilesForm
     Sub bnRightRight_Click(sender As Object, e As EventArgs) Handles bnRight.Click
         Dim inputName = InputBox.Show("Enter a name for a sub menu.")
 
-        If inputName <> "" Then
+        If inputName.NotNullOrEmptyS Then
             lbMain.SaveSelection()
 
             For x = 0 To lbMain.Items.Count - 1

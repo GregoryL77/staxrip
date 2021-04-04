@@ -1,6 +1,7 @@
 ﻿
 Imports System.Runtime.Serialization.Formatters.Binary
 Imports System.Threading
+Imports KGySoft.Collections
 
 <Serializable>
 Public Class Job
@@ -29,19 +30,19 @@ Public Class JobManager
     Shared Function GetJobPath() As String
         Dim name = p.TargetFile.Base
 
-        If name = "" Then
+        If name.NullOrEmptyS Then
             name = Macro.Expand(p.DefaultTargetName)
         End If
 
-        If name = "" Then
+        If name.NullOrEmptyS Then
             name = p.SourceFile.Base
         End If
 
         Return p.TempDir + name + ".srip"
     End Function
 
-    Shared Sub SaveJobs(jobs As List(Of Job))
-        Dim formatter As New BinaryFormatter
+    Shared Sub SaveJobs(jobs As CircularList(Of Job))
+        Dim formatter As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
         Dim counter As Integer
 
         While True
@@ -67,22 +68,22 @@ Public Class JobManager
     Shared Sub RemoveJob(path As String)
         Dim jobs = GetJobs()
 
-        For Each job In jobs.ToArray
-            If job.Path = path Then
-                jobs.Remove(job)
+        For j = jobs.Count - 1 To 0 Step -1
+            If jobs(j).Path.Equals(path) Then
+                jobs.RemoveAt(j)
                 SaveJobs(jobs)
             End If
-        Next
+        Next j
     End Sub
 
     Shared Sub ActivateJob(path As String, Optional isActive As Boolean = True)
         Dim jobs = GetJobs()
 
-        For Each job In jobs
-            If job.Path = path Then
-                job.Active = isActive
+        For j = 0 To jobs.Count - 1
+            If jobs(j).Path.Equals(path) Then
+                jobs(j).Active = isActive
             End If
-        Next
+        Next j
 
         SaveJobs(jobs)
     End Sub
@@ -90,9 +91,9 @@ Public Class JobManager
     Shared Sub AddJob(name As String, path As String, Optional position As Integer = -1)
         Dim jobs = GetJobs()
 
-        For Each job In jobs.ToArray
-            If job.Path = path Then
-                jobs.Remove(job)
+        For j = jobs.Count - 1 To 0 Step -1
+            If jobs(j).Path.Equals(path) Then
+                jobs.RemoveAt(j)
             End If
         Next
 
@@ -115,8 +116,8 @@ Public Class JobManager
         SaveJobs(jobs)
     End Sub
 
-    Shared Function GetJobs() As List(Of Job)
-        Dim formatter As New BinaryFormatter
+    Shared Function GetJobs() As CircularList(Of Job)
+        Dim formatter As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
         Dim jobsPath = Folder.Settings + "Jobs.dat"
         Dim counter As Integer
 
@@ -127,9 +128,9 @@ Public Class JobManager
                         jobsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
 
                         Try
-                            Return DirectCast(formatter.Deserialize(stream), List(Of Job))
+                            Return DirectCast(formatter.Deserialize(stream), CircularList(Of Job))
                         Catch ex As Exception
-                            Return New List(Of Job)
+                            Return New CircularList(Of Job)
                         End Try
                     End Using
 
@@ -147,6 +148,6 @@ Public Class JobManager
             End While
         End If
 
-        Return New List(Of Job)
+        Return New CircularList(Of Job)
     End Function
 End Class

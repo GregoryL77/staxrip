@@ -123,7 +123,7 @@ Public MustInherit Class VideoEncoder
         Dim MasteringDisplay_ColorPrimaries = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_ColorPrimaries")
         Dim MasteringDisplay_Luminance = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_Luminance")
 
-        If MasteringDisplay_ColorPrimaries <> "" AndAlso MasteringDisplay_Luminance <> "" Then
+        If MasteringDisplay_ColorPrimaries.NotNullOrEmptyS AndAlso MasteringDisplay_Luminance.NotNullOrEmptyS Then
             Dim luminanceMatch = Regex.Match(MasteringDisplay_Luminance, "min: ([\d\.]+) cd/m2, max: ([\d\.]+) cd/m2")
 
             If luminanceMatch.Success Then
@@ -316,7 +316,7 @@ Public MustInherit Class VideoEncoder
         g.MainForm.llMuxer.Text = Muxer.OutputExt.ToUpper
         Dim newPath = p.TargetFile.ChangeExt(Muxer.OutputExt)
 
-        If p.SourceFile <> "" AndAlso newPath.ToLower = p.SourceFile.ToLower Then
+        If p.SourceFile.NotNullOrEmptyS AndAlso newPath.ToLowerInvariant.Equals(p.SourceFile.ToLowerInvariant) Then
             newPath = newPath.Dir + newPath.Base + "_new" + newPath.ExtFull
         End If
 
@@ -404,13 +404,13 @@ Public MustInherit Class VideoEncoder
     Shared Sub SaveProfile(encoder As VideoEncoder)
         Dim name = InputBox.Show("Please enter a profile name.", "Profile Name", encoder.Name)
 
-        If name <> "" Then
+        If name.NotNullOrEmptyS Then
             encoder.Name = name
 
             For Each i In From prof In s.VideoEncoderProfiles.ToArray
                           Where prof.GetType Is encoder.GetType
 
-                If i.Name = name Then
+                If i.Name.Equals(name) Then
                     s.VideoEncoderProfiles(s.VideoEncoderProfiles.IndexOf(i)) = encoder
                     Exit Sub
                 End If
@@ -450,7 +450,7 @@ Public MustInherit Class BasicVideoEncoder
 
     Overloads Shared Sub ImportCommandLine(commandLine As String, params As CommandLineParams)
         Try
-            If commandLine = "" Then
+            If commandLine.NullOrEmptyS Then
                 Exit Sub
             End If
 
@@ -512,7 +512,7 @@ Public MustInherit Class BasicVideoEncoder
                                     For xOpt = 0 To optionParam.Options.Length - 1
                                         Dim values = If(optionParam.Values.NothingOrEmpty, optionParam.Options, optionParam.Values)
 
-                                        If a(x + 1).Trim(""""c).ToLower = values(xOpt).ToLower.Replace(" ", "") Then
+                                        If a(x + 1).Trim(""""c).ToLowerInvariant = values(xOpt).ToLowerInvariant.Replace(" ", "") Then
                                             optionParam.Value = xOpt
                                             params.RaiseValueChanged(param)
                                             exitFor = True
@@ -623,7 +623,7 @@ Public Class BatchEncoder
     End Sub
 
     Overrides Sub RunCompCheck()
-        If CompCheckCommandLines = "" OrElse CompCheckCommandLines.Trim = "" Then
+        If CompCheckCommandLines.NullOrEmptyS OrElse CompCheckCommandLines.Trim.NullOrEmptyS Then
             ShowConfigDialog()
             Exit Sub
         End If
@@ -700,7 +700,7 @@ Public Class NullEncoder
             End If
         Next
 
-        If FileTypes.VideoText.Contains(p.SourceFile.Ext) Then
+        If FileTypes.VideoText.ContainsString(p.SourceFile.Ext) Then
             Return p.LastOriginalSourceFile
         Else
             Return p.SourceFile

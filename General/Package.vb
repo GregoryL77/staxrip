@@ -1,8 +1,8 @@
 
 Imports System.Text
 Imports System.Text.RegularExpressions
-
 Imports Microsoft.Win32
+Imports JM.LinqFaster
 
 Public Class Package
     Implements IComparable(Of Package)
@@ -139,7 +139,7 @@ Public Class Package
         .DownloadURL = "https://github.com/nu774/qaac/releases",
         .HelpSwitch = "-h",
         .HelpFilename = "qaac Help.txt",
-        .Keep = {"QTfiles64", "libsndfile-1.dll", "libFLAC_dynamic.dll", "wavpackdll.dll"},
+        .Keep = {"QTfiles64", "sndfile.dll", "libFLAC_dynamic.dll", "libsoxr64.dll", "libsoxconvolver64.dll", "wavpackdll.dll"},
         .HelpURL = "https://github.com/nu774/qaac/wiki",
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.qaac),
         .Description = "Console AAC encoder using the non-free Apple AAC encoder."})
@@ -1917,6 +1917,7 @@ Public Class Package
                           For Each pack In Items.Values
                               pack.LoadConf()
                           Next
+                          'Parallel.For(0, Items.Values.Count, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(v) Items.Values(v).LoadConf())
                       End SyncLock
                   End Sub)
     End Sub
@@ -1952,7 +1953,7 @@ Public Class Package
 
     Property Filename As String
         Get
-            If g.Is32Bit AndAlso Filename32 <> "" Then
+            If g.Is32Bit AndAlso Filename32.NotNullOrEmptyS Then
                 Return Filename32
             End If
 
@@ -1972,7 +1973,7 @@ Public Class Package
                     LaunchActionValue = Sub() g.ShellExecute(Path)
                 ElseIf Not HelpSwitch Is Nothing Then
                     LaunchActionValue = Sub() g.DefaultCommands.ExecutePowerShellScript(
-                        $"& '{Path}' {If(HelpSwitch.Contains("stderr"), HelpSwitch.Replace("stderr", ""), HelpSwitch)}", True)
+                        $"& '{Path}' {HelpSwitch.Replace("stderr", "")}", True)
                 ElseIf Filename.Ext.EqualsAny("avsi", "py") Then
                     LaunchActionValue = Sub() g.ShellExecute(g.GetTextEditorPath, Path.Escape)
                 End If
@@ -2009,19 +2010,19 @@ Public Class Package
             Dim plugin = DirectCast(Me, PluginPackage)
 
             If Not plugin.AvsFilterNames.NothingOrEmpty Then
-                If plugin.Filename.Ext = "dll" Then
+                If plugin.Filename.Ext.Equals("dll") Then
                     Return "AviSynth Plugin"
                 ElseIf plugin.Filename.Ext.EqualsAny("avs", "avsi") Then
                     Return "AviSynth Script"
                 End If
             ElseIf Not plugin.VSFilterNames.NothingOrEmpty Then
-                If plugin.Filename.Ext = "dll" Then
+                If plugin.Filename.Ext.Equals("dll") Then
                     Return "VapourSynth Plugin"
-                ElseIf plugin.Filename.Ext = "py" Then
+                ElseIf plugin.Filename.Ext.Equals("py") Then
                     Return "VapourSynth Script"
                 End If
             End If
-        ElseIf Filename.Ext = "dll" Then
+        ElseIf Filename.Ext.Equals("dll") Then
             Return "Library"
         Else
             Return "Misc"
@@ -2047,16 +2048,16 @@ Public Class Package
     Sub ShowHelp()
         Dim dic As New SortedDictionary(Of String, String)
 
-        If HelpFilename = "" AndAlso Not HelpSwitch Is Nothing Then
-            HelpFilename = Name + " Help.txt"
+        If HelpFilename.NullOrEmptyS AndAlso Not HelpSwitch Is Nothing Then
+            HelpFilename = Name & " Help.txt"
 
-            If CreateHelpfile() = "" Then
+            If CreateHelpfile().NullOrEmptyS Then
                 HelpFilename = ""
             End If
         End If
 
-        If HelpFilename <> "" Then
-            dic("Local") = Directory + HelpFilename
+        If HelpFilename.NotNullOrEmptyS Then
+            dic("Local") = Directory & HelpFilename
         End If
 
         dic("Online") = HelpURL
@@ -2064,19 +2065,24 @@ Public Class Package
         dic("VapourSynth") = HelpUrlVapourSynth
         dic("Wiki") = "https://github.com/staxrip/staxrip/wiki/" + Name.Replace(" ", "-")
 
-        Dim count = dic.Values.Where(Function(val) val <> "").Count
+        'Dim count = dic.Values.Where(Function(val) val.NotNullOrEmptyS).Count
+        Dim cn As Integer
+        For Each val In dic.Values
+            If val.NotNullOrEmptyS Then cn += 1
+            If cn > 1 Then Exit For
+        Next
 
-        If count > 1 Then
+        If cn > 1 Then
             Using dialog As New TaskDialog(Of String)
                 dialog.MainInstruction = "Choose option"
 
                 For Each pair In dic
-                    If pair.Value <> "" Then
+                    If pair.Value.NotNullOrEmptyS Then
                         dialog.AddCommand(pair.Key, pair.Value)
                     End If
                 Next
 
-                If dialog.Show <> "" Then
+                If dialog.Show.NotNullOrEmptyS Then
                     CreateHelpfile()
                     g.ShellExecute(dialog.SelectedValue)
                 End If
@@ -2095,15 +2101,15 @@ Public Class Package
 
     Public ReadOnly Property URL As String
         Get
-            If WebURL <> "" Then
+            If WebURL.NotNullOrEmptyS Then
                 Return WebURL
-            ElseIf HelpURL <> "" Then
+            ElseIf HelpURL.NotNullOrEmptyS Then
                 Return HelpURL
-            ElseIf HelpUrlAviSynth <> "" Then
+            ElseIf HelpUrlAviSynth.NotNullOrEmptyS Then
                 Return HelpUrlAviSynth
-            ElseIf HelpUrlVapourSynth <> "" Then
+            ElseIf HelpUrlVapourSynth.NotNullOrEmptyS Then
                 Return HelpUrlVapourSynth
-            ElseIf DownloadURL <> "" Then
+            ElseIf DownloadURL.NotNullOrEmptyS Then
                 Return DownloadURL
             End If
         End Get
@@ -2111,17 +2117,17 @@ Public Class Package
 
     Public ReadOnly Property HelpFileOrURL As String
         Get
-            If HelpFilename <> "" Then
+            If HelpFilename.NotNullOrEmptyS Then
                 Return HelpFile
-            ElseIf HelpURL <> "" Then
+            ElseIf HelpURL.NotNullOrEmptyS Then
                 Return HelpURL
-            ElseIf HelpUrlAviSynth <> "" Then
+            ElseIf HelpUrlAviSynth.NotNullOrEmptyS Then
                 Return HelpUrlAviSynth
-            ElseIf HelpUrlVapourSynth <> "" Then
+            ElseIf HelpUrlVapourSynth.NotNullOrEmptyS Then
                 Return HelpUrlVapourSynth
-            ElseIf WebURL <> "" Then
+            ElseIf WebURL.NotNullOrEmptyS Then
                 Return WebURL
-            ElseIf DownloadURL <> "" Then
+            ElseIf DownloadURL.NotNullOrEmptyS Then
                 Return DownloadURL
             Else
                 Return "https://github.com/staxrip/staxrip/wiki/" + Name.Replace(" ", "-")
@@ -2151,17 +2157,17 @@ Public Class Package
     End Function
 
     Function VerifyOK(Optional showEvenIfNotRequired As Boolean = False) As Boolean
-        If (Required() OrElse showEvenIfNotRequired) AndAlso (Required AndAlso GetStatus() <> "") Then
+        If (Required() OrElse showEvenIfNotRequired) AndAlso (Required AndAlso GetStatus().NotNullOrEmptyS) Then
             Using form As New AppsForm
                 form.ShowPackage(Me)
                 form.ShowDialog()
 
-                If GetStatus() <> "" Then
+                If GetStatus().NotNullOrEmptyS Then
                     Throw New AbortException()
                 End If
             End Using
 
-            If Required AndAlso GetStatus() <> "" Then
+            If Required AndAlso GetStatus().NotNullOrEmptyS Then
                 Return False
             End If
         End If
@@ -2170,13 +2176,21 @@ Public Class Package
     End Function
 
     Overridable Function GetStatus() As String
-        If GetStatusLocation() <> "" Then
-            Return GetStatusLocation()
+        Dim gsl As String
+        Dim filepath As String = Path
+
+        If filepath.NullOrEmptyS Then
+            gsl = "App not found, use the Path menu to locate the App."
+        End If
+
+        If gsl IsNot Nothing Then
+            Return gsl
         End If
 
         If Not s.AllowToolsWithWrongVersion Then
-            If GetStatusVersion() <> "" Then
-                Return GetStatusVersion()
+            Dim gsv As String = GetStatusVersion(filepath)
+            If gsv IsNot Nothing Then
+                Return gsv
             End If
         End If
 
@@ -2185,20 +2199,27 @@ Public Class Package
         End If
     End Function
 
-    Function GetStatusVersion() As String
+    Function GetStatusVersion(ByRef filepath As String) As String
         Dim ret As String
 
-        If Not IsVersionValid() Then
-            If IsVersionOld() Then
-                If Not VersionAllowOld Then
-                    ret = $"The currently used version of {Name} is not compatible (too old)."
-                Else
-                    ret = $"An old {Name} version was found, click on Version (F12) and enter the name of this version or install a newer version."
-                End If
-            End If
+        If VersionAllowAny Then Return Nothing
 
-            If IsVersionNew() Then
-                ret = $"A new {Name} version was found, new versions are usually compatible, click on Version (F12) and enter the name of this version."
+        If filepath.NotNullOrEmptyS Then
+            Dim flwt As Date = File.GetLastWriteTimeUtc(filepath)
+
+            If Not (((VersionDate - flwt).TotalDays < -3 AndAlso VersionAllowNew) OrElse (flwt.AddDays(-2) < VersionDate AndAlso flwt.AddDays(2) > VersionDate)) Then
+
+                If (VersionDate - flwt).TotalDays > 3 Then
+                    If Not VersionAllowOld Then
+                        ret = $"The currently used version of {Name} is not compatible (too old)."
+                    Else
+                        ret = $"An old {Name} version was found, click on Version (F12) and enter the name of this version or install a newer version."
+                    End If
+                End If
+
+                If (VersionDate - flwt).TotalDays < -3 Then
+                    ret = $"A new {Name} version was found, new versions are usually compatible, click on Version (F12) and enter the name of this version."
+                End If
             End If
         End If
 
@@ -2206,41 +2227,44 @@ Public Class Package
     End Function
 
     Function GetStatusDisplay() As String
-        If GetStatus() <> "" Then
-            Return GetStatus()
+        Dim gs As String = GetStatus()
+        If gs.NotNullOrEmptyS Then
+            Return gs
         End If
 
         Return "OK"
     End Function
 
-    Function GetStatusLocation() As String
-        If Path = "" Then
-            Return "App not found, use the Path menu to locate the App."
-        End If
-    End Function
+    'Function GetStatusLocation() As String
+    '    If Path.NullOrEmptyS Then
+    '        Return "App not found, use the Path menu to locate the App."
+    '    End If
+    'End Function
 
     Function IsVersionOld() As Boolean
         Dim filepath = Path
-
-        If filepath <> "" Then
+        If filepath.NotNullOrEmptyS Then
             If (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays > 3 Then
                 Return True
             End If
         End If
     End Function
 
-    Function IsVersionNew() As Boolean
-        Dim filepath = Path
-
-        If filepath <> "" Then
-            If (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays < -3 Then
-                Return True
-            End If
-        End If
-    End Function
-
+    'Function IsVersionNew() As Boolean
+    '    Dim filepath = Path
+    '    If filepath.NotNullOrEmptyS Then
+    '        If (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays < -3 Then
+    '            Return True
+    '        End If
+    '    End If
+    'End Function
     Function IsVersionCorrect() As Boolean
-        Return Not IsVersionOld() AndAlso Not IsVersionNew()
+        Dim filepath = Path
+        If filepath.NotNullOrEmptyS Then
+            Dim lastWrDays As Double = (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays
+            Return Not lastWrDays > 3 AndAlso Not lastWrDays < -3
+        End If
+        Return True    'Return Not IsVersionOld() AndAlso Not IsVersionNew()
     End Function
 
     Overridable Function IsVersionValid() As Boolean
@@ -2248,21 +2272,23 @@ Public Class Package
             Return True
         End If
 
-        If IsVersionNew() AndAlso VersionAllowNew Then
-            Return True
-        End If
-
         Dim filepath = Path
 
-        If filepath <> "" Then
-            Dim dt = File.GetLastWriteTimeUtc(filepath)
-            Return dt.AddDays(-2) < VersionDate AndAlso dt.AddDays(2) > VersionDate
+        If filepath.NotNullOrEmptyS Then
+            Dim flwt As Date = File.GetLastWriteTimeUtc(filepath)
+
+            If (VersionDate - flwt).TotalDays < -3 AndAlso VersionAllowNew Then
+                Return True
+            End If
+
+            Return flwt.AddDays(-2) < VersionDate AndAlso flwt.AddDays(2) > VersionDate
         End If
     End Function
 
-    Function IsCustomPathAllowed() As Boolean
-        Return Not Path.StartsWithEx(Folder.System) AndAlso Not Path.ContainsEx("FrameServer")
-    End Function
+    'Function IsCustomPathAllowed() As Boolean
+    '    Dim pat As String = Path
+    '    Return Not pat.StartsWithEx(Folder.System) AndAlso Not pat.ContainsEx("FrameServer")
+    'End Function
 
     ReadOnly Property Directory As String
         Get
@@ -2280,7 +2306,7 @@ Public Class Package
         If Not s Is Nothing AndAlso Not s.Storage Is Nothing Then
             ret = s.Storage.GetString(Name + "custom path")
 
-            If ret <> "" Then
+            If ret.NotNullOrEmptyS Then
                 If File.Exists(ret) Then
                     Return ret
                 Else
@@ -2332,7 +2358,7 @@ Public Class Package
 
             exePath = FindEverywhere("python.exe", Python.Exclude(0))
 
-            If exePath <> "" Then
+            If exePath.NotNullOrEmptyS Then
                 Return exePath.Dir
             End If
         End If
@@ -2348,10 +2374,10 @@ Public Class Package
                 Return ret
             End If
 
-            If Location <> "" Then
+            If Location.NotNullOrEmptyS Then
                 ret = GetPathFromLocation(Location)
 
-                If ret <> "" Then
+                If ret.NotNullOrEmptyS Then
                     Return ret
                 End If
             End If
@@ -2359,7 +2385,7 @@ Public Class Package
             If Not Locations.NothingOrEmpty Then
                 ret = GetPathFromLocation(Locations)
 
-                If ret <> "" Then
+                If ret.NotNullOrEmptyS Then
                     Return ret
                 End If
             End If
@@ -2405,7 +2431,7 @@ Public Class Package
                     ret = FindEverywhere(Filename, Exclude(0))
                 End If
 
-                If ret <> "" Then
+                If ret.NotNullOrEmptyS Then
                     Return ret
                 End If
             End If
@@ -2413,11 +2439,11 @@ Public Class Package
     End Property
 
     Function GetPathFromLocation(dir As String) As String
-        If dir = "" Then
+        If dir.NullOrEmptyS Then
             Return Nothing
         End If
 
-        If Not dir.Contains(":\") AndAlso Not dir.StartsWith("\\") Then
+        If Not dir.Contains(":\") AndAlso Not dir.StartsWith("\\", StringComparison.Ordinal) Then
             dir = Folder.Apps + dir
         End If
 
@@ -2430,20 +2456,20 @@ Public Class Package
         For Each hintDir In dirs
             Dim ret = GetPathFromLocation(hintDir)
 
-            If ret <> "" Then
+            If ret.NotNullOrEmptyS Then
                 Return ret
             End If
         Next
     End Function
 
     Shared Function IsNotEmptyOrIgnored(filePath As String, ignorePath As String) As Boolean
-        Return filePath <> "" AndAlso (ignorePath = Nothing OrElse Not filePath.Contains(ignorePath))
+        Return filePath.NotNullOrEmptyS AndAlso (ignorePath = Nothing OrElse Not filePath.Contains(ignorePath))
     End Function
 
     Shared Function FindEverywhere(fileName As String, Optional ignorePath As String = Nothing) As String
         Dim ret As String
 
-        If fileName.Ext = "exe" Then
+        If fileName.Ext.Equals("exe") Then
             ret = FindInMuiCacheKey(fileName)
 
             If IsNotEmptyOrIgnored(ret, ignorePath) Then
@@ -2468,7 +2494,7 @@ Public Class Package
         For Each fn In fileNames
             Dim ret = FindEverywhere(fn)
 
-            If ret <> "" Then
+            If ret.NotNullOrEmptyS Then
                 Return ret
             End If
         Next
@@ -2571,9 +2597,8 @@ Public Class Package
     End Sub
 
     Sub SaveConf()
-        Dim sb As New StringBuilder
-        sb.Append("Version = " + Version + BR +
-                  "Date = " + VersionDate.ToInvariantString("yyyy-MM-dd"))
+        Dim sb As New StringBuilder(32)
+        sb.Append("Version = ").Append(Version).Append(BR).Append("Date = ").Append(VersionDate.ToInvariantString("yyyy-MM-dd"))
         sb.ToString.WriteFileUTF8BOM(ConfPath)
     End Sub
 

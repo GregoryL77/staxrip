@@ -186,11 +186,11 @@ Namespace UI
                 Dim a As New ArrayList
                 Dim gp As GridProperty = CType(i.Value, GridProperty)
 
-                If Not gp.Category Is Nothing AndAlso Not gp.Category = "" Then
+                If gp.Category.NotNullOrEmptyS Then
                     a.Add(New CategoryAttribute(gp.Category))
                 End If
 
-                If Not gp.Description Is Nothing AndAlso Not gp.Description = "" Then
+                If gp.Description.NotNullOrEmptyS Then
                     a.Add(New DescriptionAttribute(gp.Description))
                 End If
 

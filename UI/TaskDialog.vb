@@ -255,7 +255,7 @@ Public Class TaskDialog(Of T)
             CommandLinkShieldList.Add(id)
         End If
 
-        If description <> "" Then
+        If description.NotNullOrEmptyS Then
             text = text + BR + description
         End If
 

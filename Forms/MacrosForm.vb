@@ -258,7 +258,7 @@ Public Class MacrosForm
 
     Function Match(search As String, ParamArray values As String()) As Boolean
         For Each i In values
-            If i <> "" AndAlso i.ToLower.Contains(search.ToLower) Then
+            If i.NotNullOrEmptyS AndAlso i.ToLower.Contains(search.ToLower) Then
                 Return True
             End If
         Next
@@ -275,7 +275,7 @@ Public Class MacrosForm
         Next
 
         For Each i In macros
-            If stb.Text = "" OrElse Match(stb.Text, i.Name, i.Value) Then
+            If stb.Text.NullOrEmptyS OrElse Match(stb.Text, i.Name, i.Value) Then
                 Dim item As New ListViewItem
                 item.Text = i.Name
                 item.Tag = i.Value

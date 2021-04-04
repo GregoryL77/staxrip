@@ -1,8 +1,8 @@
-
-Imports System.ComponentModel
 Imports System.Globalization
 Imports System.Text.RegularExpressions
-
+Imports JM.LinqFaster
+Imports KGySoft.ComponentModel
+Imports KGySoft.CoreLibraries
 Imports StaxRip.UI
 
 Public Class MuxerForm
@@ -15,6 +15,8 @@ Public Class MuxerForm
             If Not (components Is Nothing) Then
                 components.Dispose()
             End If
+            If SubFBL IsNot Nothing Then SubFBL.Dispose()
+            If AudioFBL IsNot Nothing Then AudioFBL.Dispose()
         End If
         MyBase.Dispose(disposing)
     End Sub
@@ -654,9 +656,11 @@ Public Class MuxerForm
 #End Region
 
     Private Muxer As Muxer
-    Private AudioBindingSource As New BindingSource
-    Private SubtitleBindingSource As New BindingSource
-    Private SubtitleItems As New BindingList(Of SubtitleItem)
+    'Private AudioBindingSource As New BindingSource
+    Private AudioFBL As New FastBindingList(Of AudioProfile)(Force.DeepCloner.DeepClonerExtensions.DeepClone(p.AudioTracks).ToCircularList) With {.CheckConsistency = False, .RaiseListChangedEvents = True, .AllowNew = False}
+    'Private SubtitleBindingSource As New BindingSource
+    'Private SubtitleItems As New BindingList(Of SubtitleItem)
+    Private SubFBL As New FastBindingList(Of SubtitleItem) With {.CheckConsistency = False, .RaiseListChangedEvents = True, .AllowNew = False}
 
     Sub New(muxer As Muxer)
         MyBase.New()
@@ -672,16 +676,16 @@ Public Class MuxerForm
         lbAttachments.Items.AddRange(muxer.Attachments.Select(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
         lbAttachments.RemoveButton = bnAttachmentRemove
 
-        AudioBindingSource.DataSource = ObjectHelp.GetCopy(p.AudioTracks)
+        'AudioBindingSource.DataSource = ObjectHelp.GetCopy(p.AudioTracks)
 
-        dgvAudio.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
+        dgvAudio.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCells
         dgvAudio.MultiSelect = False
         dgvAudio.SelectionMode = DataGridViewSelectionMode.FullRowSelect
         dgvAudio.AllowUserToResizeRows = False
         dgvAudio.RowHeadersVisible = False
         dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
         dgvAudio.AutoGenerateColumns = False
-        dgvAudio.DataSource = AudioBindingSource
+        dgvAudio.DataSource = AudioFBL
 
         dgvTags.DataSource = muxer.Tags
         dgvTags.AllowUserToAddRows = True
@@ -721,16 +725,16 @@ Public Class MuxerForm
         pathColumn.HeaderText = "Track"
         pathColumn.ReadOnly = True
 
-        If dgvAudio.RowCount > 0 Then
+        If dgvAudio.Rows.Count > 0 Then
             dgvAudio.Rows(0).Selected = True
         End If
 
-        dgvSubtitles.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
-        dgvSubtitles.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
+        dgvSubtitles.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
+        dgvSubtitles.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None
         dgvSubtitles.AutoGenerateColumns = False
         dgvSubtitles.ShowCellToolTips = False
         dgvSubtitles.AllowUserToResizeRows = False
-        dgvSubtitles.AllowUserToResizeColumns = False
+        dgvSubtitles.AllowUserToResizeColumns = True
         dgvSubtitles.RowHeadersVisible = False
         dgvSubtitles.SelectionMode = DataGridViewSelectionMode.FullRowSelect
         dgvSubtitles.MultiSelect = False
@@ -801,9 +805,9 @@ Public Class MuxerForm
         filenameColumn.DataPropertyName = "Filename"
         dgvSubtitles.Columns.Add(filenameColumn)
 
-        SubtitleBindingSource.AllowNew = False
-        SubtitleBindingSource.DataSource = SubtitleItems
-        dgvSubtitles.DataSource = SubtitleBindingSource
+        'SubtitleBindingSource.AllowNew = False
+        'SubtitleBindingSource.DataSource = SubtitleItems
+        dgvSubtitles.DataSource = SubFBL
 
         TipProvider.SetTip("Additional command line switches that may contain macros.", tpCommandLine)
     End Sub
@@ -910,7 +914,7 @@ Public Class MuxerForm
                                  If i.IsCommon Then
                                      ml.Button.Add(i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
                                  Else
-                                     ml.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpper + " | " + i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
+                                     ml.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpperInvariant + " | " + i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
                                  End If
 
                                  Application.DoEvents()
@@ -953,7 +957,7 @@ Public Class MuxerForm
         SetValues()
 
         If DialogResult = DialogResult.OK Then
-            p.AudioTracks = DirectCast(AudioBindingSource.DataSource, List(Of AudioProfile))
+            p.AudioTracks = AudioFBL.ToList
             Muxer.Attachments.Clear()
             Muxer.Attachments.AddRange(lbAttachments.Items.OfType(Of AttachmentContainer).Select(Function(val) val.Filepath))
         End If
@@ -962,7 +966,7 @@ Public Class MuxerForm
     Sub SetValues()
         Muxer.Subtitles.Clear()
 
-        For Each subtitle In SubtitleItems
+        For Each subtitle In SubFBL
             subtitle.Subtitle.Language = subtitle.Language
             subtitle.Subtitle.Enabled = subtitle.Enabled
             subtitle.Subtitle.Title = subtitle.Title
@@ -990,23 +994,49 @@ Public Class MuxerForm
     End Sub
 
     Sub UpdateControls()
-        bnAudioRemove.Enabled = dgvAudio.SelectedRows.Count > 0
-        bnAudioPlay.Enabled = dgvAudio.SelectedRows.Count > 0
-        bnAudioEdit.Enabled = dgvAudio.SelectedRows.Count > 0
-        bnAudioUp.Enabled = dgvAudio.CanMoveUp
-        bnAudioDown.Enabled = dgvAudio.CanMoveDown
+        If Not IsHandleCreated Then Exit Sub
+        BeginInvoke(Sub()
+                        'Me.tlpSubtitles.SuspendLayout()
+                        'Me.flpSubtitleButtons.SuspendLayout()
+                        'Me.tlpAudio.SuspendLayout()
+                        'Me.flpAudio.SuspendLayout()
+                        'Me.tlpAttachments.SuspendLayout()
+                        'Me.flpAttachments.SuspendLayout()
+                        'Me.TableLayoutPanel1.SuspendLayout()
+                        'Me.tlpMain.SuspendLayout()
+                        'Me.SuspendLayout()
 
-        Dim selectedSubtitles = dgvSubtitles.SelectedRows.Count > 0
-        Dim subtitlePath = If(selectedSubtitles AndAlso dgvSubtitles.CurrentRow.Index < SubtitleItems.Count, SubtitleItems(dgvSubtitles.CurrentRow.Index).Subtitle.Path, "")
-        bnSubtitleBDSup2SubPP.Enabled = selectedSubtitles AndAlso {"idx", "sup"}.Contains(subtitlePath.Ext)
-        bnSubtitleEdit.Enabled = bnSubtitleBDSup2SubPP.Enabled
-        bnSubtitlePlay.Enabled = p.SourceFile <> "" AndAlso selectedSubtitles
-        bnSubtitleUp.Enabled = dgvSubtitles.CanMoveUp
-        bnSubtitleDown.Enabled = dgvSubtitles.CanMoveDown
-        bnSubtitleSetNames.Enabled = selectedSubtitles
-        bnSubtitleRemove.Enabled = selectedSubtitles
+                        lbAttachments.UpdateControls()
 
-        lbAttachments.UpdateControls()
+                        Dim crAudioI As Integer = dgvAudio.CurrentCellAddress.Y
+                        Dim selectedAudio As Boolean = dgvAudio.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0
+                        bnAudioRemove.Enabled = selectedAudio
+                        bnAudioPlay.Enabled = selectedAudio
+                        bnAudioEdit.Enabled = selectedAudio
+                        bnAudioUp.Enabled = selectedAudio AndAlso crAudioI > 0
+                        bnAudioDown.Enabled = selectedAudio AndAlso crAudioI < dgvAudio.Rows.Count - 1
+
+                        Dim crSubI As Integer = dgvSubtitles.CurrentCellAddress.Y
+                        Dim selectedSubtitles = dgvSubtitles.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0
+                        Dim subtitlePath = If(selectedSubtitles AndAlso crSubI < SubFBL.Count, SubFBL(crSubI).Subtitle.Path, "")
+                        bnSubtitleBDSup2SubPP.Enabled = selectedSubtitles AndAlso {"idx", "sup"}.ContainsString(subtitlePath.Ext)
+                        bnSubtitleEdit.Enabled = bnSubtitleBDSup2SubPP.Enabled
+                        bnSubtitlePlay.Enabled = p.SourceFile.NotNullOrEmptyS AndAlso selectedSubtitles
+                        bnSubtitleUp.Enabled = selectedSubtitles AndAlso crSubI > 0
+                        bnSubtitleDown.Enabled = selectedSubtitles AndAlso crSubI < dgvSubtitles.Rows.Count - 1
+                        bnSubtitleSetNames.Enabled = selectedSubtitles
+                        bnSubtitleRemove.Enabled = selectedSubtitles
+
+                        'Me.tlpSubtitles.ResumeLayout(False)
+                        'Me.flpSubtitleButtons.ResumeLayout(False)
+                        'Me.tlpAudio.ResumeLayout(False)
+                        'Me.flpAudio.ResumeLayout(False)
+                        'Me.tlpAttachments.ResumeLayout(False)
+                        'Me.flpAttachments.ResumeLayout(False)
+                        'Me.TableLayoutPanel1.ResumeLayout(False)
+                        'Me.tlpMain.ResumeLayout(False)
+                        'Me.ResumeLayout(False)
+                    End Sub)
     End Sub
 
     Sub AddAudio(path As String)
@@ -1029,7 +1059,7 @@ Public Class MuxerForm
             ap.Delay = g.ExtractDelay(ap.File)
         End If
 
-        If FileTypes.VideoAudio.Contains(ap.File.Ext) Then
+        If FileTypes.VideoAudio.ContainsString(ap.File.Ext) Then
             ap.Streams = MediaInfo.GetAudioStreams(ap.File)
         End If
 
@@ -1052,18 +1082,19 @@ Public Class MuxerForm
         End If
 
         g.MainForm.UpdateSizeOrBitrate()
-        AudioBindingSource.Add(ap)
-        AudioBindingSource.Position = AudioBindingSource.Count - 1
+        AudioFBL.Add(ap)
+        dgvAudio.CurrentCell = dgvAudio.Item(1, AudioFBL.Count - 1)
         UpdateControls()
+        dgvAudio.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells)
+        dgvAudio.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCellsExceptHeaders)
     End Sub
 
     Sub AddSubtitles(subtitles As List(Of Subtitle))
+        Dim isDef As Boolean = SubFBL.Any(Function(item) item.Default)
         For Each i In subtitles
-            If SubtitleItems.Where(Function(item) item.Default).Count > 0 Then
-                i.Default = False
-            End If
 
             If File.Exists(i.Path) Then
+                If isDef Then i.Default = False
                 Dim size As String
 
                 If i.Size > 0 Then
@@ -1108,8 +1139,12 @@ Public Class MuxerForm
                 item.Filename = i.Path.FileName
                 item.Subtitle = i
 
-                SubtitleItems.Add(item)
+                SubFBL.Add(item)
             End If
+
+            dgvSubtitles.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells)
+            dgvSubtitles.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCellsExceptHeaders)
+            UpdateControls()
         Next
     End Sub
 
@@ -1118,7 +1153,7 @@ Public Class MuxerForm
             Exit Sub
         End If
 
-        Dim st = SubtitleItems(dgvSubtitles.CurrentRow.Index).Subtitle
+        Dim st = SubFBL(dgvSubtitles.CurrentCellAddress.Y).Subtitle
         Dim filepath = st.Path
 
         If st.Path.Ext = "idx" Then
@@ -1128,7 +1163,7 @@ Public Class MuxerForm
             FileHelp.Copy(st.Path.DirAndBase + ".sub", filepath.DirAndBase + ".sub")
         End If
 
-        If FileTypes.SubtitleExludingContainers.Contains(filepath.Ext) Then
+        If FileTypes.SubtitleExludingContainers.ContainsString(filepath.Ext) Then
             g.ShellExecute(Package.mpvnet.Path, "--sub-files=" + filepath.Escape + " " + p.FirstOriginalSourceFile.Escape)
         ElseIf p.FirstOriginalSourceFile = filepath Then
             g.ShellExecute(Package.mpvnet.Path, "--sub=" & (st.Index + 1) & " " + filepath.Escape)
@@ -1154,30 +1189,30 @@ Public Class MuxerForm
     End Sub
 
     Sub bnAudioRemove_Click(sender As Object, e As EventArgs) Handles bnAudioRemove.Click
-        dgvAudio.RemoveSelection
+        RemoveSelection(dgvAudio)
         UpdateControls()
     End Sub
 
     Sub bnAudioUp_Click(sender As Object, e As EventArgs) Handles bnAudioUp.Click
-        dgvAudio.MoveSelectionUp
+        MoveSelectionUp(dgvAudio, AudioFBL)
         UpdateControls()
     End Sub
 
     Sub bnAudioDown_Click(sender As Object, e As EventArgs) Handles bnAudioDown.Click
-        dgvAudio.MoveSelectionDown
+        MoveSelectionDown(dgvAudio, AudioFBL)
         UpdateControls()
     End Sub
 
     Sub bnAudioPlay_Click(sender As Object, e As EventArgs) Handles bnAudioPlay.Click
-        g.Play(DirectCast(AudioBindingSource(dgvAudio.SelectedRows(0).Index), AudioProfile).File)
+        g.Play(AudioFBL(dgvAudio.SelectedRows(0).Index).File)
     End Sub
 
     Sub bnAudioEdit_Click(sender As Object, e As EventArgs) Handles bnAudioEdit.Click
-        Dim ap = DirectCast(AudioBindingSource(dgvAudio.SelectedRows(0).Index), AudioProfile)
+        Dim ap = AudioFBL(dgvAudio.SelectedRows(0).Index)
         ap.EditProject()
         g.MainForm.UpdateAudioMenu()
         g.MainForm.UpdateSizeOrBitrate()
-        AudioBindingSource.ResetBindings(False)
+        AudioFBL.ResetBindings()
     End Sub
 
     Sub bnAttachmentAdd_Click(sender As Object, e As EventArgs) Handles bnAttachmentAdd.Click
@@ -1216,7 +1251,7 @@ Public Class MuxerForm
         Dim files = TryCast(e.Data.GetData(DataFormats.FileDrop), String())
 
         If Not files.NothingOrEmpty Then
-            If FileTypes.VideoAudio.ContainsAny(files.Select(Function(item) item.Ext)) Then
+            If files.AnyF(Function(f) FileTypes.VideoAudio.ContainsString(f.Ext)) Then
                 e.Effect = DragDropEffects.Copy
             End If
         End If
@@ -1227,7 +1262,7 @@ Public Class MuxerForm
 
         If Not files.NothingOrEmpty Then
             For Each filePath In files
-                If FileTypes.VideoAudio.Contains(filePath.Ext) Then
+                If FileTypes.VideoAudio.ContainsString(filePath.Ext) Then
                     AddAudio(filePath)
                 End If
             Next
@@ -1251,7 +1286,7 @@ Public Class MuxerForm
         Dim files = TryCast(ea.Data.GetData(DataFormats.FileDrop), String())
 
         If Not files.NothingOrEmpty Then
-            If FileTypes.SubtitleIncludingContainers.ContainsAny(files.Select(Function(item) item.Ext)) Then
+            If files.AnyF(Function(f) FileTypes.SubtitleIncludingContainers.ContainsString(f.Ext)) Then
                 ea.Effect = DragDropEffects.Copy
             End If
         End If
@@ -1262,7 +1297,7 @@ Public Class MuxerForm
 
         If Not files.NothingOrEmpty Then
             For Each filePath In files
-                If FileTypes.SubtitleIncludingContainers.Contains(filePath.Ext) Then
+                If FileTypes.SubtitleIncludingContainers.ContainsString(filePath.Ext) Then
                     AddSubtitles(Subtitle.Create(filePath))
                 End If
             Next
@@ -1298,17 +1333,39 @@ Public Class MuxerForm
     End Sub
 
     Sub bnSubtitleRemove_Click(sender As Object, e As EventArgs) Handles bnSubtitleRemove.Click
-        dgvSubtitles.RemoveSelection
+        RemoveSelection(dgvSubtitles)
         UpdateControls()
     End Sub
 
     Sub bnSubtitleUp_Click(sender As Object, e As EventArgs) Handles bnSubtitleUp.Click
-        dgvSubtitles.MoveSelectionUp
+        MoveSelectionUp(dgvSubtitles, SubFBL)
         UpdateControls()
+        'Dim sw As New Stopwatch
+        'Dim item As New SubtitleItem
+        'Dim cnt As Integer
+        'AudioConverterForm.WarmUpCpu()
+        'sw.Restart()
+        'For n = 1 To 100
+        '    For Each i In SubFBL
+        '        item.Enabled = i.Enabled
+        '        item.Language = i.Language
+        '        item.Title = i.Title
+        '        item.Default = i.Default
+        '        item.Forced = i.Forced
+        '        item.ID = i.ID
+        '        item.TypeName = i.TypeName
+        '        item.Size = i.Size
+        '        item.Filename = i.Filename
+        '        item.Subtitle = i.Subtitle
+        '        cnt += 1
+        '    Next
+        'Next
+        'sw.Stop()
+        'MsgInfo(sw.ElapsedTicks / 10000, item.Filename.FileName & " |ItCn:" & cnt)
     End Sub
 
     Sub bnSubtitleDown_Click(sender As Object, e As EventArgs) Handles bnSubtitleDown.Click
-        dgvSubtitles.MoveSelectionDown
+        MoveSelectionDown(dgvSubtitles, SubFBL)
         UpdateControls()
     End Sub
 
@@ -1317,13 +1374,13 @@ Public Class MuxerForm
             td.MainInstruction = "Set names for all streams."
             td.AddCommand("Set language in English", 1)
 
-            If CultureInfo.CurrentCulture.NeutralCulture.TwoLetterISOLanguageName <> "en" Then
+            If Not CultureInfo.CurrentCulture.NeutralCulture.TwoLetterISOLanguageName.Equals("en") Then
                 td.AddCommand("Set language in " + CultureInfo.CurrentCulture.NeutralCulture.DisplayName, 2)
             End If
 
             Select Case td.Show
                 Case 1
-                    For Each i In SubtitleItems
+                    For Each i In SubFBL
                         i.Title = i.Language.CultureInfo.EnglishName
 
                         If i.Forced Then
@@ -1331,9 +1388,9 @@ Public Class MuxerForm
                         End If
                     Next
 
-                    SubtitleBindingSource.ResetBindings(False)
+                    SubFBL.ResetBindings()
                 Case 2
-                    For Each i In SubtitleItems
+                    For Each i In SubFBL
                         i.Title = i.Language.CultureInfo.NeutralCulture.DisplayName
 
                         If i.Forced Then
@@ -1341,17 +1398,17 @@ Public Class MuxerForm
                         End If
                     Next
 
-                    SubtitleBindingSource.ResetBindings(False)
+                    SubFBL.ResetBindings()
             End Select
         End Using
     End Sub
 
     Sub bnSubtitleBDSup2SubPP_Click(sender As Object, e As EventArgs) Handles bnSubtitleBDSup2SubPP.Click
         Try
-            Dim st = SubtitleItems(dgvSubtitles.CurrentRow.Index).Subtitle
+            Dim st = SubFBL(dgvSubtitles.CurrentCellAddress.Y).Subtitle
             Dim fp = st.Path
 
-            If fp.Ext = "idx" Then
+            If fp.Ext.Equals("idx") Then
                 fp = p.TempDir + p.TargetFile.Base + "_temp.idx"
                 Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " + st.IndexIDX.ToString).WriteFileDefault(fp)
                 FileHelp.Copy(st.Path.DirAndBase + ".sub", fp.DirAndBase + ".sub")
@@ -1365,10 +1422,10 @@ Public Class MuxerForm
 
     Sub bnSubtitleEdit_Click(sender As Object, e As EventArgs) Handles bnSubtitleEdit.Click
         Try
-            Dim st = SubtitleItems(dgvSubtitles.CurrentRow.Index).Subtitle
+            Dim st = SubFBL(dgvSubtitles.CurrentCellAddress.Y).Subtitle
             Dim fp = st.Path
 
-            If fp.ExtFull = ".idx" Then
+            If fp.ExtFull.Equals(".idx") Then
                 fp = p.TempDir + p.TargetFile.Base + "_temp.idx"
                 Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " + st.IndexIDX.ToString).WriteFileDefault(fp)
                 FileHelp.Copy(st.Path.DirAndBase + ".sub", fp.DirAndBase + ".sub")
@@ -1382,5 +1439,58 @@ Public Class MuxerForm
 
     Sub dgvSubtitles_DataBindingComplete(sender As Object, e As DataGridViewBindingCompleteEventArgs) Handles dgvSubtitles.DataBindingComplete
         UpdateControls()
+    End Sub
+    'Sub dgvAudio_SelectionChanged(sender As Object, e As EventArgs) Handles dgvAudio.SelectionChanged, dgvAudio.CurrentCellChanged, dgvSubtitles.SelectionChanged, dgvSubtitles.CurrentCellChanged
+    '    UpdateControls()
+    'End Sub
+    Sub RemoveSelection(dgv As DataGridView)
+        Dim rC As Integer = dgv.Rows.Count
+        Dim dC As Integer
+        For r = rC - 1 To 0 Step -1
+            If dgv.Rows.GetRowState(r) >= &B1100000 Then
+                dgv.Rows.RemoveAt(r)
+                dC += 1
+            End If
+        Next
+        rC -= dC
+        If rC > 0 AndAlso dgv.CurrentCellAddress.Y = rC - 1 Then
+            dgv.Rows(rC - 1).Selected = True
+        End If
+    End Sub
+
+    Function CanMoveUp(dgv As DataGridView) As Boolean
+        Return dgv.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0 AndAlso dgv.CurrentCellAddress.Y > 0
+    End Function
+
+    Function CanMoveDown(dgv As DataGridView) As Boolean
+        Return dgv.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0 AndAlso dgv.CurrentCellAddress.Y < dgv.Rows.Count - 1
+    End Function
+
+    Sub MoveSelectionUp(Of T)(dgv As DataGridView, ByRef fbl As FastBindingList(Of T))
+        If CanMoveUp(dgv) Then
+            Dim pos = dgv.CurrentCellAddress.Y
+            'fbl.RaiseListChangedEvents = False
+            Dim current = fbl(pos)
+            fbl.RemoveAt(pos)
+            pos -= 1
+            fbl.Insert(pos, current)
+            dgv.CurrentCell = dgv(dgv.CurrentCellAddress.X, pos)
+            'fbl.RaiseListChangedEvents = True
+            'fbl.ResetItem(pos)
+        End If
+    End Sub
+
+    Sub MoveSelectionDown(Of T)(dgv As DataGridView, ByRef fbl As FastBindingList(Of T))
+        If CanMoveDown(dgv) Then
+            Dim pos = dgv.CurrentCellAddress.Y
+            'fbl.RaiseListChangedEvents = False
+            Dim current = fbl(pos)
+            fbl.RemoveAt(pos)
+            pos += 1
+            fbl.Insert(pos, current)
+            dgv.CurrentCell = dgv(dgv.CurrentCellAddress.X, pos)
+            'fbl.RaiseListChangedEvents = True
+            'fbl.ResetItem(pos)
+        End If
     End Sub
 End Class

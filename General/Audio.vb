@@ -1,6 +1,7 @@
 ﻿
-Imports System.Text
 Imports System.Globalization
+Imports System.Text
+Imports JM.LinqFaster
 Imports KGySoft.CoreLibraries
 
 Public Class Audio
@@ -13,7 +14,7 @@ Public Class Audio
             p.TempDir = ap.File.Dir
         End If
 
-        If ap.File <> p.SourceFile Then
+        If Not ap.File.Equals(p.SourceFile) Then
             Log.Write("Media Info Audio Source " & ap.GetTrackID, MediaInfo.GetSummary(ap.File, ap.FileKeyHashValue))
         End If
 
@@ -51,7 +52,7 @@ Public Class Audio
                     Case ".mp4"
                         MP4BoxDemuxer.DemuxAudio(ap.File, ap.Stream, ap, p, True)
                     Case Else
-                        If p.Script.GetFilter("Source").Script.ToLower.Contains("directshowsource") AndAlso
+                        If p.Script.GetFilter("Source").Script.ToLowerInvariant.Contains("directshowsource") AndAlso
                             Not TypeOf ap Is MuxAudioProfile Then
 
                             ConvertDirectShowSource(ap)
@@ -84,12 +85,12 @@ Public Class Audio
             base = path.Base.Substring(p.SourceFile.Base.Length)
 
             'To Do: empty pipe streams temp files
-            If base = "" Then ShortBegEnd(path.Base)
+            If base.NullOrEmptyS Then ShortBegEnd(path.Base)
         Else
             base = path.Base
         End If
 
-        If base = "" Then
+        If base.NullOrEmptyS Then
             base = "temp"
         End If
 
@@ -99,11 +100,11 @@ Public Class Audio
             ret += " " & stream.Delay & "ms"
         End If
 
-        If stream.Language.TwoLetterCode <> "iv" Then
+        If Not stream.Language.TwoLetterCode.Equals("iv") Then
             ret += " " + stream.Language.ToString
         End If
 
-        If stream.Title <> "" Then
+        If stream.Title.NotNullOrEmptyS Then
             ret += " {" + stream.Title.Shorten(50).EscapeIllegalFileSysChars + "}"
         End If
 
@@ -111,16 +112,16 @@ Public Class Audio
     End Function
 
     Shared Sub Convert(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then
+        If ap.File.Ext.Equals(ap.ConvertExt) Then
             Exit Sub
         End If
 
-        If ap.File.Ext = "avs" Then
+        If ap.File.Ext.Equals("avs") Then
             Dim outPath = ap.File.DirAndBase + "." + ap.ConvertExt
             Dim args = "-i " + ap.File.Escape + " -y -hide_banner " + outPath.Escape
 
             Using proc As New Proc
-                proc.Header = "AVS to " + outPath.Ext.ToUpper
+                proc.Header = "AVS to " + outPath.Ext.ToUpperInvariant
                 proc.SkipStrings = {"frame=", "size="}
                 proc.Encoding = Encoding.UTF8
                 proc.Package = Package.ffmpeg
@@ -147,7 +148,7 @@ Public Class Audio
                 ConvertDirectShowSource(ap)
         End Select
 
-        If p.Script.GetFilter("Source").Script.ToLower.Contains("directshowsource") Then
+        If p.Script.GetFilter("Source").Script.ToLowerInvariant.Contains("directshowsource") Then
             ConvertDirectShowSource(ap)
         End If
 
@@ -161,7 +162,7 @@ Public Class Audio
             Exit Sub
         End If
 
-        If Not FileTypes.NicAudioInput.Contains(ap.File.Ext) Then
+        If Not FileTypes.NicAudioInput.ContainsString(ap.File.Ext) Then
             Exit Sub
         End If
 
@@ -207,7 +208,7 @@ Public Class Audio
             Exit Sub
         End If
 
-        If Not FileTypes.NicAudioInput.Contains(ap.File.Ext) Then
+        If Not FileTypes.NicAudioInput.ContainsString(ap.File.Ext) Then
             Exit Sub
         End If
 
@@ -262,7 +263,7 @@ Public Class Audio
             Case CuttingMode.mkvmerge
                 CutMkvmerge(ap)
             Case CuttingMode.NicAudio
-                If FileTypes.NicAudioInput.Contains(ap.File.Ext) AndAlso
+                If FileTypes.NicAudioInput.ContainsString(ap.File.Ext) AndAlso
                     Not TypeOf ap Is MuxAudioProfile Then
 
                     CutNicAudio(ap)
@@ -294,7 +295,7 @@ Public Class Audio
             Exit Sub
         End If
 
-        If Not FileTypes.eac3toInput.Contains(ap.File.Ext) Then
+        If Not FileTypes.eac3toInput.ContainsString(ap.File.Ext) Then
             Exit Sub
         End If
 
@@ -319,7 +320,7 @@ Public Class Audio
         args += " -simple -progressnumbers"
 
         Using proc As New Proc
-            proc.Header = "Convert " + ap.File.Ext.ToUpper + " to " + outPath.Ext.ToUpper + " " & ap.GetTrackID
+            proc.Header = "Convert " + ap.File.Ext.ToUpperInvariant + " to " + outPath.Ext.ToUpperInvariant + " " & ap.GetTrackID
             proc.Package = Package.eac3to
             proc.Arguments = args
             proc.TrimChars = {"-"c, " "c}
@@ -337,7 +338,9 @@ Public Class Audio
     End Sub
 
     Shared Sub ConvertFF(ap As AudioProfile)
-        If ap.File.Ext = ap.ConvertExt Then
+        Dim apConvExt As String = ap.ConvertExt
+
+        If ap.File.Ext.Equals(apConvExt) Then
             Exit Sub
         End If
 
@@ -351,34 +354,34 @@ Public Class Audio
             End If
         End If
 
-        Dim outPath = (p.TempDir + ap.File.Base + "." + ap.ConvertExt).LongPathPrefix
+        Dim outPath = (p.TempDir + ap.File.Base + "." + apConvExt).LongPathPrefix
 
-        If ap.File = outPath Then
-            outPath += "." + ap.ConvertExt
+        If ap.File.Equals(outPath) Then
+            outPath += "." + apConvExt
         End If
 
-        Dim args As String
+        Dim args As New StringBuilder(128)
 
         If gap?.Params.ProbeSize <> 5 Then
-            args += $" -probesize {gap.Params.ProbeSize}M"
+            args.Append(" -probesize ").Append(gap.Params.ProbeSize).Append("M")
         End If
 
         If gap?.Params.AnalyzeDuration <> 5 Then
-            args += $" -analyzeduration {gap.Params.AnalyzeDuration}M"
+            args.Append(" -analyzeduration ").Append(gap.Params.AnalyzeDuration).Append("M")
         End If
 
-        args += " -sn -vn -dn -i " + ap.File.LongPathPrefix.Escape
+        args.Append(" -sn -vn -dn -i ").Append(ap.File.LongPathPrefix.Escape)
 
         If Not ap.Stream Is Nothing Then
-            args += " -sn -vn -dn -map 0:" & ap.Stream.StreamOrder
+            args.Append(" -sn -vn -dn -map 0:").Append(ap.Stream.StreamOrder)
         End If
 
         If gap?.Params.ffmpegDither <> FFDither.Disabled Then
-            args += " -dither_method " & [Enum](Of FFDither).ToString(gap.Params.ffmpegDither)
+            args.Append(" -dither_method ").Append([Enum](Of FFDither).ToString(gap.Params.ffmpegDither))
         End If
 
         If gap?.Params.ffmpegResampSOX Then
-            args += " -resampler soxr -precision 28"
+            args.Append(" -resampler soxr -precision 28")
         End If
 
         'p.Ranges.Count = 0 OrElse
@@ -386,108 +389,109 @@ Public Class Audio
         '(p.Ranges.Count > 0 AndAlso gap?.DecodingMode <> AudioDecodingMode.Pipe) Or
 
         'Not (p.Ranges.Count > 0 AndAlso Not ap.File.Contains("_cut_"))
-
+        Dim fpp As Integer
         If gap?.DecodingMode <> AudioDecodingMode.Pipe OrElse gap?.Decoder <> AudioDecoderMode.Automatic OrElse gap?.SupportsNormalize Then
             If gap.Params.Normalize Then
                 Select Case gap.Params.ffmpegNormalizeMode
                     Case ffmpegNormalizeMode.dynaudnorm
-                        args += " " + Audio.GetDynAudNormArgs(gap.Params)
+                        args.Append(" ").Append(Audio.GetDynAudNormArgs(gap.Params))
                         If ap.Gain <> 0 Then
-                            args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                            args.Append(",volume=").Append(ap.Gain.ToInvariantString).Append("dB")
                         End If
                     Case ffmpegNormalizeMode.loudnorm
-                        args += " " + Audio.GetLoudNormArgs(gap.Params)
+                        args.Append(" ").Append(Audio.GetLoudNormArgs(gap.Params))
                         If ap.Gain <> 0 Then
-                            args += ",volume=" + ap.Gain.ToInvariantString + "dB"
+                            args.Append(",volume=").Append(ap.Gain.ToInvariantString).Append("dB")
                         End If
                         If gap.Params.SamplingRate = 0 Then     'Loudnorm auto x4 upsample
-                            args += " -ar " & gap.SourceSamplingRate
+                            args.Append(" -ar ").Append(gap.SourceSamplingRate)
                         End If
                     Case ffmpegNormalizeMode.peak
                         If ap.Gain <> 0 Then
-                            args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+                            args.Append(" -af volume=").Append(ap.Gain.ToInvariantString).Append("dB")
+                            fpp += 1
                         End If
                 End Select
                 gap.Params.Normalize = False
 
             ElseIf ap.Gain <> 0 Then
-                args += " -af volume=" + ap.Gain.ToInvariantString + "dB"
+                args.Append(" -af volume=").Append(ap.Gain.ToInvariantString).Append("dB")
+                fpp += 1
             End If
 
             ap.Gain = 0
-
         End If
 
         If gap?.Params.SamplingRate <> 0 Then
-            args += " -ar " & gap.Params.SamplingRate
+            args.Append(" -ar ").Append(gap.Params.SamplingRate)
         End If
 
         If gap?.Params.ChannelsMode <> ChannelsMode.Original Then
-            args += " -rematrix_maxval 1 -ac " & ap.Channels
+            args.Append(" -rematrix_maxval 1 -ac ").Append(ap.Channels)
+            fpp += 1
             If gap.Params.ffmpegLFEMixLevel <> 0 AndAlso gap.Params.ChannelsMode < 3 Then
-                args += " -lfe_mix_level " & gap.Params.ffmpegLFEMixLevel.ToInvariantString
+                args.Append(" -lfe_mix_level ").Append(gap.Params.ffmpegLFEMixLevel.ToInvariantString)
             End If
         End If
 
         If gap?.DecodingMode = AudioDecodingMode.Pipe Then 'PIPE: keep intermediate files from loosing precision
-            If ap.ConvertExt.EqualsAny("wav") Then
-                args += " -c:a pcm_f32le"
-            ElseIf ap.ConvertExt = "wv" Then
-                args += " -compression_level 1"
-                If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
-                    args += " -sample_fmt fltp"
+            If apConvExt.Equals("wv") Then
+                args.Append(" -compression_level 1")
+                If fpp > 0 Then
+                    args.Append(" -sample_fmt fltp")
                 End If
+            ElseIf apConvExt.Equals("wav") Then
+                args.Append(" -c:a pcm_f32le")
             End If
         Else
-            If ap.ConvertExt.EqualsAny("wav") Then
-                Select Case gap?.Depth
-                    Case 24
-                        args += " -c:a pcm_s24le"
-                    Case 32
-                        args += " -c:a pcm_f32le"
-                    Case 16
-                        args += " -c:a pcm_s16le"
-                    Case Else
-                        args += " -c:a pcm_f32le"
-                End Select
-
-            ElseIf ap.ConvertExt = "wv" Then
-                args += " -compression_level 1"
+            If apConvExt.Equals("wv") Then
+                args.Append(" -compression_level 1")
 
                 Select Case gap?.Depth
                     Case 24
-                        args += " -sample_fmt s32p"
+                        args.Append(" -sample_fmt s32p")
                     Case 32
-                        args += " -sample_fmt fltp"
+                        args.Append(" -sample_fmt fltp")
                     Case 16
-                        args += " -sample_fmt s16p"
+                        args.Append(" -sample_fmt s16p")
                     Case Else
                         'should ffmpeg auto choose ???
-                        If args.ContainsAny(" -af ", "-rematrix_maxval 1 -ac") Then
-                            args += " -sample_fmt fltp"
+                        If fpp > 0 Then
+                            args.Append(" -sample_fmt fltp")
                         End If
-                        'Exit Select
+                End Select
+            ElseIf apConvExt.Equals("wav") Then
+
+                Select Case gap?.Depth
+                    Case 24
+                        args.Append(" -c:a pcm_s24le")
+                    Case 32
+                        args.Append(" -c:a pcm_f32le")
+                    Case 16
+                        args.Append(" -c:a pcm_s16le")
+                    Case Else
+                        args.Append(" -c:a pcm_f32le")
                 End Select
             End If
         End If
 
-        args += " -y -hide_banner" & s.GetFFLogLevel(FfLogLevel.info)
+        args.Append(" -y -hide_banner").Append(s.GetFFLogLevel(FfLogLevel.info))
 
-        args += " " + outPath.Escape
+        args.Append(" ").Append(outPath.Escape)
 
         Using proc As New Proc
-            proc.Header = "Convert " + ap.File.Ext.ToUpper + " to " + outPath.Ext.ToUpper + " " & ap.GetTrackID
+            proc.Header = "Convert " + ap.File.Ext.ToUpperInvariant + " to " + outPath.Ext.ToUpperInvariant + " " & ap.GetTrackID
             proc.SkipStrings = {"frame=", "size="}
             proc.Encoding = Encoding.UTF8
             proc.Package = Package.ffmpeg
-            proc.Arguments = args
+            proc.Arguments = args.ToString()
             proc.Duration = ap.GetDuration()
             proc.AllowedExitCodes = {0, 1}
             proc.Start()
         End Using
 
         If g.FileExists(outPath) Then
-            If outPath.StartsWith("\\?\") Then
+            If outPath.StartsWith("\\?\", StringComparison.Ordinal) Then
                 outPath = outPath.Substring(4)
             End If
 
@@ -533,8 +537,8 @@ Public Class Audio
         If params.ffmpegDynaudnormC Then ret += ":c=true"
         If params.ffmpegDynaudnormB Then ret += ":b=true"
 
-        If ret <> "" Then
-            Return "-af dynaudnorm=" + ret.Trim(":"c)
+        If ret.NotNullOrEmptyS Then
+            Return "-af dynaudnorm=" & ret.Trim(":"c)
         Else
             Return "-af dynaudnorm"
         End If
@@ -747,7 +751,7 @@ Public Class Audio
         Dim mkvPath = p.TempDir + ap.File.Base + "_cut_.mkv"
 
         Dim args2 = "-o " + mkvPath.Escape + " " + aviPath.Escape + " " + ap.File.Escape
-        args2 += " --split parts-frames:" + p.Ranges.Select(Function(v) v.Start & "-" & (v.End + 1)).Join(",+")
+        args2 += " --split parts-frames:" + p.Ranges.SelectF(Function(v) v.Start & "-" & (v.End + 1)).Join(",+")
         args2 += " --ui-language en"
 
         Using proc As New Proc
@@ -829,7 +833,7 @@ function Down2(clip a)
     End Function
 
     Shared Function IsEncoderUsed(ap As AudioProfile, encoder As GuiAudioEncoder) As Boolean
-        If TypeOf ap Is GUIAudioProfile AndAlso ap.File <> "" Then
+        If TypeOf ap Is GUIAudioProfile AndAlso ap.File.NotNullOrEmptyS Then
             Dim gap = DirectCast(ap, GUIAudioProfile)
 
             If gap.GetEncoder = encoder Then

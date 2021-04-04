@@ -499,7 +499,7 @@ Public Class CommandLineAudioEncoderForm
         Dim gap = ObjectHelp.GetCopy(Of BatchAudioProfile)(TempProfile)
         Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
 
-        If name <> "" Then
+        If name.NotNullOrEmptyS Then
             gap.Name = name
             s.AudioProfiles.Add(gap)
             MsgInfo("The profile was saved.")

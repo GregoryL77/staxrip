@@ -206,7 +206,7 @@ Public Class ffmpegEnc
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
-                    ItemsValue = New List(Of CommandLineParam)
+                    ItemsValue = New List(Of CommandLineParam)(32)
 
                     ItemsValue.AddRange({Decoder, Codec, Mode,
                         New OptionParam With {.Name = "x264/x265 preset", .Text = "Preset", .Switch = "-preset", .Init = 5, .Options = {"Ultrafast", "Superfast", "Veryfast", "Faster", "Fast", "Medium", "Slow", "Slower", "Veryslow", "Placebo"}, .VisibleFunc = Function() Codec.OptionText.EqualsAny("x264", "x265")},
@@ -276,7 +276,7 @@ Public Class ffmpegEnc
 '                    ret += " -hwaccel cuda"
             End Select
 
-            If sourcePath.Ext = "vpy" Then
+            If sourcePath.Ext.Equals("vpy") Then
                 ret += " -f vapoursynth"
             End If
 
@@ -284,9 +284,9 @@ Public Class ffmpegEnc
                 ret += " -an -i " + sourcePath.LongPathPrefix.Escape
             End If
 
-            Dim items = From i In Me.Items Where i.GetArgs <> "" AndAlso Not IsCustom(i.Switch)
+            Dim items = From i In Me.Items Where i.GetArgs.NotNullOrEmptyS AndAlso Not IsCustom(i.Switch)
 
-            If items.Count > 0 Then
+            If items.Any Then
                 ret += " " + items.Select(Function(item) item.GetArgs).Join(" ")
             End If
 
@@ -329,11 +329,11 @@ Public Class ffmpegEnc
         End Function
 
         Function IsCustom(switch As String) As Boolean
-            If switch = "" Then
+            If switch.NullOrEmptyS Then
                 Return False
             End If
 
-            If Custom.Value?.Contains(switch + " ") OrElse Custom.Value?.EndsWith(switch) Then
+            If Custom.Value?.Contains(switch & " ") OrElse Custom.Value?.EndsWith(switch, StringComparison.Ordinal) Then
                 Return True
             End If
         End Function

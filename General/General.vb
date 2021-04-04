@@ -157,7 +157,7 @@ Public Class Folder
                                 dir = Folder.AppDataCommon + "StaxRip"
                             End If
                         End Using
-                    ElseIf dir = "" Then
+                    ElseIf dir.NullOrEmptyS Then
                         dir = Folder.AppDataCommon + "StaxRip"
                     End If
 
@@ -305,7 +305,7 @@ Public Class SafeSerialization
             End If
         Next
 
-        Dim bf As New BinaryFormatter
+        Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
 
         Try
             Using fs As New FileStream(path, FileMode.Create)
@@ -320,7 +320,7 @@ Public Class SafeSerialization
 
         If File.Exists(path) Then
             Dim list As List(Of Object)
-            Dim bf As New BinaryFormatter
+            Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
 
             Using fs As New FileStream(path, FileMode.Open)
                 list = DirectCast(bf.Deserialize(fs), List(Of Object))
@@ -331,12 +331,12 @@ Public Class SafeSerialization
                     BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
 
                     If Not iFieldInfo.IsNotSerialized Then
-                        If i.Name = iFieldInfo.Name Then
+                        If i.Name.Equals(iFieldInfo.Name) Then
                             Try
                                 If i.Value.GetType Is GetType(Byte()) Then
                                     iFieldInfo.SetValue(instance, GetObjectInstance(DirectCast(i.Value, Byte())))
                                 Else
-                                    If iFieldInfo.Name <> "_WasUpdated" Then
+                                    If Not iFieldInfo.Name.Equals("_WasUpdated") Then
                                         iFieldInfo.SetValue(instance, i.Value)
                                     End If
                                 End If
@@ -373,7 +373,7 @@ Public Class SafeSerialization
     <DebuggerNonUserCode()>
     Private Shared Function GetObjectInstance(ba As Byte()) As Object
         Using ms As New MemoryStream(ba)
-            Dim bf As New BinaryFormatter
+            Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             'Static binder As New LegacySerializationBinder
             'bf.Binder = binder
             Return bf.Deserialize(ms)
@@ -382,7 +382,7 @@ Public Class SafeSerialization
 
     Private Shared Function GetObjectData(o As Object) As Byte()
         Using ms As New MemoryStream
-            Dim bf As New BinaryFormatter
+            Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             bf.Serialize(ms, o)
             Return ms.ToArray()
         End Using
@@ -526,7 +526,7 @@ table {
     End Sub
 
     Sub WriteElement(elementName As String, rawText As String)
-        If rawText = "" Then
+        If rawText.NullOrEmptyS Then
             Exit Sub
         End If
 
@@ -543,18 +543,9 @@ table {
 
     Shared Function ConvertChars(value As String) As String
         value = value.FixBreak
-
-        If value.Contains("<") Then
-            value = value.Replace("<", "&lt;")
-        End If
-
-        If value.Contains(">") Then
-            value = value.Replace(">", "&gt;")
-        End If
-
-        If value.Contains(BR) Then
-            value = value.Replace(BR, "<br>")
-        End If
+        value = value.Replace("<", "&lt;")
+        value = value.Replace(">", "&gt;")
+        value = value.Replace(BR, "<br>")
 
         Return value
     End Function
@@ -600,20 +591,20 @@ table {
     End Function
 
     Shared Function MustConvert(value As String) As Boolean
-        If value <> "" AndAlso (value.Contains("[") OrElse value.Contains("'''")) Then
+        If value.NotNullOrEmptyS AndAlso (value.Contains("[") OrElse value.Contains("'''")) Then
             Return True
         End If
     End Function
 
     Sub WriteTips(ParamArray tips As StringPairList())
-        If tips.NothingOrEmpty Then
+        If tips Is Nothing OrElse tips.Length <= 0 Then
             Exit Sub
         End If
 
         Dim list As New StringPairList
 
         For Each i In tips
-            list.AddRange(i)
+            If i IsNot Nothing Then list.AddRange(i)
         Next
 
         list.Sort()
@@ -980,13 +971,13 @@ Public Class Command
         For Each i In commands
             Dim path = i.MethodInfo.Name
 
-            If path.StartsWith("Run") Then path = "Run | " + path
-            If path.StartsWith("Save") Then path = "Save | " + path
-            If path.StartsWith("Show") Then path = "Show | " + path
-            If path.StartsWith("Set") Then path = "Set | " + path
-            If path.StartsWith("Start") Then path = "Start | " + path
-            If path.StartsWith("Execute") Then path = "Execute | " + path
-            If path.StartsWith("Add") Then path = "Add | " + path
+            If path.StartsWith("Run", StringComparison.Ordinal) Then path = "Run | " + path
+            If path.StartsWith("Save", StringComparison.Ordinal) Then path = "Save | " + path
+            If path.StartsWith("Show", StringComparison.Ordinal) Then path = "Show | " + path
+            If path.StartsWith("Set", StringComparison.Ordinal) Then path = "Set | " + path
+            If path.StartsWith("Start", StringComparison.Ordinal) Then path = "Start | " + path
+            If path.StartsWith("Execute", StringComparison.Ordinal) Then path = "Execute | " + path
+            If path.StartsWith("Add", StringComparison.Ordinal) Then path = "Add | " + path
 
             ActionMenuItem.Add(items, path, clickSub, i, i.Attribute.Description)
         Next
@@ -1026,7 +1017,7 @@ Public Class CommandManager
     Property Commands As New Dictionary(Of String, Command)
 
     Function HasCommand(name As String) As Boolean
-        If name = "" Then
+        If name.NullOrEmptyS Then
             Return False
         End If
 
@@ -1108,14 +1099,14 @@ Public Class CommandManager
     Function ProcessCommandLineArgument(value As String) As Boolean
         For Each i As Command In Commands.Values
             Dim switch = i.MethodInfo.Name.Replace(" ", "")
-            switch = switch.ToUpper
-            Dim test = value.ToUpper
+            switch = switch.ToUpperInvariant
+            Dim test = value.ToUpperInvariant
 
-            If test = "-" + switch Then
+            If test.Equals("-" & switch) Then
                 Process(i.MethodInfo.Name, New List(Of Object))
                 Return True
             Else
-                If test.StartsWith("-" + switch + ":") Then
+                If test.StartsWith("-" + switch + ":", StringComparison.Ordinal) Then
                     Dim mc = Regex.Matches(value.Right(":"), """(?<a>.+?)""|(?<a>[^,]+)")
                     Dim args As New List(Of Object)
 
@@ -1168,16 +1159,16 @@ Public Module MainModule
     End Sub
 
     Sub MsgError(text As String, content As String, handle As IntPtr)
-        If text = "" Then
+        If text.NullOrEmptyS Then
             text = content
         End If
 
-        If text = "" Then
+        If text.NullOrEmptyS Then
             Exit Sub
         End If
 
         Using td As New TaskDialog(Of String)
-            If content = "" Then
+            If content.NullOrEmptyS Then
                 If text.Length < 80 Then
                     td.MainInstruction = text
                 Else

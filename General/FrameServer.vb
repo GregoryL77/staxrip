@@ -89,7 +89,7 @@ Public Structure ServerInfo
 
         Dim lengthtDate = Date.Today.AddSeconds(FrameCount / rate)
         Dim dateFormat = If(lengthtDate.Hour = 0, "mm:ss.fff", "HH:mm:ss.fff")
-        Dim frames = FrameCount.ToString
+        Dim frames = FrameCount.ToInvariantString
         Dim len = lengthtDate.ToString(dateFormat)
 
         If position > -1 Then
@@ -202,7 +202,7 @@ Public Class VfwFrameServer
 
                     Marshal.ReleaseComObject(clipInfo)
 
-                    If Me.Error <> "" Then
+                    If Me.Error.NotNullOrEmptyS Then
                         Throw New Exception(Me.Error)
                     End If
                 End If

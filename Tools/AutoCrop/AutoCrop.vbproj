@@ -32,7 +32,7 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <OutputPath>..\..\bin-x86\Apps\Support\AutoCrop\</OutputPath>
-    <WarningLevel>0</WarningLevel>
+    <WarningLevel>1</WarningLevel>
     <NoWarn>42105,42106,42107,42353,42354,42355</NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
@@ -43,7 +43,7 @@
     <DefineTrace>true</DefineTrace>
     <OutputPath>bin\x86\Release\</OutputPath>
     <Optimize>true</Optimize>
-    <WarningLevel>0</WarningLevel>
+    <WarningLevel>1</WarningLevel>
     <NoWarn>42105,42106,42107,42353,42354,42355</NoWarn>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x86</PlatformTarget>
@@ -55,7 +55,7 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <OutputPath>..\..\bin\Apps\Support\AutoCrop\</OutputPath>
-    <WarningLevel>0</WarningLevel>
+    <WarningLevel>1</WarningLevel>
     <NoWarn>42105,42106,42107,42353,42354,42355</NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -66,13 +66,17 @@
     <DefineTrace>false</DefineTrace>
     <OutputPath>C:\inetpub\Staxrip\Apps\Support\AutoCrop\</OutputPath>
     <Optimize>true</Optimize>
-    <WarningLevel>0</WarningLevel>
+    <WarningLevel>1</WarningLevel>
     <NoWarn>42105,42106,42107,42353,42354,42355</NoWarn>
     <DebugType>none</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RemoveIntegerChecks>true</RemoveIntegerChecks>
+    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -124,6 +128,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="My Project\app.manifest" />
     <None Include="My Project\Application.myapp">
       <Generator>MyApplicationCodeGenerator</Generator>
       <LastGenOutput>Application.Designer.vb</LastGenOutput>

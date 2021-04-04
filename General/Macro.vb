@@ -16,7 +16,7 @@ Public Class Macro
             type As Type,
             description As String)
 
-        If name.StartsWith("$") Then
+        If name.StartsWith("$", StringComparison.Ordinal) Then
             Me.Name = name
         Else
             Me.Name = "%" + name + "%"
@@ -46,7 +46,7 @@ Public Class Macro
 
     Property FriendlyName() As String
         Get
-            If FriendlyNameValue = "" AndAlso NameValue <> "" Then
+            If FriendlyNameValue.NullOrEmptyS AndAlso NameValue.NotNullOrEmptyS Then
                 FriendlyNameValue = NameValue.Replace("_", " ").Replace("%", " ").Trim(" "c).ToTitleCase
             End If
 
@@ -119,13 +119,13 @@ Public Class Macro
     End Function
 
     Function CompareTo(other As Macro) As Integer Implements System.IComparable(Of Macro).CompareTo
-        Return Name.CompareTo(other.Name)
+        Return String.CompareOrdinal(Name, other.Name)
     End Function
 
     Shared Function GetMacros(
         includeInteractive As Boolean, includeParam As Boolean, includeApps As Boolean) As List(Of Macro)
 
-        Dim ret As New List(Of Macro)
+        Dim ret As New List(Of Macro)(128)
 
         If includeInteractive Then
             ret.Add(New Macro("$browse_file$", "Browse For File", GetType(String), "Filepath returned from a file browser."))
@@ -235,7 +235,7 @@ Public Class Macro
 
         Dim ret As (Value As String, Caption As String, Cancel As Boolean) = (value, "", False)
 
-        If ret.Value = "" Then
+        If ret.Value.NullOrEmptyS Then
             Return ret
         End If
 
@@ -260,7 +260,7 @@ Public Class Macro
         If ret.Value.Contains("$enter_text$") Then
             Dim inputText = InputBox.Show("Please enter text/value.")
 
-            If inputText = "" Then
+            If inputText.NullOrEmptyS Then
                 ret.Cancel = True
                 Return ret
             Else
@@ -276,7 +276,7 @@ Public Class Macro
             For Each iMatch As Match In matches
                 Dim inputText = InputBox.Show(iMatch.Groups(1).Value)
 
-                If inputText = "" Then
+                If inputText.NullOrEmptyS Then
                     ret.Cancel = True
                     Return ret
                 Else
@@ -295,7 +295,7 @@ Public Class Macro
 
                 If items.Count > 0 Then
                     Using td As New TaskDialog(Of String)
-                        If items?(0)?.StartsWith("msg:") Then
+                        If items?(0)?.StartsWith("msg:", StringComparison.Ordinal) Then
                             td.MainInstruction = items(0).Substring(4)
                             items.RemoveAt(0)
                         Else
@@ -327,190 +327,190 @@ Public Class Macro
     End Function
 
     Shared Function Expand(value As String) As String
-        If value = "" Then Return ""
+        If value.NullOrEmptyS Then Return ""
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_file%") Then value = value.Replace("%source_file%", p.SourceFile.LongPathPrefix)
+        value = value.Replace("%source_file%", p.SourceFile.LongPathPrefix)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%working_dir%") Then value = value.Replace("%working_dir%", p.TempDir)
+        value = value.Replace("%working_dir%", p.TempDir)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%temp_dir%") Then value = value.Replace("%temp_dir%", p.TempDir)
+        value = value.Replace("%temp_dir%", p.TempDir)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%temp_file%") Then value = value.Replace("%temp_file%", p.TempDir + p.SourceFile.Base)
+        value = value.Replace("%temp_file%", p.TempDir + p.SourceFile.Base)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_temp_file%") Then value = value.Replace("%source_temp_file%", (p.TempDir + g.GetSourceBase).ToShortFilePath)
+        value = value.Replace("%source_temp_file%", (p.TempDir + g.GetSourceBase).ToShortFilePath)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_temp_file%") Then value = value.Replace("%target_temp_file%", p.TempDir + p.TargetFile.Base)
+        value = value.Replace("%target_temp_file%", p.TempDir + p.TargetFile.Base)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_name%") Then value = value.Replace("%source_name%", p.SourceFile.Base)
+        value = value.Replace("%source_name%", p.SourceFile.Base)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_ext%") Then value = value.Replace("%source_ext%", p.FirstOriginalSourceFile.Ext)
+        value = value.Replace("%source_ext%", p.FirstOriginalSourceFile.Ext)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%version%") Then value = value.Replace("%version%", Application.ProductVersion)
+        value = value.Replace("%version%", Application.ProductVersion)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_width%") Then value = value.Replace("%source_width%", p.SourceWidth.ToString)
+        value = value.Replace("%source_width%", p.SourceWidth.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_height%") Then value = value.Replace("%source_height%", p.SourceHeight.ToString)
+        value = value.Replace("%source_height%", p.SourceHeight.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_seconds%") Then value = value.Replace("%source_seconds%", p.SourceSeconds.ToString)
+        value = value.Replace("%source_seconds%", p.SourceSeconds.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_frames%") Then value = value.Replace("%source_frames%", p.SourceFrames.ToString)
+        value = value.Replace("%source_frames%", p.SourceFrames.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_framerate%") Then value = value.Replace("%source_framerate%", p.SourceFrameRate.ToString("f6", CultureInfo.InvariantCulture))
+        value = value.Replace("%source_framerate%", p.SourceFrameRate.ToString("f6", CultureInfo.InvariantCulture))
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_dir%") Then value = value.Replace("%source_dir%", p.SourceFile.Dir)
+        value = value.Replace("%source_dir%", p.SourceFile.Dir)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_dir_parent%") Then value = value.Replace("%source_dir_parent%", p.SourceFile.Dir.Parent)
+        value = value.Replace("%source_dir_parent%", p.SourceFile.Dir.Parent)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_dir_name%") Then value = value.Replace("%source_dir_name%", p.SourceFile.Dir.DirName)
+        value = value.Replace("%source_dir_name%", p.SourceFile.Dir.DirName)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_video_format%") Then value = value.Replace("%source_video_format%", MediaInfo.GetVideo(p.FirstOriginalSourceFile, "Format"))
+        value = value.Replace("%source_video_format%", MediaInfo.GetVideo(p.FirstOriginalSourceFile, "Format"))
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_width%") Then value = value.Replace("%target_width%", p.TargetWidth.ToString)
+        value = value.Replace("%target_width%", p.TargetWidth.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_height%") Then value = value.Replace("%target_height%", p.TargetHeight.ToString)
+        value = value.Replace("%target_height%", p.TargetHeight.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_seconds%") Then value = value.Replace("%target_seconds%", p.TargetSeconds.ToString)
+        value = value.Replace("%target_seconds%", p.TargetSeconds.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_frames%") Then value = value.Replace("%target_frames%", p.Script.Info.FrameCount.ToString)
+        value = value.Replace("%target_frames%", p.Script.Info.FrameCount.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_framerate%") Then value = value.Replace("%target_framerate%", p.Script.GetCachedFrameRate.ToString("f6", CultureInfo.InvariantCulture))
+        value = value.Replace("%target_framerate%", p.Script.GetCachedFrameRate.ToString("f6", CultureInfo.InvariantCulture))
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_size%") Then value = value.Replace("%target_size%", (p.TargetSize * 1024).ToString)
+        value = value.Replace("%target_size%", (p.TargetSize * 1024).ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_file%") Then value = value.Replace("%target_file%", p.TargetFile)
+        value = value.Replace("%target_file%", p.TargetFile)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_dir%") Then value = value.Replace("%target_dir%", p.TargetFile.Dir)
+        value = value.Replace("%target_dir%", p.TargetFile.Dir)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%target_name%") Then value = value.Replace("%target_name%", p.TargetFile.Base)
+        value = value.Replace("%target_name%", p.TargetFile.Base)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%crop_width%") Then value = value.Replace("%crop_width%", (p.SourceWidth - p.CropLeft - p.CropRight).ToString)
+        value = value.Replace("%crop_width%", (p.SourceWidth - p.CropLeft - p.CropRight).ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%crop_height%") Then value = value.Replace("%crop_height%", (p.SourceHeight - p.CropTop - p.CropBottom).ToString)
+        value = value.Replace("%crop_height%", (p.SourceHeight - p.CropTop - p.CropBottom).ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%crop_left%") Then value = value.Replace("%crop_left%", p.CropLeft.ToString)
+        value = value.Replace("%crop_left%", p.CropLeft.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%crop_top%") Then value = value.Replace("%crop_top%", p.CropTop.ToString)
+        value = value.Replace("%crop_top%", p.CropTop.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%crop_right%") Then value = value.Replace("%crop_right%", p.CropRight.ToString)
+        value = value.Replace("%crop_right%", p.CropRight.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%crop_bottom%") Then value = value.Replace("%crop_bottom%", p.CropBottom.ToString)
+        value = value.Replace("%crop_bottom%", p.CropBottom.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%video_bitrate%") Then value = value.Replace("%video_bitrate%", p.VideoBitrate.ToString)
+        value = value.Replace("%video_bitrate%", p.VideoBitrate.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%audio_bitrate%") Then value = value.Replace("%audio_bitrate%", (p.Audio0.Bitrate + p.Audio1.Bitrate).ToString)
+        value = value.Replace("%audio_bitrate%", (p.Audio0.Bitrate + p.Audio1.Bitrate).ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%audio_file1%") Then value = value.Replace("%audio_file1%", p.Audio0.File)
+        value = value.Replace("%audio_file1%", p.Audio0.File)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%audio_file2%") Then value = value.Replace("%audio_file2%", p.Audio1.File)
+        value = value.Replace("%audio_file2%", p.Audio1.File)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%delay%") Then value = value.Replace("%delay%", p.Audio0.Delay.ToString)
+        value = value.Replace("%delay%", p.Audio0.Delay.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%delay2%") Then value = value.Replace("%delay2%", p.Audio1.Delay.ToString)
+        value = value.Replace("%delay2%", p.Audio1.Delay.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%startup_dir%") Then value = value.Replace("%startup_dir%", Folder.Startup)
+        value = value.Replace("%startup_dir%", Folder.Startup)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%system_dir%") Then value = value.Replace("%system_dir%", Folder.System)
+        value = value.Replace("%system_dir%", Folder.System)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%script_dir%") Then value = value.Replace("%script_dir%", Folder.Scripts)
+        value = value.Replace("%script_dir%", Folder.Scripts)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%programs_dir%") Then value = value.Replace("%programs_dir%", Folder.Programs)
+        value = value.Replace("%programs_dir%", Folder.Programs)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%plugin_dir%") Then value = value.Replace("%plugin_dir%", Folder.Plugins)
+        value = value.Replace("%plugin_dir%", Folder.Plugins)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_files_comma%") Then value = value.Replace("%source_files_comma%", """" + String.Join(""",""", p.SourceFiles.ToArray) + """")
+        value = value.Replace("%source_files_comma%", """" + String.Join(""",""", p.SourceFiles.ToArray) + """")
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%source_files%") Then value = value.Replace("%source_files%", """" + String.Join(""" """, p.SourceFiles.ToArray) + """")
+        value = value.Replace("%source_files%", """" + String.Join(""" """, p.SourceFiles.ToArray) + """")
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%compressibility%") Then value = value.Replace("%compressibility%", Math.Round(p.Compressibility, 3).ToString.Replace(",", "."))
+        value = value.Replace("%compressibility%", Math.Round(p.Compressibility, 3).ToString.Replace(",", "."))
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%encoder_out_file%") Then value = value.Replace("%encoder_out_file%", p.VideoEncoder.OutputPath)
+        value = value.Replace("%encoder_out_file%", p.VideoEncoder.OutputPath)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%encoder_ext%") Then value = value.Replace("%encoder_ext%", p.VideoEncoder.OutputExt)
+        value = value.Replace("%encoder_ext%", p.VideoEncoder.OutputExt)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%muxer_ext%") Then value = value.Replace("%muxer_ext%", p.VideoEncoder.Muxer.OutputExt)
+        value = value.Replace("%muxer_ext%", p.VideoEncoder.Muxer.OutputExt)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%script_ext%") Then value = value.Replace("%script_ext%", p.Script.FileType)
+        value = value.Replace("%script_ext%", p.Script.FileType)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%pos_frame%") Then value = value.Replace("%pos_frame%", s.LastPosition.ToString)
+        value = value.Replace("%pos_frame%", s.LastPosition.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%template_name%") Then value = value.Replace("%template_name%", p.TemplateName)
+        value = value.Replace("%template_name%", p.TemplateName)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%settings_dir%") Then value = value.Replace("%settings_dir%", Folder.Settings)
+        value = value.Replace("%settings_dir%", Folder.Settings)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%player%") Then value = value.Replace("%player%", Package.mpvnet.Path)
+        value = value.Replace("%player%", Package.mpvnet.Path)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%text_editor%") Then value = value.Replace("%text_editor%", g.GetTextEditorPath)
+        value = value.Replace("%text_editor%", g.GetTextEditorPath)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%processing%") Then value = value.Replace("%processing%", g.IsJobProcessing.ToString)
+        value = value.Replace("%processing%", g.IsJobProcessing.ToString)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%video_encoder%") Then value = value.Replace("%video_encoder%", TryCast(p.VideoEncoder, BasicVideoEncoder)?.CommandLineParams.GetPackage.Name)
+        value = value.Replace("%video_encoder%", TryCast(p.VideoEncoder, BasicVideoEncoder)?.CommandLineParams.GetPackage.Name)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%dpi%") Then value = value.Replace("%dpi%", g.DPI.ToString())
+        value = value.Replace("%dpi%", g.DPI.ToString())
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%script_file%") Then value = value.Replace("%script_file%", p.Script.Path)
+        value = value.Replace("%script_file%", p.Script.Path)
         If Not value.Contains("%") Then Return value
 
-        If value.Contains("%pos_ms%") Then value = value.Replace("%pos_ms%", g.GetPreviewPosMS.ToString)
+        value = value.Replace("%pos_ms%", g.GetPreviewPosMS.ToString)
         If Not value.Contains("%") Then Return value
 
         If value.Contains("%source_par_x%") Then
@@ -568,16 +568,16 @@ Public Class Macro
         End If
 
         If p.Ranges.Count > 0 Then
-            If value.Contains("%sel_start%") Then value = value.Replace("%sel_start%", p.Ranges(0).Start.ToString)
+            value = value.Replace("%sel_start%", p.Ranges(0).Start.ToString)
             If Not value.Contains("%") Then Return value
 
-            If value.Contains("%sel_end%") Then value = value.Replace("%sel_end%", p.Ranges(0).End.ToString)
+            value = value.Replace("%sel_end%", p.Ranges(0).End.ToString)
             If Not value.Contains("%") Then Return value
         Else
-            If value.Contains("%sel_start%") Then value = value.Replace("%sel_start%", 0.ToString)
+            value = value.Replace("%sel_start%", 0.ToString)
             If Not value.Contains("%") Then Return value
 
-            If value.Contains("%sel_end%") Then value = value.Replace("%sel_end%", 0.ToString)
+            value = value.Replace("%sel_end%", 0.ToString)
             If Not value.Contains("%") Then Return value
         End If
 
@@ -590,7 +590,7 @@ Public Class Macro
 
                 Dim path = package?.Path
 
-                If path <> "" Then
+                If path.NotNullOrEmptyS Then
                     value = value.Replace(match.Value, path)
 
                     If Not value.Contains("%") Then
@@ -607,7 +607,7 @@ Public Class Macro
 
                 Dim path = package?.Path
 
-                If path <> "" Then
+                If path.NotNullOrEmptyS Then
                     value = value.Replace(match.Value, path.Dir)
                     If Not value.Contains("%") Then
                         Return value
@@ -641,7 +641,7 @@ Public Class Macro
 
             For Each i As Match In mc
                 For Each i2 In p.Script.Filters
-                    If i2.Active AndAlso i2.Path.ToUpper = i.Groups(1).Value.ToUpper Then
+                    If i2.Active AndAlso i2.Path.ToUpperInvariant = i.Groups(1).Value.ToUpperInvariant Then
                         value = value.Replace(i.Value, i2.Script)
 
                         If Not value.Contains("%") Then
@@ -697,7 +697,7 @@ Public Class Macro
         End If
 
         For Each var In OS.EnvVars
-            If value = "" OrElse var = "" Then
+            If value.NullOrEmptyS OrElse var.NullOrEmptyS Then
                 Continue For
             End If
 

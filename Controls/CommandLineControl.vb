@@ -108,7 +108,7 @@ Public Class CommandLineControl
         value = tup.Value
 
         If Not value Like "*$*$*" Then
-            If tb.Text = "" Then
+            If tb.Text.NullOrEmptyS Then
                 tb.Text = value
             Else
                 tb.Text = tb.Text.Trim + " " + value

@@ -60,7 +60,7 @@ Public Class SearchTextBox
 
     Protected Overrides Sub OnTextChanged(e As EventArgs)
         MyBase.OnTextChanged(e)
-        Button.Visible = Edit.Text <> ""
+        Button.Visible = Edit.Text.NotNullOrEmptyS
     End Sub
 
     Protected Overrides Sub OnLayout(e As LayoutEventArgs)

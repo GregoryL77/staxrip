@@ -230,7 +230,7 @@ Public Class Rav1eParams
         .Config = {0, Integer.MaxValue, 50},
         .ArgsFunc = Function() If(Light.Value <> 0 OrElse MaxFALL.Value <> 0, "--content_light """ & Light.Value & "," & MaxFALL.Value & """", ""),
         .ImportAction = Sub(param, arg)
-                            If arg = "" Then
+                            If arg.NullOrEmptyS Then
                                 Exit Sub
                             End If
 
@@ -260,7 +260,7 @@ Public Class Rav1eParams
     Overrides ReadOnly Property Items As List(Of CommandLineParam)
         Get
             If ItemsValue Is Nothing Then
-                ItemsValue = New List(Of CommandLineParam)
+                ItemsValue = New List(Of CommandLineParam)(32)
 
                 Add(Tune, Passes, Mode, Speed, Bitrate, Quantizer,
                 New StringParam With {.Switch = "--mastering_display", .Path = "VUI", .Text = "Master Display"},
@@ -269,7 +269,7 @@ Public Class Rav1eParams
                 Custom)
 
                 For Each item In ItemsValue
-                    If item.HelpSwitch <> "" Then
+                    If item.HelpSwitch.NotNullOrEmptyS Then
                         Continue For
                     End If
 
@@ -293,7 +293,7 @@ Public Class Rav1eParams
 
     Shadows Sub Add(ParamArray items As CommandLineParam())
         For Each i In items
-            If i.HelpSwitch = "" Then
+            If i.HelpSwitch.NullOrEmptyS Then
                 Dim switches = i.GetSwitches
 
                 If Not switches.NothingOrEmpty Then
@@ -308,8 +308,7 @@ Public Class Rav1eParams
                                                 includeExecutable As Boolean,
                                                 Optional pass As Integer = 1) As String
 
-        Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase +
-                       p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
+        Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase & p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
     End Function
 
     Overloads Function GetArgs(pass As Integer,
@@ -318,19 +317,20 @@ Public Class Rav1eParams
                                includePaths As Boolean,
                                includeExecutable As Boolean) As String
 
-        Dim sb As New StringBuilder
+        Dim sb As New StringBuilder(256)
 
         If includePaths AndAlso includeExecutable Then
-            sb.Append(Package.ffmpeg.Path.Escape & s.GetFFLogLevel(FfLogLevel.fatal) & $" -hide_banner{If(script.Path.Ext = "vpy", " -f vapoursynth", "")} -i " + script.Path.Escape + " -f yuv4mpegpipe -strict -1 - | " + Package.Rav1e.Path.Escape)
+            sb.Append(Package.ffmpeg.Path.Escape).Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner").
+                Append(If(script.Path.Ext.Equals("vpy"), " -f vapoursynth", "")).Append(" -i ").Append(script.Path.Escape).Append(" -f yuv4mpegpipe -strict -1 - | ").Append(Package.Rav1e.Path.Escape)
         End If
 
-        Dim q = From i In Items Where i.GetArgs <> ""
+        Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
 
-        If q.Count > 0 Then
-            sb.Append(" " + q.Select(Function(item) item.GetArgs).Join(" "))
+        If q.Any Then
+            sb.Append(" ").Append(q.Select(Function(item) item.GetArgs).Join(" "))
         End If
 
-        sb.Append(" -o " + targetPath.Escape + " - ")
+        sb.Append(" -o ").Append(targetPath.Escape).Append(" - ")
 
         Return Macro.Expand(sb.ToString.Trim.FixBreak.Replace(BR, " "))
     End Function

@@ -58,7 +58,7 @@ Namespace UI
         End Sub
 
         Sub SetTip(tipText As String, ParamArray controls As Control())
-            If tipText = "" Then
+            If tipText.NullOrEmptyS Then
                 Exit Sub
             End If
 
@@ -73,7 +73,7 @@ Namespace UI
             For Each ctrl In controls
                 TipTexts(ctrl) = tipText
 
-                If title <> "" Then
+                If title.NotNullOrEmptyS Then
                     TipTitles(ctrl) = title
                 End If
 
@@ -92,11 +92,11 @@ Namespace UI
                     Else
                         tipText = "Right-click for help"
                     End If
-                ElseIf HelpDocument.MustConvert(tipText) Then
+                ElseIf Not AudioConverterForm.AudioConverterMode OrElse HelpDocument.MustConvert(tipText) Then 'AudionConverter Opt.
                     tipText = HelpDocument.ConvertMarkup(tipText, True)
                 End If
 
-                If tipText <> "" Then
+                If tipText.NotNullOrEmptyS Then
                     AddHandler control.HandleCreated, Sub() ToolTip.SetToolTip(control, tipText)
                 End If
             End If
@@ -145,28 +145,24 @@ Namespace UI
         End Function
 
         Function FormatName(value As String) As String
-            If value.Contains(" ") Then
-                value = value.Trim
-            End If
+            value = value.Trim
 
             If value.Contains("&") AndAlso Not value.Contains(" & ") Then
                 value = value.Replace("&", "")
             End If
 
-            If value.EndsWith("...") Then
+            If value.EndsWith("...", StringComparison.Ordinal) Then
                 value = value.TrimEnd("."c)
             End If
 
-            If value.EndsWith(":") Then
-                value = value.TrimEnd(":"c)
-            End If
+            value = value.TrimEnd(":"c)
 
             Return value
         End Function
 
         Function GetTips() As StringPairList
             Dim ret As New StringPairList
-            Dim temp As New List(Of String)
+            Dim temp As New HashSet(Of String)
 
             For Each ctrl In TipTexts.Keys
                 If Not ctrl.IsDisposed AndAlso ctrl.Visible Then
@@ -179,8 +175,7 @@ Namespace UI
                         pair.Name = FormatName(ctrl.Text)
                     End If
 
-                    If Not temp.Contains(pair.Name) Then
-                        temp.Add(pair.Name)
+                    If temp.Add(pair.Name) Then
                         pair.Name = FormatName(pair.Name)
                         ret.Add(pair)
                     End If

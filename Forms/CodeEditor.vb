@@ -14,8 +14,8 @@ Public Class CodeEditor
 
         KeyPreview = True
 
-        MainFlowLayoutPanel.Padding = New Padding(0, 0, 0, 0)
         MainFlowLayoutPanel.SuspendLayout()
+        MainFlowLayoutPanel.Padding = New Padding(0, 0, 0, 0)
 
         Engine = doc.Engine
 
@@ -71,7 +71,7 @@ Public Class CodeEditor
         ret.cbActive.Checked = filter.Active
         ret.cbActive.Text = filter.Category
         ret.tbName.Text = filter.Name
-        ret.rtbScript.Text = If(filter.Script = "", "", filter.Script + BR)
+        ret.rtbScript.Text = If(filter.Script.NullOrEmptyS, "", filter.Script + BR)
         ret.SetColor()
 
         Return ret
@@ -98,7 +98,7 @@ Public Class CodeEditor
         script.Path = p.TempDir + p.TargetFile.Base + $"_temp." + script.FileType
         script.Filters = GetFilters()
 
-        If script.GetError <> "" Then
+        If script.GetError.NotNullOrEmptyS Then
             MsgError("Script Error", script.GetError)
             Exit Function
         End If
@@ -115,7 +115,7 @@ Public Class CodeEditor
     End Sub
 
     Sub VideoPreview()
-        If p.SourceFile = "" Then
+        If p.SourceFile.NullOrEmptyS Then
             Exit Sub
         End If
 
@@ -174,7 +174,8 @@ Public Class CodeEditor
             sizeRTB.Width = maxTextWidth + FontHeight
             sizeRTB.Height = table.TrimmedTextSize.Height + CInt(FontHeight * 0.3)
             table.rtbScript.Size = sizeRTB
-            table.rtbScript.Refresh()
+            'table.rtbScript.Refresh()
+            table.rtbScript.Invalidate()
         Next
     End Sub
 
@@ -325,11 +326,10 @@ Public Class CodeEditor
 
             For Each argument In args
                 Dim skip = False
+                Dim arg As String = argument.ToLowerInvariant.Replace(" ", "")
 
                 For Each parameter In parameters.Parameters
-                    If argument.ToLower.RemoveChars(" ").Contains(
-                        parameter.Name.ToLower.RemoveChars(" ") + "=") Then
-
+                    If arg.Contains(parameter.Name.ToLowerInvariant.Replace(" ", "") & "=") Then
                         skip = True
                     End If
                 Next
@@ -401,17 +401,17 @@ Public Class CodeEditor
             removeMenuItem.SetImage(Symbol.Remove)
 
             Dim previewMenuItem = Menu.Add("Preview Video...", AddressOf Editor.VideoPreview, "Previews the script with solved macros.")
-            previewMenuItem.Enabled = p.SourceFile <> ""
+            previewMenuItem.Enabled = p.SourceFile.NotNullOrEmptyS
             previewMenuItem.KeyDisplayString = "F5"
             previewMenuItem.SetImage(Symbol.Photo)
 
             Dim mpvnetMenuItem = Menu.Add("Play with mpv.net", AddressOf Editor.PlayScriptWithMPV, "Plays the current script with mpv.net.")
-            mpvnetMenuItem.Enabled = p.SourceFile <> ""
+            mpvnetMenuItem.Enabled = p.SourceFile.NotNullOrEmptyS
             mpvnetMenuItem.KeyDisplayString = "F9"
             mpvnetMenuItem.SetImage(Symbol.Play)
 
             Dim mpcMenuItem = Menu.Add("Play with mpc", AddressOf Editor.PlayScriptWithMPC, "Plays the current script with MPC.")
-            mpcMenuItem.Enabled = p.SourceFile <> ""
+            mpcMenuItem.Enabled = p.SourceFile.NotNullOrEmptyS
             mpcMenuItem.KeyDisplayString = "F10"
             mpcMenuItem.SetImage(Symbol.Play)
 
@@ -420,9 +420,9 @@ Public Class CodeEditor
             Dim infoMenuItem = Menu.Add("Info...", AddressOf Editor.ShowInfo, "Previews script parameters such as framecount and colorspace.")
             infoMenuItem.SetImage(Symbol.Info)
             infoMenuItem.KeyDisplayString = "Ctrl+I"
-            infoMenuItem.Enabled = p.SourceFile <> ""
+            infoMenuItem.Enabled = p.SourceFile.NotNullOrEmptyS
 
-            Menu.Add("Advanced Info...", AddressOf Editor.ShowAdvancedInfo, p.SourceFile <> "").SetImage(Symbol.Lightbulb)
+            Menu.Add("Advanced Info...", AddressOf Editor.ShowAdvancedInfo, p.SourceFile.NotNullOrEmptyS).SetImage(Symbol.Lightbulb)
 
             Dim joinMenuItem = Menu.Add("Join Filters", AddressOf Editor.JoinFilters, "Joins all filters into one filter.")
             joinMenuItem.Enabled = DirectCast(Parent, FlowLayoutPanel).Controls.Count > 1
@@ -468,7 +468,7 @@ Public Class CodeEditor
             copyMenuItem.SetImage(Symbol.Copy)
             copyMenuItem.KeyDisplayString = "Ctrl+C"
 
-            Dim pasteMenuItem = Menu.Add("Paste", pasteAction, Clipboard.GetText <> "" AndAlso Not rtbScript.ReadOnly)
+            Dim pasteMenuItem = Menu.Add("Paste", pasteAction, Clipboard.GetText.NotNullOrEmptyS AndAlso Not rtbScript.ReadOnly)
             pasteMenuItem.SetImage(Symbol.Paste)
             pasteMenuItem.KeyDisplayString = "Ctrl+V"
 
@@ -493,7 +493,7 @@ Public Class CodeEditor
                                      Dim helpText = rtbScript.Text.Left("(")
 
                                      If helpText.EndsWith("Resize") Then helpText = "Resize"
-                                     If helpText.StartsWith("ConvertTo") Then helpText = "Convert"
+                                     If helpText.StartsWith("ConvertTo", StringComparison.Ordinal) Then helpText = "Convert"
 
                                      Dim filterPath = installDir + "\Docs\English\corefilters\" + helpText + ".htm"
 
@@ -602,8 +602,8 @@ Public Class CodeEditor
                         cbActive.Checked = filter.Active
                         cbActive.Text = filter.Category
 
-                        If tup.Value <> filter.Script AndAlso tup.Caption <> "" Then
-                            If filter.Script.StartsWith("$") Then
+                        If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
+                            If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
                                 tbName.Text = tup.Caption
                             Else
                                 tbName.Text = filter.Name.Replace("...", "") + " " + tup.Caption
@@ -623,8 +623,8 @@ Public Class CodeEditor
                             Exit Sub
                         End If
 
-                        If tup.Value <> filter.Script AndAlso tup.Caption <> "" Then
-                            If filter.Script.StartsWith("$") Then
+                        If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
+                            If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
                                 filter.Path = tup.Caption
                             Else
                                 filter.Path = filter.Path.Replace("...", "") + " " + tup.Caption
@@ -650,8 +650,8 @@ Public Class CodeEditor
                             Exit Sub
                         End If
 
-                        If tup.Value <> filter.Script AndAlso tup.Caption <> "" Then
-                            If filter.Script.StartsWith("$") Then
+                        If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
+                            If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
                                 filter.Path = tup.Caption
                             Else
                                 filter.Path = filter.Path.Replace("...", "") + " " + tup.Caption
@@ -680,8 +680,8 @@ Public Class CodeEditor
             cbActive.Checked = filter.Active
             cbActive.Text = filter.Category
 
-            If tup.Value <> filter.Script AndAlso tup.Caption <> "" Then
-                If filter.Script.StartsWith("$") Then
+            If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
+                If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
                     tbName.Text = tup.Caption
                 Else
                     tbName.Text = filter.Name.Replace("...", "") + " " + tup.Caption

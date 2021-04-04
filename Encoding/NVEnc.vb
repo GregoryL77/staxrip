@@ -1,6 +1,8 @@
 ﻿
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
+Imports JM.LinqFaster
+Imports System.Text
 
 <Serializable()>
 Public Class NVEnc
@@ -37,6 +39,9 @@ Public Class NVEnc
         newParams.Init(store)
 
         Using form As New CommandLineForm(newParams)
+            form.tlpMain.SuspendLayout()
+            form.tlpRTB.SuspendLayout()
+            form.SuspendLayout()
             form.HTMLHelp = "<h2>NVEnc Help</h2>" + "<p>Right-clicking a option shows the local console help for the option.</p>" +
                             "<p>For Constant Quality Mode choose VBR mode, then check Constant Quality Mode and set desired VBR Quality (usually between 10-30).</p>" +
                            $"<h2>NVEnc Online Help</h2><p><a href=""{Package.NVEnc.HelpURL}"">NVEnc Online Help</a></p>" +
@@ -56,6 +61,10 @@ Public Class NVEnc
             form.cms.Items.Add(New ActionMenuItem("Check Features", Sub() g.ShowCode("Check Features", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-features"))))
             form.cms.Items.Add(New ActionMenuItem("Check Environment", Sub() g.ShowCode("Check Environment", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-environment"))))
             ActionMenuItem.Add(form.cms.Items, "Save Profile...", saveProfileAction).SetImage(Symbol.Save)
+            form.tlpMain.ResumeLayout(False)
+            form.tlpRTB.ResumeLayout(False)
+            form.ResumeLayout(False)
+            newParams.NVForm = form
 
             If form.ShowDialog() = DialogResult.OK Then
                 Params = newParams
@@ -75,7 +84,7 @@ Public Class NVEnc
         If OutputExt = "h265" Then
             Dim codecs = ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-hw").Right("Codec(s)")
 
-            If Not codecs.ToLower.Contains("hevc") Then
+            If Not codecs.ToLowerInvariant.Contains("hevc") Then
                 Throw New ErrorAbortException("NVEnc Error", "H.265/HEVC isn't supported by the graphics card.")
             End If
         End If
@@ -142,6 +151,8 @@ Public Class NVEnc
     Public Class EncoderParams
         Inherits CommandLineParams
 
+        Public NVForm As CommandLineForm
+
         Sub New()
             Title = "NVEnc Options"
         End Sub
@@ -172,7 +183,7 @@ Public Class NVEnc
                                     Mode.Value = Array.IndexOf(Mode.Switches.ToArray, param)
                                 End If
 
-                                If (param = "--vbrhq" OrElse param = "--vbr") AndAlso arg = "0" Then
+                                If (param.Equals("--vbrhq") OrElse param.Equals("--vbr")) AndAlso arg.Equals("0") Then
                                     ConstantQualityMode.Value = True
                                 End If
                             End Sub}
@@ -274,7 +285,7 @@ Public Class NVEnc
             .Config = {0, Integer.MaxValue, 50},
             .ArgsFunc = Function() If(MaxCLL.Value <> 0 OrElse MaxFALL.Value <> 0, "--max-cll """ & MaxCLL.Value & "," & MaxFALL.Value & """", ""),
             .ImportAction = Sub(param, arg)
-                                If arg = "" Then
+                                If arg.NullOrEmptyS Then
                                     Exit Sub
                                 End If
 
@@ -425,7 +436,7 @@ Public Class NVEnc
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
                 If ItemsValue Is Nothing Then
-                    ItemsValue = New List(Of CommandLineParam)
+                    ItemsValue = New List(Of CommandLineParam)(208)
                     'To DO: 8 bit depth switch show and default auto. Is really needed?, can force 8b with main10 profile, checking 4:4:4 is needed
                     Add("Basic", Mode, Multipass, Decoder, Codec,
                         New OptionParam With {.Switch = "--preset", .HelpSwitch = "-u", .Text = "Presets", .Init = 6, .Options = {"Default (=P4)", "Max Quality (=P7)", "Performance (=P1)", "P1 (=Performance)", "P2", "P3", "P4 (=Default)", "P5", "P6", "P7 (=Quality)"}, .Values = {"default", "quality", "performance", "P1", "P2", "P3", "P4", "P5", "P6", "P7"}},
@@ -625,7 +636,7 @@ Public Class NVEnc
                         New BoolParam With {.Switch = "--bluray", .Text = "Blu-ray"})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch <> "" Then
+                        If item.HelpSwitch.NotNullOrEmptyS Then
                             Continue For
                         End If
 
@@ -648,14 +659,21 @@ Public Class NVEnc
         End Sub
 
         Protected Overrides Sub OnValueChanged(item As CommandLineParam)
-            If Not Decoder.MenuButton Is Nothing AndAlso (item Is Decoder OrElse item Is Nothing) Then
-                Dim isIntelPresent = OS.VideoControllers.Where(Function(val) val.Contains("Intel")).Count > 0
+            If NVForm IsNot Nothing Then
+                NVForm.tlpMain.SuspendLayout()
+                NVForm.tlpRTB.SuspendLayout()
+                NVForm.SuspendLayout()
+            End If
 
-                For x = 0 To Decoder.Options.Length - 1
-                    If Decoder.Options(x).Contains("Intel") Then
-                        Decoder.ShowOption(x, isIntelPresent)
-                    End If
-                Next
+            If Not Decoder.MenuButton Is Nothing AndAlso (item Is Decoder OrElse item Is Nothing) Then
+                Dim isIntelPresent As Boolean = True '(OS.VideoControllers.Item1 And 2) = 2 '2-Intel,4-Nvidia,6-Nvidia+Intel, 128 Error
+
+                'For x = 0 To Decoder.Options.Length - 1
+                ' If Decoder.Options(x).Contains("Intel") Then 
+                Decoder.ShowOption(3, isIntelPresent)
+                Decoder.ShowOption(4, isIntelPresent)
+                '      End If
+                '  Next
             End If
 
             If Not QPI.NumEdit Is Nothing Then
@@ -757,9 +775,14 @@ Public Class NVEnc
                 ColorSpaceColorPrimOut.MenuButton.Enabled = ColorSpaceColorPrimIn.Value <> ColorSpaceColorPrimIn.DefaultValue AndAlso ColorSpace.Value
                 ColorSpaceTransferOut.MenuButton.Enabled = ColorSpaceTransferIn.Value <> ColorSpaceTransferIn.DefaultValue AndAlso ColorSpace.Value
                 ColorSpaceRangeOut.MenuButton.Enabled = ColorSpaceRangeIn.Value <> ColorSpaceRangeIn.DefaultValue AndAlso ColorSpace.Value
-
             End If
+
             MyBase.OnValueChanged(item)
+            If NVForm IsNot Nothing Then
+                NVForm.tlpMain.ResumeLayout()
+                NVForm.tlpRTB.ResumeLayout()
+                NVForm.ResumeLayout()
+            End If
         End Sub
 
         Function GetSmooth() As String
@@ -778,7 +801,7 @@ Public Class NVEnc
                     ret += ",prec=" & SmoothPrec.ValueText
                 End If
 
-                If ret <> "" Then
+                If ret IsNot "" Then
                     Return "--vpp-smooth " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-smooth"
@@ -853,7 +876,7 @@ Public Class NVEnc
                     ret += ",ldr_nits=" & ColorSpaceLDRNits.Value.ToInvariantString
                 End If
 
-                If ret <> "" Then
+                If ret IsNot "" Then
                     Return "--vpp-colorspace " + ret.TrimStart(","c).TrimEnd
                 Else
                     Return "--vpp-colorspace"
@@ -879,7 +902,7 @@ Public Class NVEnc
                     ret += ",threshold=" & PmdThreshold.Value
                 End If
 
-                If ret <> "" Then
+                If ret IsNot "" Then
                     Return "--vpp-pmd " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-pmd"
@@ -915,7 +938,7 @@ Public Class NVEnc
                     ret += ",swapuv=true"
                 End If
 
-                If ret <> "" Then
+                If ret IsNot "" Then
                     Return "--vpp-tweak " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-tweak"
@@ -943,7 +966,7 @@ Public Class NVEnc
                     ret += "," & PadBottom.Value
                 End If
 
-                If ret <> "" Then
+                If ret IsNot "" Then
                     Return "--vpp-pad " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-pad "
@@ -971,7 +994,7 @@ Public Class NVEnc
                     ret += ",th_lerp=" & KnnThLerp.Value.ToInvariantString
                 End If
 
-                If ret <> "" Then
+                If ret IsNot "" Then
                     Return "--vpp-knn " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-knn"
@@ -1094,7 +1117,7 @@ Public Class NVEnc
                 ret += ",transpose=true"
             End If
 
-            If ret <> "" Then
+            If ret IsNot "" Then
                 Return ("--vpp-transform " + ret.TrimStart(","c)).TrimEnd
             End If
         End Function
@@ -1103,7 +1126,7 @@ Public Class NVEnc
             Dim ret = ""
 
             ret += SelectEveryValue.Value.ToString
-            ret += "," + SelectEveryOffsets.Value.SplitNoEmptyAndWhiteSpace(" ", ",", ";").Select(Function(item) "offset=" + item).Join(",")
+            ret += "," + SelectEveryOffsets.Value.SplitNoEmptyAndWhiteSpace(" ", ",", ";").SelectF(Function(item) "offset=" + item).Join(",")
 
             If SelectEvery.Value Then
                 Return ("--vpp-select-every " + ret.TrimStart(","c)).TrimEnd(","c)
@@ -1141,7 +1164,7 @@ Public Class NVEnc
                 ret += ",prec=" + NnediPrec.ValueText
             End If
 
-            If NnediWeightfile.Value <> "" Then
+            If NnediWeightfile.Value.NotNullOrEmptyS Then
                 ret += ",weightfile=" + NnediWeightfile.Value.Escape
             End If
 
@@ -1157,7 +1180,7 @@ Public Class NVEnc
                 ret += "preset=" + AfsPreset.ValueText
             End If
 
-            If AfsINI.Value <> "" Then
+            If AfsINI.Value.NotNullOrEmptyS Then
                 ret += ",ini=" + AfsINI.Value.Escape
             End If
 
@@ -1263,15 +1286,13 @@ Public Class NVEnc
             End Select
         End Function
 
-        Overrides Function GetCommandLine(
-            includePaths As Boolean, includeExe As Boolean, Optional pass As Integer = 1) As String
-
-            Dim ret As String
+        Overrides Function GetCommandLine(includePaths As Boolean, includeExe As Boolean, Optional pass As Integer = 1) As String
+            Dim sb As New StringBuilder(512)
             Dim sourcePath As String
             Dim targetPath = p.VideoEncoder.OutputPath.ChangeExt(p.VideoEncoder.OutputExt)
 
             If includePaths AndAlso includeExe Then
-                ret = Package.NVEnc.Path.Escape
+                sb.Append(Package.NVEnc.Path.Escape)
             End If
 
             Select Case Decoder.ValueText
@@ -1280,19 +1301,20 @@ Public Class NVEnc
 
                     'Vapoursynth fix, avisynth is not my thing BTW
                     If includePaths AndAlso FrameServerHelp.IsAviSynthPortableUsed AndAlso p.Script.Engine = ScriptEngine.AviSynth Then
-                        ret += " --avsdll " + Package.AviSynth.Path.Escape
+                        sb.Append(" --avsdll ").Append(Package.AviSynth.Path.Escape)
                     End If
                 Case "nvhw"
                     sourcePath = p.LastOriginalSourceFile
-                    ret += " --avhw"
+                    sb.Append(" --avhw")
                 Case "nvsw"
                     sourcePath = p.LastOriginalSourceFile
-                    ret += " --avsw"
+                    sb.Append(" --avsw")
                 Case "qs"
                     sourcePath = "-"
 
                     If includePaths Then
-                        ret = If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64") + " -o - -c raw" + " -i " + If(includePaths, p.SourceFile.Escape, "path") + " | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
+                        sb.Append(If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")).Append(" -o - -c raw").Append(" -i ").
+                            Append(If(includePaths, p.SourceFile.Escape, "path")).Append(" | ").Append(If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64"))
                     End If
                 Case "ffcuda"
                     sourcePath = "-"
@@ -1307,10 +1329,8 @@ Public Class NVEnc
                         'p.ExtractTimestamps seems like death switch, nvidia paper uses vsync 0
 
                         Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") +
-                            If(p.ExtractTimestamps, " -vsync 0", " -vsync 1") + "-hwaccel cuda -i " + If(includePaths, p.SourceFile.Escape, "path") +
-                            " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
-                            If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
+                        sb.Append(If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg")).Append(If(p.ExtractTimestamps, " -vsync 0", " -vsync 1")).Append("-hwaccel cuda -i ").Append(If(includePaths, p.SourceFile.Escape, "path")).
+                            Append(" -f yuv4mpegpipe -pix_fmt ").Append(pix_fmt).Append(" -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ").Append(If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64"))
 
 
                     End If
@@ -1318,52 +1338,53 @@ Public Class NVEnc
                     sourcePath = "-"
 
                     If includePaths Then
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.SourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64")
+                        sb.Append(If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg")).Append(" -threads 1 -hwaccel qsv -i ").Append(If(includePaths, p.SourceFile.Escape, "path")).
+                            Append(" -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ").Append(If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64"))
                     End If
             End Select
 
-            Dim q = From i In Items Where i.GetArgs <> "" AndAlso Not IsCustom(i.Switch)
+            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS AndAlso Not IsCustom(i.Switch)
 
-            If q.Count > 0 Then
-                ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")
+            If q.Any Then
+                sb.Append(" ").Append(q.Select(Function(item) item.GetArgs).Join(" "))
             End If
 
             If (p.CropLeft Or p.CropTop Or p.CropRight Or p.CropBottom) <> 0 AndAlso
                 (p.Script.IsFilterActive("Crop", "Hardware Encoder") OrElse
-                (Decoder.ValueText <> "avs" AndAlso p.Script.IsFilterActive("Crop"))) Then
+              Not (Decoder.ValueText.Equals("avs") AndAlso p.Script.IsFilterActive("Crop"))) Then
 
-                ret += " --crop " & p.CropLeft & "," & p.CropTop & "," & p.CropRight & "," & p.CropBottom
+                sb.Append(" --crop ").Append(p.CropLeft).Append(",").Append(p.CropTop).Append(",").Append(p.CropRight).Append(",").Append(p.CropBottom)
             End If
 
             If p.Script.IsFilterActive("Resize", "Hardware Encoder") OrElse
-                (Decoder.ValueText <> "avs" AndAlso p.Script.IsFilterActive("Resize")) Then
+                (Not Decoder.ValueText.Equals("avs") AndAlso p.Script.IsFilterActive("Resize")) Then
 
-                ret += " --output-res " & p.TargetWidth & "x" & p.TargetHeight
+                sb.Append(" --output-res ").Append(p.TargetWidth).Append("x").Append(p.TargetHeight)
             End If
 
-            If Decoder.ValueText <> "avs" Then
+            If Not Decoder.ValueText.Equals("avs") Then
                 If p.Ranges.Count > 0 Then
-                    ret += " --trim " + p.Ranges.Select(Function(range) range.Start & ":" & range.End).Join(",")
+                    sb.Append(" --trim ").Append(p.Ranges.SelectF(Function(range) range.Start & ":" & range.End).Join(","))
                 End If
             End If
 
-            If sourcePath = "-" Then
-                ret += " --y4m"
+            If String.Equals(sourcePath, "-") Then
+                sb.Append(" --y4m")
             End If
 
             If includePaths Then
-                ret += " -i " + sourcePath.Escape + " -o " + targetPath.Escape
+                sb.Append(" -i ").Append(sourcePath.Escape).Append(" -o ").Append(targetPath.Escape)
             End If
 
-            Return ret.Trim
+            Return sb.ToString.Trim
         End Function
 
         Function IsCustom(switch As String) As Boolean
-            If switch = "" Then
+            If switch.NullOrEmptyS Then
                 Return False
             End If
 
-            If Custom.Value?.Contains(switch + " ") OrElse Custom.Value?.EndsWith(switch) Then
+            If Custom.Value?.Contains(switch + " ") OrElse Custom.Value?.EndsWith(switch, StringComparison.Ordinal) Then
                 Return True
             End If
         End Function

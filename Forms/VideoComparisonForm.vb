@@ -228,7 +228,7 @@ Public Class VideoComparisonForm
         Dim value = InputBox.Show("Time:", "Go To Time", d.ToString("HH:mm:ss.fff"))
         Dim time As TimeSpan
 
-        If value <> "" AndAlso TimeSpan.TryParse(value, time) Then
+        If value.NotNullOrEmptyS AndAlso TimeSpan.TryParse(value, time) Then
             TrackBar.Value = CInt((time.TotalMilliseconds / 1000) * tab.Server.FrameRate)
         End If
     End Sub
@@ -312,7 +312,7 @@ Public Class VideoComparisonForm
                         For x2 = 0 To headers.Length - 1
                             Dim value = values(x2).Trim
 
-                            If value <> "" AndAlso value <> "-" Then
+                            If value.NotNullOrEmptyS AndAlso Not value.Equals("-") Then
                                 FrameInfo(x - 1) += headers(x2).Trim + ": " + value + ", "
                             End If
                         Next

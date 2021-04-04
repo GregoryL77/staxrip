@@ -68,7 +68,7 @@ Public Class SelectionBox(Of T)
 
             form.Text = Title
 
-            If form.Text = "" Then
+            If form.Text.NullOrEmptyS Then
                 form.Text = Application.ProductName
             End If
 

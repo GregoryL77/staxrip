@@ -16,24 +16,24 @@ Public Class ImageHelp
 
     Shared Function GetSymbolImage(symbol As Symbol) As Image
         If Not FontFilesExist Then Return Nothing
-        Dim legacy = OSVersion.Current < OSVersion.Windows10
+        'Dim legacy = OSVersion.Current < OSVersion.Windows10 'Opt. Assume W10 Only!!!
 
         If Coll Is Nothing Then
             Coll = New PrivateFontCollection
             Coll.AddFontFile(AwesomePath)
-            If legacy Then Coll.AddFontFile(SegoePath)
+            'If legacy Then Coll.AddFontFile(SegoePath)
         End If
 
         Dim family As FontFamily
 
         If CInt(symbol) > 61400 Then
-            If Coll.Families.Count > 0 Then family = Coll.Families(0)
+            If Coll.Families.Length > 0 Then family = Coll.Families(0)
         Else
-            If legacy Then
-                If Coll.Families.Count > 1 Then family = Coll.Families(1)
-            Else
-                family = New FontFamily("Segoe MDL2 Assets")
-            End If
+            'If legacy Then
+            'If Coll.Families.Length > 1 Then family = Coll.Families(1)
+            'Else
+            family = New FontFamily("Segoe MDL2 Assets")
+            'End If
         End If
 
         If family Is Nothing Then Return Nothing
@@ -101,7 +101,7 @@ Public Class Thumbnails
 
         Dim errorMsg = script.GetError
 
-        If errorMsg <> "" Then
+        If errorMsg.NotNullOrEmptyS Then
             MsgError("Failed to open file" + BR2 + inputFile, errorMsg)
             Exit Sub
         End If
@@ -176,17 +176,17 @@ Public Class Thumbnails
         Dim infoDuration = MediaInfo.GetGeneral(inputFile, "Duration").ToInt
         Dim audioCodecs = MediaInfo.GetAudioCodecs(inputFile)
 
-        If audioCodecs = "" Then
+        If audioCodecs Is Nothing Then
             audioCodecs = ""
         End If
 
         Dim channels = MediaInfo.GetAudio(inputFile, "Channel(s)").ToInt
         Dim subSampling = MediaInfo.GetVideo(inputFile, "ChromaSubsampling").Replace(":", "")
-        If subSampling = "" Then subSampling = ""
+        If subSampling Is Nothing Then subSampling = ""
         Dim colorSpace = MediaInfo.GetVideo(inputFile, "ColorSpace").ToLower
-        If colorSpace = "" Then colorSpace = ""
+        If colorSpace Is Nothing Then colorSpace = ""
         Dim profile = MediaInfo.GetVideo(inputFile, "Format_Profile").Shorten(4)
-        If profile = "" Then profile = "Main"
+        If profile.NullOrEmptyS Then profile = "Main"
         Dim scanType = MediaInfo.GetVideo(inputFile, "ScanType")
 
         Dim audioSound As String
@@ -200,7 +200,7 @@ Public Class Thumbnails
         If infoLength / 1024 ^ 3 > 1 Then
             infoSize = (infoLength / 1024 ^ 3).ToInvariantString("f2") + "GB"
         Else
-            infoSize = CInt(infoLength / 1024 ^ 2).ToString + "MB"
+            infoSize = CInt(infoLength / 1024 ^ 2).ToInvariantString + "MB"
         End If
 
         Dim caption = "File: " + inputFile.FileName + BR & "Size: " + MediaInfo.GetGeneral(inputFile, "FileSize") + " bytes" + " (" + infoSize + ")" & ", " + "Duration: " + StaxRip.g.GetTimeString(infoDuration / 1000) + ", avg.bitrate: " + MediaInfo.GetGeneral(inputFile, "OverallBitRate_String") + BR +

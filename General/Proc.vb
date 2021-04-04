@@ -4,6 +4,7 @@ Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading
+Imports JM.LinqFaster.SIMD
 
 Public Class Proc
     Implements IDisposable
@@ -100,7 +101,7 @@ Public Class Proc
 
             Dim header = ""
 
-            If Me.Header <> "" Then
+            If Me.Header.NotNullOrEmptyS Then
                 header = Me.Header.ToLower
             End If
 
@@ -112,7 +113,7 @@ Public Class Proc
                 End If
             Next
 
-            If ret = "" Then
+            If ret.NullOrEmptyS Then
                 ret = File.Base
             End If
 
@@ -149,14 +150,14 @@ Public Class Proc
 
     'TODO: should probably be removed
     Shared Function WriteBatchFile(path As String, content As String) As String
-        If OSVersion.Current = OSVersion.Windows7 Then
-            For Each i In content
-                If Convert.ToInt32(i) > 137 Then
-                    Throw New ErrorAbortException("Unsupported Windows Version",
-                        "Executing batch files with character '" & i & "' requires minimum Windows 8.")
-                End If
-            Next
-        End If
+        'If OSVersion.Current = OSVersion.Windows7 Then 'Opt. Assume W10 Only!!!
+        '    For Each i In content
+        '        If Convert.ToInt32(i) > 137 Then
+        '            Throw New ErrorAbortException("Unsupported Windows Version",
+        '                "Executing batch files with character '" & i & "' requires minimum Windows 8.")
+        '        End If
+        '    Next
+        'End If
 
         If content.IsDosCompatible Then
             content = "@echo off" + BR + content
@@ -206,10 +207,7 @@ Public Class Proc
         End Get
         Set(Value As String)
             Process.StartInfo.Arguments = Value
-
-            If Process.StartInfo.Arguments.Contains("\""") Then
-                Process.StartInfo.Arguments = Process.StartInfo.Arguments.Replace("\""", "\\""")
-            End If
+            Process.StartInfo.Arguments = Process.StartInfo.Arguments.Replace("\""", "\\""")
 
             If Process.StartInfo.Arguments.Contains("%") Then
                 Process.StartInfo.Arguments = Environment.ExpandEnvironmentVariables(Process.StartInfo.Arguments)
@@ -237,7 +235,7 @@ Public Class Proc
             If Not Process.HasExited Then
                 If Process.ProcessName = "cmd" Then
                     For Each i In ProcessHelp.GetChilds(Process)
-                        If {"conhost", "vspipe", "avs2pipemod64"}.Contains(i.ProcessName) Then
+                        If {"conhost", "vspipe", "avs2pipemod64"}.ContainsString(i.ProcessName) Then
                             Continue For
                         End If
 
@@ -287,7 +285,7 @@ Public Class Proc
         End If
 
         Try
-            If Header <> "" Then
+            If Header.NotNullOrEmptyS Then
                 Log.WriteHeader(Header)
 
                 If Not Package Is Nothing Then
@@ -295,7 +293,7 @@ Public Class Proc
                 End If
             End If
 
-            If Process.StartInfo.FileName = "" Then
+            If Process.StartInfo.FileName.NullOrEmptyS Then
                 Process.StartInfo.FileName = Package.Path
             End If
 
@@ -339,11 +337,11 @@ Public Class Proc
         Catch ex As Exception
             Dim msg = ex.Message
 
-            If File <> "" Then
+            If File.NotNullOrEmptyS Then
                 msg += BR2 + "File: " + File
             End If
 
-            If Arguments <> "" Then
+            If Arguments.NotNullOrEmptyS Then
                 msg += BR2 + "Arguments: " + Arguments
             End If
 
@@ -370,17 +368,17 @@ Public Class Proc
                     Throw New SkipException
                 End If
 
-                If AllowedExitCodes.Length > 0 AndAlso Not AllowedExitCodes.Contains(ExitCode) Then
+                If AllowedExitCodes.Length > 0 AndAlso Not AllowedExitCodes.ContainsS(ExitCode) Then
                     Dim interpretation As String
                     Dim systemError = New Win32Exception(ExitCode).Message
 
-                    If systemError <> "" AndAlso Not systemError?.StartsWith("Unknown error") Then
+                    If systemError.NotNullOrEmptyS AndAlso Not systemError?.StartsWith("Unknown error", StringComparison.Ordinal) Then
                         interpretation = "It's unclear what the exit code means, in case it's a Windows system error then it possibly means:" + BR2 + systemError
                     Else
                         Try
                             Marshal.ThrowExceptionForHR(ExitCode)
                         Catch ex As Exception
-                            If ex.Message <> "" AndAlso Not ex.Message?.StartsWith("Exception from HRESULT: 0x") Then
+                            If ex.Message.NotNullOrEmptyS AndAlso Not ex.Message?.StartsWith("Exception from HRESULT: 0x", StringComparison.Ordinal) Then
                                 interpretation = "It's unclear what the exit code means, in case it's a COM error then it possibly means:" + BR2 + ex.Message
                             End If
                         End Try
@@ -389,7 +387,7 @@ Public Class Proc
                     Dim errorMessage = Header + " returned error exit code: " & ExitCode &
                         " (" + "0x" + ExitCode.ToString("X") + ")"
 
-                    If interpretation <> "" Then
+                    If interpretation.NotNullOrEmptyS Then
                         errorMessage += BR2 + interpretation
                     End If
 
@@ -483,7 +481,7 @@ Public Class Proc
     End Sub
 
     Function ProcessData(value As String) As (Data As String, Skip As Boolean)
-        If value = "" Then
+        If value.NullOrEmptyS Then
             Return ("", False)
         End If
 
@@ -491,11 +489,11 @@ Public Class Proc
             value = value.Trim(TrimChars)
         End If
 
-        If SkipString <> "" AndAlso value.Contains(SkipString) Then
+        If SkipString.NotNullOrEmptyS AndAlso value.Contains(SkipString) Then
             Return (value, True)
         End If
 
-        If Not SkipStrings Is Nothing Then
+        If SkipStrings IsNot Nothing Then
             For Each i In SkipStrings
                 If value.Contains(i) Then
                     Return (value, True)

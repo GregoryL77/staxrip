@@ -76,9 +76,6 @@
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42024,42032,42036,42099</WarningsAsErrors>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>false</Prefer32Bit>
-    <DebugSymbols>true</DebugSymbols>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>C:\inetpub\Staxrip\</OutputPath>
@@ -92,7 +89,7 @@
     <RemoveIntegerChecks>true</RemoveIntegerChecks>
     <Optimize>true</Optimize>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DefineDebug>true</DefineDebug>
@@ -117,6 +114,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="DeepCloner, Version=0.10.0.0, Culture=neutral, PublicKeyToken=dc0b95cf99bf4e99, processorArchitecture=MSIL">
       <HintPath>packages\DeepCloner.0.10.2\lib\net40\DeepCloner.dll</HintPath>
@@ -127,8 +127,8 @@
     <Reference Include="JM.LinqFaster, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\JM.LinqFaster.1.1.2\lib\net461\JM.LinqFaster.dll</HintPath>
     </Reference>
-    <Reference Include="KGySoft.CoreLibraries, Version=5.5.0.0, Culture=neutral, PublicKeyToken=b45eba277439ddfe, processorArchitecture=MSIL">
-      <HintPath>packages\KGySoft.CoreLibraries.5.5.0\lib\net472\KGySoft.CoreLibraries.dll</HintPath>
+    <Reference Include="KGySoft.CoreLibraries, Version=5.6.0.0, Culture=neutral, PublicKeyToken=b45eba277439ddfe, processorArchitecture=MSIL">
+      <HintPath>packages\KGySoft.CoreLibraries.5.6.0\lib\net472\KGySoft.CoreLibraries.dll</HintPath>
     </Reference>
     <Reference Include="LinqFasterer, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\LinqFasterer.2.1.0\lib\netstandard2.0\LinqFasterer.dll</HintPath>
@@ -146,11 +146,12 @@
       <HintPath>packages\Microsoft.Bcl.HashCode.1.1.1\lib\net461\Microsoft.Bcl.HashCode.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Toolkit.HighPerformance, Version=7.0.0.0, Culture=neutral, PublicKeyToken=4aff67a105548ee2, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Toolkit.HighPerformance.7.0.0\lib\netstandard2.0\Microsoft.Toolkit.HighPerformance.dll</HintPath>
+      <HintPath>packages\Microsoft.Toolkit.HighPerformance.7.0.1\lib\netstandard2.0\Microsoft.Toolkit.HighPerformance.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic">
       <Name>Microsoft.VisualBasic</Name>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
@@ -274,6 +275,7 @@
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
       <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>

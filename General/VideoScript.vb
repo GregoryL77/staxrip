@@ -34,7 +34,7 @@ Public Class VideoScript
     End Function
 
     Overridable Function GetScript(skipCategory As String) As String
-        Dim sb As New StringBuilder()
+        Dim sb As New StringBuilder(2048)
 
         If p.CodeAtTop.NotNullOrEmptyS Then
             sb.AppendLine(p.CodeAtTop)
@@ -578,6 +578,7 @@ clipname.set_output()
     Overrides Function Edit() As DialogResult
         Using f As New CodeEditor(Me)
             f.StartPosition = FormStartPosition.CenterParent
+
             If f.ShowDialog() = DialogResult.OK Then
                 Filters = f.GetFilters
 
@@ -975,7 +976,7 @@ Public Class FilterParameters
     Shared ReadOnly Property Definitions As List(Of FilterParameters)
         Get
             If DefinitionsValue Is Nothing Then
-                DefinitionsValue = New List(Of FilterParameters)
+                DefinitionsValue = New List(Of FilterParameters)(256)
 
                 Dim add = Sub(func As String(),
                               path As String,

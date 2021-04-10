@@ -222,9 +222,7 @@ Public Class ToolUpdate
             Return True
         End If
 
-        Dim x86 = {"_Win32", "\x86", "-x86", "32-bit"}
-
-        If g.Is64Bit AndAlso value.ContainsAny(x86) Then
+        If value.ContainsAny({"_Win32", "\x86", "-x86", "32-bit"}) Then 'g.Is64Bit AndAlso' Assume 64 bit only!!! 
             Return True
         End If
     End Function

@@ -852,7 +852,7 @@ Public Class eac3toForm
                     End If
 
                     For Each pro In s.eac3toProfiles
-                        Dim searchWords = pro.Match.SplitNoEmptyAndWhiteSpace(" ")
+                        Dim searchWords = pro.Match.SplitNoEmptyAndNoWSDelim(" ")
 
                         If searchWords.NothingOrEmpty Then
                             Continue For
@@ -879,7 +879,7 @@ Public Class eac3toForm
                     stream.ListViewItem = lvAudio.Items.Add(stream.ToString)
                     stream.ListViewItem.Tag = stream
 
-                    Dim autoCode = Project.PreferredAudio.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+                    Dim autoCode = Project.PreferredAudio.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
                     stream.ListViewItem.Checked = autoCode.ContainsAny("all", stream.Language.TwoLetterCode, stream.Language.ThreeLetterCode)
                 ElseIf stream.IsVideo Then
                     cbVideoStream.Items.Add(stream)
@@ -887,7 +887,7 @@ Public Class eac3toForm
                     Dim item = lvSubtitles.Items.Add(stream.Language.ToString)
                     item.Tag = stream
 
-                    Dim autoCode = Project.PreferredSubtitles.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+                    Dim autoCode = Project.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
                     item.Checked = autoCode.ContainsAny("all", stream.Language.TwoLetterCode, stream.Language.ThreeLetterCode)
                 ElseIf stream.IsChapters Then
                     cbChapters.Visible = True

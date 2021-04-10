@@ -462,7 +462,7 @@ Public MustInherit Class BasicVideoEncoder
                 End If
             Next
 
-            Dim a = commandLine.SplitNoEmptyAndWhiteSpace(" ")
+            Dim a = commandLine.SplitNoEmptyAndNoWSDelim(" ")
 
             For x = 0 To a.Length - 1
                 For Each param In params.Items

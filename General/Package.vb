@@ -91,6 +91,8 @@ Public Class Package
         .Description = "Haali Splitter is used by eac3to to write MKV files.",
         .Required = False,
         .IsIncluded = False,
+        .VersionAllowAny = True,
+        .Find = False,
         .Locations = {Registry.ClassesRoot.GetString("CLSID\" + GUIDS.HaaliMuxer.ToString + "\InprocServer32", Nothing).Dir}})
 
     Shared Property NicAudio As Package = Add(New PluginPackage With {
@@ -170,6 +172,8 @@ Public Class Package
         .HelpSwitch = "-?",
         .IsIncluded = False,
         .VersionAllowAny = True,
+        .Find = False,
+        .Required = False,
         .RequiredFunc = Function() Audio.IsEncoderUsed(GuiAudioEncoder.eac3to) AndAlso Audio.CommandContains("m4a"),
         .Description = "Non-free AAC audio convertor console app."})
 
@@ -301,6 +305,9 @@ Public Class Package
         .Location = "Encoders\xvid_encraw",
         .Filename = "xvid_encraw.exe",
         .Description = "MPEG-4 video encoder console app.",
+        .VersionAllowAny = True,
+        .Find = False,
+        .Required = False,
         .WebURL = "https://www.xvid.com",
         .DownloadURL = "https://www.mediafire.com/folder/vkt2ckzjvt0qf/StaxRip_Tools",
         .RequiredFunc = Function() TypeOf p.VideoEncoder Is BatchEncoder AndAlso DirectCast(p.VideoEncoder, BatchEncoder).CommandLines.Contains("xvid_encraw"),
@@ -396,13 +403,13 @@ Public Class Package
     Shared Property MpcBE As Package = Add(New Package With {
         .Name = "MPC-BE",
         .Filename = "mpc-be64.exe",
-        .Filename32 = "mpc-be.exe",
         .IsIncluded = False,
         .VersionAllowAny = True,
+        .Find = False,
         .Required = False,
         .WebURL = "https://sourceforge.net/projects/mpcbe/",
         .Description = "DirectShow based media player (GUI app).",
-        .Locations = {Registry.LocalMachine.GetString("SOFTWARE\MPC-BE", "ExePath").Dir, Folder.Programs + "MPC-BE x64"}})
+        .Locations = {Registry.LocalMachine.GetString("SOFTWARE\MPC-BE", "ExePath").Dir, Folder.Programs + "MPC-BE x64"}}) '.Filename32 = "mpc-be.exe",
 
     Shared Property MpcHC As Package = Add(New Package With {
         .Name = "MPC-HC",
@@ -1953,9 +1960,9 @@ Public Class Package
 
     Property Filename As String
         Get
-            If g.Is32Bit AndAlso Filename32.NotNullOrEmptyS Then
-                Return Filename32
-            End If
+            'If g.Is32Bit AndAlso Filename32.NotNullOrEmptyS Then ' Assume 64 bit only!!!
+            '    Return Filename32
+            'End If
 
             Return FilenameValue
         End Get
@@ -2199,7 +2206,7 @@ Public Class Package
         End If
     End Function
 
-    Function GetStatusVersion(ByRef filepath As String) As String
+    Function GetStatusVersion(filepath As String) As String
         Dim ret As String
 
         If VersionAllowAny Then Return Nothing
@@ -2443,12 +2450,14 @@ Public Class Package
             Return Nothing
         End If
 
-        If Not dir.Contains(":\") AndAlso Not dir.StartsWith("\\", StringComparison.Ordinal) Then
+        'If Not dir.Contains(":\") AndAlso Not dir.StartsWith("\\", StringComparison.Ordinal) Then
+        If Not dir.StartsWith("\\", StringComparison.Ordinal) AndAlso Not dir.Contains(":\") Then
             dir = Folder.Apps + dir
         End If
 
-        If File.Exists(dir.FixDir + Filename) Then
-            Return dir.FixDir + Filename
+        Dim df As String = dir.FixDir + Filename
+        If File.Exists(df) Then
+            Return df
         End If
     End Function
 
@@ -2565,7 +2574,8 @@ Public Class Package
     End Function
 
     Function CompareTo(other As Package) As Integer Implements System.IComparable(Of Package).CompareTo ' Ordinal ???
-        Return Name.CompareTo(other.Name)
+        'Return Name.CompareTo(other.Name)
+        Return String.CompareOrdinal(Name, other.Name)
     End Function
 
     ReadOnly Property ConfPath As String
@@ -2597,7 +2607,7 @@ Public Class Package
     End Sub
 
     Sub SaveConf()
-        Dim sb As New StringBuilder(32)
+        Dim sb As New StringBuilder(48)
         sb.Append("Version = ").Append(Version).Append(BR).Append("Date = ").Append(VersionDate.ToInvariantString("yyyy-MM-dd"))
         sb.ToString.WriteFileUTF8BOM(ConfPath)
     End Sub

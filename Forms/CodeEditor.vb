@@ -1,6 +1,8 @@
 ﻿
 Imports System.Text.RegularExpressions
-
+Imports System.Threading
+Imports System.Threading.Tasks
+Imports JM.LinqFaster
 Imports Microsoft.Win32
 
 Imports StaxRip.UI
@@ -12,22 +14,35 @@ Public Class CodeEditor
     Sub New(doc As VideoScript)
         InitializeComponent()
 
-        KeyPreview = True
-
-        MainFlowLayoutPanel.SuspendLayout()
+        Me.tlpMain.SuspendLayout()
+        Me.FlowLayoutPanel1.SuspendLayout()
+        Me.MainFlowLayoutPanel.SuspendLayout()
+        Me.SuspendLayout()
         MainFlowLayoutPanel.Padding = New Padding(0, 0, 0, 0)
 
+        Width = 1280
+        Height = 464
+        FormBorderStyle = FormBorderStyle.Sizable
         Engine = doc.Engine
 
         For Each i In doc.Filters
             MainFlowLayoutPanel.Controls.Add(CreateFilterTable(i))
         Next
 
-        MainFlowLayoutPanel.ResumeLayout()
+        'AutoSizeMode = AutoSizeMode.GrowAndShrink
+        AutoSizeMode = AutoSizeMode.GrowOnly
+        AutoSize = True
+        KeyPreview = True
         AddHandler MainFlowLayoutPanel.Layout, AddressOf MainFlowLayoutPanelLayout
 
-        AutoSizeMode = AutoSizeMode.GrowAndShrink
-        AutoSize = True
+    End Sub
+
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
+        Me.tlpMain.ResumeLayout(True)
+        Me.FlowLayoutPanel1.ResumeLayout(True)
+        Me.MainFlowLayoutPanel.ResumeLayout(True)
+        Me.ResumeLayout(True)
     End Sub
 
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
@@ -71,6 +86,11 @@ Public Class CodeEditor
         ret.cbActive.Checked = filter.Active
         ret.cbActive.Text = filter.Category
         ret.tbName.Text = filter.Name
+
+        Dim fh As Integer = ret.Font.Height 'Opt.16 Disabled OnLayout in FilterTable Class 'was 16(Sagoe) or 13 in filterTable class
+        ret.tbName.Height = CInt(fh * 1.25) '1.2
+        ret.tbName.Width = fh * 8 '7
+
         ret.rtbScript.Text = If(filter.Script.NullOrEmptyS, "", filter.Script + BR)
         ret.SetColor()
 
@@ -153,7 +173,7 @@ Public Class CodeEditor
     Sub JoinFilters()
         Dim firstTable = DirectCast(MainFlowLayoutPanel.Controls(0), FilterTable)
         firstTable.tbName.Text = "merged"
-        firstTable.rtbScript.Text = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).Select(Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" + arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " + BR))).Join(BR) + BR2 + BR2
+        firstTable.rtbScript.Text = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray.SelectF(Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" + arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " + BR))).Join(BR) + BR2 + BR2
 
         For x = MainFlowLayoutPanel.Controls.Count - 1 To 1 Step -1
             MainFlowLayoutPanel.Controls.RemoveAt(x)
@@ -161,22 +181,29 @@ Public Class CodeEditor
     End Sub
 
     Sub MainFlowLayoutPanelLayout(sender As Object, e As LayoutEventArgs)
-        Dim filterTables = MainFlowLayoutPanel.Controls.OfType(Of FilterTable)
+        'SW.Restart()
+        Dim filterTables = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray
 
-        If filterTables.Count = 0 Then
+        If filterTables.Length <= 0 Then 'Any
             Exit Sub
         End If
+        'Dim maxTextWidth = Aggregate i In filterTables Into Max(i.TrimmedTextSize.Width)
+        Dim maxTextWidth As Integer  '= filterTables.MaxF(Function(i) i.TrimmedTextSize.Width)
+        Dim ttsA(filterTables.Length - 1) As Size
+        For f = 0 To filterTables.Length - 1
+            ttsA(f) = filterTables(f).TrimmedTextSize
+            If ttsA(f).Width > maxTextWidth Then maxTextWidth = ttsA(f).Width
+        Next f
 
-        Dim maxTextWidth = Aggregate i In filterTables Into Max(i.TrimmedTextSize.Width)
-
-        For Each table As FilterTable In MainFlowLayoutPanel.Controls
+        Dim fh As Integer = FontHeight
+        For f = 0 To filterTables.Length - 1
             Dim sizeRTB As Size
-            sizeRTB.Width = maxTextWidth + FontHeight
-            sizeRTB.Height = table.TrimmedTextSize.Height + CInt(FontHeight * 0.3)
-            table.rtbScript.Size = sizeRTB
-            'table.rtbScript.Refresh()
-            table.rtbScript.Invalidate()
-        Next
+            sizeRTB.Width = maxTextWidth + fh
+            sizeRTB.Height = ttsA(f).Height + CInt(fh * 0.3)
+            filterTables(f).rtbScript.Size = sizeRTB
+            'filterTables(f).rtbScript.Refresh()
+            filterTables(f).rtbScript.Invalidate()
+        Next f
     End Sub
 
     Sub CodeEditor_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
@@ -215,25 +242,27 @@ Public Class CodeEditor
             rtbScript.Margin = New Padding(0)
             rtbScript.Font = New Font("Consolas", 10 * s.UIScaleFactor)
 
-            AddHandler Disposed, Sub() Menu.Dispose()
+            AddHandler Disposed, Sub()
+                                     Menu?.Items.ClearAndDisplose
+                                     Menu?.Dispose()
+                                     rtbScript?.Font?.Dispose()
+                                 End Sub
             AddHandler cbActive.CheckedChanged, Sub() SetColor()
             AddHandler rtbScript.MouseUp, AddressOf HandleMouseUp
             AddHandler rtbScript.Enter, Sub() Editor.ActiveTable = Me
             AddHandler rtbScript.TextChanged, Sub()
                                                   If Parent Is Nothing Then Exit Sub
-                                                  Dim filterTables = Parent.Controls.OfType(Of FilterTable)
-                                                  Dim maxTextWidth = Aggregate i In filterTables Into Max(i.TrimmedTextSize.Width)
+                                                  Dim maxTextWidth = Parent.Controls.OfType(Of FilterTable)().ToArray.MaxF(Function(i) i.TrimmedTextSize.Width)
 
                                                   Dim textSizeVar = TrimmedTextSize
 
-                                                  If textSizeVar.Width > maxTextWidth OrElse
-                                                      (textSizeVar.Width = maxTextWidth AndAlso
-                                                      textSizeVar.Width <> LastTextSize.Width) OrElse
-                                                      LastTextSize.Height <> textSizeVar.Height AndAlso
-                                                      textSizeVar.Height > FontHeight Then
-
-                                                      Parent.PerformLayout()
-                                                      LastTextSize = TrimmedTextSize
+                                                  If textSizeVar.Width > maxTextWidth OrElse (textSizeVar.Width = maxTextWidth AndAlso textSizeVar.Width <> LastTextSize.Width) OrElse
+                                                  LastTextSize.Height <> textSizeVar.Height AndAlso textSizeVar.Height > FontHeight Then
+                                                      LastTextSize = textSizeVar
+                                                      Task.Run(Sub()
+                                                                   Thread.Sleep(150)
+                                                                   BeginInvoke(Sub() Parent.PerformLayout())
+                                                               End Sub)
                                                   End If
                                               End Sub
             ColumnCount = 2
@@ -254,17 +283,21 @@ Public Class CodeEditor
             t.RowStyles.Add(New RowStyle(SizeType.AutoSize))
             t.Controls.Add(cbActive, 0, 0)
             t.Controls.Add(tbName, 0, 1)
-            t.ResumeLayout()
+            't.ResumeLayout()
 
             Controls.Add(t, 0, 0)
             Controls.Add(rtbScript, 1, 0)
+
+            t.ResumeLayout()
+
         End Sub
 
-        Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            tbName.Height = CInt(FontHeight * 1.2)
-            tbName.Width = FontHeight * 7
-            MyBase.OnLayout(levent)
-        End Sub
+        'Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
+        '    Dim fh As Integer = FontHeight
+        '    tbName.Height = CInt(fh * 1.2)
+        '    tbName.Width = fh * 8 '7
+        '    MyBase.OnLayout(levent)
+        'End Sub
 
         Protected Overrides Sub OnHandleCreated(e As EventArgs)
             Menu.Form = FindForm()
@@ -283,35 +316,35 @@ Public Class CodeEditor
                 cbActive.ForeColor = Color.Gray
             End If
         End Sub
-
-        ReadOnly Property TextSize As Size
-            Get
-                Return TextRenderer.MeasureText(rtbScript.Text, rtbScript.Font, New Size(100000, 100000))
-            End Get
-        End Property
-
-        ReadOnly Property MaxTextWidth As Integer
-            Get
-                Return Font.Height * 108
-            End Get
-        End Property
-
-        ReadOnly Property MaxTextHeight As Integer
-            Get
-                Return Font.Height * 15
-            End Get
-        End Property
+        'ReadOnly Property TextSize As Size
+        '    Get
+        '        Return TextRenderer.MeasureText(rtbScript.Text, rtbScript.Font, New Size(10000, 10000))
+        '    End Get
+        'End Property
+        'ReadOnly Property MaxTextSizeWH As (Integer, Integer)
+        '    Get
+        '        Return (Font.Height * 108, Font.Height * 15)
+        '    End Get
+        'End Property
+        'ReadOnly Property MaxTextHeight As Integer
+        '    Get
+        '        Return Font.Height * 15
+        '    End Get
+        'End Property
 
         ReadOnly Property TrimmedTextSize As Size
             Get
-                Dim ret = TextSize
+                Dim ret = TextRenderer.MeasureText(rtbScript.Text, rtbScript.Font, New Size(100000, 100000))
+                Dim fontH As Integer = Font.Height
+                Dim maxFW As Integer = fontH * 104 '108-96 fh=16 'Or: Screen.PrimaryScreen.Bounds
+                Dim maxFH As Integer = fontH * 15
 
-                If ret.Width > MaxTextWidth Then
-                    ret.Width = MaxTextWidth
+                If ret.Width > maxFW Then
+                    ret.Width = maxFW
                 End If
 
-                If ret.Height > MaxTextHeight Then
-                    ret.Height = MaxTextHeight
+                If ret.Height > maxFH Then
+                    ret.Height = maxFH
                 End If
 
                 Return ret
@@ -358,6 +391,7 @@ Public Class CodeEditor
                 Exit Sub
             End If
 
+            Menu.SuspendLayout()
             Menu.Items.ClearAndDisplose
             Dim filterProfiles = If(p.Script.Engine = ScriptEngine.AviSynth, s.AviSynthProfiles, s.VapourSynthProfiles)
             Dim code = rtbScript.Text.FixBreak
@@ -460,11 +494,12 @@ Public Class CodeEditor
                                   rtbScript.ScrollToCaret()
                               End Sub
 
-            Dim cutMenuItem = Menu.Add("Cut", cutAction, rtbScript.SelectionLength > 0 AndAlso Not rtbScript.ReadOnly)
+            Dim isTSel As Boolean = rtbScript.SelectionLength > 0
+            Dim cutMenuItem = Menu.Add("Cut", cutAction, isTSel AndAlso Not rtbScript.ReadOnly)
             cutMenuItem.SetImage(Symbol.Cut)
             cutMenuItem.KeyDisplayString = "Ctrl+X"
 
-            Dim copyMenuItem = Menu.Add("Copy", copyAction, rtbScript.SelectionLength > 0)
+            Dim copyMenuItem = Menu.Add("Copy", copyAction, isTSel)
             copyMenuItem.SetImage(Symbol.Copy)
             copyMenuItem.KeyDisplayString = "Ctrl+C"
 
@@ -482,8 +517,8 @@ Public Class CodeEditor
                                      If Not pluginPack.AvsFilterNames Is Nothing Then
                                          For Each avsFilterName In pluginPack.AvsFilterNames
                                              If rtbScript.Text.Contains(avsFilterName) Then
-                                                     Menu.Add("Help | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
-                                                 End If
+                                                 Menu.Add("Help | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
+                                             End If
                                          Next
                                      End If
                                  Next
@@ -492,7 +527,7 @@ Public Class CodeEditor
                                      Dim installDir = Registry.LocalMachine.GetString("SOFTWARE\AviSynth", Nothing)
                                      Dim helpText = rtbScript.Text.Left("(")
 
-                                     If helpText.EndsWith("Resize") Then helpText = "Resize"
+                                     If helpText.EndsWith("Resize", StringComparison.Ordinal) Then helpText = "Resize"
                                      If helpText.StartsWith("ConvertTo", StringComparison.Ordinal) Then helpText = "Convert"
 
                                      Dim filterPath = installDir + "\Docs\English\corefilters\" + helpText + ".htm"
@@ -513,7 +548,7 @@ Public Class CodeEditor
                                      For Each pluginPack In Package.Items.Values.OfType(Of PluginPackage)
 
                                          If Not pluginPack.AvsFilterNames Is Nothing Then
-                                             Menu.Add("Help | " + pluginPack.Name.Substring(0, 1).ToUpper + " | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
+                                             Menu.Add("Help | " + pluginPack.Name.Substring(0, 1).ToUpperInvariant + " | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
                                              Application.DoEvents()
                                          End If
                                      Next
@@ -523,7 +558,7 @@ Public Class CodeEditor
 
                                      For Each pluginPack In Package.Items.Values.OfType(Of PluginPackage)
                                          If Not pluginPack.VSFilterNames Is Nothing Then
-                                             Menu.Add("Help | " + pluginPack.Name.Substring(0, 1).ToUpper + " | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
+                                             Menu.Add("Help | " + pluginPack.Name.Substring(0, 1).ToUpperInvariant + " | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
                                              Application.DoEvents()
                                          End If
                                      Next
@@ -538,6 +573,7 @@ Public Class CodeEditor
                                                         helpTempMenuItem.Visible = False
                                                         helpAction()
                                                     End Sub
+            Menu.ResumeLayout(False)
             Menu.Show(rtbScript, e.Location)
         End Sub
 

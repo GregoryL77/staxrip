@@ -245,7 +245,8 @@ Namespace UI
                 Dim form = ToolStrip.FindForm
 
                 If Not form Is Nothing Then
-                    form.Refresh()
+                    form.Invalidate()
+                    'form.Refresh()
                 End If
             End If
         End Sub

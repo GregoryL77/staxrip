@@ -5,7 +5,7 @@ Imports System.Globalization
 Imports System.Threading.Tasks
 
 Public Class ImageHelp
-    Private Shared Coll As PrivateFontCollection
+    Public Shared Coll As PrivateFontCollection
     Private Shared AwesomePath As String = Folder.Apps + "\Fonts\FontAwesome.ttf"
     Private Shared SegoePath As String = Folder.Apps + "\Fonts\Segoe-MDL2-Assets.ttf"
     Private Shared FontFilesExist As Boolean = File.Exists(AwesomePath) AndAlso File.Exists(SegoePath)
@@ -45,6 +45,7 @@ Public Class ImageHelp
         graphics.DrawString(Convert.ToChar(CInt(symbol)), font, Brushes.Black, -fontHeight * 0.1F, fontHeight * 0.07F)
         graphics.Dispose()
         font.Dispose()
+        family?.Dispose()
 
         Return bitmap
     End Function

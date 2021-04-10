@@ -1126,7 +1126,7 @@ Public Class NVEnc
             Dim ret = ""
 
             ret += SelectEveryValue.Value.ToString
-            ret += "," + SelectEveryOffsets.Value.SplitNoEmptyAndWhiteSpace(" ", ",", ";").SelectF(Function(item) "offset=" + item).Join(",")
+            ret += "," + SelectEveryOffsets.Value.SplitNoEmptyAndNoWSDelim(" ", ",", ";").SelectF(Function(item) "offset=" + item).Join(",")
 
             If SelectEvery.Value Then
                 Return ("--vpp-select-every " + ret.TrimStart(","c)).TrimEnd(","c)

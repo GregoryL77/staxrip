@@ -365,10 +365,10 @@ Public Class CommandLineDemuxForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         If DialogResult = DialogResult.OK Then
             Target.Name = tbName.Text
-            Target.InputExtensions = tbInput.Text.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
-            Target.InputFormats = ConvertFormat(tbInputFormats.Text).SplitNoEmptyAndWhiteSpace(",", ";", " ")
-            Target.OutputExtensions = tbVideoOut.Text.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
-            Target.SourceFilters = tbSourceFilters.Text.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+            Target.InputExtensions = tbInput.Text.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
+            Target.InputFormats = ConvertFormat(tbInputFormats.Text).SplitNoEmptyAndNoWSDelim(",", ";", " ")
+            Target.OutputExtensions = tbVideoOut.Text.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
+            Target.SourceFilters = tbSourceFilters.Text.SplitNoEmptyAndNoWSDelim(",", ";", " ")
             Target.Command = tbCommand.Text
             Target.Arguments = tbArguments.Text
         End If

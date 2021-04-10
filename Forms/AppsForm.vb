@@ -1,6 +1,7 @@
 
 Imports System.Runtime.InteropServices
 Imports System.Text
+Imports System.Threading
 Imports System.Threading.Tasks
 
 Imports StaxRip.UI
@@ -385,7 +386,7 @@ Public Class AppsForm
         tv.ItemHeight = CInt(FontHeight * 1.5)
         tv.Scrollable = True
 
-        SearchTextBox_TextChanged()
+        SearchTextBox_Update()
 
         ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
         g.SetRenderer(ToolStrip)
@@ -465,8 +466,9 @@ Public Class AppsForm
         Contents("Description").Text = CurrentPackage.Description
 
         If File.Exists(path) Then
-            Contents("Version").Text = If(CurrentPackage.IsVersionCorrect, CurrentPackage.Version, "Unknown")
-            Contents("Version").Text += " (" + File.GetLastWriteTimeUtc(path).ToShortDateString() + ")"
+            Dim lwtU As Date = File.GetLastWriteTimeUtc(path) 'Package.IsVersionCorrect
+            Contents("Version").Text = If(Not (CurrentPackage.VersionDate - lwtU).TotalDays > 3 AndAlso Not (CurrentPackage.VersionDate - lwtU).TotalDays < -3, CurrentPackage.Version, "Unknown")
+            Contents("Version").Text += " (" + lwtU.ToShortDateString() + ")"
         Else
             Contents("Version").Text = "-"
         End If
@@ -564,7 +566,8 @@ Public Class AppsForm
 
     Protected Overrides Sub OnActivated(e As EventArgs)
         ShowActivePackage()
-        Refresh()
+        'Refresh()
+        Invalidate()
         MyBase.OnActivated(e)
     End Sub
 
@@ -602,8 +605,9 @@ Public Class AppsForm
         End If
     End Sub
 
-    Sub SearchTextBox_TextChanged() Handles SearchTextBox.TextChanged
+    Sub SearchTextBox_Update() Handles SearchTextBox.TextChanged
         Dim current = CurrentPackage
+        Dim sbt = SearchTextBox.Text?.ToLowerInvariant
 
         tv.BeginUpdate()
         tv.Nodes.Clear()
@@ -614,7 +618,7 @@ Public Class AppsForm
             Dim searchString = pack.Name + pack.Description + pack.Version + pack.WebURL +
                 plugin?.VSFilterNames.Join(" ") + pack.Path + plugin?.AvsFilterNames.Join(" ")
 
-            If searchString?.ToLowerInvariant.Contains(SearchTextBox.Text?.ToLowerInvariant) Then
+            If searchString?.ToLowerInvariant.Contains(sbt) Then
                 If plugin Is Nothing Then
                     If pack.TreePath.NotNullOrEmptyS Then
                         Dim n = tv.AddNode(pack.TreePath + "|" + pack.Name)
@@ -639,7 +643,7 @@ Public Class AppsForm
                     End If
                 End If
             End If
-        Next
+        Next pack
 
         Dim tvNC As Integer = tv.Nodes.Count
 
@@ -650,7 +654,7 @@ Public Class AppsForm
         ToolStrip.Enabled = tvNC > 0
         flp.Enabled = tvNC > 0
 
-        If SearchTextBox.Text.NotNullOrEmptyS Then
+        If sbt.NotNullOrEmptyS Then
             tv.ExpandAll()
         Else
             ShowPackage(current)
@@ -829,7 +833,7 @@ Public Class AppsForm
                               Everything_GetResultFullPathName(CUInt(x), sb, CUInt(size))
                               Dim path = sb.ToString
 
-                              If path.FileName.ToLower = CurrentPackage.Filename.ToLower Then
+                              If path.FileName.ToLowerInvariant = CurrentPackage.Filename.ToLowerInvariant Then
                                   paths.Add(path)
                               End If
 
@@ -948,7 +952,8 @@ Public Class AppsForm
 
     Sub UpdateUI() Implements IUpdateUI.UpdateUI
         ShowActivePackage()
-        Refresh()
+        'Refresh()
+        Invalidate()
     End Sub
 
     Sub miHelp_Click(sender As Object, e As EventArgs) Handles miHelp.Click

@@ -919,18 +919,18 @@ Public Class Startup
         Application.EnableVisualStyles()
         Application.SetCompatibleTextRenderingDefault(False)
 
-        Dim args = Environment.GetCommandLineArgs
+        'Dim args = Environment.GetCommandLineArgs
 
-        If args.Length > 2 AndAlso args(1) = "--create-soft-links" Then
-            Try
-                SoftLink.CreateLinksElevated(args.Skip(2))
-            Catch ex As Exception
-                MsgError(ex.Message)
-                Environment.ExitCode = 1
-            End Try
+        'If args.Length > 2 AndAlso args(1).Equals("--create-soft-links") Then
+        '    Try
+        '        SoftLink.CreateLinksElevated(args.Skip(2))
+        '    Catch ex As Exception
+        '        MsgError(ex.Message)
+        '        Environment.ExitCode = 1
+        '    End Try
 
-            Exit Sub
-        End If
+        '    Exit Sub
+        'End If
 
         Application.Run(New MainForm())
         RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
@@ -1282,7 +1282,7 @@ Public Class Subtitle
                         st.Language = New Language(CultureInfo.InvariantCulture)
                     End Try
 
-                    Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+                    Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
                     st.Enabled = autoCode.ContainsAny("all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode)
 
                     If Not st Is Nothing Then
@@ -1338,7 +1338,7 @@ Public Class Subtitle
                 st.Title = title.Left("}").UnescapeIllegalFileSysChars
             End If
 
-            Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+            Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
             st.Enabled = autoCode.ContainsAny("all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode)
 
             st.Path = path
@@ -1526,8 +1526,12 @@ Public Class FileTypes
     Shared Property VideoDemuxOutput As String() = {"mpg", "h264", "avi", "h265"}
     Shared Property Image As String() = {"bmp", "jpg", "png", "gif", "tif", "jpe", "jpeg", "psd", "webp", "heif", "avif"}
 
-    Shared Function GetFilter(values As IEnumerable(Of String)) As String
-        Return "*." + values.Join(";*.") + "|*." + values.Join(";*.") + "|All Files|*.*"
+    'Shared Function GetFilter(values As IEnumerable(Of String)) As String
+    '    Return "*." + values.Join(";*.") + "|*." + values.Join(";*.") + "|All Files|*.*"
+    'End Function
+    Shared Function GetFilter(values As String()) As String
+        Dim vj As String = values.Join(";*.")
+        Return "*." + vj + "|*." + vj + "|All Files|*.*"
     End Function
 End Class
 

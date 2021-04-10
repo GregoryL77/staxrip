@@ -33,7 +33,7 @@ Public MustInherit Class Demuxer
             Dim tb = ui.AddText(page)
             tb.Label.Text = "Supported Input File Types:"
             tb.Edit.Text = InputExtensions.Join(" ")
-            tb.Edit.SaveAction = Sub(value) InputExtensions = value.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+            tb.Edit.SaveAction = Sub(value) InputExtensions = value.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
 
             Dim cb = ui.AddBool(page)
             cb.Text = "Video Demuxing"
@@ -242,7 +242,7 @@ Public Class eac3toDemuxer
                         Throw New AbortException
                     End Try
 
-                    If Not form.cbVideoOutput.Text = "Nothing" Then
+                    If Not String.Equals(form.cbVideoOutput.Text, "Nothing") Then
                         proj.SourceFile = form.OutputFolder + proj.SourceFile.Base + "." + form.cbVideoOutput.Text.ToLower
                         proj.SourceFiles.Clear()
                         proj.SourceFiles.Add(proj.SourceFile)
@@ -328,7 +328,7 @@ Public Class ffmpegDemuxer
 
         Dim outPath = proj.TempDir + proj.SourceFile.Base + streams(0).ExtFull
 
-        If outPath = proj.SourceFile OrElse (Not overrideExisting AndAlso outPath.FileExists) Then
+        If outPath.Equals(proj.SourceFile) OrElse (Not overrideExisting AndAlso outPath.FileExists) Then
             Exit Sub
         End If
 
@@ -376,7 +376,7 @@ Public Class ffmpegDemuxer
 
         args += " -vn -sn -dn -y -hide_banner"
 
-        If outPath.Ext = "wav" Then
+        If outPath.Ext.Equals("wav") Then
             args += " -c:a pcm_f32le"
         Else
             args += " -c:a copy"
@@ -407,7 +407,8 @@ Public Class ffmpegDemuxer
     End Sub
 
     Sub DemuxSubtitles(subtitles As List(Of Subtitle), proj As Project)
-        If subtitles.Where(Function(subtitle) subtitle.Enabled).Count = 0 Then
+        'If subtitles.Where(Function(subtitle) subtitle.Enabled).Count = 0 Then
+        If Not subtitles.Exists(Function(subtitle) subtitle.Enabled) Then
             Exit Sub
         End If
 
@@ -604,11 +605,11 @@ Public Class MP4BoxDemuxer
 
         Dim outpath = proj.TempDir + proj.SourceFile.Base + streams(0).ExtFull
 
-        If outpath = proj.SourceFile OrElse (Not overrideExisting AndAlso outpath.FileExists) Then
+        If outpath.Equals(proj.SourceFile) OrElse (Not overrideExisting AndAlso outpath.FileExists) Then
             Exit Sub
         End If
 
-        Dim args = If(streams(0).Ext = "avi", "-avi ", "-raw ")
+        Dim args = If(streams(0).Ext.Equals("avi"), "-avi ", "-raw ")
         args += streams(0).ID & " -out " + outpath.Escape + " " + proj.SourceFile.Escape
 
         FileHelp.Delete(outpath)
@@ -640,7 +641,7 @@ Public Class MP4BoxDemuxer
         proj As Project,
         overrideExisting As Boolean)
 
-        If MediaInfo.GetAudio(sourcefile, "Format") = "PCM" Then
+        If String.Equals(MediaInfo.GetAudio(sourcefile, "Format"), "PCM") Then
             ffmpegDemuxer.DemuxAudio(sourcefile, stream, ap, proj, overrideExisting)
             Exit Sub
         End If
@@ -788,7 +789,7 @@ Public Class mkvDemuxer
 
         Dim enabledAttachments = attachments.Where(Function(val) val.Enabled)
 
-        If enabledAttachments.Count > 0 Then
+        If enabledAttachments.Any Then
             Using proc As New Proc
                 proc.Project = proj
                 proc.Header = "Demux attachments"
@@ -885,9 +886,9 @@ Public Class mkvDemuxer
         End If
 
         For Each subtitle In subtitles
-            If Not subtitle.Enabled Then
-                Continue For
-            End If
+            'If Not subtitle.Enabled Then
+            '    Continue For
+            'End If
 
             Dim forced = If(subtitle.Forced, "_forced", "")
             Dim outPath = proj.TempDir + subtitle.Filename + forced + subtitle.ExtFull

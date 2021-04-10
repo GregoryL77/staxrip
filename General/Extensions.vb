@@ -149,8 +149,13 @@ Module StringExtensions
             Return True
         End If
 
-        Dim bytes = Encoding.Convert(Encoding.Unicode, Encoding.GetEncoding(ConsoleHelp.DosCodePage), Encoding.Unicode.GetBytes(instance))
-        Return instance.Equals(Encoding.Unicode.GetString(Encoding.Convert(Encoding.GetEncoding(ConsoleHelp.DosCodePage), Encoding.Unicode, bytes)))
+        For i = 0 To instance.Length - 1 'TODO: Tests!!! or merge with Stax
+            If Convert.ToUInt16(instance(i)) > 127 Then Return False
+        Next i
+        Return True
+
+        'Dim bytes = Encoding.Convert(Encoding.Unicode, Encoding.GetEncoding(ConsoleHelp.DosCodePage), Encoding.Unicode.GetBytes(instance))
+        'Return instance.Equals(Encoding.Unicode.GetString(Encoding.Convert(Encoding.GetEncoding(ConsoleHelp.DosCodePage), Encoding.Unicode, bytes)))
     End Function
 
     <Extension>
@@ -521,18 +526,23 @@ Module StringExtensions
         If value.NullOrEmptyS Then Return ""
         Dim lines = value.SplitKeepEmpty(BR)
         Dim leftSides As New List(Of String)
+        Dim highest As Integer
 
         For Each i In lines
             Dim pos = i.IndexOf(delimiter, StringComparison.Ordinal)
 
             If pos > 0 Then
-                leftSides.Add(i.Substring(0, pos).Trim)
+                Dim st As String = i.Substring(0, pos).Trim
+                If st.Length > highest Then highest = st.Length
+                leftSides.Add(st)
             Else
+                If i.Length > highest Then highest = i.Length
                 leftSides.Add(i)
             End If
         Next
 
-        Dim highest = Aggregate i In leftSides Into Max(i.Length)
+        'highest = Aggregate i In leftSides Into Max(i.Length)
+        'highest = leftSides.MaxF(Function(le) le.Length)
         Dim ret As New List(Of String)
 
         For i = 0 To lines.Length - 1
@@ -724,7 +734,13 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function SplitNoEmptyAndWhiteSpace(value As String, ParamArray delimiters As String()) As String()
+    Function SplitNoEmptyAndNoWSDelim(value As String, ParamArray delimiters As String()) As String()
+        If value Is Nothing Then Return {}
+        Return value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+    End Function
+
+    <Extension()>
+    Function SplitNoEmptyAndWhiteSpace(value As String, ParamArray delimiters As Char()) As String()
         If value Is Nothing Then
             Return {}
         End If
@@ -733,8 +749,14 @@ Module StringExtensions
         Dim ret As New List(Of String)(a.Length)
 
         For i = 0 To a.Length - 1
+            ' If a(i) <> a(i).Trim Then Console.Beep(5000, 60) 'debug!!!
             a(i) = a(i).Trim
-            If a(i) IsNot "" Then ret.Add(a(i)) 'ToDo: Test this for Is ""!!!
+
+            If a(i) IsNot "" Then 'ToDo: Test this for Is ""!!!
+                ret.Add(a(i))
+            Else
+                Console.Beep(3100, 120) 'debug!!!
+            End If
         Next
 
         Return ret.ToArray
@@ -799,6 +821,7 @@ Module StringExtensions
 End Module
 
 Module MiscExtensions
+
     Public ReadOnly CPUsC As Integer = Environment.ProcessorCount
     Public ReadOnly SWFreq As Double = Stopwatch.Frequency / 1000
 
@@ -856,8 +879,7 @@ Module MiscExtensions
     Function ContainsAny(instance As String(), ParamArray values As String()) As Boolean
         Return instance.AnyF(Function(arg) values.ContainsString(arg))
     End Function
-    '<Extension()>
-    'Function ContainsAny(Of T)(instance As IEnumerable(Of T), values As IEnumerable(Of T)) As Boolean
+    '<Extension()> Function ContainsAny(Of T)(instance As IEnumerable(Of T), values As IEnumerable(Of T)) As Boolean
     '    Return instance.Any(Function(arg) values.Contains(arg))
     'End Function
     <Extension()>
@@ -899,6 +921,19 @@ Module MiscExtensions
         End If
 
         Return String.Join(delimiter, instance)
+    End Function
+
+    <Extension>
+    Function ConcatA(Of T)(first As T(), second As T()) As T()
+        'If second Is Nothing Then
+        '    Return If(first, Nothing)
+        'ElseIf first Is Nothing Then
+        '    Return second
+        'End If
+        Dim ol = first.Length
+        Array.Resize(Of T)(first, ol + second.Length)
+        Array.Copy(second, 0, first, ol, second.Length)
+        Return first
     End Function
 
     <Extension()>
@@ -1136,9 +1171,6 @@ Module UIExtensions
         For i = instance.Count - 1 To 0 Step -1
             If TypeOf instance(i) Is IDisposable Then instance(i).Dispose()
         Next i
-        'For Each i In instance.OfType(Of IDisposable).ToArray
-        '    'i.Dispose()
-        'Next i 
         instance.Clear()
     End Sub
 
@@ -1198,11 +1230,9 @@ Module UIExtensions
             End If
         Next
     End Sub
-
-    <Extension()>
-    Sub SetFilter(dialog As FileDialog, values As IEnumerable(Of String))
-        dialog.Filter = FileTypes.GetFilter(values)
-    End Sub
+    '<Extension()> Sub SetFilter(dialog As FileDialog, values As IEnumerable(Of String))
+    '    dialog.Filter = FileTypes.GetFilter(values)
+    'End Sub
 
     <Extension()>
     Sub SendMessageCue(tb As TextBox, value As String, hideWhenFocused As Boolean)

@@ -738,7 +738,7 @@ Public Class GlobalCommands
     <Command("Shows a dialog to generate thumbnails.")>
     Sub ShowBatchGenerateThumbnailsDialog()
         Using dialog As New OpenFileDialog
-            dialog.SetFilter(FileTypes.Video)
+            dialog.Filter = FileTypes.GetFilter(FileTypes.Video)
             dialog.Multiselect = True
 
             If dialog.ShowDialog = DialogResult.OK Then

@@ -22,7 +22,14 @@ Public Class MainForm
         If disposing Then
             components?.Dispose()
         End If
-
+        If ImageHelp.Coll IsNot Nothing Then
+            For Each ff In ImageHelp.Coll.Families
+                ff.Dispose()
+            Next ff
+            ImageHelp.Coll.Dispose()
+        End If
+        MenuStrip?.Font.Dispose()
+        Font?.Dispose()
         MyBase.Dispose(disposing)
     End Sub
 
@@ -1658,9 +1665,9 @@ Public Class MainForm
 
             Text = path.Base + " - " + Application.ProductName + " " + Application.ProductVersion
 
-            If g.Is32Bit Then
-                Text += " (32 bit)"
-            End If
+            'If g.Is32Bit Then
+            '    Text += " (32 bit)"
+            'End If
 
             SkipAssistant = True
 
@@ -2447,7 +2454,7 @@ Public Class MainForm
 
         If Not sourceFilter.Script.Contains("(") Then
             For Each pref In preferences
-                Dim extensions = pref.Name.SplitNoEmptyAndWhiteSpace({",", " ", ";"})
+                Dim extensions = pref.Name.SplitNoEmptyAndNoWSDelim({",", " ", ";"})
 
                 For Each extension In extensions
                     extension = extension.ToLowerInvariant
@@ -3464,7 +3471,7 @@ Public Class MainForm
             t.Label.Offset = 12
             t.Edit.Expand = True
             t.Edit.Text = s.WindowPositionsRemembered.Join(", ")
-            t.Edit.SaveAction = Sub(value) s.WindowPositionsRemembered = value.SplitNoEmptyAndWhiteSpace(",")
+            t.Edit.SaveAction = Sub(value) s.WindowPositionsRemembered = value.SplitNoEmptyAndWhiteSpace({","c})
 
             n = ui.AddNum()
             n.Text = "UI Scale Factor"
@@ -4747,7 +4754,7 @@ Public Class MainForm
     <Command("Shows a dialog to add a hardcoded subtitle.")>
     Sub ShowHardcodedSubtitleDialog()
         Using dialog As New OpenFileDialog
-            dialog.SetFilter(FileTypes.SubtitleExludingContainers)
+            dialog.Filter = FileTypes.GetFilter(FileTypes.SubtitleExludingContainers)
             dialog.SetInitDir(s.LastSourceDir)
 
             If dialog.ShowDialog = DialogResult.OK Then
@@ -5226,7 +5233,7 @@ Public Class MainForm
     <Command("Dialog to open a single file source.")>
     Sub ShowOpenSourceSingleFileDialog()
         Using dialog As New OpenFileDialog
-            dialog.SetFilter(FileTypes.Video.Concat(FileTypes.Image))
+            dialog.Filter = FileTypes.GetFilter(FileTypes.Video.ConcatA(FileTypes.Image))
             dialog.SetInitDir(s.LastSourceDir)
 
             If dialog.ShowDialog() = DialogResult.OK Then
@@ -5498,7 +5505,8 @@ Public Class MainForm
                 If ToolStripRendererEx.IsAutoRenderMode Then
                     ToolStripRendererEx.InitColors(s.ToolStripRenderModeEx)
                     SetMenuStyle()
-                    MenuStrip.Refresh()
+                    'MenuStrip.Refresh()
+                    MenuStrip.Invalidate(True)
                 End If
         End Select
 
@@ -5507,7 +5515,7 @@ Public Class MainForm
 
     Sub tbSource_DoubleClick() Handles tbSourceFile.DoubleClick
         Using dialog As New OpenFileDialog
-            dialog.SetFilter(FileTypes.Video)
+            dialog.Filter = FileTypes.GetFilter(FileTypes.Video)
             dialog.Multiselect = True
             dialog.SetInitDir(s.LastSourceDir)
 
@@ -5549,9 +5557,10 @@ Public Class MainForm
 
     Sub tbAudioFile0_DoubleClick() Handles tbAudioFile0.DoubleClick
         Using dialog As New OpenFileDialog
-            Dim filter = FileTypes.Audio.ToList
-            filter.Insert(0, "avs")
-            dialog.SetFilter(filter)
+            Dim filter(FileTypes.Audio.Length) As String
+            filter(0) = "avs"
+            Array.Copy(FileTypes.Audio, 0, filter, 1, FileTypes.Audio.Length)
+            dialog.Filter = FileTypes.GetFilter(filter)
             dialog.SetInitDir(p.TempDir, s.LastSourceDir)
 
             If dialog.ShowDialog() = DialogResult.OK Then
@@ -5562,9 +5571,10 @@ Public Class MainForm
 
     Sub tbAudioFile1_DoubleClick() Handles tbAudioFile1.DoubleClick
         Using dialog As New OpenFileDialog
-            Dim filter = FileTypes.Audio.ToList
-            filter.Insert(0, "avs")
-            dialog.SetFilter(filter)
+            Dim filter(FileTypes.Audio.Length) As String
+            filter(0) = "avs"
+            Array.Copy(FileTypes.Audio, 0, filter, 1, FileTypes.Audio.Length)
+            dialog.Filter = FileTypes.GetFilter(filter)
             dialog.SetInitDir(p.TempDir, s.LastSourceDir)
 
             If dialog.ShowDialog() = DialogResult.OK Then
@@ -5837,7 +5847,7 @@ Public Class MainForm
         End If
 
         If value?.Contains("x") Then
-            Dim a = value.SplitNoEmptyAndWhiteSpace("x")
+            Dim a = value.SplitNoEmptyAndWhiteSpace({"x"c})
 
             If a.Length = 2 AndAlso a(0).IsInt AndAlso a(1).IsInt Then
                 SetTargetImageSize(a(0).ToInt, a(1).ToInt)
@@ -6119,7 +6129,8 @@ Public Class MainForm
         UpdateRecentProjectsMenu()
         UpdateTemplatesMenuAsync()
         IsLoading = False
-        Refresh()
+        'Refresh()
+        Invalidate()
         ProcessCommandLine(Environment.GetCommandLineArgs)
         StaxRip.StaxRipUpdate.ShowUpdateQuestion()
         StaxRip.StaxRipUpdate.CheckForUpdate(False, s.CheckForUpdatesBeta, Environment.Is64BitProcess)
@@ -6143,6 +6154,7 @@ Public Class MainForm
         End If
 
         g.SaveSettings()
+        Font?.Dispose()
         g.RaiseAppEvent(ApplicationEvent.ApplicationExit)
     End Sub
 

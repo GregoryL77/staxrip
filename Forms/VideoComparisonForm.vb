@@ -56,7 +56,7 @@ Public Class VideoComparisonForm
         End If
 
         Using dialog As New OpenFileDialog
-            dialog.SetFilter(FileTypes.Video)
+            dialog.Filter = FileTypes.GetFilter(FileTypes.Video)
             dialog.Multiselect = True
             dialog.SetInitDir(s.Storage.GetString("video comparison folder"))
 

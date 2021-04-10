@@ -158,7 +158,7 @@ Namespace UI
         End Sub
 
         Function AddNode(path As String) As TreeNode
-            Dim pathElements = path.SplitNoEmptyAndWhiteSpace("|")
+            Dim pathElements = path.SplitNoEmptyAndWhiteSpace({"|"c})
             Dim currentNodeList = Nodes
             Dim currentPath = ""
             Dim ret As TreeNode = Nothing
@@ -191,7 +191,7 @@ Namespace UI
         End Function
 
         Function GetNodes() As List(Of TreeNode)
-            Dim ret As New List(Of TreeNode)
+            Dim ret As New List(Of TreeNode)(32)
             AddNodesRecursive(Nodes, ret)
             Return ret
         End Function

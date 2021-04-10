@@ -138,7 +138,7 @@ Public Class MediaInfo
                             Case DemuxMode.None
                                 at.Enabled = False
                             Case DemuxMode.Preferred, DemuxMode.Dialog
-                                Dim autoCode = p.PreferredAudio.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+                                Dim autoCode = p.PreferredAudio.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
                                 at.Enabled = autoCode.ContainsAny("all", at.Language.TwoLetterCode, at.Language.ThreeLetterCode)
                         End Select
                     End If
@@ -180,7 +180,7 @@ Public Class MediaInfo
                     subtitle.Format = GetText(index, "Format")
                     subtitle.Size = GetText(index, "StreamSize").ToInt
 
-                    Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+                    Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
                     subtitle.Enabled = autoCode.ContainsAny("all", subtitle.Language.TwoLetterCode, subtitle.Language.ThreeLetterCode) OrElse p.DemuxSubtitles = DemuxMode.All
 
                     ret.Add(subtitle)
@@ -409,11 +409,11 @@ Public Class MediaInfo
     End Sub
 
     Protected Overrides Sub Finalize()
-        Try
-            Dispose()
-        Catch ex As Exception
-            Microsoft.VisualBasic.MsgBox(ex.ToString)
-        End Try
+        'Try
+        Dispose()
+        'Catch ex As Exception
+        '    Microsoft.VisualBasic.MsgBox(ex.ToString)
+        'End Try
     End Sub
 
 #End Region

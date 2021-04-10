@@ -1,5 +1,6 @@
 ﻿
 Imports System.Runtime.InteropServices
+Imports JM.LinqFaster
 Imports Microsoft.Win32
 Imports StaxRip.UI
 
@@ -155,8 +156,7 @@ Public Class FrameServerFactory
             Package.FFTW.Directory,
             Package.VisualCpp2019.Directory)
 
-        If (path.Ext = "avs" AndAlso s.AviSynthMode = FrameServerMode.VFW) OrElse
-           (path.Ext = "vpy" AndAlso s.VapourSynthMode = FrameServerMode.VFW) Then
+        If (s.VapourSynthMode = FrameServerMode.VFW AndAlso path.Ext.Equals("vpy")) OrElse (s.AviSynthMode = FrameServerMode.VFW AndAlso path.Ext.Equals("avs")) Then
 
             Return New VfwFrameServer(path)
         Else
@@ -258,24 +258,24 @@ Public Class VfwFrameServer
 
     Function GetColorSpace(fcc As UInt32) As ColorSpace
         Select Case FccToString(fcc)
-            Case "Y416"
-                Return ColorSpace.YUV444P16
-            Case "Y410"
-                Return ColorSpace.YUV444P10
+            Case "YV12"
+                Return ColorSpace.YUV420P8
+            Case "P010"
+                Return ColorSpace.YUV420P10
+            Case "P016"
+                Return ColorSpace.YUV420P16
             Case "YV24"
                 Return ColorSpace.YUV444P8
+            Case "Y410"
+                Return ColorSpace.YUV444P10
+            Case "Y416"
+                Return ColorSpace.YUV444P16
             Case "P216"
                 Return ColorSpace.YUV422P16
             Case "P210", "v210", "V210"
                 Return ColorSpace.YUV422P10
             Case "YV16"
                 Return ColorSpace.YUV422P8
-            Case "P016"
-                Return ColorSpace.YUV420P16
-            Case "P010"
-                Return ColorSpace.YUV420P10
-            Case "YV12"
-                Return ColorSpace.YUV420P8
             Case "Y41B"
                 Return ColorSpace.YUV411P8
             Case "YVU9"
@@ -480,8 +480,7 @@ Public Class FrameServerHelp
     Shared Function VerifyAviSynthLinks() As Boolean
         Dim packages = {Package.ffmpeg, Package.x264, Package.x265, Package.VCEEnc}
 
-        Dim links = packages.Select(Function(pack) New SoftLink(
-            pack.Directory + "AviSynth.dll", Package.AviSynth.Path)).ToArray
+        Dim links = packages.SelectF(Function(pack) New SoftLink(pack.Directory + "AviSynth.dll", Package.AviSynth.Path))
 
         If AreAviSynthLinksRequired() Then
             If Not SoftLink.AreLinksValid(links) Then
@@ -600,7 +599,7 @@ Public Class SoftLink
     End Sub
 
     Shared Sub CreateLinksElevated(links As SoftLink())
-        Dim args = links.Select(Function(pack) """" + pack.Link + "|" + pack.Target + """")
+        Dim args = links.SelectF(Function(pack) """" + pack.Link + "|" + pack.Target + """")
 
         Using pr As New Process
             pr.StartInfo.UseShellExecute = True

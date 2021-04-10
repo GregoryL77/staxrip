@@ -364,10 +364,8 @@ Public Class GlobalClass
     Sub DeleteTempFiles()
         If s.DeleteTempFilesMode <> DeleteMode.Disabled AndAlso p.TempDir.EndsWith("_temp\", StringComparison.Ordinal) Then
             Try
-                Dim moreJobsToProcessInTempDir = JobManager.GetJobs.Where(Function(a) a.Active AndAlso a.Path.Contains(p.TempDir))
-
-                If moreJobsToProcessInTempDir.Count = 0 Then
-                    If s.DeleteTempFilesMode = DeleteMode.RecycleBin Then
+                If Not JobManager.GetJobs.Exists(Function(a) a.Active AndAlso a.Path.Contains(p.TempDir)) Then
+                    If Global.StaxRip.ShortcutModule.s.DeleteTempFilesMode = Global.StaxRip.DeleteMode.RecycleBin Then
                         FolderHelp.Delete(p.TempDir, VB6.FileIO.RecycleOption.SendToRecycleBin)
                     Else
                         FolderHelp.Delete(p.TempDir)
@@ -408,7 +406,7 @@ Public Class GlobalClass
     End Function
 
     Function VerifyRequirements() As Boolean
-        If s.VerifyToolStatus AndAlso Not g.Is32Bit Then
+        If s.VerifyToolStatus Then 'AndAlso Not g.Is32Bit' Assume 64 bit only!!!
             SyncLock Package.ConfLock
                 For Each pack In Package.Items.Values
                     If Not pack.VerifyOK Then
@@ -444,11 +442,11 @@ Public Class GlobalClass
     End Function
 
     Sub PlayAudio(ap As AudioProfile)
-        If FileTypes.AudioRaw.Contains(ap.File.Ext) Then
+        If FileTypes.AudioRaw.ContainsString(ap.File.Ext) Then
             g.ShellExecute(Package.mpvnet.Path, ap.File.Escape)
         ElseIf ap.File = p.FirstOriginalSourceFile AndAlso ap.Streams.Count > 0 Then
             g.ShellExecute(Package.mpvnet.Path, "--audio=" & (ap.Stream.Index + 1) & " " + p.FirstOriginalSourceFile.Escape)
-        ElseIf FileTypes.Audio.Contains(ap.File.Ext) Then
+        ElseIf FileTypes.Audio.ContainsString(ap.File.Ext) Then
             g.ShellExecute(Package.mpvnet.Path, "--audio-delay=" + (g.ExtractDelay(ap.File) / 1000).ToInvariantString.Shorten(9) + " --audio-files=" + ap.File.Escape + " " + p.FirstOriginalSourceFile.Escape)
         Else
             MsgError("Unable to play audio.")
@@ -460,9 +458,9 @@ Public Class GlobalClass
     End Sub
 
     Function GetAudioProfileForScriptPlayback() As AudioProfile
-        If File.Exists(p.Audio0.File) AndAlso FileTypes.Audio.Contains(p.Audio0.File.Ext) Then
+        If File.Exists(p.Audio0.File) AndAlso FileTypes.Audio.ContainsString(p.Audio0.File.Ext) Then
             Return p.Audio0
-        ElseIf File.Exists(p.Audio1.File) AndAlso FileTypes.Audio.Contains(p.Audio1.File.Ext) Then
+        ElseIf File.Exists(p.Audio1.File) AndAlso FileTypes.Audio.ContainsString(p.Audio1.File.Ext) Then
             Return p.Audio1
         End If
     End Function
@@ -495,7 +493,7 @@ Public Class GlobalClass
 
         Dim ap = GetAudioProfileForScriptPlayback()
 
-        If Not ap Is Nothing AndAlso FileTypes.Audio.Contains(ap.File.Ext) AndAlso
+        If Not ap Is Nothing AndAlso FileTypes.Audio.ContainsString(ap.File.Ext) AndAlso
             p.Ranges.Count = 0 Then
 
             args += " /dub " + ap.File.Escape
@@ -527,7 +525,7 @@ Public Class GlobalClass
 
         Dim ap = GetAudioProfileForScriptPlayback()
 
-        If Not ap Is Nothing AndAlso FileTypes.Audio.Contains(ap.File.Ext) AndAlso p.Ranges.Count = 0 Then
+        If Not ap Is Nothing AndAlso FileTypes.Audio.ContainsString(ap.File.Ext) AndAlso p.Ranges.Count = 0 Then
             args += " --audio-files=" + ap.File.Escape
         End If
 
@@ -850,7 +848,7 @@ Public Class GlobalClass
         Optional proj As Project = Nothing)
 
         If File.Exists(sourcePath) AndAlso Not File.Exists(cachePath) AndAlso
-            Not FileTypes.VideoText.Contains(sourcePath.Ext) Then
+            Not FileTypes.VideoText.ContainsString(sourcePath.Ext) Then
 
             Using proc As New Proc
                 proc.Header = "Indexing using ffmsindex"
@@ -1076,23 +1074,26 @@ Public Class GlobalClass
         End If
 
         Dim find As String
-
-        If content.Contains(switch.Replace("--", "--(no-)") + " ") Then
-            find = switch.Replace("--", "--(no-)") + " "
-        ElseIf content.Contains(switch.Replace("--", "--(no-)")) Then
-            find = switch.Replace("--", "--(no-)")
-        ElseIf content.Contains(switch.Replace("--", "--[no-]") + " ") Then
-            find = switch.Replace("--", "--[no-]") + " "
-        ElseIf content.Contains(switch.Replace("--", "--[no-]")) Then
-            find = switch.Replace("--", "--[no-]")
-        ElseIf content.Contains("  " + switch + " ") Then
-            find = "  " + switch + " "
-        ElseIf content.Contains(",  " + switch + " ") Then
-            find = ",  " + switch + " "
-        ElseIf content.Contains(switch + " ") Then
-            find = switch + " "
-        ElseIf content.Contains(switch) Then
-            find = switch
+        Dim c1 As String = switch.Replace("--", "--(no-)")
+        If content.Contains(c1 + " ") Then
+            find = c1 + " "
+        ElseIf content.Contains(c1) Then
+            find = c1
+        Else
+            Dim c2 As String = switch.Replace("--", "--[no-]")
+            If content.Contains(c2 + " ") Then
+                find = c2 + " "
+            ElseIf content.Contains(c2) Then
+                find = c2
+            ElseIf content.Contains("  " + switch + " ") Then
+                find = "  " + switch + " "
+            ElseIf content.Contains(",  " + switch + " ") Then
+                find = ",  " + switch + " "
+            ElseIf content.Contains(switch + " ") Then
+                find = switch + " "
+            ElseIf content.Contains(switch) Then
+                find = switch
+            End If
         End If
 
         If find.NullOrEmptyS Then
@@ -1485,17 +1486,17 @@ Public Class GlobalClass
     End Sub
 
     Function IsDevelopmentPC() As Boolean
-        ' Return Application.StartupPath.EndsWith("\bin") OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
-        Return File.Exists(Application.StartupPath & "\devel.pc") 'Debug
+        Return Application.StartupPath.EndsWith("\bin") 'OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
+        ' Return File.Exists(Application.StartupPath & "\devel.pc") 'Debug
     End Function
 
-    Function Is32Bit() As Boolean
-        Return IntPtr.Size = 4
-    End Function
-
-    Function Is64Bit() As Boolean
-        Return IntPtr.Size = 8
-    End Function
+    'Function Is32Bit() As Boolean ' Assume 64 bit only!!!
+    '    Return IntPtr.Size = 4
+    'End Function
+    'Function Is64Bit() As Boolean
+    '    'Return IntPtr.Size = 8
+    '    Return True
+    'End Function
 
     Sub RunTask(action As Action)
         Task.Run(Sub()

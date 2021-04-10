@@ -487,10 +487,12 @@ Public Class CommandLineAudioEncoderForm
         TipProvider.SetTip("Default MKV Track.", cbDefault)
         TipProvider.SetTip("Forced MKV Track.", cbForced)
 
+        cms.SuspendLayout()
         cms.Add("Copy Command Line", Sub() Clipboard.SetText(TempProfile.GetCode))
         cms.Add("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Lines", TempProfile.GetCode))
         cms.Add("Save Profile...", AddressOf SaveProfile, "Saves the current settings as profile").SetImage(Symbol.Save)
         cms.Add("Help", AddressOf ShowHelp).SetImage(Symbol.Help)
+        cms.ResumeLayout(False)
 
         ActiveControl = bnOK
     End Sub
@@ -528,7 +530,7 @@ Public Class CommandLineAudioEncoderForm
     End Sub
 
     Sub tbInput_TextChanged() Handles tbInput.TextChanged
-        TempProfile.SupportedInput = tbInput.Text.ToLower.SplitNoEmptyAndWhiteSpace(",", ";", " ")
+        TempProfile.SupportedInput = tbInput.Text.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
         EditControl.UpdatePreview()
     End Sub
 
@@ -594,7 +596,8 @@ Public Class CommandLineAudioEncoderForm
     End Sub
 
     Sub CommandLineAudioEncoderForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
-        Refresh()
+        'Refresh()
+        Invalidate(True)
 
         For Each i In Language.Languages
             If i.IsCommon Then

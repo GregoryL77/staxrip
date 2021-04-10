@@ -102,13 +102,13 @@ Public Class Proc
             Dim header = ""
 
             If Me.Header.NotNullOrEmptyS Then
-                header = Me.Header.ToLower
+                header = Me.Header.ToLowerInvariant
             End If
 
             Dim ret = ""
 
             For Each i In Package.Items.Values
-                If header?.Contains(i.Name.ToLower) OrElse Arguments?.Contains(i.Filename) Then
+                If header?.Contains(i.Name.ToLowerInvariant) OrElse Arguments?.Contains(i.Filename) Then
                     ret += " | " + i.Name
                 End If
             Next
@@ -122,7 +122,7 @@ Public Class Proc
     End Property
 
     Shared Function GetSkipStrings(commands As String) As String()
-        commands = commands.ToLower
+        commands = commands.ToLowerInvariant
 
         'If commands.Contains("xvid_encraw") Then
         'Return {"key=", "frames("}
@@ -159,7 +159,7 @@ Public Class Proc
         '    Next
         'End If
 
-        If content.IsDosCompatible Then
+        If content.IsDosCompatible Then  'TODO: Tests!!! or merge with Stax
             content = "@echo off" + BR + content
             IO.File.WriteAllText(path, content, Encoding.GetEncoding(ConsoleHelp.DosCodePage))
         ElseIf content.IsANSICompatible Then
@@ -233,7 +233,7 @@ Public Class Proc
     Sub Kill()
         Try
             If Not Process.HasExited Then
-                If Process.ProcessName = "cmd" Then
+                If String.Equals(Process.ProcessName, "cmd") Then
                     For Each i In ProcessHelp.GetChilds(Process)
                         If {"conhost", "vspipe", "avs2pipemod64"}.ContainsString(i.ProcessName) Then
                             Continue For
@@ -298,7 +298,7 @@ Public Class Proc
             End If
 
             If ReadOutput Then
-                If File = "cmd.exe" AndAlso Arguments.StartsWithEx("/S /C """) AndAlso Arguments.EndsWithEx("""") Then
+                If String.Equals(File, "cmd.exe") AndAlso Arguments.StartsWithEx("/S /C """) AndAlso Arguments.EndsWithEx("""") Then
                     Log.WriteLine(Arguments.Substring(7, Arguments.Length - 8) + BR2)
                 Else
                     Log.WriteLine(CommandLine + BR2)
@@ -451,7 +451,7 @@ Public Class Proc
         Dim dic = process.StartInfo.EnvironmentVariables
         dic("AviSynthDLL") = Package.AviSynth.Path
 
-        Dim keys = dic.Keys.OfType(Of String).Select(Function(key) key.ToLower)
+        Dim keys = dic.Keys.OfType(Of String).Select(Function(key) key.ToLowerInvariant)
 
         For Each mac In Macro.GetMacros(False, False, False)
             Dim name = mac.Name.Trim("%"c)
@@ -464,7 +464,7 @@ Public Class Proc
         Dim path = dic("Path")
 
         For Each pack In Package.Items.Values
-            If pack.Path.Ext = "exe" AndAlso pack.HelpSwitch IsNot Nothing AndAlso
+            If pack.Path.Ext.Equals("exe") AndAlso pack.HelpSwitch IsNot Nothing AndAlso
                 pack.Path.FileExists AndAlso Not path.Contains(pack.Directory + ";") Then
 
                 path = pack.Directory + ";" + path

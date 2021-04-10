@@ -102,13 +102,15 @@ Public Class SearchTextBox
         Protected Overrides Sub OnMouseEnter(eventArgs As EventArgs)
             MyBase.OnMouseEnter(eventArgs)
             MouseIsOver = True
-            Refresh()
+            Invalidate()
+            'Refresh()
         End Sub
 
         Protected Overrides Sub OnMouseLeave(eventArgs As EventArgs)
             MyBase.OnMouseLeave(eventArgs)
             MouseIsOver = False
-            Refresh()
+            Invalidate()
+            'Refresh()
         End Sub
 
         Protected Overrides Sub OnPaint(e As PaintEventArgs)

@@ -767,7 +767,7 @@ Public Class PreviewForm
     <Command("Saves the current frame as bitmap.")>
     Sub SaveBitmap()
         Using dialog As New SaveFileDialog
-            dialog.SetFilter({"bmp"})
+            dialog.Filter = FileTypes.GetFilter({"bmp"})
             dialog.FileName = p.TargetFile.Base + " - " & Renderer.Position
 
             If dialog.ShowDialog = DialogResult.OK Then
@@ -779,7 +779,7 @@ Public Class PreviewForm
     <Command("Saves the current frame as bitmap.")>
     Sub SavePng()
         Using dialog As New SaveFileDialog
-            dialog.SetFilter({"png"})
+            dialog.Filter = FileTypes.GetFilter({"png"})
             dialog.FileName = p.TargetFile.Base + " - " & Renderer.Position
 
             If dialog.ShowDialog = DialogResult.OK Then

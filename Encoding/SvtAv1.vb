@@ -170,7 +170,7 @@ Public Class SVTAV1
 
             Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
 
-            If q.Count > 0 Then
+            If q.Any Then
                 ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")
             End If
 

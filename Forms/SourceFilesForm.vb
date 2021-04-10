@@ -200,7 +200,7 @@ Public Class SourceFilesForm
     Sub ShowOpenFileDialog()
         Using dialog As New OpenFileDialog
             dialog.Multiselect = True
-            dialog.SetFilter(FileTypes.Video)
+            dialog.Filter = FileTypes.GetFilter(FileTypes.Video)
             dialog.SetInitDir(s.LastSourceDir)
 
             If dialog.ShowDialog() = DialogResult.OK Then

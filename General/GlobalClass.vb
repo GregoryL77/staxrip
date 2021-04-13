@@ -981,9 +981,9 @@ Public Class GlobalClass
 
             If Not noKill Then
                 Try
+                    RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
                     g.MainForm?.Close()
                     Application.Exit()
-                    RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
                 Finally
                     Process.GetCurrentProcess.Kill()
                 End Try

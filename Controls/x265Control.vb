@@ -162,6 +162,7 @@ Public Class x265Control
     End Sub
 
     Sub UpdateMenu()
+        cms.SuspendLayout()
         cms.Items.ClearAndDisplose
         Dim offset = If(Params.Mode.Value = x265RateMode.SingleCRF, 0, 1)
 
@@ -184,6 +185,7 @@ Public Class x265Control
                     Next
             End Select
         End If
+        cms.ResumeLayout()
     End Sub
 
     Sub SetQuality(v As Single)

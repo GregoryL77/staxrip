@@ -472,6 +472,7 @@ Namespace UI
 
             Dim cms As New ContextMenuStripEx()
 
+            cms.SuspendLayout()
             Dim cutItem = cms.Add("Cut")
             cutItem.SetImage(Symbol.Cut)
             cutItem.KeyDisplayString = "Ctrl+X"
@@ -485,6 +486,7 @@ Namespace UI
             pasteItem.KeyDisplayString = "Ctrl+V"
 
             cms.Add("Copy Everything", Sub() Clipboard.SetText(Text))
+            cms.ResumeLayout(True)
 
             AddHandler cutItem.Click, Sub()
                                           Clipboard.SetText(SelectedText)

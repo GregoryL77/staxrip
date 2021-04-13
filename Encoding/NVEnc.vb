@@ -39,9 +39,10 @@ Public Class NVEnc
         newParams.Init(store)
 
         Using form As New CommandLineForm(newParams)
-            form.tlpMain.SuspendLayout()
-            form.tlpRTB.SuspendLayout()
-            form.SuspendLayout()
+            'form.tlpMain.SuspendLayout()
+            'form.tlpRTB.SuspendLayout()
+            'form.SuspendLayout()
+            form.cms.SuspendLayout()
             form.HTMLHelp = "<h2>NVEnc Help</h2>" + "<p>Right-clicking a option shows the local console help for the option.</p>" +
                             "<p>For Constant Quality Mode choose VBR mode, then check Constant Quality Mode and set desired VBR Quality (usually between 10-30).</p>" +
                            $"<h2>NVEnc Online Help</h2><p><a href=""{Package.NVEnc.HelpURL}"">NVEnc Online Help</a></p>" +
@@ -61,9 +62,10 @@ Public Class NVEnc
             form.cms.Items.Add(New ActionMenuItem("Check Features", Sub() g.ShowCode("Check Features", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-features"))))
             form.cms.Items.Add(New ActionMenuItem("Check Environment", Sub() g.ShowCode("Check Environment", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-environment"))))
             ActionMenuItem.Add(form.cms.Items, "Save Profile...", saveProfileAction).SetImage(Symbol.Save)
-            form.tlpMain.ResumeLayout(False)
-            form.tlpRTB.ResumeLayout(False)
-            form.ResumeLayout(False)
+            form.cms.ResumeLayout(False)
+            'form.tlpMain.ResumeLayout(False)
+            'form.tlpRTB.ResumeLayout(False)
+            'form.ResumeLayout(False)
             newParams.NVForm = form
 
             If form.ShowDialog() = DialogResult.OK Then

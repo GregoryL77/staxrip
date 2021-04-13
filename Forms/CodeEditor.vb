@@ -573,7 +573,7 @@ Public Class CodeEditor
                                                         helpTempMenuItem.Visible = False
                                                         helpAction()
                                                     End Sub
-            Menu.ResumeLayout(False)
+            Menu.ResumeLayout(True)
             Menu.Show(rtbScript, e.Location)
         End Sub
 

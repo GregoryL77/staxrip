@@ -1,5 +1,6 @@
 
 Imports System.Reflection
+Imports KGySoft.CoreLibraries
 
 Namespace UI
     Public Class CustomMenuEditor
@@ -7,6 +8,17 @@ Namespace UI
 
 #Region " Designer "
         Protected Overloads Overrides Sub Dispose(disposing As Boolean)
+            If cmsSymbol IsNot Nothing Then
+                For Each itm1 As ActionMenuItem In cmsSymbol.Items
+                    For Each itm2 As ActionMenuItem In itm1.DropDownItems
+                        itm2.DropDownItems.ClearAndDisplose
+                    Next itm2
+                    itm1.DropDownItems.ClearAndDisplose
+                Next itm1
+                cmsSymbol.Items.ClearAndDisplose
+            End If
+
+
             If disposing Then
                 If Not (components Is Nothing) Then
                     components.Dispose()
@@ -583,7 +595,9 @@ Namespace UI
             PopulateTreeView(menu.MenuItem.GetClone, Nothing)
             tv.ExpandAll()
 
+            cmsCommand.SuspendLayout()
             Command.PopulateCommandMenu(cmsCommand.Items, GenericMenu.CommandManager.Commands.Values.ToList, AddressOf SetCommand)
+            cmsCommand.ResumeLayout(True)
 
             g.SetRenderer(cmsSymbol)
 
@@ -602,28 +616,37 @@ Namespace UI
         End Sub
 
         Sub PopulateSymbolMenu()
+            cmsSymbol.SuspendLayout()
             ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, "No Icon", AddressOf HandleSymbol, Symbol.None)
+            cmsSymbol.ResumeLayout(True)
 
-            Dim enumNames = System.Enum.GetNames(GetType(Symbol)).ToList
-            enumNames.Sort()
+            'Dim enumNames = System.Enum.GetNames(GetType(Symbol)).ToList
+            Dim enumNames = [Enum](Of Symbol).GetNames
+            'enumNames.Sort()
+            Array.Sort(enumNames, StringComparer.Ordinal)
+            cmsSymbol.SuspendLayout()
 
             For Each iName In enumNames
-                If iName.StartsWith("fa_") Then Continue For
+                If iName.StartsWith("fa_", StringComparison.Ordinal) Then Continue For
                 If IsClosing Then Exit For
-                Dim symbol = DirectCast(System.Enum.Parse(GetType(Symbol), iName), Symbol)
-                Dim path = "Segoe MDL2 Assets    | " + iName.Substring(0, 1).ToUpper + " | " + iName
+                Dim symbol = [Enum](Of Symbol).Parse(iName)
+                Dim path = "Segoe MDL2 Assets    | " + iName.Substring(0, 1).ToUpperInvariant + " | " + iName
                 ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol).SetImage(symbol)
                 Application.DoEvents()
             Next
 
+            cmsSymbol.ResumeLayout()
+            cmsSymbol.SuspendLayout()
+
             For Each iName In enumNames
-                If Not iName.StartsWith("fa_") Then Continue For
+                If Not iName.StartsWith("fa_", StringComparison.Ordinal) Then Continue For
                 If IsClosing Then Exit For
-                Dim symbol = DirectCast(System.Enum.Parse(GetType(Symbol), iName), Symbol)
-                Dim path = "FontAwesome | " + iName.Substring(3, 1).ToUpper + " | " + iName.Substring(3).ToTitleCase.Replace("_", " ")
+                Dim symbol = [Enum](Of Symbol).Parse(iName)
+                Dim path = "FontAwesome | " + iName.Substring(3, 1).ToUpperInvariant + " | " + iName.Substring(3).ToTitleCase.Replace("_", " ")
                 ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol).SetImage(symbol)
                 Application.DoEvents()
             Next
+            cmsSymbol.ResumeLayout()
         End Sub
 
         Sub HandleSymbol(symbol As Symbol)

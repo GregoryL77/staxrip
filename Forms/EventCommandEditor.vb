@@ -404,13 +404,15 @@ Public Class EventCommandEditor
         End If
 
         SetCommandParameters(CommandParameters)
+        cmsCommands.SuspendLayout()
         Command.PopulateCommandMenu(cmsCommands.Items, New List(Of Command)(g.MainForm.CustomMainMenu.CommandManager.Commands.Values), AddressOf MenuClick)
 
         For Each i As ToolStripMenuItem In cmsCommands.Items
-            If i.Text = "Dynamic" Then
+            If String.Equals(i.Text, "Dynamic") Then
                 i.Visible = False
             End If
         Next
+        cmsCommands.ResumeLayout(True)
 
         TipProvider.SetTip("Parameters used to execute the command.", pgParameters, lParameters)
         TipProvider.SetTip("Criteria can be defined optionally to execute the command only if the criteria is matched.", CriteriaControl, gbCriteria)

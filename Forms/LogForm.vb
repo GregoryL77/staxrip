@@ -30,6 +30,7 @@ Public Class LogForm
         Dim cms = DirectCast(rtb.ContextMenuStrip, ContextMenuStripEx)
         cms.Form = Me
 
+        cms.SuspendLayout()
         cms.Add("-")
         cms.Add("Save As...", Sub()
                                   Using dialog As New SaveFileDialog
@@ -43,6 +44,8 @@ Public Class LogForm
         cms.Add("Open in Text Editor", Sub() g.ShellExecute(g.GetTextEditorPath, p.Log.GetPath.Escape), Keys.Control Or Keys.T).SetImage(Symbol.Edit)
         cms.Add("Show in File Explorer", Sub() g.SelectFileWithExplorer(p.Log.GetPath), Keys.Control Or Keys.E).SetImage(Symbol.FileExplorer)
         cms.Add("Show History", Sub() g.ShellExecute(Folder.Settings + "Log Files"), Keys.Control Or Keys.H).SetImage(Symbol.ClockLegacy)
+        cms.ResumeLayout(False)
+
     End Sub
 
     Sub lb_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lb.SelectedIndexChanged

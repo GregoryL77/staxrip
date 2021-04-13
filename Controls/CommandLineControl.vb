@@ -145,8 +145,10 @@ Public Class CommandLineControl
     Sub bn_Click() Handles bn.Click
         Dim cms = TextCustomMenu.GetMenu(Presets, bn, components, AddressOf MenuItenClick)
         components.Add(cms)
+        cms.SuspendLayout()
         cms.Items.Add(New ToolStripSeparator)
         cms.Items.Add(New ActionMenuItem("Edit Menu..." + g.MenuSpace, AddressOf EditPresets))
+        cms.ResumeLayout(True)
         cms.Show(bn, 0, bn.Height)
     End Sub
 

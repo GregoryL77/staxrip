@@ -42,6 +42,7 @@ Public Class CommandLineForm
         cbGoTo.SendMessageCue("Search")
         cbGoTo.Select()
 
+        cms.SuspendLayout()
         cms.Add("Execute Command Line", Sub() params.Execute(), p.SourceFile.NotNullOrEmptyS).SetImage(Symbol.fa_terminal)
 
         cms.Add("Copy Command Line", Sub()
@@ -54,6 +55,7 @@ Public Class CommandLineForm
 
         cms.Add("Help about this dialog", AddressOf ShowHelp).SetImage(Symbol.Help)
         cms.Add("Help about " + params.GetPackage.Name, Sub() params.GetPackage.ShowHelp()).SetImage(Symbol.Help)
+        cms.ResumeLayout(False)
     End Sub
 
     Sub SelectLastPage()
@@ -437,6 +439,7 @@ Public Class CommandLineForm
 
     Sub rtbCommandLine_MouseUp(sender As Object, e As MouseEventArgs) Handles rtbCommandLine.MouseUp
         If e.Button = MouseButtons.Right Then
+            cmsCommandLine.SuspendLayout()
             cmsCommandLine.Items.Clear()
 
             Dim copyItem = cmsCommandLine.Add("Copy Selection", Sub() Clipboard.SetText(rtbCommandLine.SelectedText))
@@ -475,6 +478,7 @@ Public Class CommandLineForm
                                                      End Sub)
             End If
 
+            cms.ResumeLayout(True)
             cmsCommandLine.Show(rtbCommandLine, e.Location)
         End If
     End Sub

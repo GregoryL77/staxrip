@@ -63,7 +63,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <DefineTrace>false</DefineTrace>
+    <DefineTrace>true</DefineTrace>
     <OutputPath>C:\inetpub\Staxrip\Apps\Support\AutoCrop\</OutputPath>
     <Optimize>true</Optimize>
     <WarningLevel>1</WarningLevel>

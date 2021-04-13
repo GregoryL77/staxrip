@@ -690,7 +690,7 @@ Namespace UI
                     ret.Items.Add(New ToolStripSeparator)
                 End If
             Next
-            ret.ResumeLayout(False)
+            ret.ResumeLayout()
             Return ret
         End Function
     End Class

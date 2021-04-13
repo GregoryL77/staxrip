@@ -216,6 +216,7 @@ Friend Class JobsForm
 
         AddHandler Disposed, Sub()
                                  FileWatcher.Dispose()
+                                 cms.Items.ClearAndDisplose
                                  cms.Dispose()
                              End Sub
 
@@ -227,6 +228,7 @@ Friend Class JobsForm
                                        End If
                                    End Sub
 
+        cms.SuspendLayout()
         cms.Add("Select All", Sub() SelectAll(), Keys.Control Or Keys.A, Function() lv.Items.Count > lv.SelectedItems.Count)
         cms.Add("Select None", Sub() SelectNone(), Keys.Shift Or Keys.A, Function() lv.SelectedItems.Count > 0)
         cms.Add("-")
@@ -245,6 +247,8 @@ Friend Class JobsForm
         cms.Add("Sort Alphabetically", Sub() lv.SortItems(), Keys.Control Or Keys.S, Function() lv.Items.Count > 1).SetImage(Symbol.Sort)
         cms.Add("Remove Selection", Sub() bnRemove.PerformClick(), Keys.Control Or Keys.Delete, Function() lv.SelectedItems.Count > 0).SetImage(Symbol.Remove)
         cms.Add("Load Selection", Sub() bnLoad.PerformClick(), Keys.Control Or Keys.L, Function() lv.SelectedItems.Count = 1)
+        cms.ResumeLayout(False)
+
     End Sub
 
     Sub UncheckAll()

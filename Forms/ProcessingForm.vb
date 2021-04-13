@@ -216,6 +216,7 @@ Public Class ProcessingForm
         ScaleClientSize(54, 50)
 
         CMS = New ContextMenuStripEx(components)
+        CMS.SuspendLayout()
         CMS.Add("Suspend", AddressOf ProcController.Suspend, "Suspends the current process, might not work with all tools.")
         CMS.Add("Resume", AddressOf ProcController.ResumeProcs, "Resumes a suspended process.")
         CMS.Add("-")
@@ -227,6 +228,8 @@ Public Class ProcessingForm
         CMS.Add("Log", AddressOf g.DefaultCommands.ShowLogFile, "Shows the log file.").KeyDisplayString = "F7"
         CMS.Add("-")
         CMS.Add("Help", AddressOf ShowHelp).KeyDisplayString = "F1"
+        CMS.ResumeLayout(False)
+
 
         bnMenu.ContextMenuStrip = CMS
     End Sub

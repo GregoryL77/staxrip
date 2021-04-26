@@ -67,7 +67,7 @@ Public Class GlobalCommands
                 Using td As New TaskDialog(Of Demuxer)
                     td.MainInstruction = "Select a demuxer."
 
-                    If sourceFile.Edit.Text.Ext = "mkv" Then
+                    If sourceFile.Edit.Text.Ext.Equals("mkv") Then
                         td.AddCommand("mkvextract", New mkvDemuxer)
                     End If
 
@@ -377,7 +377,7 @@ Public Class GlobalCommands
         Try
             For Each i In Directory.GetFiles(Macro.Expand(dir))
                 For Each i2 In filter.SplitNoEmpty(" ")
-                    If i.ToUpper.EndsWith(i2.ToUpper) Then
+                    If i.ToUpperInvariant.EndsWith(i2.ToUpperInvariant, StringComparison.Ordinal) Then
                         FileHelp.Delete(i)
                     End If
                 Next

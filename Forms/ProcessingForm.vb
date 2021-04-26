@@ -207,7 +207,7 @@ Public Class ProcessingForm
     Sub New()
         InitializeComponent()
         'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         mbShutdown.Add(System.Enum.GetValues(GetType(ShutdownMode)).Cast(Of Object))
         Icon = g.Icon
         NotifyIcon.Icon = g.Icon

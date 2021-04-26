@@ -588,13 +588,13 @@ Public Class Language
             If LanguagesValue Is Nothing Then
                 Dim l As New List(Of Language)(304)
 
+                l.Add(New Language("pl", True))
                 l.Add(New Language("zh", True))
                 l.Add(New Language("en", True))
                 l.Add(New Language("fr", True))
                 l.Add(New Language("de", True))
                 l.Add(New Language("it", True))
                 l.Add(New Language("ja", True))
-                l.Add(New Language("pl", True))
                 l.Add(New Language("pt", True))
                 l.Add(New Language("ru", True))
                 l.Add(New Language("es", True))
@@ -607,7 +607,7 @@ Public Class Language
 
                 l.Add(New Language(CultureInfo.InvariantCulture, True))
 
-                Dim current = l.FindLast(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
+                Dim current = l.Find(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
 
                 If current Is Nothing Then
                     l.Add(CurrentCulture)
@@ -642,7 +642,7 @@ Public Class Language
     End Function
 
     Function CompareTo(other As Language) As Integer Implements System.IComparable(Of Language).CompareTo
-        Return String.Compare(Name, other.Name, StringComparison.Ordinal)
+        Return String.CompareOrdinal(Name, other.Name)
         'Return Name.CompareTo(other.Name)
     End Function
 
@@ -911,16 +911,13 @@ End Enum
 Public Class Startup
     <STAThread()>
     Shared Sub Main()
-
-        AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        'AddHandler My.Application.UnhandledException, AddressOf g.OnUnhandledException
+        'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
         AddHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
-
         Application.EnableVisualStyles()
         Application.SetCompatibleTextRenderingDefault(False)
-
         'Dim args = Environment.GetCommandLineArgs
-
         'If args.Length > 2 AndAlso args(1).Equals("--create-soft-links") Then
         '    Try
         '        SoftLink.CreateLinksElevated(args.Skip(2))
@@ -928,13 +925,12 @@ Public Class Startup
         '        MsgError(ex.Message)
         '        Environment.ExitCode = 1
         '    End Try
-
         '    Exit Sub
         'End If
-
         Application.Run(New MainForm())
-        RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
+        'RemoveHandler My.Application.UnhandledException, AddressOf g.OnUnhandledException
+        ' RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        ' RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
     End Sub
 End Class
 

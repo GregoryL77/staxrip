@@ -1,5 +1,6 @@
 
 Imports System.Reflection
+Imports System.Threading.Tasks
 Imports KGySoft.CoreLibraries
 
 Namespace UI
@@ -8,21 +9,28 @@ Namespace UI
 
 #Region " Designer "
         Protected Overloads Overrides Sub Dispose(disposing As Boolean)
-            If cmsSymbol IsNot Nothing Then
-                For Each itm1 As ActionMenuItem In cmsSymbol.Items
-                    For Each itm2 As ActionMenuItem In itm1.DropDownItems
-                        itm2.DropDownItems.ClearAndDisplose
-                    Next itm2
-                    itm1.DropDownItems.ClearAndDisplose
-                Next itm1
-                cmsSymbol.Items.ClearAndDisplose
-            End If
-
-
             If disposing Then
-                If Not (components Is Nothing) Then
-                    components.Dispose()
-                End If
+                'If cmsSymbol IsNot Nothing Then
+                '    For Each itm1 As ActionMenuItem In cmsSymbol.Items
+                '        For Each itm2 As ActionMenuItem In itm1.DropDownItems
+                '            itm2.DropDownItems.ClearAndDisplose
+                '        Next itm2
+                '        itm1.DropDownItems.ClearAndDisplose
+                '    Next itm1
+                '    cmsSymbol.Items.ClearAndDisplose
+                '    cmsSymbol.Dispose()
+                'End If
+                'If cmsCommand IsNot Nothing Then
+                '    cmsCommand.Items.ClearAndDisplose
+                '    cmsCommand.Dispose()
+                'End If
+                'If ToolStrip IsNot Nothing Then
+                '    ToolStrip.Items.ClearAndDisplose
+                '    ToolStrip.Dispose()
+                'End If
+                'If Not (components Is Nothing) Then
+                '    components.Dispose()
+                'End If
             End If
             MyBase.Dispose(disposing)
         End Sub
@@ -609,6 +617,7 @@ Namespace UI
                 i.Image = i.Image.ResizeToSmallIconSize
             Next
 
+
             TipProvider.SetTip("Parameters used when the command is executed. Please make a feature request if useful parameters are missing.", pg, lParameters)
             TipProvider.SetTip("Text to be displayed. Enter minus to create a separator.", tbText, laText)
             TipProvider.SetTip("A key can be deleted by pressing it two times.", tbHotkey, laHotkey)
@@ -616,37 +625,33 @@ Namespace UI
         End Sub
 
         Sub PopulateSymbolMenu()
-            cmsSymbol.SuspendLayout()
             ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, "No Icon", AddressOf HandleSymbol, Symbol.None)
-            cmsSymbol.ResumeLayout(True)
-
-            'Dim enumNames = System.Enum.GetNames(GetType(Symbol)).ToList
             Dim enumNames = [Enum](Of Symbol).GetNames
-            'enumNames.Sort()
             Array.Sort(enumNames, StringComparer.Ordinal)
-            cmsSymbol.SuspendLayout()
 
             For Each iName In enumNames
                 If iName.StartsWith("fa_", StringComparison.Ordinal) Then Continue For
                 If IsClosing Then Exit For
                 Dim symbol = [Enum](Of Symbol).Parse(iName)
+                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbol))
                 Dim path = "Segoe MDL2 Assets    | " + iName.Substring(0, 1).ToUpperInvariant + " | " + iName
-                ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol).SetImage(symbol)
+                Dim am = ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol) '.SetImage(symbol)
+                am.ImageScaling = ToolStripItemImageScaling.None
+                am.Image = imT.Result  'ImageHelp.GetSymbolImage(symbol)
                 Application.DoEvents()
             Next
-
-            cmsSymbol.ResumeLayout()
-            cmsSymbol.SuspendLayout()
 
             For Each iName In enumNames
                 If Not iName.StartsWith("fa_", StringComparison.Ordinal) Then Continue For
                 If IsClosing Then Exit For
                 Dim symbol = [Enum](Of Symbol).Parse(iName)
+                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbol))
                 Dim path = "FontAwesome | " + iName.Substring(3, 1).ToUpperInvariant + " | " + iName.Substring(3).ToTitleCase.Replace("_", " ")
-                ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol).SetImage(symbol)
+                Dim am = ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol) '.SetImage(symbol)
+                am.ImageScaling = ToolStripItemImageScaling.None
+                am.Image = imT.Result   ' ImageHelp.GetSymbolImage(symbol)
                 Application.DoEvents()
             Next
-            cmsSymbol.ResumeLayout()
         End Sub
 
         Sub HandleSymbol(symbol As Symbol)

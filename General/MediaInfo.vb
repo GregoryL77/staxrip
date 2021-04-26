@@ -391,8 +391,8 @@ Public Class MediaInfo
         'For Each i In Cache
         '    i.Value?.Dispose()
         'Next
-        Parallel.ForEach(Cache, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(p) p.Value?.Dispose())
-
+        Parallel.ForEach(Cache.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
+        'Parallel.ForEach(Cache, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m.Value?.Dispose())
         Cache.Clear()
     End Sub
 

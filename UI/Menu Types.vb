@@ -350,19 +350,22 @@ Namespace UI
                 mi.Image = Nothing
                 Exit Sub
             End If
-
             Dim img = Await ImageHelp.GetSymbolImageAsync(symbol)
+            'Dim img = Await If(mi.IsDisposed, Nothing, ImageHelp.GetSymbolImageAsync(symbol))
 
             Try
                 If Not mi.IsDisposed Then
                     mi.ImageScaling = ToolStripItemImageScaling.None
                     mi.Image = img
+                Else
+                    img?.Dispose()
                 End If
             Catch
             End Try
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)
+            'Image?.Dispose()
             MyBase.Dispose(disposing)
             CustomMenuItem = Nothing
         End Sub

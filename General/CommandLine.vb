@@ -33,15 +33,15 @@ Namespace CommandLine
         End Sub
 
         Function GetStringParam(switch As String) As StringParam
-            Return Items.OfType(Of StringParam).Where(Function(item) item.Switch = switch).FirstOrDefault
+            Return Items.OfType(Of StringParam).FirstOrDefault(Function(item) item.Switch.EqualsEx(switch))
         End Function
 
         Function GetOptionParam(switch As String) As OptionParam
-            Return Items.OfType(Of OptionParam).Where(Function(item) item.Switch = switch).FirstOrDefault
+            Return Items.OfType(Of OptionParam).FirstOrDefault(Function(item) item.Switch.EqualsEx(switch))
         End Function
 
         Function GetNumParamByName(name As String) As NumParam
-            Return Items.OfType(Of NumParam).Where(Function(item) item.Name = name).FirstOrDefault
+            Return Items.OfType(Of NumParam).FirstOrDefault(Function(item) item.Name.EqualsEx(name))
         End Function
 
         Sub RaiseValueChanged(item As CommandLineParam)

@@ -903,7 +903,7 @@ Public Class GlobalClass
     End Function
 
     Function GetFilesInTempDirAndParent() As List(Of String)
-        Dim ret As New List(Of String)
+        Dim ret As New List(Of String)(16)
         Dim dirs As New HashSet(Of String)
 
         If p.TempDir.NotNullOrEmptyS Then
@@ -980,16 +980,29 @@ Public Class GlobalClass
             End Try
 
             If Not noKill Then
-                Try
-                    RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-                    g.MainForm?.Close()
-                    Application.Exit()
-                Finally
-                    Process.GetCurrentProcess.Kill()
-                End Try
+                KillMeAll()
             End If
 
         End If
+    End Sub
+
+    Public Sub KillMeAll()
+        Try
+            RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
+            RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+            If Not g.ProcForm Is Nothing Then
+                g.ProcForm.Invoke(Sub() g.ProcForm.Close())
+            End If
+            'g.MainForm = Nothing
+            'g.MainForm?.Close()
+            'Application.Exit()
+            'RaiseAppEvent(ApplicationEvent.ApplicationExit)
+            Process.GetCurrentProcess.CloseMainWindow()
+            Process.GetCurrentProcess.Close()
+            Thread.Sleep(60)
+        Finally
+            Process.GetCurrentProcess.Kill()
+        End Try
     End Sub
 
     Sub ShowException(
@@ -1064,14 +1077,13 @@ Public Class GlobalClass
     Sub ShowCommandLineHelp(package As Package, switch As String)
         Dim content = package.CreateHelpfile
 
-        If package Is StaxRip.Package.x264 Then
-
-            ' Show me help for x264 presets anyway:
-            'Dim match = Regex.Match(content, "Presets:.+Frame-type options:", RegexOptions.Singleline)
-            'If match.Success Then
-            'content = content.Replace(match.Value, BR)
-            'End If
-        End If
+        ' Show me help for x264 presets anyway:
+        'If package Is StaxRip.Package.x264 Then
+        'Dim match = Regex.Match(content, "Presets:.+Frame-type options:", RegexOptions.Singleline)
+        'If match.Success Then
+        'content = content.Replace(match.Value, BR)
+        'End If
+        'End If
 
         Dim find As String
         Dim c1 As String = switch.Replace("--", "--(no-)")
@@ -1116,12 +1128,10 @@ Public Class GlobalClass
     Sub OnUnhandledException(sender As Object, e As UnhandledExceptionEventArgs)
         OnException(DirectCast(e.ExceptionObject, Exception))
     End Sub
-
     'Sub OnUnhandledException(sender As Object, e As Microsoft.VisualBasic.ApplicationServices.UnhandledExceptionEventArgs)
     '    e.ExitApplication = False
-    '    'OnException(DirectCast(e.ExceptionObject, Exception))
+    '    OnException(e.Exception)
     'End Sub
-
     Private IconValue As Icon
     Private LastIconFile As String
 
@@ -1486,7 +1496,7 @@ Public Class GlobalClass
     End Sub
 
     Function IsDevelopmentPC() As Boolean
-        Return Application.StartupPath.EndsWith("\bin") 'OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
+        Return Application.StartupPath.EndsWith("\bin", StringComparison.Ordinal) 'OrElse Application.StartupPath.EndsWith("\bin-x86") OrElse
         ' Return File.Exists(Application.StartupPath & "\devel.pc") 'Debug
     End Function
 

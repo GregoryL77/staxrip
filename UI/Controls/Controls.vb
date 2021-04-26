@@ -876,21 +876,7 @@ Namespace UI
             ret.Tag = obj
             Return ret
         End Function
-        'Function AddRange(path As List(Of String), obj As List(Of Object), Optional tip As List(Of String) = Nothing) As ActionMenuItem()
-        '    Dim retr(path.Count - 1) As ActionMenuItem
-        '    Dim i As Integer
-        '    For itr = 0 To path.Count - 1
-        '        i = itr
-        '        Items.Add(obj(i))
-        '        Dim name = path(i)
-        '        Dim rp = path(i).RightLast("|")
-        '        If rp IsNot "" Then name = rp.Trim
-        '        Dim ret = ActionMenuItem.Add(Menu.Items, path(i), Sub(o As Object) OnAction(name(i), o), obj(i), tip?(i))
-        '        ret.Tag = obj(i)
-        '        retr(i) = ret
-        '    Next itr
-        '    Return retr
-        'End Function
+
         Sub Clear()
             Items.Clear()
             Menu.Items.ClearAndDisplose
@@ -1157,8 +1143,8 @@ Namespace UI
 
             If ShowMenuSymbol Then
                 e.Graphics.SmoothingMode = SmoothingMode.HighQuality
-
-                Dim h = CInt(Font.Height * 0.3)
+                Dim fontH As Integer = Font.Height
+                Dim h = CInt(fontH * 0.3)
                 Dim w = h * 2
 
                 Dim x1 = If(Text.NullOrEmptyS, Width \ 2 - w \ 2, Width - w - CInt(w * 0.7))
@@ -1170,7 +1156,7 @@ Namespace UI
                 Dim x3 = x1 + w
                 Dim y3 = y1
 
-                Using pen = New Pen(ForeColor, Font.Height / 16.0F)
+                Using pen = New Pen(MyBase.ForeColor, fontH / 16.0F)
                     e.Graphics.DrawLine(pen, x1, y1, x2, y2)
                     e.Graphics.DrawLine(pen, x2, y2, x3, y3)
                 End Using
@@ -1898,8 +1884,8 @@ Namespace UI
                 End If
 
                 ControlPaint.DrawBorder(gx, ClientRectangle, Color.CadetBlue, ButtonBorderStyle.Solid)
-
-                Dim h = CInt(Font.Height * 0.2)
+                Dim fontH As Integer = Font.Height
+                Dim h = CInt(fontH * 0.2)
                 Dim w = h * 2
 
                 Dim x1 = Width \ 2 - w \ 2
@@ -1917,7 +1903,7 @@ Namespace UI
                     y3 = y1
                 End If
 
-                Using pen = New Pen(If(Enabled, Color.Black, SystemColors.GrayText), Font.Height / 20.0F)
+                Using pen = New Pen(If(Enabled, Color.Black, SystemColors.GrayText), fontH / 20.0F)
                     gx.DrawLine(pen, x1, y1, x2, y2)
                     gx.DrawLine(pen, x2, y2, x3, y3)
                 End Using

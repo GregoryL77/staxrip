@@ -147,7 +147,7 @@ Public Class Folder
 
                     Dim dir = td.Show
 
-                    If dir = "custom" Then
+                    If String.Equals(dir, "custom") Then
                         Using dialog As New FolderBrowserDialog
                             dialog.SelectedPath = Folder.Startup
 
@@ -270,7 +270,7 @@ Public Class Folder
     End Function
 
     Shared Function GetFolderPath(folder As Environment.SpecialFolder) As String
-        Dim sb As New StringBuilder(500)
+        Dim sb As New StringBuilder(512)
         SHGetFolderPath(IntPtr.Zero, CInt(folder), IntPtr.Zero, 0, sb)
         Dim ret = sb.ToString.FixDir
         Call New FileIOPermission(FileIOPermissionAccess.PathDiscovery, ret).Demand()
@@ -851,12 +851,12 @@ Public Class CLIArg
 
     Function IsMatch(ParamArray values As String()) As Boolean
         For Each i As String In values
-            i = i.ToUpper
-            Dim val As String = Value.ToUpper
+            i = i.ToUpperInvariant
+            Dim val As String = Value.ToUpperInvariant
 
             If "-" + i = val OrElse "/" + i = val OrElse
-                val.ToUpper.StartsWith("-" + i + ":") OrElse
-                val.ToUpper.StartsWith("/" + i + ":") Then
+                val.ToUpperInvariant.StartsWith("-" + i + ":", StringComparison.Ordinal) OrElse
+                val.ToUpperInvariant.StartsWith("/" + i + ":", StringComparison.Ordinal) Then
 
                 Return True
             End If
@@ -1014,7 +1014,7 @@ Public Class CommandAttribute
 End Class
 
 Public Class CommandManager
-    Property Commands As New Dictionary(Of String, Command)
+    Property Commands As New Dictionary(Of String, Command)(89)
 
     Function HasCommand(name As String) As Boolean
         If name.NullOrEmptyS Then

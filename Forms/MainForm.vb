@@ -22,14 +22,14 @@ Public Class MainForm
         If disposing Then
             components?.Dispose()
         End If
-        If ImageHelp.Coll IsNot Nothing Then
-            For Each ff In ImageHelp.Coll.Families
-                ff.Dispose()
-            Next ff
-            ImageHelp.Coll.Dispose()
-        End If
-        MenuStrip?.Font.Dispose()
-        Font?.Dispose()
+        'ImageHelp.FamilyAwesome?.Dispose()
+        'ImageHelp.FamilySagoe?.Dispose()
+        'If ImageHelp.CollPF IsNot Nothing Then
+        '    For Each ff In ImageHelp.CollPF.Families
+        '        ff.Dispose()
+        '    Next ff
+        '    ImageHelp.CollPF.Dispose()
+        'End If
         MyBase.Dispose(disposing)
     End Sub
 
@@ -1083,7 +1083,7 @@ Public Class MainForm
 
     Sub New()
         'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
 
         g.MainForm = Me
         LoadSettings()
@@ -1105,6 +1105,8 @@ Public Class MainForm
             Trace.Listeners.Add(listener)
             Trace.AutoFlush = True
         End If
+
+        ImageHelp.CreateAwesomeFontFamily()
 
         MenuItemEx.UseTooltips = s.EnableTooltips
         Icon = g.Icon
@@ -4062,38 +4064,41 @@ Public Class MainForm
 
     <Command("Audio Converter.")>
     Sub ShowAudioConverter()
-        Dim aform As AudioConverterForm
+        'Dim aform As New AudioConverterForm
         Me.Hide()
-        Try
-            aform = New AudioConverterForm
-            AudioConverterForm.AudioConverterMode = True
+        'Try
+        AudioConverterForm.AudioConverterMode = True
+        Using aform = New AudioConverterForm
             aform.ShowDialog()
-            If MediaInfo.Cache.Count > 5400 Then BeginInvoke(Sub() MediaInfo.ClearCache()) ' Ask User to Remove???
-        Catch ex As Exception
-            Log.Write("AudioConverter Form Exception:", ex.ToString & ex.Message?.ToString & ex.InnerException?.ToString & ex.GetBaseException?.ToString)
-            Log.Save()
-            g.ShowException(ex, timeout:=90)
-            'MediaInfo.ClearCache()
-            'Me.Close()
-            'Application.Exit()
-            'Process.GetCurrentProcess.Kill()
-        Finally
-            AudioConverterForm.AudioConverterMode = False
-            aform?.Dispose()
-            If Not Me.IsDisposed Then
-                'Me.Invalidate(True)
-                'Me.Activate()
-                Me.Show()
-                'Me.Select()
-            Else
-                Me.Close()
-                Application.Exit()
-                Process.GetCurrentProcess.Kill()
-            End If
-        End Try
+        End Using
+        If MediaInfo.Cache.Count > 5370 Then BeginInvoke(Sub() MediaInfo.ClearCache()) ' Ask User to Remove???
+        Task.Run(Sub() If Not Log.IsEmpty Then Log.Save())
+        'Catch ex As Exception
+        'Log.Write("AudioConverter Form Exception:", ex.ToString & ex.Message?.ToString & ex.InnerException?.ToString & ex.GetBaseException?.ToString)
+        'Log.Save()
+        'g.ShowException(ex, timeout:=90)
+        'MediaInfo.ClearCache()
+        'Me.Close()
+        'Application.Exit()
+        'Process.GetCurrentProcess.Kill()
+        'Finally
+        AudioConverterForm.AudioConverterMode = False
+        'aform?.Dispose()
+        If Not Me.IsDisposed Then
+            'Me.Invalidate(True)
+            'Me.Activate()
+            Me.Show()
+            'Me.Select()
+        Else
+            Me.Close()
+            Application.Exit()
+            g.KillMeAll()
+        End If
+        'End Try
 
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.Collect(2, GCCollectionMode.Optimized, True, True)
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
     End Sub
 
     <Command("Dialog to edit filters.")>
@@ -4640,7 +4645,7 @@ Public Class MainForm
                     Dim found As Boolean
 
                     For Each i2 In filterProfiles
-                        If i.Name = i2.Name Then
+                        If i.Name.EqualsEx(i2.Name) Then
                             found = True
                         End If
                     Next
@@ -6130,7 +6135,7 @@ Public Class MainForm
         UpdateTemplatesMenuAsync()
         IsLoading = False
         'Refresh()
-        Invalidate()
+        Invalidate(True)
         ProcessCommandLine(Environment.GetCommandLineArgs)
         StaxRip.StaxRipUpdate.ShowUpdateQuestion()
         StaxRip.StaxRipUpdate.CheckForUpdate(False, s.CheckForUpdatesBeta, Environment.Is64BitProcess)
@@ -6154,7 +6159,6 @@ Public Class MainForm
         End If
 
         g.SaveSettings()
-        Font?.Dispose()
         g.RaiseAppEvent(ApplicationEvent.ApplicationExit)
     End Sub
 

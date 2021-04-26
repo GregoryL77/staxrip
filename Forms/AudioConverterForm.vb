@@ -31,10 +31,8 @@ Public Class AudioConverterForm
         If disposing Then
             AudioSBL?.Dispose()
             dgvAudio?.Dispose()
-            If CMS IsNot Nothing Then
-                CMS.Items.ClearAndDisplose
-                CMS.Dispose()
-            End If
+            CMS?.Items.ClearAndDisplose
+
             If components IsNot Nothing Then
                 components.Dispose()
             End If
@@ -58,15 +56,15 @@ Public Class AudioConverterForm
     Friend WithEvents laAC As Label
     Friend WithEvents bnMenuAudio As ButtonEx
     Friend WithEvents dgvAudio As DataGridViewEx
-    Friend WithEvents bnSort As Button
+    Friend WithEvents BnSort As Button
     Friend WithEvents TBFind As TextBox
-    Friend WithEvents BnFindTest As Button
+    Friend WithEvents BnFindNext As Button
     Private components As System.ComponentModel.IContainer
 
     <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AudioConverterForm))
         Me.TipProvider = New StaxRip.UI.TipProvider(Me.components)
-        Me.laThreads = New System.Windows.Forms.Label()
         Me.numThreads = New StaxRip.UI.NumEdit()
         Me.bnCMD = New StaxRip.UI.ButtonEx()
         Me.bnAudioMediaInfo = New StaxRip.UI.ButtonEx()
@@ -75,7 +73,9 @@ Public Class AudioConverterForm
         Me.bnRemove = New StaxRip.UI.ButtonEx()
         Me.bnMenuAudio = New StaxRip.UI.ButtonEx()
         Me.laAC = New System.Windows.Forms.Label()
-        Me.bnSort = New System.Windows.Forms.Button()
+        Me.BnSort = New System.Windows.Forms.Button()
+        Me.BnFindNext = New System.Windows.Forms.Button()
+        Me.laThreads = New System.Windows.Forms.Label()
         Me.bnAdd = New StaxRip.UI.ButtonEx()
         Me.bnPlay = New StaxRip.UI.ButtonEx()
         Me.bnDown = New StaxRip.UI.ButtonEx()
@@ -83,50 +83,31 @@ Public Class AudioConverterForm
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
         Me.dgvAudio = New StaxRip.UI.DataGridViewEx()
         Me.TBFind = New System.Windows.Forms.TextBox()
-        Me.BnFindTest = New System.Windows.Forms.Button()
         Me.tlpMain.SuspendLayout()
         CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
-        'laThreads
-        '
-        Me.laThreads.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
-            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.laThreads.BackColor = System.Drawing.SystemColors.Control
-        Me.laThreads.CausesValidation = False
-        Me.tlpMain.SetColumnSpan(Me.laThreads, 2)
-        Me.laThreads.Location = New System.Drawing.Point(559, 330)
-        Me.laThreads.Margin = New System.Windows.Forms.Padding(0, 3, 3, 3)
-        Me.laThreads.Name = "laThreads"
-        Me.laThreads.Size = New System.Drawing.Size(177, 15)
-        Me.laThreads.TabIndex = 97
-        Me.laThreads.Text = "Threads :"
-        Me.laThreads.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        Me.TipProvider.SetTipText(Me.laThreads, "Number of parallel processes, set the default in settings")
-        Me.laThreads.UseMnemonic = False
-        '
         'numThreads
         '
-        Me.numThreads.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
-            Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.numThreads.BackColor = System.Drawing.SystemColors.Control
         Me.numThreads.CausesValidation = False
-        Me.numThreads.Location = New System.Drawing.Point(742, 327)
-        Me.numThreads.Margin = New System.Windows.Forms.Padding(3, 1, 3, 0)
-        Me.numThreads.Maximum = 32.0R
+        Me.numThreads.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.numThreads.Location = New System.Drawing.Point(786, 365)
+        Me.numThreads.Margin = New System.Windows.Forms.Padding(1, 2, 3, 1)
+        Me.numThreads.Maximum = 64.0R
         Me.numThreads.Minimum = 1.0R
         Me.numThreads.Name = "numThreads"
-        Me.numThreads.Size = New System.Drawing.Size(42, 21)
+        Me.numThreads.Size = New System.Drawing.Size(41, 21)
         Me.numThreads.TabIndex = 98
         Me.numThreads.TabStop = False
-        Me.numThreads.Tag = "No. threads"
-        Me.TipProvider.SetTipText(Me.numThreads, "Number of parallel processes, set the default in settings")
+        Me.TipProvider.SetTipText(Me.numThreads, "Number of parallel processes")
         '
         'bnCMD
         '
         Me.bnCMD.CausesValidation = False
+        Me.tlpMain.SetColumnSpan(Me.bnCMD, 2)
         Me.bnCMD.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnCMD.Location = New System.Drawing.Point(742, 351)
+        Me.bnCMD.Location = New System.Drawing.Point(743, 390)
         Me.bnCMD.Size = New System.Drawing.Size(84, 26)
         Me.bnCMD.Text = "   C&MD"
         Me.TipProvider.SetTipText(Me.bnCMD, "Show Command Line")
@@ -135,7 +116,7 @@ Public Class AudioConverterForm
         '
         Me.bnAudioMediaInfo.CausesValidation = False
         Me.bnAudioMediaInfo.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnAudioMediaInfo.Location = New System.Drawing.Point(652, 351)
+        Me.bnAudioMediaInfo.Location = New System.Drawing.Point(653, 390)
         Me.bnAudioMediaInfo.Size = New System.Drawing.Size(84, 26)
         Me.bnAudioMediaInfo.Text = "   &Info"
         Me.TipProvider.SetTipText(Me.bnAudioMediaInfo, "Media Info")
@@ -143,8 +124,9 @@ Public Class AudioConverterForm
         'bnEdit
         '
         Me.bnEdit.CausesValidation = False
+        Me.tlpMain.SetColumnSpan(Me.bnEdit, 2)
         Me.bnEdit.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnEdit.Location = New System.Drawing.Point(562, 351)
+        Me.bnEdit.Location = New System.Drawing.Point(563, 390)
         Me.bnEdit.Size = New System.Drawing.Size(84, 26)
         Me.bnEdit.Text = "    &Edit..."
         Me.TipProvider.SetTipText(Me.bnEdit, "Edit Audio Profile for selection")
@@ -153,7 +135,7 @@ Public Class AudioConverterForm
         '
         Me.bnConvert.CausesValidation = False
         Me.bnConvert.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnConvert.Location = New System.Drawing.Point(238, 351)
+        Me.bnConvert.Location = New System.Drawing.Point(239, 390)
         Me.bnConvert.Size = New System.Drawing.Size(88, 26)
         Me.bnConvert.Text = "&Convert..."
         Me.bnConvert.TextAlign = System.Drawing.ContentAlignment.MiddleRight
@@ -163,7 +145,7 @@ Public Class AudioConverterForm
         '
         Me.bnRemove.CausesValidation = False
         Me.bnRemove.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnRemove.Location = New System.Drawing.Point(144, 351)
+        Me.bnRemove.Location = New System.Drawing.Point(145, 390)
         Me.bnRemove.Size = New System.Drawing.Size(88, 26)
         Me.bnRemove.Text = "&Remove "
         Me.bnRemove.TextAlign = System.Drawing.ContentAlignment.MiddleRight
@@ -173,10 +155,10 @@ Public Class AudioConverterForm
         '
         Me.bnMenuAudio.CausesValidation = False
         Me.bnMenuAudio.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnMenuAudio.Location = New System.Drawing.Point(5, 350)
-        Me.bnMenuAudio.Margin = New System.Windows.Forms.Padding(2)
+        Me.bnMenuAudio.Location = New System.Drawing.Point(4, 390)
+        Me.bnMenuAudio.Margin = New System.Windows.Forms.Padding(4, 3, 4, 3)
         Me.bnMenuAudio.ShowMenuSymbol = True
-        Me.bnMenuAudio.Size = New System.Drawing.Size(40, 28)
+        Me.bnMenuAudio.Size = New System.Drawing.Size(40, 26)
         Me.TipProvider.SetTipText(Me.bnMenuAudio, "Click to open menu")
         Me.bnMenuAudio.UseMnemonic = False
         '
@@ -186,8 +168,8 @@ Public Class AudioConverterForm
         Me.tlpMain.SetColumnSpan(Me.laAC, 3)
         Me.laAC.Dock = System.Windows.Forms.DockStyle.Fill
         Me.laAC.Font = New System.Drawing.Font("Segoe UI", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.laAC.Location = New System.Drawing.Point(47, 327)
-        Me.laAC.Margin = New System.Windows.Forms.Padding(0, 1, 0, 1)
+        Me.laAC.Location = New System.Drawing.Point(48, 365)
+        Me.laAC.Margin = New System.Windows.Forms.Padding(0, 2, 0, 2)
         Me.laAC.Name = "laAC"
         Me.laAC.Size = New System.Drawing.Size(282, 20)
         Me.laAC.TabIndex = 99
@@ -196,28 +178,61 @@ Public Class AudioConverterForm
         Me.TipProvider.SetTipText(Me.laAC, "Double Click to Clean-Up")
         Me.laAC.UseMnemonic = False
         '
-        'bnSort
+        'BnSort
         '
-        Me.bnSort.Anchor = CType((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom), System.Windows.Forms.AnchorStyles)
-        Me.bnSort.CausesValidation = False
-        Me.bnSort.FlatAppearance.BorderSize = 0
-        Me.bnSort.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.bnSort.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.bnSort.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(75, Byte), Integer), CType(CType(255, Byte), Integer))
-        Me.bnSort.Location = New System.Drawing.Point(334, 326)
-        Me.bnSort.Margin = New System.Windows.Forms.Padding(5, 0, 5, 1)
-        Me.bnSort.Name = "bnSort"
-        Me.bnSort.Size = New System.Drawing.Size(60, 21)
-        Me.bnSort.TabIndex = 49
-        Me.bnSort.Text = "&View"
-        Me.TipProvider.SetTipText(Me.bnSort, "Switches to other auto-size columns mode")
-        Me.bnSort.UseVisualStyleBackColor = True
+        Me.BnSort.CausesValidation = False
+        Me.BnSort.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.BnSort.FlatAppearance.BorderSize = 0
+        Me.BnSort.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BnSort.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(75, Byte), Integer), CType(CType(255, Byte), Integer))
+        Me.BnSort.Location = New System.Drawing.Point(4, 364)
+        Me.BnSort.Margin = New System.Windows.Forms.Padding(4, 1, 4, 0)
+        Me.BnSort.Name = "BnSort"
+        Me.BnSort.Size = New System.Drawing.Size(40, 23)
+        Me.BnSort.TabIndex = 2
+        Me.BnSort.Text = "&View"
+        Me.TipProvider.SetTipText(Me.BnSort, "Auto-size columns mode")
+        Me.BnSort.UseVisualStyleBackColor = True
+        '
+        'BnFindNext
+        '
+        Me.BnFindNext.CausesValidation = False
+        Me.BnFindNext.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.BnFindNext.Enabled = False
+        Me.BnFindNext.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(120, Byte), Integer), CType(CType(215, Byte), Integer))
+        Me.BnFindNext.FlatAppearance.BorderSize = 0
+        Me.BnFindNext.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.BnFindNext.Image = CType(resources.GetObject("BnFindNext.Image"), System.Drawing.Image)
+        Me.BnFindNext.Location = New System.Drawing.Point(560, 364)
+        Me.BnFindNext.Margin = New System.Windows.Forms.Padding(0, 1, 22, 0)
+        Me.BnFindNext.Name = "BnFindNext"
+        Me.BnFindNext.Padding = New System.Windows.Forms.Padding(2, 0, 0, 3)
+        Me.BnFindNext.Size = New System.Drawing.Size(23, 23)
+        Me.BnFindNext.TabIndex = 4
+        Me.TipProvider.SetTipText(Me.BnFindNext, "Find next <Enter>")
+        Me.BnFindNext.UseMnemonic = False
+        Me.BnFindNext.UseVisualStyleBackColor = True
+        '
+        'laThreads
+        '
+        Me.laThreads.BackColor = System.Drawing.SystemColors.Control
+        Me.laThreads.CausesValidation = False
+        Me.tlpMain.SetColumnSpan(Me.laThreads, 3)
+        Me.laThreads.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.laThreads.Location = New System.Drawing.Point(605, 367)
+        Me.laThreads.Margin = New System.Windows.Forms.Padding(0, 4, 0, 4)
+        Me.laThreads.Name = "laThreads"
+        Me.laThreads.Size = New System.Drawing.Size(180, 16)
+        Me.laThreads.TabIndex = 97
+        Me.laThreads.Text = "Threads : "
+        Me.laThreads.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        Me.laThreads.UseMnemonic = False
         '
         'bnAdd
         '
         Me.bnAdd.CausesValidation = False
         Me.bnAdd.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnAdd.Location = New System.Drawing.Point(50, 351)
+        Me.bnAdd.Location = New System.Drawing.Point(51, 390)
         Me.bnAdd.Size = New System.Drawing.Size(88, 26)
         Me.bnAdd.Text = "    &Add..."
         '
@@ -225,7 +240,7 @@ Public Class AudioConverterForm
         '
         Me.bnPlay.CausesValidation = False
         Me.bnPlay.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnPlay.Location = New System.Drawing.Point(472, 351)
+        Me.bnPlay.Location = New System.Drawing.Point(473, 390)
         Me.bnPlay.Size = New System.Drawing.Size(84, 26)
         Me.bnPlay.Text = "   &Play"
         '
@@ -233,7 +248,7 @@ Public Class AudioConverterForm
         '
         Me.bnDown.CausesValidation = False
         Me.bnDown.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnDown.Location = New System.Drawing.Point(402, 351)
+        Me.bnDown.Location = New System.Drawing.Point(403, 390)
         Me.bnDown.Size = New System.Drawing.Size(64, 26)
         Me.bnDown.Text = "&Down"
         Me.bnDown.TextAlign = System.Drawing.ContentAlignment.MiddleRight
@@ -242,29 +257,31 @@ Public Class AudioConverterForm
         '
         Me.bnUp.CausesValidation = False
         Me.bnUp.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.bnUp.Location = New System.Drawing.Point(332, 351)
+        Me.bnUp.Location = New System.Drawing.Point(333, 390)
         Me.bnUp.Size = New System.Drawing.Size(64, 26)
         Me.bnUp.Text = "  &Up"
         '
         'tlpMain
         '
         Me.tlpMain.CausesValidation = False
-        Me.tlpMain.ColumnCount = 11
-        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 44.0!))
+        Me.tlpMain.ColumnCount = 13
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 48.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 94.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 94.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 94.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 70.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 70.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 90.0!))
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 45.0!))
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 45.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 90.0!))
-        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 90.0!))
-        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 90.0!))
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 45.0!))
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 45.0!))
         Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.tlpMain.Controls.Add(Me.dgvAudio, 0, 0)
         Me.tlpMain.Controls.Add(Me.laAC, 1, 1)
-        Me.tlpMain.Controls.Add(Me.laThreads, 7, 1)
-        Me.tlpMain.Controls.Add(Me.numThreads, 9, 1)
+        Me.tlpMain.Controls.Add(Me.laThreads, 8, 1)
+        Me.tlpMain.Controls.Add(Me.numThreads, 11, 1)
         Me.tlpMain.Controls.Add(Me.bnMenuAudio, 0, 2)
         Me.tlpMain.Controls.Add(Me.bnAdd, 1, 2)
         Me.tlpMain.Controls.Add(Me.bnRemove, 2, 2)
@@ -273,20 +290,19 @@ Public Class AudioConverterForm
         Me.tlpMain.Controls.Add(Me.bnDown, 5, 2)
         Me.tlpMain.Controls.Add(Me.bnPlay, 6, 2)
         Me.tlpMain.Controls.Add(Me.bnEdit, 7, 2)
-        Me.tlpMain.Controls.Add(Me.bnCMD, 9, 2)
-        Me.tlpMain.Controls.Add(Me.bnSort, 4, 1)
-        Me.tlpMain.Controls.Add(Me.bnAudioMediaInfo, 8, 2)
-        Me.tlpMain.Controls.Add(Me.TBFind, 5, 1)
-        Me.tlpMain.Controls.Add(Me.BnFindTest, 0, 1)
+        Me.tlpMain.Controls.Add(Me.bnCMD, 10, 2)
+        Me.tlpMain.Controls.Add(Me.BnSort, 0, 1)
+        Me.tlpMain.Controls.Add(Me.bnAudioMediaInfo, 9, 2)
+        Me.tlpMain.Controls.Add(Me.TBFind, 4, 1)
+        Me.tlpMain.Controls.Add(Me.BnFindNext, 7, 1)
         Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpMain.Location = New System.Drawing.Point(0, 0)
+        Me.tlpMain.Location = New System.Drawing.Point(3, 3)
         Me.tlpMain.Name = "tlpMain"
-        Me.tlpMain.Padding = New System.Windows.Forms.Padding(3)
         Me.tlpMain.RowCount = 3
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22.0!))
+        Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24.0!))
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 32.0!))
-        Me.tlpMain.Size = New System.Drawing.Size(832, 383)
+        Me.tlpMain.Size = New System.Drawing.Size(830, 419)
         Me.tlpMain.TabIndex = 100
         '
         'dgvAudio
@@ -297,10 +313,10 @@ Public Class AudioConverterForm
         Me.dgvAudio.AllowUserToOrderColumns = True
         Me.dgvAudio.AllowUserToResizeRows = False
         Me.dgvAudio.CausesValidation = False
-        Me.tlpMain.SetColumnSpan(Me.dgvAudio, 11)
+        Me.tlpMain.SetColumnSpan(Me.dgvAudio, 13)
         Me.dgvAudio.Dock = System.Windows.Forms.DockStyle.Fill
         Me.dgvAudio.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically
-        Me.dgvAudio.Location = New System.Drawing.Point(6, 6)
+        Me.dgvAudio.Location = New System.Drawing.Point(3, 3)
         Me.dgvAudio.Name = "dgvAudio"
         Me.dgvAudio.ReadOnly = True
         Me.dgvAudio.RowHeadersWidth = 24
@@ -308,55 +324,39 @@ Public Class AudioConverterForm
         Me.dgvAudio.ShowCellErrors = False
         Me.dgvAudio.ShowEditingIcon = False
         Me.dgvAudio.ShowRowErrors = False
-        Me.dgvAudio.Size = New System.Drawing.Size(820, 317)
+        Me.dgvAudio.Size = New System.Drawing.Size(824, 357)
         Me.dgvAudio.StandardTab = True
         Me.dgvAudio.TabIndex = 1
         Me.dgvAudio.VirtualMode = True
         '
         'TBFind
         '
-        Me.TBFind.BorderStyle = System.Windows.Forms.BorderStyle.None
         Me.TBFind.CausesValidation = False
         Me.TBFind.CharacterCasing = System.Windows.Forms.CharacterCasing.Lower
-        Me.tlpMain.SetColumnSpan(Me.TBFind, 2)
+        Me.tlpMain.SetColumnSpan(Me.TBFind, 3)
         Me.TBFind.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TBFind.ForeColor = System.Drawing.Color.Gray
-        Me.TBFind.Location = New System.Drawing.Point(399, 328)
-        Me.TBFind.Margin = New System.Windows.Forms.Padding(0, 2, 0, 0)
-        Me.TBFind.MaxLength = 64
+        Me.TBFind.Location = New System.Drawing.Point(330, 364)
+        Me.TBFind.Margin = New System.Windows.Forms.Padding(0, 1, 0, 0)
+        Me.TBFind.MaxLength = 260
         Me.TBFind.Name = "TBFind"
-        Me.TBFind.Size = New System.Drawing.Size(160, 16)
+        Me.TBFind.Size = New System.Drawing.Size(230, 23)
         Me.TBFind.TabIndex = 3
-        Me.TBFind.Text = " search..."
+        Me.TBFind.Text = " search... "
         Me.TBFind.WordWrap = False
-        '
-        'BnFindTest
-        '
-        Me.BnFindTest.CausesValidation = False
-        Me.BnFindTest.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.BnFindTest.FlatAppearance.BorderSize = 0
-        Me.BnFindTest.FlatStyle = System.Windows.Forms.FlatStyle.System
-        Me.BnFindTest.Location = New System.Drawing.Point(6, 328)
-        Me.BnFindTest.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
-        Me.BnFindTest.Name = "BnFindTest"
-        Me.BnFindTest.Size = New System.Drawing.Size(38, 18)
-        Me.BnFindTest.TabIndex = 90
-        Me.BnFindTest.TabStop = False
-        Me.BnFindTest.Text = "BnFT"
-        Me.BnFindTest.UseVisualStyleBackColor = True
         '
         'AudioConverterForm
         '
-        Me.AcceptButton = Me.BnFindTest
         Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.AutoValidate = System.Windows.Forms.AutoValidate.Disable
         Me.CausesValidation = False
-        Me.ClientSize = New System.Drawing.Size(832, 383)
+        Me.ClientSize = New System.Drawing.Size(836, 425)
         Me.Controls.Add(Me.tlpMain)
         Me.DoubleBuffered = True
         Me.KeyPreview = True
         Me.Name = "AudioConverterForm"
+        Me.Padding = New System.Windows.Forms.Padding(3)
         Me.Text = "AudioConverter"
         Me.tlpMain.ResumeLayout(False)
         Me.tlpMain.PerformLayout()
@@ -366,20 +366,22 @@ Public Class AudioConverterForm
     End Sub
 
 #End Region
-
     Friend WithEvents CMS As ContextMenuStripEx
     Public Shared AudioConverterMode As Boolean
     Private Shared MaxThreads As Integer
     Private Shared OutPath As String
     Private Shared LastLogPath As String
     Private Shared LogHeader As Boolean
-    Private AudioCL As CircularList(Of AudioProfile)
-    Private AudioSBL As SortableBindingList(Of AudioProfile)
+    Private ReadOnly AudioCL As New CircularList(Of AudioProfile)
+    Private ReadOnly AudioSBL As New SortableBindingList(Of AudioProfile)(AudioCL) With {.CheckConsistency = False, .SortOnChange = False, .RaiseListChangedEvents = True, .AllowNew = False}
 
-    Private TBFindText As String
+    'Private DuplCount As Integer '! Wrong What if delete row??? Use FindDupli all the time
+
     Private TBFindIdx As Integer = -1
+    Private BuildFindT As Task(Of String())
 
-    Private StatTextSB As New StringBuilder(38)
+    Private ReadOnly StatTextSB As New StringBuilder(38)
+    Private IsStatusFlashing As Boolean
     Private CurrentType As Type
     Private SelectChangeES As Boolean
     Private LastKeyDown As Integer = -1
@@ -388,21 +390,24 @@ Public Class AudioConverterForm
     Private PopulateTask As Task
     Private PopulateTaskW As Task
     Private PopulateTaskS As Integer
-    Private PopulateWSW As New Stopwatch
-    Private PopulateRSW As New Stopwatch
+    Private ReadOnly PopulateWSW As New Stopwatch
+    Private ReadOnly PopulateRSW As New Stopwatch
     Private PopulateIter As Integer
     Private SLock As New Object
-    Private SW1 As New Stopwatch
-    Private SW2 As New Stopwatch
+    Private ReadOnly SW1 As New Stopwatch
+    Private ReadOnly SW2 As New Stopwatch
     Private ReadOnly AudioVideoFExts As New HashSet(Of String)(FileTypes.Audio.ConcatA(FileTypes.VideoAudio), StringComparer.Ordinal)
-    Private ReadOnly InvalidPathCh As Char() = {":"c, "\"c, "/"c, "?"c, "^"c, "."c}
+    'Private ReadOnly InvalidPathCh As Char() = {":"c, "\"c, "/"c, "?"c, "^"c, "."c}
+    Private ReadOnly InvalidPathChHS As New HashSet(Of Char)({":"c, "\"c, "/"c, "?"c, "^"c, "."c})
     'Private DGVEventCount As Integer
     Private StatUpdateTask As Task
     Private ReadOnly StatUpdateTaskA As Action =
         Sub()
             Do While PopulateIter < 900 AndAlso AudioConverterMode
-                Dim t As String = PopulateIter.ToInvariantString & PopulateTask?.Status.ToString & PopulateWSW.ElapsedTicks / SWFreq & "msW" & PopulateTaskS.ToInvariantString & "PTS" & PopulateRSW.ElapsedTicks / SWFreq & "msR|WPT"
-                t &= PopulateTaskW?.Status.ToString & SW2.ElapsedTicks / SWFreq & "ms2|Sw" & SW1.ElapsedTicks / SWFreq & "MC" & MediaInfo.Cache.Count.ToInvariantString '& "VC" & DGVEventCount.ToInvariantString & "SBL:" & StatTextSB.Length.ToInvariantString
+                Dim t As String = PopulateIter.ToInvariantString & PopulateTask?.Status.ToString & PopulateWSW.ElapsedTicks / SWFreq & "msW" & PopulateTaskS.ToInvariantString & "PTS" & PopulateRSW.ElapsedTicks / SWFreq & "msR|WPT" &
+                PopulateTaskW?.Status.ToString & SW2.ElapsedTicks / SWFreq & "ms2|Sw" & SW1.ElapsedTicks / SWFreq & "MC" & MediaInfo.Cache.Count.ToInvariantString &
+                "FTL" & BuildFindT?.Status.ToString & If(BuildFindT?.IsCompleted, BuildFindT.Result.Length.ToInvariantString, "") & TBFind.Text & TBFind.TextLength.ToInvariantString & "FIdx" & TBFindIdx.ToInvariantString
+                '& "VC" & DGVEventCount.ToInvariantString & "SBL:" & StatTextSB.Length.ToInvariantString
                 Me.BeginInvoke(Sub() Me.Text = t)
                 'If StatTextSB.Length > 38 Then Me.BeginInvoke(Sub() Me.BackColor = Color.HotPink)
                 Thread.Sleep(105)
@@ -412,32 +417,38 @@ Public Class AudioConverterForm
 
     Public Sub New()
         MyBase.New()
-        'Add/RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        'If Debugger.IsAttached Then Control.CheckForIllegalCrossThreadCalls = False
-        AudioCL = New CircularList(Of AudioProfile)
-        AudioSBL = New SortableBindingList(Of AudioProfile)(AudioCL) With {.CheckConsistency = False, .SortOnChange = False, .RaiseListChangedEvents = True, .AllowNew = False}
+        'Color.FromArgb(0, 120, 215) Color.FromArgb(229, 241, 251) Color.FromArgb(204, 228, 247) SystemColors-Bluish
+
+
+        If Debugger.IsAttached Then Control.CheckForIllegalCrossThreadCalls = False
+
+
         Icon = g.Icon
-        MinimumSize = New Size(MyBase.Font.Height * 22, MyBase.Font.Height * 12)
-        RestoreClientSize(53, 29)
+        Dim fh As Integer = MyBase.Font.Height
+        MinimumSize = New Size(fh * 22, fh * 12)
+        RestoreClientSize(54, 29)
         InitializeComponent()
 
+        Me.tlpMain.SuspendLayout()
         CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()
-        GetType(DataGridViewEx).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or BindingFlags.Instance Or BindingFlags.NonPublic, Nothing, dgvAudio, New Object() {True})
-        dgvAudio.DefaultCellStyle.DataSourceNullValue = Nothing
-        dgvAudio.DefaultCellStyle.FormatProvider = CultureInfo.InvariantCulture
-        dgvAudio.ColumnHeadersDefaultCellStyle.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        dgvAudio.RowTemplate.Height = Font.Height + 4 'or *1.25 ?, AutoResize=20, def=22
-        '[InDesigner-InitSub]-dgvAudio.RowHeadersWidth = 24 ' (0)=42 +6 per number char
-        dgvAudio.AutoGenerateColumns = False
-        dgvAudio.DataSource = AudioSBL
+        Me.SuspendLayout()
+        With dgvAudio
+            GetType(DataGridViewEx).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or BindingFlags.Instance Or BindingFlags.NonPublic, Nothing, dgvAudio, New Object() {True})
+            .DefaultCellStyle.DataSourceNullValue = Nothing
+            .DefaultCellStyle.FormatProvider = CultureInfo.InvariantCulture
+            .ColumnHeadersDefaultCellStyle.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+            .RowTemplate.Height = Font.Height + 4 'or *1.25 ?, AutoResize=20, def=22
+            '[InDesigner-InitSub]-dgvAudio.RowHeadersWidth = 24 ' (0)=42 +6 per number char
+            .AutoGenerateColumns = False
+            .DataSource = AudioSBL
 
-        Dim indexCol As New DataGridViewTextBoxColumn With {.SortMode = DataGridViewColumnSortMode.NotSortable, .HeaderText = "No.", .FillWeight = 10, .MinimumWidth = 28, .ReadOnly = True}
-        'indexCol.ValueType = GetType(Integer) ; col.MinimumWidth = col.HeaderText.Length * 8 + 5 <no=32-noTTip> ; 'col.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
-        Dim profNameCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "Name", .HeaderText = "Profile", .FillWeight = 100, .MinimumWidth = 60, .ReadOnly = True}
-        Dim dispNameCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "DisplayName", .HeaderText = "Track", .FillWeight = 400, .MinimumWidth = 46, .ReadOnly = True}
-        Dim pathCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "File", .HeaderText = "Full Path", .FillWeight = 500, .MinimumWidth = 74, .ReadOnly = True}
-        dgvAudio.Columns.AddRange({indexCol, profNameCol, dispNameCol, pathCol})
-        CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
+            Dim indexCol As New DataGridViewTextBoxColumn With {.SortMode = DataGridViewColumnSortMode.NotSortable, .HeaderText = "No.", .FillWeight = 10, .MinimumWidth = 28, .ReadOnly = True}
+            'indexCol.ValueType = GetType(Integer) ; col.MinimumWidth = col.HeaderText.Length * 8 + 5 <no=32-noTTip> ; 'col.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+            Dim profNameCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "Name", .HeaderText = "Profile", .FillWeight = 100, .MinimumWidth = 60, .ReadOnly = True}
+            Dim dispNameCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "DisplayName", .HeaderText = "Track", .FillWeight = 400, .MinimumWidth = 46, .ReadOnly = True}
+            Dim pathCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "File", .HeaderText = "Full Path", .FillWeight = 500, .MinimumWidth = 74, .ReadOnly = True}
+            .Columns.AddRange({indexCol, profNameCol, dispNameCol, pathCol})
+        End With
 
         bnAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
         bnRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
@@ -449,12 +460,20 @@ Public Class AudioConverterForm
         bnAudioMediaInfo.Image = ImageHelp.GetSymbolImage(Symbol.Info)
         bnCMD.Image = ImageHelp.GetSymbolImage(Symbol.CommandPrompt)
 
+        Dim dfh As Integer = Control.DefaultFont.Height \ 10
+        Dim pad As Padding
+        'BnFindNext.Image = ImageHelp.GetSymbolImage(Symbol.fa_arrow_right)
+        'BnFindNext.TextImageRelation = TextImageRelation.Overlay
+        'BnFindNext.ImageAlign = ContentAlignment.MiddleCenter
+        'pad = New Padding(1)
+        'BnFindNext.Padding = pad
+
         For Each bn As ButtonEx In {bnAdd, bnRemove, bnPlay, bnUp, bnDown, bnEdit, bnConvert, bnAudioMediaInfo, bnCMD}
-            bn.TextImageRelation = TextImageRelation.Overlay
+            'bn.TextImageRelation = TextImageRelation.Overlay 'this is  Defaults
             bn.ImageAlign = ContentAlignment.MiddleLeft
-            Dim pad As Padding = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
-            pad.Right = pad.Left
+            pad = bn.Padding
+            pad.Left = dfh
+            pad.Right = dfh
             bn.Padding = pad
         Next
 
@@ -465,6 +484,9 @@ Public Class AudioConverterForm
         bnMenuAudio.ContextMenuStrip = CMS
         'UpdateDefaultButton()
         bnAdd.Select()
+        Me.tlpMain.ResumeLayout()
+        CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.ResumeLayout()
     End Sub
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
@@ -472,27 +494,21 @@ Public Class AudioConverterForm
         If AudioCL.Count <= 0 Then
             dgvAudio.Columns.Item(3).HeaderCell.SortGlyphDirection = SortOrder.Ascending
             UpdateControls()
-
-            Me.BnFindTest.TabStop = False
-
         End If
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.Collect(2, GCCollectionMode.Optimized, True, True)
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
     End Sub
 
     Protected Overrides Sub OnFormClosing(e As FormClosingEventArgs)
         PopulateTaskS = -1
         PopulateIter = 999
         RemoveHandlersDGV()
+        BuildFindT = Nothing
         AudioCL.Reset()
         AudioSBL.Clear()
         dgvAudio.Columns.Clear()
         MyBase.OnFormClosing(e)
-    End Sub
-
-    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        SaveConverterLog(LastLogPath)
-        MyBase.OnFormClosed(e)
     End Sub
 
     Private Sub UpdateCMS(sender As Object, e As CancelEventArgs) Handles CMS.Opening
@@ -511,9 +527,6 @@ Public Class AudioConverterForm
         'WarmUpCpu()
         'SW2.Restart()
         'For n = 1 To itr
-        '    Dim chars = s2.ToCharArray
-        '    Array.Reverse(chars)
-        '    r1 = New String(chars)
         '    'If ta1.ContainsString(s2) Then r1 += 1 'ContainsF Ordinal is fastest & Contains<NoStrCompOpt> is faster,forLoopEquals Is Fastest of ALL
         '    'For c = 0 To s2.Length - 1
         '    '    If InvalidFileSystemCh.ContainsF(s2(c)) Then '3500ms
@@ -559,93 +572,95 @@ Public Class AudioConverterForm
         'Refresh()
         'AddHandlersDGV()
 
+        With CMS
+            .SuspendLayout()
+            ' .GetItems.ForEach(Sub(it) it.Image.Dispose()) ' = Nothing)
+            'For Each it In  .Items.OfType(Of ToolStripItem).ToArray
+            '    RemoveHandler  .Opening, AddressOf TryCast(it, ActionMenuItem).Opening
+            '    If Me.Owner IsNot Nothing Then RemoveHandler DirectCast(Me.Owner, ToolStripDropDown).Opening, AddressOf DirectCast(it, ActionMenuItem).Opening
+            '    it.Dispose()
+            'Next
+            .Items.ClearAndDisplose
+            Dim isR = AudioCL.Count > 0
+            Dim isCR = isR AndAlso dgvAudio.CurrentCellAddress.Y >= 0
+            Dim cAP As AudioProfile
+            If isCR Then cAP = AudioSBL.Item(dgvAudio.CurrentCellAddress.Y)
+            Dim logNotEmpty As Boolean = Not Log.IsEmpty
 
-        CMS.SuspendLayout()
-        'CMS.GetItems.ForEach(Sub(it) it.Image = Nothing)
-        'For Each it In CMS.Items.OfType(Of ToolStripItem).ToArray
-        '    RemoveHandler CMS.Opening, AddressOf TryCast(it, ActionMenuItem).Opening
-        '    If Me.Owner IsNot Nothing Then RemoveHandler DirectCast(Me.Owner, ToolStripDropDown).Opening, AddressOf UpdateCMS
-        '    If Me.Owner IsNot Nothing Then RemoveHandler DirectCast(Me.Owner, ToolStripDropDown).Opening, AddressOf DirectCast(it, ActionMenuItem).Opening
-        '    it.Dispose()
-        'Next
-        CMS.Items.ClearAndDisplose
-        Dim isR = AudioCL.Count > 0
-        Dim isCR = isR AndAlso dgvAudio.CurrentCellAddress.Y >= 0
-        Dim cAP As AudioProfile
-        If isCR Then cAP = AudioSBL.Item(dgvAudio.CurrentCellAddress.Y)
-        Dim logNotEmpty As Boolean = Not Log.IsEmpty
+            .Add("Select all  <Ctrl+A>", Sub() dgvAudio.SelectAll(), isR).SetImage(Symbol.SelectAll)
+            .Add("Remove all", Sub()
+                                   PopulateTaskS = -1
+                                   RemoveHandlersDGV(True)
+                                   AudioCL.Reset()
+                                   AudioSBL.Clear()
+                                   AudioSBL.InnerListChanged()
+                                   AudioSBL.ResetBindings()
+                                   dgvAudio.Rows.Clear()
+                                   TBFind.Clear()
+                                   TBFind_Leave(Me, EventArgs.Empty)
+                                   CurrentType = Nothing
+                                   UpdateControls()
+                                   GC.Collect()
+                               End Sub, isR).SetImage(Symbol.Clear)
+            .Add("Remove duplicates", Sub()
+                                          PopulateTaskS = -1
+                                          RemoveHandlersDGV(True)
+                                          Dim occ As Integer = dgvAudio.CurrentCellAddress.X
+                                          Dim ocF As Long = cAP.FileKeyHashValue
+                                          Dim uAR = AudioCL.Distinct(New AudioProfileHComparer).ToArray
 
-        CMS.Add("Select all  <Ctrl+A>", Sub() dgvAudio.SelectAll(), isR).SetImage(Symbol.SelectAll)
-        CMS.Add("Remove all", Sub()
-                                  PopulateTaskS = -1
-                                  RemoveHandlersDGV(True)
-                                  AudioCL.Reset()
-                                  AudioSBL.Clear()
-                                  AudioSBL.InnerListChanged()
-                                  AudioSBL.ResetBindings()
-                                  dgvAudio.Rows.Clear()
-                                  UpdateControls()
-                                  CurrentType = Nothing
-                                  GC.Collect()
-                              End Sub, isR).SetImage(Symbol.Clear)
-        CMS.Add("Remove duplicates", Sub()
-                                         PopulateTaskS = -1
-                                         RemoveHandlersDGV(True)
-                                         Dim occ As Integer = dgvAudio.CurrentCellAddress.X
-                                         Dim ocF As Long = cAP.FileKeyHashValue
-                                         Dim uAR = AudioCL.Distinct(New AudioProfileHComparer).ToArray
+                                          If AudioCL.Count <= uAR.Length Then
+                                              MsgInfo("No duplicates found.")
+                                          ElseIf MsgQuestion(Me.AudioCL.Count - uAR.Length & " duplicated file(s) found." & BR & "Remove from Grid View ?") = DialogResult.OK Then
+                                              StatusText("Removing duplicated files...")
+                                              AudioCL.Reset()
+                                              AudioSBL.Clear()
+                                              AudioCL.Capacity = uAR.Length
+                                              AudioSBL.RaiseListChangedEvents = False
+                                              AudioSBL.InnerListChanged()
+                                              AudioSBL.RemoveSort()
+                                              AudioSBL.AddRange(uAR)
+                                              AudioSBL.RaiseListChangedEvents = True
+                                              AudioSBL.ResetBindings()
+                                              Dim crI As Integer = Array.FindIndex(uAR, Function(ap) ap.FileKeyHashValue = ocF)
+                                              If crI >= 0 Then dgvAudio.CurrentCell = dgvAudio.Rows.Item(crI).Cells.Item(occ)
+                                              AutoSizeColumns()
+                                          End If
 
-                                         If AudioCL.Count <= uAR.Length Then
-                                             MsgInfo("No duplicates found.")
-                                         ElseIf MsgQuestion(Me.AudioCL.Count - uAR.Length & " duplicated file(s) found." & BR & "Remove from Grid View ?") = DialogResult.OK Then
-                                             StatusText("Removing duplicated files...")
-                                             AudioCL.Reset()
-                                             AudioSBL.Clear()
-                                             AudioCL.Capacity = uAR.Length
-                                             AudioSBL.RaiseListChangedEvents = False
-                                             AudioSBL.InnerListChanged()
-                                             AudioSBL.RemoveSort()
-                                             AudioSBL.AddRange(uAR)
-                                             AudioSBL.RaiseListChangedEvents = True
-                                             AudioSBL.ResetBindings()
-                                             Dim crI As Integer = Array.FindIndex(uAR, Function(ap) ap.FileKeyHashValue = ocF)
-                                             If crI >= 0 Then dgvAudio.CurrentCell = dgvAudio.Rows.Item(crI).Cells.Item(occ)
-                                             AutoSizeColumns()
-                                         End If
+                                          PopulateCache(4000000)
+                                          UpdateControls()
+                                          AddHandlersDGV()
+                                      End Sub, isCR, "Removes duplicated files from list").SetImage(Symbol.ShowResults) 'BulletedList)
 
-                                         PopulateCache(4000000)
-                                         UpdateControls()
-                                         AddHandlersDGV()
-                                     End Sub, isCR, "Removes duplicated files from list").SetImage(Symbol.ShowResults) 'BulletedList)
+            .Add("Show Source File", Sub()
+                                         dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.CurrentCellAddress.Y
+                                         g.SelectFileWithExplorer(cAP.FileValue)
+                                     End Sub, isCR AndAlso FileExists(cAP.FileValue), "Open the source file in File Explorer.").SetImage(Symbol.FileExplorer)
 
-        CMS.Add("Show Source File", Sub()
-                                        dgvAudio.FirstDisplayedScrollingRowIndex = dgvAudio.CurrentCellAddress.Y
-                                        g.SelectFileWithExplorer(cAP.FileValue)
-                                    End Sub, isCR AndAlso FileExists(cAP.FileValue), "Open the source file in File Explorer.").SetImage(Symbol.FileExplorer)
+            .Add("Show Ouput Folder", Sub() g.SelectFileWithExplorer(OutPath), DirExists(OutPath), "Open output folder in File Explorer.").SetImage(Symbol.FileExplorerApp)
 
-        CMS.Add("Show Ouput Folder", Sub() g.SelectFileWithExplorer(OutPath), DirExists(OutPath), "Open output folder in File Explorer.").SetImage(Symbol.FileExplorerApp)
+            ' .Add("Show Output File", Sub() g.SelectFileWithExplorer(OutPath & RelativeSubDirRecursive(cAP.FileValue.Dir, 0) & cAP.GetOutputFile),
+            'ccExists AndAlso FileExists(OutPath & RelativeSubDirRecursive(cAP.FileValue.Dir, 0) & cAP.GetOutputFile), "Open converted file in File explerer").SetImage(Symbol.ShowResults)
 
-        'cms.Add("Show Output File", Sub() g.SelectFileWithExplorer(OutPath & RelativeSubDirRecursive(cAP.FileValue.Dir, 0) & cAP.GetOutputFile),
-        'ccExists AndAlso FileExists(OutPath & RelativeSubDirRecursive(cAP.FileValue.Dir, 0) & cAP.GetOutputFile), "Open converted file in File explerer").SetImage(Symbol.ShowResults)
+            .Add("Show LOG", Sub()
+                                 SaveConverterLog(LastLogPath)
+                                 If FileExists(LastLogPath) Then
+                                     g.SelectFileWithExplorer(LastLogPath)
+                                 ElseIf FileExists(p.Log.GetPath) Then
+                                     g.SelectFileWithExplorer(p.Log.GetPath)
+                                 End If
+                             End Sub, logNotEmpty, "Open current log in File Explorer").SetImage(Symbol.fa_folder_open_o)
 
-        CMS.Add("Show LOG", Sub()
-                                SaveConverterLog(LastLogPath)
-                                If FileExists(LastLogPath) Then
-                                    g.SelectFileWithExplorer(LastLogPath)
-                                ElseIf FileExists(p.Log.GetPath) Then
-                                    g.SelectFileWithExplorer(p.Log.GetPath)
-                                End If
-                            End Sub, logNotEmpty, "Open current log in File Explorer").SetImage(Symbol.fa_folder_open_o)
+            .Add("Save LOG...", Sub() SaveConverterLog(UseDialog:=True), logNotEmpty).SetImage(Symbol.Save)
+            .Add("-")
+            .Add("qaac Help", Sub() Package.qaac.ShowHelp())
+            .Add("qaac Formats", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.qaac.Path, "--formats")))
+            .Add("Opus Help", Sub() Package.OpusEnc.ShowHelp())
+            .Add("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp())
+            .Add("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to"))
 
-        CMS.Add("Save LOG...", Sub() SaveConverterLog(UseDialog:=True), logNotEmpty).SetImage(Symbol.Save)
-        CMS.Add("-")
-        CMS.Add("qaac Help", Sub() Package.qaac.ShowHelp())
-        CMS.Add("qaac Formats", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.qaac.Path, "--formats")))
-        CMS.Add("Opus Help", Sub() Package.OpusEnc.ShowHelp())
-        CMS.Add("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp())
-        CMS.Add("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to"))
-
-        CMS.ResumeLayout(False)
+            .ResumeLayout(False)
+        End With
         LastKeyDown = -1
         SelectChangeES = False
         ButtonAltImage(False)
@@ -658,17 +673,18 @@ Public Class AudioConverterForm
         If SelRowsCount = -1 Then SelRowsCount = dgvAudio.Rows.GetRowCount(DataGridViewElementStates.Selected)
         If CurrentRowI = -1 Then CurrentRowI = dgvAudio.CurrentCellAddress.Y
         StatTextSB.Clear()
-        If rC > 0 Then StatTextSB.Append("Pos: ").Append((CurrentRowI + 1).ToInvariantString).Append(" Sel: ").Append(SelRowsCount.ToInvariantString).Append(" / Tot: ").Append(rC.ToInvariantString)
+
+        If rC > 0 Then
+            StatTextSB.Append("Pos: ").Append((CurrentRowI + 1).ToInvariantString).Append(" Sel: ").Append(SelRowsCount.ToInvariantString).Append(" / Tot: ").Append(rC.ToInvariantString)
+        Else
+            StatTextSB.Append("Please add or drag music files...")
+        End If
+
         Me.BeginInvoke(Sub()
                            'SW2.Restart()
-                           If rC > 0 Then
-                               'laAC.Text = "Pos: " & (CurrentRowI + 1).ToInvariantString & " | Sel: " & (SelRowsCount).ToInvariantString & " / Tot: " & (rC).ToInvariantString
-                               laAC.Text = StatTextSB.ToString
-                               numThreads.Enabled = True  ' Or 1 selected
-                           Else
-                               laAC.Text = "Please add or drag music files..."
-                               numThreads.Enabled = False
-                           End If
+                           'laAC.Text = "Pos: " & (CurrentRowI + 1).ToInvariantString & " | Sel: " & (SelRowsCount).ToInvariantString & " / Tot: " & (rC).ToInvariantString
+                           laAC.Text = StatTextSB.ToString
+                           numThreads.Enabled = rC > 0
                            bnRemove.Enabled = SelRowsCount > 0
                            bnConvert.Enabled = SelRowsCount > 0
                            bnUp.Enabled = SelRowsCount = 1 AndAlso CurrentRowI > 0
@@ -688,8 +704,11 @@ Public Class AudioConverterForm
     End Sub
 
     Private Sub FlashingText(InfoText As String, Optional Count As Integer = 10, Optional Delay As Integer = 120)
+        If IsStatusFlashing Then Exit Sub
+        IsStatusFlashing = True
+
         For n = 1 To Count
-            If PopulateTaskS > -1 AndAlso AudioConverterMode AndAlso Me.IsHandleCreated Then
+            If AudioConverterMode AndAlso Me.IsHandleCreated Then
                 BeginInvoke(Sub()
                                 laAC.ForeColor = Color.Red
                                 laAC.Text = InfoText
@@ -701,21 +720,31 @@ Public Class AudioConverterForm
                 Exit For
             End If
         Next n
-        If AudioConverterMode AndAlso Not Me.IsDisposed AndAlso Me.IsHandleCreated Then BeginInvoke(Sub() laAC.ForeColor = Color.Black)
+
+        IsStatusFlashing = False
+        If AudioConverterMode AndAlso Not Me.IsDisposed AndAlso Me.IsHandleCreated Then
+            BeginInvoke(Sub()
+                            laAC.ForeColor = Color.Black
+                            UpdateControls()  'laAC.Text = StatTextSB.ToString
+                        End Sub)
+        End If
     End Sub
 
     Private Sub AutoSizeColumns(Optional AllCells As Boolean = False)
         If AudioCL.Count > 1000 OrElse (AudioCL.Count > 100 AndAlso MediaInfo.Cache.Count < 100) Then StatusText("Auto Resizing Columns...")
-        Dim c0w = Math.Max(28, CInt(14 + 6 * Fix(Math.Log10(AudioCL.Count + 1))))
-        If dgvAudio.Columns.Item(0).MinimumWidth <> c0w Then dgvAudio.Columns.Item(0).MinimumWidth = c0w
-        If dgvAudio.ColumnHeadersHeight <> 23 Then dgvAudio.ColumnHeadersHeight = 23
-        If dgvAudio.RowHeadersWidth <> 24 Then dgvAudio.RowHeadersWidth = 24
-        If dgvAudio.AutoSizeColumnsMode <> DataGridViewAutoSizeColumnsMode.Fill Then
-            PopulateTaskS = -1
-            Dim allc As Boolean = AllCells OrElse AudioCL.Count < 200 OrElse (AudioCL.Count < 2500 AndAlso MediaInfo.Cache.Count > 2000)
-            If allc Then Application.DoEvents()
-            dgvAudio.AutoResizeColumns(If(allc, DataGridViewAutoSizeColumnsMode.AllCellsExceptHeader, DataGridViewAutoSizeColumnsMode.DisplayedCellsExceptHeader))
-        End If
+        With dgvAudio
+            ' CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()
+            .Columns.Item(0).MinimumWidth = Math.Max(28, CInt(14 + 6 * Fix(Math.Log10(AudioCL.Count + 1))))
+            If .ColumnHeadersHeight <> 23 Then .ColumnHeadersHeight = 23
+            If .RowHeadersWidth <> 24 Then .RowHeadersWidth = 24
+            If .AutoSizeColumnsMode <> DataGridViewAutoSizeColumnsMode.Fill Then
+                PopulateTaskS = -1
+                Dim allc As Boolean = AllCells OrElse AudioCL.Count < 200 OrElse (AudioCL.Count < 2500 AndAlso MediaInfo.Cache.Count > 2000)
+                If allc Then Application.DoEvents()
+                .AutoResizeColumns(If(allc, DataGridViewAutoSizeColumnsMode.AllCellsExceptHeader, DataGridViewAutoSizeColumnsMode.DisplayedCellsExceptHeader))
+            End If
+            ' CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
+        End With
     End Sub
 
     Private Sub dgvAudio_SelectionChanged(sender As Object, e As EventArgs)
@@ -766,83 +795,162 @@ Public Class AudioConverterForm
         e.FormattingApplied = True
     End Sub
 
-    Private Sub TBFind_TextChanged(sender As Object, e As EventArgs) Handles TBFind.TextChanged
-        SW1.Restart()
+    Private Function BuildFind() As String()
         Dim rC As Integer = AudioCL.Count
-        If rC <= 0 OrElse TBFindIdx < -1 OrElse TBFind.Text.NullOrEmptyS Then
+        If rC > 0 Then
+            SW2.Restart()
+            PopulateTaskS = 0
+            Dim retA(rC - 1) As String
+            'Dim arr = AudioSBL.ToArray
+            Dim isCF = CInt(Fix(rC * 0.9)) <= MediaInfo.Cache.Count + FindDuplicates(False) 'DuplCount '90% cache fill
+            Parallel.For(0, rC, New ParallelOptions With {.MaxDegreeOfParallelism = CPUsC \ 2},
+                         Sub(i)
+                             With AudioSBL(i)
+                                 If isCF Then
+                                     Dim dn As String = .DisplayNameValue
+                                     If dn IsNot Nothing Then
+                                         'dn = dn.Replace(" (" & .FileValue.FileName & ")", "")
+                                         Dim si = dn.IndexOf(" (", StringComparison.Ordinal)
+                                         dn = If(si >= 0, dn.Substring(0, si), "")
+                                         retA(i) = (.FileValue & .Name & dn).ToLowerInvariant
+                                     Else
+                                         retA(i) = .FileValue.ToLowerInvariant
+                                     End If
+                                 Else
+                                     retA(i) = .FileValue.ToLowerInvariant
+                                 End If
+                             End With
+                         End Sub)
+            PopulateCache(13000000)
+            SW2.Stop()
+            Return retA
+        End If
+        Return {}
+    End Function
+    Private Sub FindTextFile(FindString As String)
+        SW1.Restart()
+Again: 'Debug StopWatch Use
+        Dim rC = AudioCL.Count
+        If rC <= 0 Then
             SW1.Stop()
             Exit Sub
         End If
-        TBFindText = TBFind.Text
-        'TBFindIdx = -1
-        Dim sf As Integer = -1
 
-        'If AudioSBL.SortProperty IsNot Nothing Then 'No for LowerCase
-        '    sf = AudioSBL.Find(AudioSBL.SortProperty, TBFindText)
-        'End If
-
-        If sf < 0 Then
-            If TBFindIdx > 0 Then
-                Dim ss As Integer = If(TBFindIdx <= rC - 1, TBFindIdx, 0)
-                For i = ss To rC - 1
-                    If AudioSBL(i).File.ToLowerInvariant.Contains(TBFindText) Then
-                        sf = i
-                        Exit For
-                    End If
-                Next i
-            Else
-                If sf < 0 Then
-                    For i = 0 To rC - 1
-                        If AudioSBL(i).File.ToLowerInvariant.Contains(TBFindText) Then
-                            sf = i
-                            Exit For
-                        End If
-                    Next i
-                End If
-            End If
+        Dim fString As String() = BuildFindT?.Result
+        If fString Is Nothing OrElse rC <> fString.Length Then ' What if Sort or ADD,Remove,Move UP/Down
+            BuildFindT = Task.Run(Function() BuildFind())
+            GoTo Again
         End If
 
+        Dim findC As Integer
+        Dim found As Boolean
+        If TBFindIdx > 0 AndAlso TBFindIdx < rC Then
+            For i = TBFindIdx To rC - 1
+                If fString(i).Contains(FindString) Then
+                    TBFindIdx = i
+                    found = True
+                    Exit For
+                End If
+            Next i
 
-        TBFindIdx = sf
-        If TBFindIdx >= 0 AndAlso TBFindIdx <= rC - 1 Then
+            If Not found Then
+                TBFindIdx = -1
+                'FindTextFile()
+                GoTo Again
+            End If
+        Else
+            'Dim foundAll As Boolean
+            For i = 0 To rC - 1
+                If fString(i).Contains(FindString) Then
+                    'If Not foundAll Then TBFindIdx = i
+                    TBFindIdx = i
+                    findC += 1
+                    'foundAll = True
+                    Exit For
+                End If
+            Next i
+        End If
+
+        If TBFindIdx > -1 AndAlso TBFindIdx < rC Then
+            If findC > 0 Then
+                Dim tr As Integer = 0
+                Task.Run(Sub()
+                             tr = 1
+                             For i = TBFindIdx + 1 To rC - 1
+                                 If fString(i).Contains(FindString) Then findC += 1
+                                 If tr = 0 Then Return
+                             Next i
+                             'findC = fString.CountF(Function(s) s.Contains(FindString))
+                             BeginInvoke(Sub() If tr = 1 Then laThreads.Text = findC.ToInvariantString & " file" & If(findC > 1, "s", "") & " found.           Threads : ")
+                         End Sub)
+            End If
+
             dgvAudio.CurrentCell = dgvAudio(dgvAudio.CurrentCellAddress.X, TBFindIdx) 'Or3
+            'dgvAudio.Rows(TBFindIdx).Selected = True
+            'dgvAudio.FirstDisplayedScrollingRowIndex = TBFindIdx
+            BnFindNext.Enabled = True
+            AcceptButton = BnFindNext
+        Else
+            Task.Run(Sub() FlashingText("Not Found !", 4, 120))
+            AcceptButton = Nothing
+            BnFindNext.Enabled = False
+            laThreads.Text = "Threads : "
         End If
         SW1.Stop()
-
+    End Sub
+    Private Sub TBFind_TextChanged(sender As Object, e As EventArgs) Handles TBFind.TextChanged
+        If TBFindIdx > -2 AndAlso AudioCL.Count > 0 AndAlso TBFind.Text IsNot "" Then
+            TBFindIdx = -1
+            FindTextFile(TBFind.Text)
+        Else
+            AcceptButton = Nothing
+            BnFindNext.Enabled = False
+            laThreads.Text = "Threads : "
+        End If
     End Sub
 
     Private Sub TBFind_Enter(sender As Object, e As EventArgs) Handles TBFind.Enter
-        If String.Equals(TBFind.Text, " search...") Then ' , StringComparison.OrdinalIgnoreCase) Then
+        BuildFindT = Task.Run(Function() BuildFind())
+        If String.Equals(TBFind.Text, " search... ") Then
             TBFindIdx = -2
             TBFind.ForeColor = Color.Black
             TBFind.Clear()
             TBFindIdx = -1
-        ElseIf TBFind.TextLength > 0 Then
-            TBFind.SelectAll()
+        ElseIf TBFind.Text IsNot "" Then
+            BeginInvoke(Sub() TBFind.SelectAll())
+            BnFindNext.Enabled = True
+            AcceptButton = BnFindNext
         End If
     End Sub
 
     Private Sub TBFind_Leave(sender As Object, e As EventArgs) Handles TBFind.Leave
-        'TBFindText = TBFind.Text
-        If TBFind.Text.NullOrEmptyS Then
+        If TBFind.Text Is "" Then
             TBFindIdx = -2
             TBFind.ForeColor = Color.Gray
-            TBFind.Text = " search..."
+            TBFind.Text = " search... "
             TBFindIdx = -1
         End If
-    End Sub
 
-    Private Sub TBFind_Click(sender As Object, e As EventArgs) Handles TBFind.Click
-        If TBFind.TextLength > 0 Then
-            TBFind.SelectAll()
+        If ActiveControl IsNot BnFindNext Then
+            AcceptButton = Nothing
+            BnFindNext.Enabled = False
+            BuildFindT = Nothing
         End If
     End Sub
 
-    Private Sub BnFindTest_Click(sender As Object, e As EventArgs) Handles BnFindTest.Click
-        If TBFindIdx >= 0 Then
+    Private Sub BnFindTest_Click(sender As Object, e As EventArgs) Handles BnFindNext.Click
+        If TBFindIdx >= 0 AndAlso TBFind.Text IsNot "" Then
             TBFindIdx += 1
+            FindTextFile(TBFind.Text)
         End If
-        TBFind_TextChanged(sender, e)
+    End Sub
+
+    Private Sub BnFindTest_Leave(sender As Object, e As EventArgs) Handles BnFindNext.Leave
+        If ActiveControl IsNot TBFind Then
+            AcceptButton = Nothing
+            BnFindNext.Enabled = False
+            BuildFindT = Nothing
+        End If
     End Sub
 
     'Private Sub dgvAudio_RowUnshared(sender As Object, e As DataGridViewRowEventArgs) Handles dgvAudio.RowUnshared
@@ -928,6 +1036,7 @@ Public Class AudioConverterForm
                 uhs.Add(AudioCL.Item(r).FileKeyHashValue)
             Next r
             cUn = uhs.Count
+            '  DuplCount = cn - cUn
         End If
 
         Return cn - cUn
@@ -937,9 +1046,10 @@ Public Class AudioConverterForm
         If SubDepth < 1 Then Return ""
 
         If fPath.Length <= 3 Then
-            For c = 0 To InvalidPathCh.Length - 1
-                'fPath = fPath.Replace(InvalidFileSystemCh(c), "") 'or Inv as Hashset
-                fPath = fPath.Replace(InvalidPathCh(c), "")
+            'For c = 0 To InvalidPathCh.Length - 1
+            For c = fPath.Length - 1 To 0 Step -1
+                If InvalidPathChHS.Contains(fPath(c)) Then fPath = fPath.Replace(fPath(c), "") 'or Inv as Hashset
+                'fPath = fPath.Replace(InvalidPathCh(c), "")
             Next c
             Return If(fPath.Length > 0, fPath & SeparatorD, "")
         End If
@@ -1353,7 +1463,7 @@ Public Class AudioConverterForm
         Select Case PopulateIter
             Case Is > 900
                 Exit Sub
-            Case Is >= 200
+            Case Is >= 170
                 PopulateTaskS = -1
                 PopulateIter += 1
                 Exit Sub
@@ -1648,18 +1758,19 @@ Public Class AudioConverterForm
     End Sub
 
     Private Sub AudioConverterForm_KeyDown(sender As Object, e As KeyEventArgs) Handles MyBase.KeyDown
-        Select Case e.KeyData
-            Case Keys.ShiftKey Or Keys.Shift Or Keys.Control, Keys.ControlKey Or Keys.Shift Or Keys.Control
-                If Not ButtonAltImgDone AndAlso Not e.Alt Then
-                    ButtonAltImage(True)
-                End If
-            Case Keys.Cancel Or Keys.Control
-                Close()
-                Dispose(True)
-                g.MainForm.Close()
-                g.MainForm.Dispose()
-                Application.Exit()
-        End Select
+        Dim ekd As Integer = e.KeyData
+        If ekd = (Keys.Control Or Keys.F) Then  'ekd <= 90 AndAlso ekd >= 65 OrElse ekd >= 48 AndAlso ekd <= 57 OrElse ekd >= 96 AndAlso ekd <= 105 Then ' [A-Z] [1-9]&numL
+            If ActiveControl Is TBFind Then TBFind_Enter(Me, EventArgs.Empty) Else TBFind.Select()
+            'TBFind.AppendText([Enum](Of Keys).GetName(ekd).ToLowerInvariant)
+            'TBFind.ScrollToCaret()
+            e.SuppressKeyPress = True
+        ElseIf ekd = (Keys.ShiftKey Or Keys.Shift Or Keys.Control) OrElse ekd = (Keys.ControlKey Or Keys.Shift Or Keys.Control) Then
+            If Not ButtonAltImgDone AndAlso Not e.Alt Then
+                ButtonAltImage(True)
+            End If
+        ElseIf ekd = (Keys.Cancel Or Keys.Control) Then
+            g.KillMeAll()
+        End If
     End Sub
 
     Private Sub AudioConverterForm_KeyUp(sender As Object, e As KeyEventArgs) Handles MyBase.KeyUp
@@ -1852,8 +1963,10 @@ Public Class AudioConverterForm
             AudioSBL.InnerListChanged()
             AudioSBL.ResetBindings()
             dgvAudio.Rows.Clear()
-            UpdateControls()
+            TBFind.Clear()
+            TBFind_Leave(Me, EventArgs.Empty)
             CurrentType = Nothing
+            UpdateControls()
             GC.Collect()
             Exit Sub
         End If
@@ -1918,14 +2031,14 @@ Public Class AudioConverterForm
         Dim crI As Integer = cc.Y
 
         If crI > 0 Then
-            AudioSBL.RaiseListChangedEvents = False
+            AudioSBL.RaiseListChangedEvents = False ' Test this !!!
             Dim current As AudioProfile = AudioSBL(crI)
             AudioSBL.RemoveAt(crI)
             crI -= 1
             AudioSBL.Insert(crI, current)
-            dgvAudio.CurrentCell = dgvAudio.Rows.Item(crI).Cells(cc.X)
             AudioSBL.RaiseListChangedEvents = True
             AudioSBL.ResetItem(crI)
+            dgvAudio.CurrentCell = dgvAudio(cc.X, crI)
         End If
 
         PopulateCache(4000000)
@@ -1946,9 +2059,9 @@ Public Class AudioConverterForm
             AudioSBL.RemoveAt(crI)
             crI += 1
             AudioSBL.Insert(crI, current)
-            dgvAudio.CurrentCell = dgvAudio.Rows.Item(crI).Cells(cc.X)
-            AudioSBL.RaiseListChangedEvents = False
+            AudioSBL.RaiseListChangedEvents = True
             AudioSBL.ResetItem(crI)
+            dgvAudio.CurrentCell = dgvAudio.Rows.Item(crI).Cells(cc.X)
         End If
 
         PopulateCache(4000000)
@@ -1994,7 +2107,7 @@ Public Class AudioConverterForm
     End Sub
     Private Sub laThreads_DoubleClick(sender As Object, e As EventArgs) Handles laThreads.DoubleClick
         If numThreads.Visible = False Then
-            laThreads.Text = "Threads :"
+            laThreads.Text = "Threads : "
             numThreads.Value = If(MaxThreads > 0, MaxThreads, s.ParallelProcsNum)
             numThreads.Visible = True
         Else
@@ -2002,16 +2115,18 @@ Public Class AudioConverterForm
         End If
     End Sub
 
-    Private Sub bnSort_Click(sender As Object, e As EventArgs) Handles bnSort.Click
-        If dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None Then
-            dgvAudio.Columns(0).FillWeight = 10
-            dgvAudio.Columns(1).FillWeight = 100
-            dgvAudio.Columns(2).FillWeight = 400
-            dgvAudio.Columns(3).FillWeight = 500
-            dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        ElseIf dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill Then
-            dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
-        End If
+    Private Sub bnSort_Click(sender As Object, e As EventArgs) Handles BnSort.Click
+        With dgvAudio
+            If .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None Then
+                .Columns(0).FillWeight = 10
+                .Columns(1).FillWeight = 100
+                .Columns(2).FillWeight = 400
+                .Columns(3).FillWeight = 500
+                .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+            ElseIf .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill Then
+                .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
+            End If
+        End With
         AutoSizeColumns(My.Computer.Keyboard.ShiftKeyDown)
         UpdateControls()
     End Sub
@@ -2044,6 +2159,8 @@ Public Class AudioConverterForm
             If Not PopulateTask?.IsCompleted AndAlso Not PopulateWSW.IsRunning Then PopulateTask.Wait(60)
             Dim miT = Task.Run(Sub() MediaInfo.ClearCache())
             Text = "AudioConverter"
+            TBFind.Clear()
+            TBFind_Leave(Me, EventArgs.Empty)
             Dim uAR As AudioProfile()
             If FindDuplicates(False) > 0 Then uAR = AudioCL.Distinct(New AudioProfileHComparer).ToArray Else uAR = AudioCL.ToArray
             Dim isGAP = rC > 0 AndAlso uAR(0).IsGapProfile

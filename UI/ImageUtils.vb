@@ -5,48 +5,55 @@ Imports System.Globalization
 Imports System.Threading.Tasks
 
 Public Class ImageHelp
-    Public Shared Coll As PrivateFontCollection
-    Private Shared AwesomePath As String = Folder.Apps + "\Fonts\FontAwesome.ttf"
-    Private Shared SegoePath As String = Folder.Apps + "\Fonts\Segoe-MDL2-Assets.ttf"
-    Private Shared FontFilesExist As Boolean = File.Exists(AwesomePath) AndAlso File.Exists(SegoePath)
+    'Public Shared Coll As PrivateFontCollection
+    'Private Shared ReadOnly AwesomePath As String = Folder.Apps & "Fonts\FontAwesome.ttf"
+    'Private Shared FontFilesExist As Boolean = File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") 'AndAlso File.Exists(Folder.Apps & "Fonts\Segoe-MDL2-Assets.ttf")
+    Private Shared ReadOnly FamilySagoe As New FontFamily("Segoe MDL2 Assets")
+    Private Shared FamilyAwesome As FontFamily
+
+    Public Shared Sub CreateAwesomeFontFamily()
+        If File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") Then
+            Using Coll As New PrivateFontCollection
+                Coll.AddFontFile(Folder.Apps & "Fonts\FontAwesome.ttf")
+                FamilyAwesome = Coll.Families(0)
+            End Using
+        End If
+    End Sub
 
     Shared Async Function GetSymbolImageAsync(symbol As Symbol) As Task(Of Image)
         Return Await Task.Run(Of Image)(Function() GetSymbolImage(symbol))
     End Function
 
     Shared Function GetSymbolImage(symbol As Symbol) As Image
-        If Not FontFilesExist Then Return Nothing
-        'Dim legacy = OSVersion.Current < OSVersion.Windows10 'Opt. Assume W10 Only!!!
-
-        If Coll Is Nothing Then
-            Coll = New PrivateFontCollection
-            Coll.AddFontFile(AwesomePath)
-            'If legacy Then Coll.AddFontFile(SegoePath)
-        End If
-
-        Dim family As FontFamily
-
-        If CInt(symbol) > 61400 Then
-            If Coll.Families.Length > 0 Then family = Coll.Families(0)
-        Else
-            'If legacy Then
-            'If Coll.Families.Length > 1 Then family = Coll.Families(1)
-            'Else
-            family = New FontFamily("Segoe MDL2 Assets")
-            'End If
-        End If
-
-        If family Is Nothing Then Return Nothing
-        Dim font As New Font(family, 12)
-        Dim fontHeight = font.Height
-        Dim bitmap As New Bitmap(CInt(fontHeight * 1.1F), CInt(fontHeight * 1.1F))
-        Dim graphics = Drawing.Graphics.FromImage(bitmap)
-        graphics.TextRenderingHint = TextRenderingHint.AntiAlias
-        graphics.DrawString(Convert.ToChar(CInt(symbol)), font, Brushes.Black, -fontHeight * 0.1F, fontHeight * 0.07F)
-        graphics.Dispose()
-        font.Dispose()
-        family?.Dispose()
-
+        'If Not FontFilesExist Then Return Nothing
+        'If Coll Is Nothing OrElse FamilyAwesome Is Nothing Then
+        '    Coll = New PrivateFontCollection
+        '    Coll.AddFontFile(AwesomePath)
+        '    FamilyAwesome = Coll.Families(0)
+        'End If
+        'Dim family As FontFamily
+        'If symbol > 61400 Then
+        '    'If FamilyAwesome Is Nothing Then  'Init in MainForm New
+        '    '        Dim Coll = New PrivateFontCollection
+        '    '        Coll.AddFontFile(AwesomePath)
+        '    '        FamilyAwesome = Coll.Families(0)
+        '    'End If
+        '    family = FamilyAwesome 'Coll.Families(0)
+        'Else
+        '    family = FamilySagoe ' New FontFamily("Segoe MDL2 Assets")
+        'End If
+        'If family Is Nothing Then Return Nothing
+        If symbol > 61400 AndAlso FamilyAwesome Is Nothing Then Return Nothing
+        Dim bitmap As Bitmap
+        'Using font As New Font(family, 12)
+        Using font As New Font(If(symbol > 61400, FamilyAwesome, FamilySagoe), 12)
+            Dim fontHeight = 16 ' font.Height
+            bitmap = New Bitmap(CInt(fontHeight * 1.1F), CInt(fontHeight * 1.1F))
+            Using graphics = Drawing.Graphics.FromImage(bitmap)
+                graphics.TextRenderingHint = TextRenderingHint.AntiAlias
+                graphics.DrawString(Convert.ToChar(symbol), font, Brushes.Black, -fontHeight * 0.1F, fontHeight * 0.07F)
+            End Using
+        End Using
         Return bitmap
     End Function
 End Class

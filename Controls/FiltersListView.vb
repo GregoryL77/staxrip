@@ -40,8 +40,8 @@ Public Class FiltersListView
         End If
 
         BlockItemCheck = True
-        Items.Clear()
         BeginUpdate()
+        Items.Clear()
 
         For Each filter In p.Script.Filters
             Dim item As New ListViewItem
@@ -65,6 +65,7 @@ Public Class FiltersListView
     End Sub
 
     Sub RebuildMenu()
+        Menu.SuspendLayout()
         Menu.Items.ClearAndDisplose
         Dim filterProfiles = If(p.Script.Engine = ScriptEngine.AviSynth, s.AviSynthProfiles, s.VapourSynthProfiles)
         Dim selectedFunc = Function() SelectedItems.Count > 0
@@ -147,6 +148,7 @@ Public Class FiltersListView
                                          End If
                                      Next
                                  End Sub
+        Menu.ResumeLayout()
     End Sub
 
     Sub MoveUp()

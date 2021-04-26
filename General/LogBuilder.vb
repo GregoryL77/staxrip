@@ -40,7 +40,7 @@ Public Class LogBuilder
             Append(FormatHeader(title))
 
             If content.NotNullOrEmptyS Then
-                If content.EndsWith(BR) Then
+                If content.EndsWith(BR, StringComparison.Ordinal) Then
                     Append(content)
                 Else
                     Append(content + BR)
@@ -51,7 +51,7 @@ Public Class LogBuilder
 
     Sub WriteLine(value As String)
         If value.NotNullOrEmptyS Then
-            If value.EndsWith(BR) Then
+            If value.EndsWith(BR, StringComparison.Ordinal) Then
                 Append(value)
             Else
                 Append(value + BR)

@@ -69,8 +69,9 @@ Namespace UI
             End If
 
             If DefaultWidthScale <> 0 Then
-                Dim defaultWidth = CInt(Font.Height * DefaultWidthScale)
-                Dim defaultHeight = CInt(Font.Height * DefaultHeightScale)
+                Dim fh As Integer = Font.Height
+                Dim defaultWidth = CInt(fh * DefaultWidthScale)
+                Dim defaultHeight = CInt(fh * DefaultHeightScale)
 
                 Dim w = s.Storage.GetInt(Me.GetType().Name + "width")
                 Dim h = s.Storage.GetInt(Me.GetType().Name + "height")
@@ -187,7 +188,7 @@ Namespace UI
             Dim ret As New List(Of ListBag(Of T))
 
             For Each i As T In System.Enum.GetValues(GetType(T))
-                ret.Add(New ListBag(Of T)(DispNameAttribute.GetValueForEnum(i), i))
+                ret.Add(New ListBag(Of T)(UI.DispNameAttribute.GetValueForEnum(i), i))
             Next
 
             Return ret.ToArray
@@ -249,7 +250,7 @@ Namespace UI
         Sub RestorePosition(form As Form)
             Dim text = GetText(form)
 
-            If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso Not TypeOf form Is InputBoxForm Then
+            If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso Not TypeOf form Is UI.InputBoxForm Then
                 For Each i In s.WindowPositionsRemembered
                     If text.StartsWith(i) OrElse i = "all" Then
                         RestorePositionInternal(form)
@@ -305,7 +306,7 @@ Namespace UI
         End Sub
 
         Overloads Overrides Function EditValue(context As ITypeDescriptorContext, provider As IServiceProvider, value As Object) As Object
-            Dim form As New StringEditorForm
+            Dim form As New UI.StringEditorForm
             form.rtb.Text = DirectCast(value, String)
 
             If form.ShowDialog() = DialogResult.OK Then

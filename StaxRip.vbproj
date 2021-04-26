@@ -127,8 +127,8 @@
     <Reference Include="JM.LinqFaster, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\JM.LinqFaster.1.1.2\lib\net461\JM.LinqFaster.dll</HintPath>
     </Reference>
-    <Reference Include="KGySoft.CoreLibraries, Version=5.6.0.0, Culture=neutral, PublicKeyToken=b45eba277439ddfe, processorArchitecture=MSIL">
-      <HintPath>packages\KGySoft.CoreLibraries.5.6.0\lib\net472\KGySoft.CoreLibraries.dll</HintPath>
+    <Reference Include="KGySoft.CoreLibraries, Version=5.6.1.0, Culture=neutral, PublicKeyToken=b45eba277439ddfe, processorArchitecture=MSIL">
+      <HintPath>packages\KGySoft.CoreLibraries.5.6.1\lib\net472\KGySoft.CoreLibraries.dll</HintPath>
     </Reference>
     <Reference Include="LinqFasterer, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\LinqFasterer.2.1.0\lib\netstandard2.0\LinqFasterer.dll</HintPath>
@@ -218,7 +218,6 @@
     <Import Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ApplicationEvents.vb" />
     <Compile Include="Controls\PreprocessingControl.vb">
       <SubType>UserControl</SubType>
     </Compile>
@@ -530,6 +529,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\AudioConverterForm.resx">
       <DependentUpon>AudioConverterForm.vb</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\AudioForm.resx">
       <DependentUpon>AudioForm.vb</DependentUpon>

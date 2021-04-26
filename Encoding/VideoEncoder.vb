@@ -251,10 +251,10 @@ Public MustInherit Class VideoEncoder
                 End If
             End While
 
-            g.MainForm.tbTargetWidth.Text = p.TargetWidth.ToString
-            g.MainForm.tbTargetHeight.Text = p.TargetHeight.ToString
+            g.MainForm.tbTargetWidth.Text = p.TargetWidth.ToInvariantString
+            g.MainForm.tbTargetHeight.Text = p.TargetHeight.ToInvariantString
 
-            Log.WriteLine("Target image size: " & oldWidth.ToString & "x" & oldHeight.ToString & " -> " & p.TargetWidth.ToString & "x" & p.TargetHeight.ToString)
+            Log.WriteLine("Target image size: " & oldWidth.ToInvariantString & "x" & oldHeight.ToInvariantString & " -> " & p.TargetWidth.ToInvariantString & "x" & p.TargetHeight.ToInvariantString)
 
             If p.AutoSmartCrop Then
                 g.MainForm.StartSmartCrop()
@@ -274,7 +274,7 @@ Public MustInherit Class VideoEncoder
         g.MainForm.UpdateEncoderStateRelatedControls()
         g.MainForm.SetEncoderControl(p.VideoEncoder.CreateEditControl)
         g.MainForm.lgbEncoder.Text = g.ConvertPath(p.VideoEncoder.Name).Shorten(38)
-        g.MainForm.llMuxer.Text = p.VideoEncoder.Muxer.OutputExt.ToUpper
+        g.MainForm.llMuxer.Text = p.VideoEncoder.Muxer.OutputExt.ToUpperInvariant
 
         If GetFixedBitrate() <> 0 Then
             p.BitrateIsFixed = True
@@ -295,7 +295,7 @@ Public MustInherit Class VideoEncoder
 
         If muxer.Edit = DialogResult.OK Then
             Me.Muxer = muxer
-            g.MainForm.llMuxer.Text = Me.Muxer.OutputExt.ToUpper
+            g.MainForm.llMuxer.Text = Me.Muxer.OutputExt.ToUpperInvariant
             g.MainForm.Refresh()
             g.MainForm.UpdateSizeOrBitrate()
             g.MainForm.Assistant()
@@ -313,7 +313,7 @@ Public MustInherit Class VideoEncoder
     Sub LoadMuxer(profile As Profile)
         Muxer = DirectCast(ObjectHelp.GetCopy(profile), Muxer)
         Muxer.Init()
-        g.MainForm.llMuxer.Text = Muxer.OutputExt.ToUpper
+        g.MainForm.llMuxer.Text = Muxer.OutputExt.ToUpperInvariant
         Dim newPath = p.TargetFile.ChangeExt(Muxer.OutputExt)
 
         If p.SourceFile.NotNullOrEmptyS AndAlso newPath.ToLowerInvariant.Equals(p.SourceFile.ToLowerInvariant) Then
@@ -345,7 +345,7 @@ Public MustInherit Class VideoEncoder
     End Function
 
     Shared Function GetDefaults() As List(Of VideoEncoder)
-        Dim ret As New List(Of VideoEncoder)
+        Dim ret As New List(Of VideoEncoder)(16)
 
         ret.Add(New x264Enc)
         ret.Add(New x265Enc)
@@ -501,7 +501,7 @@ Public MustInherit Class BasicVideoEncoder
                             If a.Length - 1 > x Then
                                 If optionParam.IntegerValue Then
                                     For xOpt = 0 To optionParam.Options.Length - 1
-                                        If a(x + 1) = xOpt.ToString Then
+                                        If a(x + 1) = xOpt.ToInvariantString Then
                                             optionParam.Value = xOpt
                                             params.RaiseValueChanged(param)
                                             exitFor = True
@@ -527,7 +527,7 @@ Public MustInherit Class BasicVideoEncoder
                             ElseIf a.Length - 1 = x Then
                                 If Not optionParam.Values Is Nothing Then
                                     For xOpt = 0 To optionParam.Values.Length - 1
-                                        If a(x) = optionParam.Values(xOpt) AndAlso optionParam.Values(xOpt).StartsWith("--") Then
+                                        If a(x) = optionParam.Values(xOpt) AndAlso optionParam.Values(xOpt).StartsWith("--", StringComparison.Ordinal) Then
                                             optionParam.Value = xOpt
                                             params.RaiseValueChanged(param)
                                             exitFor = True
@@ -636,7 +636,7 @@ Public Class BatchEncoder
         script.Engine = p.Script.Engine
         script.Filters = p.Script.GetFiltersCopy
         Dim code As String
-        Dim every = ((100 \ p.CompCheckRange) * 14).ToString
+        Dim every = ((100 \ p.CompCheckRange) * 14).ToInvariantString
 
         If script.Engine = ScriptEngine.AviSynth Then
             code = "SelectRangeEvery(" + every + ",14)"
@@ -676,7 +676,7 @@ Public Class BatchEncoder
 
         g.MainForm.Assistant()
 
-        Log.WriteLine(CInt(Calc.GetPercent).ToString() + " %")
+        Log.WriteLine(CInt(Calc.GetPercent).ToInvariantString + " %")
         Log.Save()
     End Sub
 End Class

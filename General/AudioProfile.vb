@@ -174,7 +174,7 @@ Public MustInherit Class AudioProfile
 
     Overridable Sub Migrate()
         'FileValue = ""  ' or Nothing ????
-        FileKeyHashValue = MediaInfo.KeyDefault
+        'FileKeyHashValue = MediaInfo.KeyDefault
         DisplayNameValue = Nothing
         'Debug todo: Remove some of it: ???
         SourceSamplingRateValue = 0
@@ -182,7 +182,7 @@ Public MustInherit Class AudioProfile
         'StreamName = Nothing
         '_Decoder = Nothing
         '_Language = New Language
-        'Depth =  Org was 24???
+        'Depth = 0 ' Org was 24???
     End Sub
 
     'Public Function DeepCopy(path As String) As AudioProfile
@@ -808,13 +808,13 @@ Public Class GUIAudioProfile
     Public Overrides Sub Migrate()
         MyBase.Migrate()
         Params.Migrate()
-        DefaultnameValue = Nothing
+        ' DefaultnameValue = Nothing
         SourceDepth = 0
         SourceChannels = 0
-        _SupportedInput = Nothing
-        _CommandLines = Nothing
-        _OutputFileType = Nothing
-        If Params.Codec <> AudioCodec.DTS Then ExtractDTSCore = False
+        '_SupportedInput = Nothing
+        '_CommandLines = Nothing
+        '_OutputFileType = Nothing
+        ' If Params.Codec <> AudioCodec.DTS Then ExtractDTSCore = False
     End Sub
 
     Public SourceDepth As Integer

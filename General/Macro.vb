@@ -587,7 +587,7 @@ Public Class Macro
 
             For Each match As Match In mc
                 Dim package = StaxRip.Package.Items.Values.FirstOrDefault(
-                    Function(pack) pack.Name.ToLower = match.Groups(1).Value.ToLower)
+                    Function(pack) pack.Name.ToLowerInvariant = match.Groups(1).Value.ToLowerInvariant)
 
                 Dim path = package?.Path
 
@@ -604,7 +604,7 @@ Public Class Macro
         If value.Contains("%app_dir:") Then
             For Each match As Match In Regex.Matches(value, "%app_dir:(.+?)%")
                 Dim package = StaxRip.Package.Items.Values.FirstOrDefault(
-                    Function(pack) pack.Name.ToLower = match.Groups(1).Value.ToLower)
+                    Function(pack) pack.Name.ToLowerInvariant = match.Groups(1).Value.ToLowerInvariant)
 
                 Dim path = package?.Path
 

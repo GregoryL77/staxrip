@@ -18,13 +18,13 @@ Imports VB6 = Microsoft.VisualBasic
 
 Module StringExtensions
     Public SeparatorD As Char = Path.DirectorySeparatorChar
-    Public InvalidFileSystemCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}
-    Public InvalidFSChI16 As UShort() = InvalidFileSystemCh.SelectF(Function(c) Convert.ToUInt16(c))
-    Public InvalidFileCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}
-    Public InvalidFChI16 As UShort() = InvalidFileCh.SelectF(Function(c) Convert.ToUInt16(c))
+    'Public InvalidFileSystemCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}
+    Public InvalidFSChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}.SelectF(Function(c) Convert.ToUInt16(c))
+    'Public InvalidFileCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}
+    Public InvalidFChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}.SelectF(Function(c) Convert.ToUInt16(c))
     Public EscapeCh As Char() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}
-    Public EscapeChI16 As UShort() = EscapeCh.SelectF(Function(c) Convert.ToUInt16(c))
-    'Public EscapeChHS As HashSet(Of Char) = EscapeCh.ToHashSet
+    Public EscapeChI16 As UShort() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}.SelectF(Function(c) Convert.ToUInt16(c))
+    Public EscapeChHS As HashSet(Of Char) = EscapeCh.ToHashSet
 
     <Extension>
     Function TrimTrailingSeparator(instance As String) As String
@@ -209,21 +209,28 @@ Module StringExtensions
 
     <Extension()>
     Function Escape(instance As String) As String
-        If instance.NullOrEmptyS Then ' try with HashSet
+        If instance.NullOrEmptyS Then
             Return ""
         End If
         'For iCh = 0 To EscapeChI16.Length - 1 'Worst Perf - string-ForLoop->ChArray.Contains is Faster than string.contains, string.ToCharArray.containsF is Faster;'2550ms-ContainsF ; ForLoop 2400ms ; 2xForLoop NoCharArray 2350ms-Fastest NoSimd,Simd~1200ms
         'Dim iChA = instance.ToCharArray.SelectF(Function(ch) Convert.ToUInt16(ch))
+
+        ''Dim instHS = instance.ToHashSet
+        'If EscapeChHS.Overlaps(instance) Then
+        '    Return """" & instance & """"
+        'End If
+
         Dim iChA(instance.Length - 1) As UShort
         For i = 0 To instance.Length - 1
             iChA(i) = Convert.ToUInt16(instance(i))
         Next i
 
-        For iCh = 0 To EscapeCh.Length - 1
+        For iCh = 0 To EscapeChI16.Length - 1
+            'If instHS.Contains(EscapeCh(iCh)) Then Return """" & instance & """" ' try with HashSet
             If iChA.ContainsS(EscapeChI16(iCh)) Then Return """" & instance & """"
             'For c = 0 To instance.Length - 1
             'If instance(c) = EscapeCh(iCh) Then
-            Return """" & instance & """"
+            ' Return """" & instance & """"
             'End If
             'Next c
         Next iCh
@@ -1169,7 +1176,10 @@ Module UIExtensions
     <Extension()>
     Sub ClearAndDisplose(instance As ToolStripItemCollection)
         For i = instance.Count - 1 To 0 Step -1
-            If TypeOf instance(i) Is IDisposable Then instance(i).Dispose()
+            If TypeOf instance(i) Is IDisposable Then
+                'instance(i).Image?.Dispose()
+                instance(i).Dispose()
+            End If
         Next i
         instance.Clear()
     End Sub

@@ -910,6 +910,7 @@ Public Class MuxerForm
             compression.Property = NameOf(MkvMuxer.Compression)
 
             lastAction = Sub()
+                             ml.Button.Menu.SuspendLayout()
                              For Each i In Language.Languages
                                  If i.IsCommon Then
                                      ml.Button.Add(i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
@@ -918,7 +919,8 @@ Public Class MuxerForm
                                  End If
 
                                  Application.DoEvents()
-                             Next
+                             Next i
+                             ml.Button.Menu.ResumeLayout(False)
                          End Sub
 
         ElseIf TypeOf Muxer Is MP4Muxer Then

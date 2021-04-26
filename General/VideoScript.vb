@@ -34,7 +34,7 @@ Public Class VideoScript
     End Function
 
     Overridable Function GetScript(skipCategory As String) As String
-        Dim sb As New StringBuilder(2048)
+        Dim sb As New StringBuilder(1024) '1024
 
         If p.CodeAtTop.NotNullOrEmptyS Then
             sb.AppendLine(p.CodeAtTop)
@@ -677,6 +677,9 @@ Public Class VideoFilter
     ReadOnly Property Name As String
         Get
             If Path.Contains("|") Then
+                'im prl = Path.RightLast("|")
+                'If prl IsNot "" Then
+                'Return prl.Trim
                 Return Path.RightLast("|").Trim
             End If
 
@@ -693,7 +696,8 @@ Public Class VideoFilter
     End Function
 
     Function CompareTo(other As VideoFilter) As Integer Implements System.IComparable(Of VideoFilter).CompareTo
-        Return Path.CompareTo(other.Path)
+        'Return Path.CompareTo(other.Path)
+        Return String.CompareOrdinal(Path, other.Path)
     End Function
 
     Shared Function GetDefault(category As String, name As String) As VideoFilter
@@ -761,7 +765,7 @@ Public Class FilterCategory
     End Sub
 
     Shared Function GetAviSynthDefaults() As List(Of FilterCategory)
-        Dim ret As New List(Of FilterCategory)
+        Dim ret As New List(Of FilterCategory)(16)
 
         Dim src As New FilterCategory("Source")
         src.Filters.AddRange(
@@ -852,7 +856,7 @@ Public Class FilterCategory
     End Function
 
     Shared Function GetVapourSynthDefaults() As List(Of FilterCategory)
-        Dim ret As New List(Of FilterCategory)
+        Dim ret As New List(Of FilterCategory)(16)
 
         Dim src As New FilterCategory("Source")
         src.Filters.AddRange(

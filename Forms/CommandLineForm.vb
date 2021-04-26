@@ -303,7 +303,7 @@ Public Class CommandLineForm
 
         Dim find = cbGoTo.Text.ToLowerInvariant
         Dim findNoSpace = find.Replace(" ", "")
-        Dim matchedItems As New HashSet(Of Item)(64)
+        Dim matchedItems As New HashSet(Of Item)(50)
 
         If find.Length > 1 Then
             For Each item In Items

@@ -35,8 +35,7 @@ Public Class Package
     Property VersionAllowOld As Boolean = True
     Property VersionDate As Date
     Property WebURL As String
-
-    Shared Property Items As New SortedDictionary(Of String, Package)
+    Shared Property Items As New SortedDictionary(Of String, Package)(StringComparer.Ordinal)
 
     Shared Property DGIndex As Package = Add(New Package With {
         .Name = "DGIndex",

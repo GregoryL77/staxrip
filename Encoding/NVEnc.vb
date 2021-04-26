@@ -114,9 +114,7 @@ Public Class NVEnc
 
     Overrides Property QualityMode() As Boolean
         Get
-            Return Params.Mode.Value = 0 OrElse
-                ((Params.Mode.Value = 3 OrElse Params.Mode.Value = 4) AndAlso
-                Params.ConstantQualityMode.Value)
+            Return Params.Mode.Value = 0 OrElse (Params.Mode.Value >= 2 AndAlso Params.ConstantQualityMode.Value)
         End Get
         Set(Value As Boolean)
         End Set
@@ -143,7 +141,7 @@ Public Class NVEnc
             vpp-decimate audio-disposition audio-metadata option-list sub-disposition sub-metadata
             metadata video-metadata video-tag attachment-copy chapter-no-trim"
 
-        tester.UndocumentedSwitches = "cbrhq vbrhq"
+        'tester.UndocumentedSwitches = "cbrhq vbrhq"
         tester.Package = Package.NVEnc
         tester.CodeFile = Folder.Startup.Parent + "Encoding\nvenc.vb"
 
@@ -172,13 +170,11 @@ Public Class NVEnc
         Property Mode As New OptionParam With {
             .Text = "Mode",
             .Expand = True,
-            .Switches = {"--cqp", "--cbr", "--cbrhq", "--vbr", "--vbrhq"},
+            .Switches = {"--cqp", "--cbr", "--vbr"},
             .Options = {"CQP - Constant QP",
             "CBR - Constant Bitrate",
-            "CBR HQ (=CBR+2PassF, obsolete)",
-            "VBR - Variable Bitrate",
-            "VBR HQ (=VBR+2PassF, obsolete)"},
-            .VisibleFunc = Function() Not Lossless.Value,
+            "VBR - Variable Bitrate"},
+        .VisibleFunc = Function() Not Lossless.Value,
             .ArgsFunc = AddressOf GetModeArgs,
             .ImportAction = Sub(param, arg)
                                 If Mode.Switches.Contains(param) Then
@@ -193,7 +189,7 @@ Public Class NVEnc
         Property Multipass As New OptionParam With {
             .Text = "Multipass",
             .Switch = "--multipass",
-            .VisibleFunc = Function() Mode.Value = 1 OrElse Mode.Value = 3,
+            .VisibleFunc = Function() Mode.Value >= 1,
             .Options = {"2pass-full", "2pass-quarter", "none"},
             .Init = 2}
 
@@ -223,7 +219,7 @@ Public Class NVEnc
         Property ConstantQualityMode As New BoolParam With {
             .Switches = {"--vbr-quality"},
             .Text = "Constant Quality Mode",
-            .VisibleFunc = Function() Not Lossless.Value AndAlso Mode.Value >= 3
+            .VisibleFunc = Function() Not Lossless.Value AndAlso Mode.Value >= 2
         }
 
         Property QPAdvanced As New BoolParam With {
@@ -263,7 +259,7 @@ Public Class NVEnc
             .Switch = "--vbr-quality",
             .Text = "VBR Quality",
             .Config = {0, 51, 1, 1},
-            .VisibleFunc = Function() Not Lossless.Value AndAlso Mode.Value >= 3,
+            .VisibleFunc = Function() Not Lossless.Value AndAlso Mode.Value >= 2,
             .ArgsFunc = Function()
                             If ConstantQualityMode.Value OrElse
                                 VbrQuality.Value <> VbrQuality.DefaultValue Then
@@ -1280,11 +1276,8 @@ Public Class NVEnc
                 Case 1
                     Return "--cbr " & p.VideoBitrate
                 Case 2
-                    Return "--cbrhq " & p.VideoBitrate
-                Case 3
                     Return "--vbr " & bitrate
-                Case 4
-                    Return "--vbrhq " & bitrate
+
             End Select
         End Function
 

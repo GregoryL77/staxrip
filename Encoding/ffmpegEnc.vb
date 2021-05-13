@@ -57,7 +57,7 @@ Public Class ffmpegEnc
             Dim a2 = Sub()
                          Dim codecText = newParams.Codec.OptionText
                          Dim consoleHelp = ProcessHelp.GetConsoleOutput(Package.ffmpeg.Path, "-hide_banner -h encoder=" + newParams.Codec.ValueText)
-                         Dim helpDic As New Dictionary(Of String, String) From {
+                         Dim helpDic As New Dictionary(Of String, String)(11, StringComparer.Ordinal) From {
                             {"x264", "https://trac.ffmpeg.org/wiki/Encode/H.264"},
                             {"x265", "https://trac.ffmpeg.org/wiki/Encode/H.265"},
                             {"XviD", "https://trac.ffmpeg.org/wiki/Encode/MPEG-4"},

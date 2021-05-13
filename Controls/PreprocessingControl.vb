@@ -173,7 +173,11 @@ Public Class PreprocessingControl
         InitializeComponent()
 
         TipProvider = New TipProvider(Nothing)
-        AddHandler Disposed, Sub() TipProvider.Dispose()
+        Dim deh As EventHandler = Sub()
+                                      RemoveHandler Me.Disposed, deh
+                                      TipProvider.Dispose()
+                                  End Sub
+        AddHandler Disposed, deh
 
         For Each i In ObjectHelp.GetCopy(Of List(Of Demuxer))(s.Demuxers)
             AddItem(i)

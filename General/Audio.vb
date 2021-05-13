@@ -100,7 +100,8 @@ Public Class Audio
             ret += " " & stream.Delay & "ms"
         End If
 
-        If Not stream.Language.TwoLetterCode.Equals("iv") Then
+        'If Not stream.Language.TwoLetterCode.Equals("iv") Then
+        If stream.Language.LCID <> 127 Then
             ret += " " + stream.Language.ToString
         End If
 

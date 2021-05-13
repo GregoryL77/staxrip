@@ -395,7 +395,8 @@ Public MustInherit Class VideoEncoder
     End Function
 
     Function CompareToVideoEncoder(other As VideoEncoder) As Integer Implements System.IComparable(Of VideoEncoder).CompareTo
-        Return Name.CompareTo(other.Name)
+        ' Return Name.CompareTo(other.Name)
+        Return String.CompareOrdinal(Name, other.Name)
     End Function
 
     Overridable Sub RunCompCheck()
@@ -485,12 +486,13 @@ Public MustInherit Class BasicVideoEncoder
                     ElseIf TypeOf param Is NumParam Then
                         Dim numParam = DirectCast(param, NumParam)
 
-                        If numParam.GetSwitches.Contains(a(x)) AndAlso
-                            a.Length - 1 > x AndAlso a(x + 1).IsDouble Then
-
-                            numParam.Value = a(x + 1).ToDouble
-                            params.RaiseValueChanged(param)
-                            Exit For
+                        If numParam.GetSwitches.Contains(a(x)) AndAlso a.Length - 1 > x Then
+                            Dim tdax1 As Double = a(x + 1).ToDouble(Double.NaN) 'opt
+                            If Not Double.IsNaN(tdax1) Then
+                                numParam.Value = tdax1
+                                params.RaiseValueChanged(param)
+                                Exit For
+                            End If
                         End If
                     ElseIf TypeOf param Is OptionParam Then
                         Dim optionParam = DirectCast(param, OptionParam)

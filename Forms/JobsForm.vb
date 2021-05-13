@@ -209,24 +209,26 @@ Friend Class JobsForm
         lv.AddItems(JobManager.GetJobs())
         lv.SelectFirst()
 
-        Dim cms As New ContextMenuStripEx()
+        Dim cms As New ContextMenuStripEx(components)
         cms.Form = Me
         bnMenu.ContextMenuStrip = cms
         lv.ContextMenuStrip = cms
+        Dim lreh As ListViewEx.ItemRemovedEventHandler = Sub(item)
+                                                             Dim fp = DirectCast(item.Tag, Job).Path
 
-        AddHandler Disposed, Sub()
-                                 FileWatcher.Dispose()
-                                 cms.Items.ClearAndDisplose
-                                 cms.Dispose()
-                             End Sub
+                                                             If fp.StartsWith(Folder.Settings + "Batch Projects\", StringComparison.Ordinal) Then
+                                                                 FileHelp.Delete(fp)
+                                                             End If
+                                                         End Sub
+        Dim deh As EventHandler = Sub()
+                                      RemoveHandler Me.Disposed, deh
+                                      FileWatcher.Dispose()
+                                      cms.Dispose()
+                                      RemoveHandler lv.ItemRemoved, lreh
+                                  End Sub
+        AddHandler Disposed, deh
 
-        AddHandler lv.ItemRemoved, Sub(item)
-                                       Dim fp = DirectCast(item.Tag, Job).Path
-
-                                       If fp.StartsWith(Folder.Settings + "Batch Projects\") Then
-                                           FileHelp.Delete(fp)
-                                       End If
-                                   End Sub
+        AddHandler lv.ItemRemoved, lreh
 
         cms.SuspendLayout()
         cms.Add("Select All", Sub() SelectAll(), Keys.Control Or Keys.A, Function() lv.Items.Count > lv.SelectedItems.Count)

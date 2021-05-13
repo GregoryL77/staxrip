@@ -56,7 +56,11 @@ Public Class HelpForm
         Get
             If DocumentValue Is Nothing Then
                 Dim path = Folder.Temp + Guid.NewGuid.ToString + ".htm"
-                AddHandler g.MainForm.Disposed, Sub() FileHelp.Delete(path)
+                Dim mfdeh As EventHandler = Sub()
+                                                RemoveHandler g.MainForm.Disposed, mfdeh
+                                                FileHelp.Delete(path)
+                                            End Sub
+                AddHandler g.MainForm.Disposed, mfdeh
                 DocumentValue = New HelpDocument(path)
             End If
 

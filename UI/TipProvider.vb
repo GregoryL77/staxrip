@@ -9,8 +9,8 @@ Namespace UI
         Implements IExtenderProvider
 
         Private ToolTip As New ToolTip
-        Private TipTitles As New Dictionary(Of Control, String)
-        Private TipTexts As New Dictionary(Of Control, String)
+        Private TipTitles As New Dictionary(Of Control, String)(17)
+        Private TipTexts As New Dictionary(Of Control, String)(17)
 
         <Browsable(False)>
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -20,7 +20,6 @@ Namespace UI
             If Not component Is Nothing Then
                 component.Add(Me)
             End If
-
             ToolTip.AutomaticDelay = 1000
             ToolTip.AutoPopDelay = 10000
             ToolTip.InitialDelay = 1000
@@ -92,7 +91,7 @@ Namespace UI
                     Else
                         tipText = "Right-click for help"
                     End If
-                ElseIf Not AudioConverterForm.AudioConverterMode OrElse HelpDocument.MustConvert(tipText) Then 'AudionConverter Opt.
+                ElseIf Not AudioConverterForm.AudioConverterMode AndAlso HelpDocument.MustConvert(tipText) Then 'AudionConverter Opt.
                     tipText = HelpDocument.ConvertMarkup(tipText, True)
                 End If
 
@@ -162,7 +161,7 @@ Namespace UI
 
         Function GetTips() As StringPairList
             Dim ret As New StringPairList
-            Dim temp As New HashSet(Of String)
+            Dim temp As New HashSet(Of String)(7, StringComparer.Ordinal)
 
             For Each ctrl In TipTexts.Keys
                 If Not ctrl.IsDisposed AndAlso ctrl.Visible Then

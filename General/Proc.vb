@@ -134,14 +134,14 @@ Public Class Proc
             Return {", ETA ", "x)"}
         ElseIf commands.Contains("opusenc") Then
             Return {"x realtime,"}
-        ElseIf commands.Contains("fdkaac") Then
-            Return {"%]", "x)"}
-        ElseIf commands.Contains("eac3to") Then
-            Return {"process: ", "analyze: "}
         ElseIf commands.Contains("ffmpeg") Then
             Return {"frame=", "size="}
         ElseIf commands.Contains("wavpack") Then
             Return {"% done."}
+        ElseIf commands.Contains("fdkaac") Then
+            Return {"%]", "x)"}
+        ElseIf commands.Contains("eac3to") Then
+            Return {"process: ", "analyze: "}
         Else
             Return {" [ETA ", ", eta ", "frames: ", "Maximum Gain Found",
                 "transcoding ...", "process: ", "analyze: "}
@@ -485,24 +485,25 @@ Public Class Proc
             Return ("", False)
         End If
 
-        If Not TrimChars Is Nothing Then
+        If TrimChars IsNot Nothing Then
             value = value.Trim(TrimChars)
         End If
 
-        If SkipString.NotNullOrEmptyS AndAlso value.Contains(SkipString) Then
+        If SkipString IsNot Nothing AndAlso value.Contains(SkipString) Then
             Return (value, True)
         End If
 
         If SkipStrings IsNot Nothing Then
-            For Each i In SkipStrings
-                If value.Contains(i) Then
+            For i = 0 To SkipStrings.Length - 1
+                If value.Contains(SkipStrings(i)) Then
                     Return (value, True)
                 End If
             Next
         End If
 
-        If IntegerFrameOutput AndAlso value.Trim.IsInt Then
-            Return (value.Trim, True)
+        If IntegerFrameOutput Then
+            Dim vst As String = value.Trim
+            If vst.IsInt Then Return (vst, True)
         End If
 
         If IntegerPercentOutput AndAlso value.IsInt Then

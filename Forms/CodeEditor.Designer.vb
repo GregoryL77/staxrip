@@ -8,6 +8,7 @@ Partial Class CodeEditor
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub dispose(ByVal disposing As Boolean)
         Try
+            RemoveHandler MainFlowLayoutPanel.Layout, AddressOf MainFlowLayoutPanelLayout
             If disposing AndAlso components IsNot Nothing Then
                 components.Dispose()
             End If

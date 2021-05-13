@@ -22,9 +22,9 @@ Module StringExtensions
     Public InvalidFSChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}.SelectF(Function(c) Convert.ToUInt16(c))
     'Public InvalidFileCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}
     Public InvalidFChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}.SelectF(Function(c) Convert.ToUInt16(c))
-    Public EscapeCh As Char() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}
+    'Public EscapeCh As Char() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}
     Public EscapeChI16 As UShort() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}.SelectF(Function(c) Convert.ToUInt16(c))
-    Public EscapeChHS As HashSet(Of Char) = EscapeCh.ToHashSet
+    'Public EscapeChHS As HashSet(Of Char) = EscapeCh.ToHashSet
 
     <Extension>
     Function TrimTrailingSeparator(instance As String) As String
@@ -481,6 +481,12 @@ Module StringExtensions
     End Function
 
     <Extension()>
+    Function ToIntM(value As String) As Integer '-&H7FFFFFFEI) 'opt -2147483646I
+        Dim ret As Integer
+        Return If(Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, ret), ret, -2147483646I)
+    End Function
+
+    <Extension()>
     Function IsSingle(value As String) As Boolean
         If value.NotNullOrEmptyS Then
             value = value.Replace(",", ".")
@@ -762,7 +768,7 @@ Module StringExtensions
             If a(i) IsNot "" Then 'ToDo: Test this for Is ""!!!
                 ret.Add(a(i))
             Else
-                Console.Beep(3100, 120) 'debug!!!
+                Console.Beep(2900, 120) 'debug!!!
             End If
         Next
 
@@ -829,7 +835,7 @@ End Module
 
 Module MiscExtensions
 
-    Public ReadOnly CPUsC As Integer = Environment.ProcessorCount
+    Public ReadOnly CPUsC As Integer = Math.Max(Environment.ProcessorCount, 1)
     Public ReadOnly SWFreq As Double = Stopwatch.Frequency / 1000
 
     <Extension()>
@@ -1177,7 +1183,6 @@ Module UIExtensions
     Sub ClearAndDisplose(instance As ToolStripItemCollection)
         For i = instance.Count - 1 To 0 Step -1
             If TypeOf instance(i) Is IDisposable Then
-                'instance(i).Image?.Dispose()
                 instance(i).Dispose()
             End If
         Next i
@@ -1186,7 +1191,7 @@ Module UIExtensions
 
     <Extension()>
     Function ResizeToSmallIconSize(img As Image) As Image
-        If Not img Is Nothing AndAlso img.Size <> SystemInformation.SmallIconSize Then
+        If img IsNot Nothing AndAlso img.Size <> SystemInformation.SmallIconSize Then
             Dim s = SystemInformation.SmallIconSize
             Dim r As New Bitmap(s.Width, s.Height)
 

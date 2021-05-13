@@ -1,5 +1,7 @@
+Imports System.Collections.Concurrent
 Imports System.Runtime.InteropServices
 Imports System.Text.RegularExpressions
+Imports System.Threading
 Imports System.Threading.Tasks
 Imports KGySoft.CoreLibraries
 
@@ -33,9 +35,12 @@ Public Class MediaInfo
                         Dim at As New VideoStream
                         at.Index = index
 
-                        Dim streamOrder = GetVideo(index, "StreamOrder")
-                        If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvariantString
-                        at.StreamOrder = streamOrder.ToInt
+                        Dim streamOrder = GetVideo(index, "StreamOrder").ToIntM 'opt.
+                        at.StreamOrder = If(streamOrder = -2147483646I, index + 1, streamOrder)
+
+                        'Dim streamOrder = GetVideo(index, "StreamOrder")
+                        'If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvariantString
+                        'at.StreamOrder = streamOrder.ToInt
 
                         at.Format = GetVideo(index, "Format")
                         at.ID = GetVideo(index, "ID").ToInt
@@ -60,21 +65,19 @@ Public Class MediaInfo
                     Dim at As New AudioStream
                     at.Index = index
 
-                    Dim streamOrder = GetAudio(index, "StreamOrder")
+                    Dim streamOrder = GetAudio(index, "StreamOrder").ToIntM ' opt.
+                    at.StreamOrder = If(streamOrder = -2147483646I, index + 1 + offset, streamOrder + offset)
 
-                    If Not streamOrder.IsInt Then
-                        streamOrder = (index + 1).ToInvariantString
-                    End If
+                    'Dim streamOrder = GetAudio(index, "StreamOrder")
+                    'If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvariantString
+                    'at.StreamOrder = streamOrder.ToInt + offset
 
-                    at.StreamOrder = streamOrder.ToInt + offset
+                    Dim id = GetAudio(index, "ID").ToIntM ' opt.
+                    at.ID = If(id = -2147483646I, index + 2 + offset, id + offset)
 
-                    Dim id = GetAudio(index, "ID")
-
-                    If Not id.IsInt Then
-                        id = (index + 2).ToInvariantString
-                    End If
-
-                    at.ID = id.ToInt + offset
+                    'Dim id = GetAudio(index, "ID")
+                    'If Not id.IsInt Then id = (index + 2).ToInvariantString
+                    'at.ID = id.ToInt + offset
 
                     at.Lossy = GetAudio(index, "Compression_Mode") = "Lossy"
                     at.SamplingRate = GetAudio(index, "SamplingRate").ToInt
@@ -98,8 +101,9 @@ Public Class MediaInfo
 
                     Dim bitrate = GetAudio(index, "BitRate")
 
-                    If bitrate.IsInt Then
-                        at.Bitrate = (bitrate.ToInt \ 1000)
+                    Dim bi = bitrate.ToIntM()
+                    If bi <> -2147483646I Then
+                        at.Bitrate = (bi \ 1000)
                     ElseIf bitrate.Contains("/") Then
                         Dim values = bitrate.Split("/"c)
                         at.Bitrate = (values(0).ToInt \ 1000)
@@ -374,7 +378,8 @@ Public Class MediaInfo
         Return GetMediaInfo(path, Key).GetSubtitleCount
     End Function
 
-    Public Shared Cache As New Dictionary(Of Long, MediaInfo)(128)
+    Public Shared Cache As New Dictionary(Of Long, MediaInfo)(199)
+    'Public Shared CacheTS As KGySoft.Collections.LockingDictionary(Of Long, MediaInfo) = Cache.AsThreadSafe
 
     Shared Function GetMediaInfo(path As String, Optional Key As Long = KeyDefault) As MediaInfo
         If path.NullOrEmptyS Then Return Nothing
@@ -382,7 +387,8 @@ Public Class MediaInfo
         If Key <= 0 Then Key = ((path.GetHashCode + 2147483648L) << 16) + path.Length
         If Cache.ContainsKey(Key) Then Return Cache.Item(Key)
         Dim ret As New MediaInfo(path)
-        'Dim cTS = Cache.AsThreadSafe 
+        'Dim cTS = Cache.AsThreadSafe
+        'CacheTS.Item(Key) = ret
         Cache.Item(Key) = ret
         Return ret
     End Function
@@ -392,7 +398,6 @@ Public Class MediaInfo
         '    i.Value?.Dispose()
         'Next
         Parallel.ForEach(Cache.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
-        'Parallel.ForEach(Cache, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m.Value?.Dispose())
         Cache.Clear()
     End Sub
 
@@ -401,19 +406,24 @@ Public Class MediaInfo
     Private Disposed As Boolean
 
     Sub Dispose() Implements IDisposable.Dispose
-        If Not Disposed Then
+
+        If Not Disposed AndAlso Loaded Then ' added loaded, debugger mode error workaround
             Disposed = True
+            'Try
             MediaInfo_Close(Handle)
             MediaInfo_Delete(Handle)
+            'Catch ex As Exception
+            'Dim ll = Loaded
+            'Microsoft.VisualBasic.MsgBox("MediaInfo Dispose Exception:" & BR & ex.ToString)
+            'End Try
+        Else
+
         End If
+
     End Sub
 
     Protected Overrides Sub Finalize()
-        'Try
         Dispose()
-        'Catch ex As Exception
-        '    Microsoft.VisualBasic.MsgBox(ex.ToString)
-        'End Try
     End Sub
 
 #End Region

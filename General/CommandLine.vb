@@ -119,7 +119,7 @@ Namespace CommandLine
         End Function
 
         Function GetSwitches() As HashSet(Of String)
-            Dim ret As New HashSet(Of String)
+            Dim ret As New HashSet(Of String)(StringComparer.Ordinal)
 
             If Switch.NotNullOrEmptyS Then ret.Add(Switch)
             If NoSwitch.NotNullOrEmptyS Then ret.Add(NoSwitch)
@@ -200,10 +200,12 @@ Namespace CommandLine
             CheckBox = cb
             CheckBox.Checked = Value
             AddHandler CheckBox.CheckedChanged, AddressOf CheckedChanged
-            AddHandler CheckBox.Disposed, Sub()
-                                              RemoveHandler CheckBox.CheckedChanged, AddressOf CheckedChanged
-                                              CheckBox = Nothing
-                                          End Sub
+            Dim cbdeh As EventHandler = Sub()
+                                            RemoveHandler CheckBox.Disposed, cbdeh
+                                            RemoveHandler CheckBox.CheckedChanged, AddressOf CheckedChanged
+                                            CheckBox = Nothing
+                                        End Sub
+            AddHandler CheckBox.Disposed, cbdeh
         End Sub
 
         Sub CheckedChanged(sender As Object, e As EventArgs)
@@ -303,10 +305,12 @@ Namespace CommandLine
             NumEdit = ne
             NumEdit.Value = Value
             AddHandler NumEdit.ValueChanged, AddressOf ValueChanged
-            AddHandler NumEdit.Disposed, Sub()
-                                             RemoveHandler NumEdit.ValueChanged, AddressOf ValueChanged
-                                             NumEdit = Nothing
-                                         End Sub
+            Dim nedeh As EventHandler = Sub()
+                                            RemoveHandler NumEdit.Disposed, nedeh
+                                            RemoveHandler NumEdit.ValueChanged, AddressOf ValueChanged
+                                            NumEdit = Nothing
+                                        End Sub
+            AddHandler NumEdit.Disposed, nedeh
         End Sub
 
         Overloads Overrides Sub InitParam(store As PrimitiveStore, params As CommandLineParams)
@@ -388,10 +392,12 @@ Namespace CommandLine
             MenuButton = mb
             MenuButton.Value = Value
             AddHandler MenuButton.ValueChangedUser, AddressOf ValueChangedUser
-            AddHandler MenuButton.Disposed, Sub()
-                                                RemoveHandler MenuButton.ValueChangedUser, AddressOf ValueChangedUser
-                                                MenuButton = Nothing
-                                            End Sub
+            Dim mbeh As EventHandler = Sub()
+                                           RemoveHandler MenuButton.Disposed, mbeh
+                                           RemoveHandler MenuButton.ValueChangedUser, AddressOf ValueChangedUser
+                                           MenuButton = Nothing
+                                       End Sub
+            AddHandler MenuButton.Disposed, mbeh
         End Sub
 
         Public Overloads Overrides Sub InitParam(store As PrimitiveStore, params As CommandLineParams)
@@ -512,12 +518,14 @@ Namespace CommandLine
             TextEdit = te.Edit
             TextEdit.Text = Value
             AddHandler TextEdit.TextChanged, AddressOf TextChanged
-            AddHandler TextEdit.Disposed, Sub()
-                                              If Not TextEdit Is Nothing Then
-                                                  RemoveHandler TextEdit.TextChanged, AddressOf TextChanged
-                                                  TextEdit = Nothing
-                                              End If
-                                          End Sub
+            Dim tedeh As EventHandler = Sub()
+                                            If TextEdit IsNot Nothing Then
+                                                RemoveHandler TextEdit.Disposed, tedeh
+                                                RemoveHandler TextEdit.TextChanged, AddressOf TextChanged
+                                                TextEdit = Nothing
+                                            End If
+                                        End Sub
+            AddHandler TextEdit.Disposed, tedeh
 
             If Not InitAction Is Nothing Then InitAction.Invoke(te)
         End Sub

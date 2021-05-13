@@ -22,7 +22,7 @@ Partial Class CommandLineForm
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.bnCancel = New StaxRip.UI.ButtonEx()
@@ -33,7 +33,7 @@ Partial Class CommandLineForm
         Me.cms = New StaxRip.UI.ContextMenuStripEx(Me.components)
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
         Me.tlpRTB = New System.Windows.Forms.TableLayoutPanel()
-        Me.rtbCommandLine = New StaxRip.UI.CommandLineRichTextBox()
+        Me.rtbCommandLine = New StaxRip.UI.CommandLineRichTextBox(False)
         Me.cmsCommandLine = New StaxRip.UI.ContextMenuStripEx(Me.components)
         Me.tlpMain.SuspendLayout()
         Me.tlpRTB.SuspendLayout()
@@ -44,7 +44,7 @@ Partial Class CommandLineForm
         Me.bnCancel.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.bnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.bnCancel.Location = New System.Drawing.Point(348, 169)
-        Me.bnCancel.Margin = New System.Windows.Forms.Padding(5, 5, 5, 5)
+        Me.bnCancel.Margin = New System.Windows.Forms.Padding(5)
         Me.bnCancel.Size = New System.Drawing.Size(83, 23)
         Me.bnCancel.Text = "Cancel"
         '
@@ -65,7 +65,7 @@ Partial Class CommandLineForm
         Me.tlpMain.SetColumnSpan(Me.SimpleUI, 4)
         Me.SimpleUI.FormSizeScaleFactor = New System.Drawing.SizeF(0!, 0!)
         Me.SimpleUI.Location = New System.Drawing.Point(5, 5)
-        Me.SimpleUI.Margin = New System.Windows.Forms.Padding(5, 5, 5, 5)
+        Me.SimpleUI.Margin = New System.Windows.Forms.Padding(5)
         Me.SimpleUI.Name = "SimpleUI"
         Me.SimpleUI.Size = New System.Drawing.Size(426, 133)
         Me.SimpleUI.TabIndex = 5
@@ -75,7 +75,7 @@ Partial Class CommandLineForm
         '
         Me.cbGoTo.Anchor = System.Windows.Forms.AnchorStyles.Left
         Me.cbGoTo.FormattingEnabled = True
-        Me.cbGoTo.Location = New System.Drawing.Point(5, 169)
+        Me.cbGoTo.Location = New System.Drawing.Point(5, 170)
         Me.cbGoTo.Margin = New System.Windows.Forms.Padding(5, 0, 5, 0)
         Me.cbGoTo.Name = "cbGoTo"
         Me.cbGoTo.Size = New System.Drawing.Size(179, 23)
@@ -114,7 +114,7 @@ Partial Class CommandLineForm
         Me.tlpMain.Controls.Add(Me.tlpRTB, 0, 1)
         Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlpMain.Location = New System.Drawing.Point(0, 0)
-        Me.tlpMain.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
+        Me.tlpMain.Margin = New System.Windows.Forms.Padding(1)
         Me.tlpMain.Name = "tlpMain"
         Me.tlpMain.RowCount = 3
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
@@ -170,7 +170,7 @@ Partial Class CommandLineForm
         Me.Controls.Add(Me.tlpMain)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
-        Me.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
+        Me.Margin = New System.Windows.Forms.Padding(1)
         Me.MaximizeBox = True
         Me.MinimizeBox = True
         Me.Name = "CommandLineForm"

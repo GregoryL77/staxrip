@@ -23,6 +23,9 @@ Public Class ProcessingForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overloads Overrides Sub Dispose(disposing As Boolean)
+
+        RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+
         If disposing AndAlso components IsNot Nothing Then
             components.Dispose()
         End If
@@ -206,7 +209,7 @@ Public Class ProcessingForm
 
     Sub New()
         InitializeComponent()
-        'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException ' In dispose InitializeComponent
         AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         mbShutdown.Add(System.Enum.GetValues(GetType(ShutdownMode)).Cast(Of Object))
         Icon = g.Icon

@@ -1,4 +1,5 @@
 
+Imports System.ComponentModel
 Imports StaxRip.UI
 
 Public Class CommandLineAudioEncoderForm
@@ -7,6 +8,7 @@ Public Class CommandLineAudioEncoderForm
 #Region " Designer "
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overloads Overrides Sub Dispose(disposing As Boolean)
+        RemoveHandler EditControl.rtbEdit.TextChanged, AddressOf tbEditTextChanged
         If disposing AndAlso components IsNot Nothing Then
             components.Dispose()
         End If
@@ -154,7 +156,7 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.tbDelay.Anchor = CType((System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.tbDelay.Location = New System.Drawing.Point(132, 2)
-        Me.tbDelay.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.tbDelay.Margin = New System.Windows.Forms.Padding(2)
         Me.tbDelay.Name = "tbDelay"
         Me.ValidationProvider.SetPattern(Me.tbDelay, "^(-?[1-9]+\d*|-?0)$")
         Me.tbDelay.Size = New System.Drawing.Size(61, 23)
@@ -165,7 +167,7 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.tbStreamName.Anchor = CType((System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.tbStreamName.Location = New System.Drawing.Point(197, 80)
-        Me.tbStreamName.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.tbStreamName.Margin = New System.Windows.Forms.Padding(2)
         Me.tbStreamName.Name = "tbStreamName"
         Me.tbStreamName.Size = New System.Drawing.Size(191, 23)
         Me.tbStreamName.TabIndex = 10
@@ -174,7 +176,7 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.tbChannels.Anchor = CType((System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.tbChannels.Location = New System.Drawing.Point(67, 2)
-        Me.tbChannels.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.tbChannels.Margin = New System.Windows.Forms.Padding(2)
         Me.tbChannels.Name = "tbChannels"
         Me.ValidationProvider.SetPattern(Me.tbChannels, "^[1-9]{1}$")
         Me.tbChannels.Size = New System.Drawing.Size(61, 23)
@@ -220,7 +222,7 @@ Public Class CommandLineAudioEncoderForm
         Me.bnCancel.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.bnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.bnCancel.Location = New System.Drawing.Point(261, 5)
-        Me.bnCancel.Margin = New System.Windows.Forms.Padding(5, 5, 5, 5)
+        Me.bnCancel.Margin = New System.Windows.Forms.Padding(5)
         Me.bnCancel.Size = New System.Drawing.Size(83, 23)
         Me.bnCancel.Text = "Cancel"
         '
@@ -237,7 +239,7 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.tbType.Anchor = System.Windows.Forms.AnchorStyles.Left
         Me.tbType.Location = New System.Drawing.Point(197, 28)
-        Me.tbType.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.tbType.Margin = New System.Windows.Forms.Padding(2)
         Me.tbType.Name = "tbType"
         Me.tbType.Size = New System.Drawing.Size(63, 23)
         Me.tbType.TabIndex = 15
@@ -246,9 +248,9 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.mbLanguage.Anchor = System.Windows.Forms.AnchorStyles.Left
         Me.mbLanguage.Location = New System.Drawing.Point(392, 28)
-        Me.mbLanguage.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.mbLanguage.Margin = New System.Windows.Forms.Padding(2)
         Me.mbLanguage.ShowMenuSymbol = True
-        Me.mbLanguage.Size = New System.Drawing.Size(112, 22)
+        Me.mbLanguage.Size = New System.Drawing.Size(140, 22)
         '
         'tbProfileName
         '
@@ -272,7 +274,7 @@ Public Class CommandLineAudioEncoderForm
         Me.bnMenu.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.bnMenu.ContextMenuStrip = Me.cms
         Me.bnMenu.Location = New System.Drawing.Point(135, 5)
-        Me.bnMenu.Margin = New System.Windows.Forms.Padding(5, 5, 5, 5)
+        Me.bnMenu.Margin = New System.Windows.Forms.Padding(5)
         Me.bnMenu.ShowMenuSymbol = True
         Me.bnMenu.Size = New System.Drawing.Size(33, 23)
         '
@@ -305,7 +307,7 @@ Public Class CommandLineAudioEncoderForm
         Me.TableLayoutPanel1.Controls.Add(Me.mbLanguage, 2, 1)
         Me.TableLayoutPanel1.Controls.Add(Me.tbInput, 0, 1)
         Me.TableLayoutPanel1.Location = New System.Drawing.Point(1, 1)
-        Me.TableLayoutPanel1.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
+        Me.TableLayoutPanel1.Margin = New System.Windows.Forms.Padding(1)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
         Me.TableLayoutPanel1.RowCount = 4
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
@@ -375,7 +377,7 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.cbDefault.AutoSize = True
         Me.cbDefault.Location = New System.Drawing.Point(1, 1)
-        Me.cbDefault.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
+        Me.cbDefault.Margin = New System.Windows.Forms.Padding(1)
         Me.cbDefault.Name = "cbDefault"
         Me.cbDefault.Size = New System.Drawing.Size(64, 19)
         Me.cbDefault.TabIndex = 3
@@ -386,7 +388,7 @@ Public Class CommandLineAudioEncoderForm
         '
         Me.cbForced.AutoSize = True
         Me.cbForced.Location = New System.Drawing.Point(67, 1)
-        Me.cbForced.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
+        Me.cbForced.Margin = New System.Windows.Forms.Padding(1)
         Me.cbForced.Name = "cbForced"
         Me.cbForced.Size = New System.Drawing.Size(62, 19)
         Me.cbForced.TabIndex = 4
@@ -402,7 +404,7 @@ Public Class CommandLineAudioEncoderForm
         Me.tlpMain.Controls.Add(Me.EditControl, 0, 1)
         Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlpMain.Location = New System.Drawing.Point(0, 0)
-        Me.tlpMain.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
+        Me.tlpMain.Margin = New System.Windows.Forms.Padding(1)
         Me.tlpMain.Name = "tlpMain"
         Me.tlpMain.RowCount = 3
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 107.0!))
@@ -460,7 +462,7 @@ Public Class CommandLineAudioEncoderForm
         tbType.Text = TempProfile.OutputFileType
         tbInput.Text = TempProfile.SupportedInput.Join(" ")
 
-        If TempProfile.Name <> TempProfile.DefaultName Then
+        If Not String.Equals(TempProfile.Name, TempProfile.DefaultName) Then
             tbProfileName.Text = TempProfile.Name
         End If
 
@@ -499,15 +501,9 @@ Public Class CommandLineAudioEncoderForm
         cms.Add("Help", AddressOf ShowHelp).SetImage(Symbol.Help)
         cms.ResumeLayout(False)
 
-        ActiveControl = bnOK
-        mbLanguage.Menu.SuspendLayout()
         mbLanguage.Value = TempProfile.Language
-        For Each i In Language.Languages
-            If i.IsCommon Then
-                mbLanguage.Add(i.ToString, i)
-            End If
-        Next i
-        mbLanguage.Menu.ResumeLayout(False)
+        mbLanguage.BuildLangMenu(False)
+        ActiveControl = bnOK
     End Sub
 
     Sub SaveProfile()
@@ -521,7 +517,8 @@ Public Class CommandLineAudioEncoderForm
         End If
     End Sub
 
-    Sub CommandLineAudioSettingsForm_FormClosed() Handles Me.FormClosed
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        MyBase.OnFormClosed(e)
         If DialogResult = DialogResult.OK Then
             Profile.SupportedInput = TempProfile.SupportedInput
             Profile.OutputFileType = TempProfile.OutputFileType
@@ -535,6 +532,12 @@ Public Class CommandLineAudioEncoderForm
             Profile.Default = TempProfile.Default
             Profile.Forced = TempProfile.Forced
         End If
+    End Sub
+
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        ShowHelp()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Sub tbStreamName_TextChanged() Handles tbStreamName.TextChanged
@@ -564,6 +567,7 @@ Public Class CommandLineAudioEncoderForm
 
     Sub mbLanguage_ValueChangedUser(value As Object) Handles mbLanguage.ValueChangedUser
         TempProfile.Language = DirectCast(mbLanguage.Value, Language)
+        mbLanguage.Text = TempProfile.Language.Name
         EditControl.UpdatePreview()
     End Sub
 
@@ -608,25 +612,6 @@ Public Class CommandLineAudioEncoderForm
         form.Show()
     End Sub
 
-    Sub CommandLineAudioEncoderForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
-        Threading.Tasks.Task.Run(Sub()
-                                     Threading.Thread.Sleep(60)
-                                     BeginInvoke(Sub()
-                                                     mbLanguage.Menu.SuspendLayout()
-                                                     mbLanguage.SuspendLayout()
-                                                     For Each i In Language.Languages
-                                                         If Not i.IsCommon Then
-                                                             mbLanguage.Add("More | " & i.ToString.Substring(0, 1).ToUpperInvariant & " | " & i.ToString, i)
-                                                         End If
-                                                     Next
-                                                     mbLanguage.Menu.ResumeLayout()
-                                                     mbLanguage.ResumeLayout()
-                                                     mbLanguage.Invalidate(True)
-                                                     Invalidate(True)
-                                                     'Refresh()
-                                                 End Sub)
-                                 End Sub)
-    End Sub
     Sub cbDefault_CheckedChanged(sender As Object, e As EventArgs) Handles cbDefault.CheckedChanged
         TempProfile.Default = cbDefault.Checked
         EditControl.UpdatePreview()
@@ -635,9 +620,5 @@ Public Class CommandLineAudioEncoderForm
     Sub cbForced_CheckedChanged(sender As Object, e As EventArgs) Handles cbForced.CheckedChanged
         TempProfile.Forced = cbForced.Checked
         EditControl.UpdatePreview()
-    End Sub
-
-    Sub CommandLineAudioEncoderForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
-        ShowHelp()
     End Sub
 End Class

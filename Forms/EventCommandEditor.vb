@@ -412,7 +412,7 @@ Public Class EventCommandEditor
                 i.Visible = False
             End If
         Next
-        cmsCommands.ResumeLayout(True)
+        cmsCommands.ResumeLayout(False)
 
         TipProvider.SetTip("Parameters used to execute the command.", pgParameters, lParameters)
         TipProvider.SetTip("Criteria can be defined optionally to execute the command only if the criteria is matched.", CriteriaControl, gbCriteria)

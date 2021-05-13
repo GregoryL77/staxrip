@@ -68,7 +68,7 @@ Public MustInherit Class AudioProfile
             If AudioConverterForm.AudioConverterMode Then 'AudioConverter Opt.
                 If value IsNot Nothing Then FileValue = value
             Else
-                If FileValue <> value Then
+                If Not EqualsEx(FileValue, value) Then
                     FileValue = value
                     Stream = Nothing
                     DisplayNameValue = Nothing
@@ -108,8 +108,7 @@ Public MustInherit Class AudioProfile
         End Set
     End Property
 
-    <NonSerialized()>
-    Public DisplayNameValue As String
+    <NonSerialized()> Public DisplayNameValue As String
     Property DisplayName As String
         Get
             If AudioConverterForm.AudioConverterMode Then
@@ -145,24 +144,26 @@ Public MustInherit Class AudioProfile
     Public SourceSamplingRateValue As Integer
     Public ReadOnly Property SourceSamplingRate As Integer
         Get
-            If SourceSamplingRateValue <= 0 Then
+            Dim ret As Integer = SourceSamplingRateValue
+            If ret <= 0 Then
                 If Stream Is Nothing Then
                     If (AudioConverterForm.AudioConverterMode AndAlso File.NotNullOrEmptyS) OrElse IO.File.Exists(File) Then ' 'AudioConverter Opt.
-                        SourceSamplingRateValue = Math.Abs(MediaInfo.GetAudio(File, "SamplingRate", FileKeyHashValue).ToInt(48000))
+                        ret = Math.Abs(MediaInfo.GetAudio(File, "SamplingRate", FileKeyHashValue).ToInt(48000))
                     End If
                 Else
-                    SourceSamplingRateValue = Math.Abs(Stream.SamplingRate)
+                    ret = Math.Abs(Stream.SamplingRate)
                 End If
             End If
 
-            Select Case SourceSamplingRateValue
+            Select Case ret
                 Case Is = 0
-                    SourceSamplingRateValue = 48000
+                    ret = 48000
                 Case Is > 48000 * 256
-                    SourceSamplingRateValue = 48000 * 256
+                    ret = 48000 * 256
             End Select
 
-            Return SourceSamplingRateValue
+            SourceSamplingRateValue = ret
+            Return ret
         End Get
     End Property
 
@@ -184,29 +185,6 @@ Public MustInherit Class AudioProfile
         '_Language = New Language
         'Depth = 0 ' Org was 24???
     End Sub
-
-    'Public Function DeepCopy(path As String) As AudioProfile
-    '    Dim other As AudioProfile = DirectCast(Me.MemberwiseClone(), AudioProfile)
-    'gap.Bitrate = TempProfile.Bitrate 'better, for GAP only?
-    'gap.Language = TempProfile.Language
-    'gap.Delay = TempProfile.Delay
-    'gap.DefaultnameValue = Nothing
-    'gap.Name = TempProfile.Name
-    'gap.StreamName = TempProfile.StreamName
-    'gap.Gain = TempProfile.Gain
-    'gap.Default = TempProfile.Default
-    'gap.Forced = TempProfile.Forced
-    'gap.Params = TempProfile.Params
-    'gap.Decoder = TempProfile.Decoder
-    'gap.DecodingMode = TempProfile.DecodingMode
-    'gap.ExtractDTSCore = TempProfile.ExtractDTSCore
-    'gap.Depth = TempProfile.Depth
-    '    other.File = path
-    '    other.Name = Name
-    '    other.DisplayName = Nothing
-    '    ' batch cmd lines, params etc. mess
-    '    Return other
-    'End Function
 
     ReadOnly Property ConvertExt As String
         Get
@@ -242,6 +220,29 @@ Public MustInherit Class AudioProfile
             Return ret
         End Get
     End Property
+
+    'Public Function DeepCopy(path As String) As AudioProfile
+    '    Dim other As AudioProfile = DirectCast(Me.MemberwiseClone(), AudioProfile)
+    'gap.Bitrate = TempProfile.Bitrate 'better, for GAP only?
+    'gap.Language = TempProfile.Language
+    'gap.Delay = TempProfile.Delay
+    'gap.DefaultnameValue = Nothing
+    'gap.Name = TempProfile.Name
+    'gap.StreamName = TempProfile.StreamName
+    'gap.Gain = TempProfile.Gain
+    'gap.Default = TempProfile.Default
+    'gap.Forced = TempProfile.Forced
+    'gap.Params = TempProfile.Params
+    'gap.Decoder = TempProfile.Decoder
+    'gap.DecodingMode = TempProfile.DecodingMode
+    'gap.ExtractDTSCore = TempProfile.ExtractDTSCore
+    'gap.Depth = TempProfile.Depth
+    '    other.File = path
+    '    other.Name = Name
+    '    other.DisplayName = Nothing
+    '    ' batch cmd lines, params etc. mess
+    '    Return other
+    'End Function
 
     Overridable Sub OnFileChanged()
     End Sub
@@ -502,7 +503,7 @@ Public Class BatchAudioProfile
                     proc.SkipStrings = Proc.GetSkipStrings(CommandLines)
 
                     'Test this: Progress bar
-                    If ContainsCommand("|") AndAlso CommandLines.ToLowerEx.ContainsAny("qaac", "opusenc", "ffmpeg", "lossywav", "\flac ") Then 'ToLowerEx(True)
+                    If ContainsCommand("|") AndAlso CommandLines?.ToLowerInvariant.ContainsAny("qaac", "opusenc", "ffmpeg", "lossywav", "\flac ") Then 'ToLowerEx(True)
                         Try
                             proc.Duration = GetDuration()
                         Catch
@@ -695,15 +696,10 @@ Public Class MuxAudioProfile
             mbi.Label.Help = "Language of the audio track."
             mbi.Button.Value = Language
             mbi.Button.SaveAction = Sub(value) Language = value
-
-            For Each i In Language.Languages
-                If i.IsCommon Then
-                    mbi.Button.Add(i.ToString, i)
-                Else
-                    mbi.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpper + " | " + i.ToString, i)
-                End If
-            Next
-
+            mbi.Button.BuildLangMenu(True)
+            'For Each i In Language.Languages
+            '    If i.IsCommon Then mbi.Button.Add(i.ToString, i) Else mbi.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpper + " | " + i.ToString, i)
+            'Next
             Dim cb = ui.AddBool(page)
             cb.Text = "Default"
             cb.Help = "Flaged as default in MKV."
@@ -739,9 +735,8 @@ End Class
 Public Class GUIAudioProfile
     Inherits AudioProfile
 
+    <NonSerialized()> Private GainWasNormalized As Boolean
     Property Params As New Parameters
-    <NonSerialized()>
-    Private GainWasNormalized As Boolean
 
     Sub New(codec As AudioCodec, quality As Single)
         MyBase.New(Nothing)
@@ -759,24 +754,24 @@ Public Class GUIAudioProfile
         Bitrate = GetBitrate()
     End Sub
 
-    Public SourceChannels As Integer
+    Public ChannelsValue As Integer
     Public Overrides Property Channels As Integer
         Get
             Select Case Params.ChannelsMode
                 Case ChannelsMode.Original
 
-                    If SourceChannels <= 0 OrElse Not AudioConverterForm.AudioConverterMode Then
+                    If ChannelsValue <= 0 OrElse Not AudioConverterForm.AudioConverterMode Then
                         If Stream IsNot Nothing Then
-                            SourceChannels = Math.Abs(If(Stream.Channels > Stream.Channels2, Stream.Channels, Stream.Channels2))
+                            ChannelsValue = Math.Abs(If(Stream.Channels > Stream.Channels2, Stream.Channels, Stream.Channels2))
                         Else
                             If (AudioConverterForm.AudioConverterMode AndAlso File.NotNullOrEmptyS) OrElse IO.File.Exists(File) Then 'AudioConverter Opt.
-                                SourceChannels = Math.Abs(MediaInfo.GetChannels(File, FileKeyHashValue))
+                                ChannelsValue = Math.Abs(MediaInfo.GetChannels(File, FileKeyHashValue))
                             End If
                         End If
                     End If
 
-                    SourceChannels = If(SourceChannels > 0 AndAlso SourceChannels <= (1 << 18), SourceChannels, 6)
-                    Return SourceChannels
+                    ChannelsValue = If(ChannelsValue > 0 AndAlso ChannelsValue <= (1 << 18), ChannelsValue, 6)
+                    Return ChannelsValue
                 Case ChannelsMode._1
                     Return 1
                 Case ChannelsMode._2
@@ -792,6 +787,7 @@ Public Class GUIAudioProfile
             End Select
         End Get
         Set(value As Integer)
+            ChannelsValue = value
         End Set
     End Property
 
@@ -810,7 +806,7 @@ Public Class GUIAudioProfile
         Params.Migrate()
         ' DefaultnameValue = Nothing
         SourceDepth = 0
-        SourceChannels = 0
+        ChannelsValue = 0
         '_SupportedInput = Nothing
         '_CommandLines = Nothing
         '_OutputFileType = Nothing
@@ -905,16 +901,8 @@ Public Class GUIAudioProfile
                     If DecodingMode = AudioDecodingMode.Pipe Then proc.Duration = GetDuration()
                 ElseIf cl.Contains("opusenc") Then
                     proc.Package = Package.OpusEnc
-                    proc.SkipStrings = {"x realtime,"}
+                    proc.SkipString = "x realtime,"
                     If DecodingMode = AudioDecodingMode.Pipe Then proc.Duration = GetDuration()
-                ElseIf cl.Contains("fdkaac") Then
-                    proc.Package = Package.fdkaac
-                    proc.SkipStrings = {"%]", "x)"}
-                ElseIf cl.Contains("eac3to") Then
-                    proc.Package = Package.eac3to
-                    proc.SkipStrings = {"process: ", "analyze: "}
-                    proc.TrimChars = {"-"c, " "c}
-                    g.AddToPath(Package.NeroAAC.Directory)
                 ElseIf cl.Contains("ffmpeg") Then
                     If cl.Contains("libfdk_aac") Then
                         proc.Package = Package.ffmpeg_non_free
@@ -929,7 +917,15 @@ Public Class GUIAudioProfile
                     ' Sometimes ffmpeg pipe blocks WP progress, console shows only creating .WV
                 ElseIf cl.Contains("wavpack") Then
                     proc.Package = Package.WavPack
-                    proc.SkipStrings = {"% done."}
+                    proc.SkipString = "% done."
+                ElseIf cl.Contains("fdkaac") Then
+                    proc.Package = Package.fdkaac
+                    proc.SkipStrings = {"%]", "x)"}
+                ElseIf cl.Contains("eac3to") Then
+                    proc.Package = Package.eac3to
+                    proc.SkipStrings = {"process: ", "analyze: "}
+                    proc.TrimChars = {"-"c, " "c}
+                    g.AddToPath(Package.NeroAAC.Directory)
                 End If
 
                 proc.Start()
@@ -1051,7 +1047,7 @@ Public Class GUIAudioProfile
                     proc.File = "cmd.exe"
                     proc.Arguments = "/S /C """ + sb.ToString + """"
                     proc.Package = Package.qaac
-                    proc.SkipStrings = {"x)"}
+                    proc.SkipString = "x)"
                     proc.Duration = GetDuration()
                     proc.Start()
 
@@ -1097,8 +1093,7 @@ Public Class GUIAudioProfile
         End Using
     End Function
 
-    <NonSerialized()>
-    Private _OutputFileType As String
+    <NonSerialized()> Private _OutputFileType As String
     Public Overrides Property OutputFileType As String
         Get
             Select Case Params.Codec
@@ -1838,8 +1833,7 @@ Public Class GUIAudioProfile
         Return False
     End Function
 
-    <NonSerialized()>
-    Public DefaultnameValue As String
+    <NonSerialized()> Public DefaultnameValue As String
     Public Overrides ReadOnly Property DefaultName As String
         Get
             If Params Is Nothing Then
@@ -1894,8 +1888,7 @@ Public Class GUIAudioProfile
         End Get
     End Property
 
-    <NonSerialized()>
-    Private _CommandLines As String
+    <NonSerialized()> Private _CommandLines As String
     Overrides Property CommandLines() As String
         Get
             Return GetCommandLine(True)
@@ -1962,8 +1955,7 @@ Public Class GUIAudioProfile
         End Select
     End Function
 
-    <NonSerialized()>
-    Private _SupportedInput As String()
+    <NonSerialized()> Private _SupportedInput As String()
     Overrides Property SupportedInput As String()
         Get
             Select Case GetEncoder()

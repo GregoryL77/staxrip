@@ -19,18 +19,16 @@ Public Class MainForm
 #Region " Designer "
 
     Protected Overloads Overrides Sub Dispose(disposing As Boolean)
+        ImageHelp.DisposeFonts()
         If disposing Then
             components?.Dispose()
         End If
-        'ImageHelp.FamilyAwesome?.Dispose()
-        'ImageHelp.FamilySagoe?.Dispose()
-        'If ImageHelp.CollPF IsNot Nothing Then
-        '    For Each ff In ImageHelp.CollPF.Families
-        '        ff.Dispose()
-        '    Next ff
-        '    ImageHelp.CollPF.Dispose()
-        'End If
         MyBase.Dispose(disposing)
+        RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
+        Console.Beep(420, 30)
     End Sub
 
     Private components As System.ComponentModel.IContainer
@@ -1059,6 +1057,7 @@ Public Class MainForm
     Public BlockSubtitlesItemCheck As Boolean
     Public AssistantPassed As Boolean
     Public CommandManager As New CommandManager
+    Public ForceClose As Boolean
 
     Private AudioMenu0 As ContextMenuStripEx
     Private AudioMenu1 As ContextMenuStripEx
@@ -1082,7 +1081,6 @@ Public Class MainForm
     Private BlockSourceTextBoxTextChanged As Boolean
 
     Sub New()
-        'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
         AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
 
         g.MainForm = Me
@@ -1106,8 +1104,7 @@ Public Class MainForm
             Trace.AutoFlush = True
         End If
 
-        ImageHelp.CreateAwesomeFontFamily()
-
+        ImageHelp.CreateFonts()
         MenuItemEx.UseTooltips = s.EnableTooltips
         Icon = g.Icon
         InitializeComponent()
@@ -1282,7 +1279,8 @@ Public Class MainForm
                                 base = base.Replace(" DELAY", "")
                                 base = base.Replace(" 0ms", "")
 
-                                If Not String.Equals(stream.Language.TwoLetterCode, "iv") Then
+                                'If Not String.Equals(stream.Language.TwoLetterCode, "iv") Then
+                                If stream.Language.LCID <> 127 Then
                                     base += " " + stream.Language.Name
                                 End If
 
@@ -1342,8 +1340,9 @@ Public Class MainForm
                 If lang Then
                     Dim lng = profile.Language
 
-                    If String.Equals(profile.Language.ThreeLetterCode, "und") Then
-                        lng = If(track = 0, New Language(), New Language("en"))
+                    '  If String.Equals(profile.Language.ThreeLetterCode, "und") Then
+                    If profile.Language.LCID = 127 Then
+                        lng = If(track = 0, New Language(), New Language(9)) '"en"
                     End If
 
                     If Not iPath.Contains(lng.Name) Then
@@ -1879,7 +1878,11 @@ Public Class MainForm
         Dim recoverText = Text
 
         SafeSerialization.Serialize(p, recoverProjectPath)
-        AddHandler Disposed, Sub() FileHelp.Delete(recoverProjectPath)
+        Dim deh As EventHandler = Sub()
+                                      RemoveHandler Me.Disposed, deh
+                                      FileHelp.Delete(recoverProjectPath)
+                                  End Sub
+        AddHandler Disposed, deh
 
         Try
             files = files.Select(Function(filePath) New FileInfo(filePath).FullName) '.AsEnumerable
@@ -4064,37 +4067,30 @@ Public Class MainForm
 
     <Command("Audio Converter.")>
     Sub ShowAudioConverter()
-        'Dim aform As New AudioConverterForm
-        Me.Hide()
-        'Try
-        AudioConverterForm.AudioConverterMode = True
-        Using aform = New AudioConverterForm
-            aform.ShowDialog()
-        End Using
-        If MediaInfo.Cache.Count > 5370 Then BeginInvoke(Sub() MediaInfo.ClearCache()) ' Ask User to Remove???
-        Task.Run(Sub() If Not Log.IsEmpty Then Log.Save())
-        'Catch ex As Exception
-        'Log.Write("AudioConverter Form Exception:", ex.ToString & ex.Message?.ToString & ex.InnerException?.ToString & ex.GetBaseException?.ToString)
-        'Log.Save()
-        'g.ShowException(ex, timeout:=90)
-        'MediaInfo.ClearCache()
-        'Me.Close()
-        'Application.Exit()
-        'Process.GetCurrentProcess.Kill()
-        'Finally
-        AudioConverterForm.AudioConverterMode = False
-        'aform?.Dispose()
-        If Not Me.IsDisposed Then
-            'Me.Invalidate(True)
-            'Me.Activate()
-            Me.Show()
-            'Me.Select()
-        Else
-            Me.Close()
-            Application.Exit()
-            g.KillMeAll()
-        End If
-        'End Try
+        Try
+            Me.Hide()
+            AudioConverterForm.AudioConverterMode = True
+            Using aform As New AudioConverterForm
+                aform.ShowDialog()
+            End Using
+        Catch ex As Exception
+            AudioConverterForm.AudioConverterMode = False
+            Log.Write("AudioConverter Form Exception:", ex.ToString & BR & ex.Message?.ToString & BR & ex.InnerException?.ToString & BR & ex.GetBaseException?.ToString)
+            Log.Save()
+            MediaInfo.ClearCache()
+            g.ShowException(ex, timeout:=90)
+        Finally
+            AudioConverterForm.AudioConverterMode = False
+            If Not Me.IsDisposed Then
+                Me.Show()
+                Task.Run(Sub()
+                             If Not Log.IsEmpty Then Log.Save()
+                             If MediaInfo.Cache.Count > 5355 Then BeginInvoke(Sub() MediaInfo.ClearCache()) ' Ask User to Remove???
+                         End Sub)
+                'Else
+                'Process.GetCurrentProcess.Kill()
+            End If
+        End Try
 
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Optimized, True, True)
@@ -4260,7 +4256,7 @@ Public Class MainForm
 
             t = ui.AddText
             t.Text = "Preferred Languages"
-            t.Help = "Preferred audio languages using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all languages just enter 'all'." + BR2 + String.Join(BR, From i In Language.Languages Where i.IsCommon Select i.ToString + ": " + i.TwoLetterCode + ", " + i.ThreeLetterCode)
+            t.Help = "Preferred audio languages using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all languages just enter 'all'." + BR2 + String.Join(BR, Language.Languages.WhereSelectF(Function(lw) lw.IsCommon, Function(ls) ls.ToString + ": " + ls.TwoLetterCode + ", " + ls.ThreeLetterCode))
             t.Field = NameOf(p.PreferredAudio)
 
             Dim cut = ui.AddMenu(Of CuttingMode)
@@ -4330,7 +4326,7 @@ Public Class MainForm
 
             t = ui.AddText(subPage)
             t.Text = "Preferred Languages"
-            t.Help = "Subtitles demuxed and loaded automatically using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all subtitles just enter all." + BR2 + String.Join(BR, From i In Language.Languages Where i.IsCommon Select i.ToString + ": " + i.TwoLetterCode + ", " + i.ThreeLetterCode)
+            t.Help = "Subtitles demuxed and loaded automatically using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all subtitles just enter all." + BR2 + String.Join(BR, Language.Languages.WhereSelectF(Function(lw) lw.IsCommon, Function(ls) ls.ToString + ": " + ls.TwoLetterCode + ", " + ls.ThreeLetterCode))
             t.Field = NameOf(p.PreferredSubtitles)
 
             Dim tbm = ui.AddTextMenu(subPage)
@@ -5846,17 +5842,24 @@ Public Class MainForm
 
         value = tup.Value
 
-        If value.IsInt Then
-            SetTargetImageSizeByPixel(CInt(value))
+        Dim vi = value.ToIntM
+        If vi <> -2147483646I Then
+            SetTargetImageSizeByPixel(vi)
             Exit Sub
         End If
 
         If value?.Contains("x") Then
             Dim a = value.SplitNoEmptyAndWhiteSpace({"x"c})
 
-            If a.Length = 2 AndAlso a(0).IsInt AndAlso a(1).IsInt Then
-                SetTargetImageSize(a(0).ToInt, a(1).ToInt)
-                Exit Sub
+            If a.Length = 2 Then
+                Dim a0i = a(0).ToIntM
+                If a0i <> -2147483646I Then
+                    Dim a1i = a(1).ToIntM
+                    If a1i <> -2147483646I Then
+                        SetTargetImageSize(a0i, a1i)
+                        Exit Sub
+                    End If
+                End If
             End If
         End If
 
@@ -6134,8 +6137,7 @@ Public Class MainForm
         UpdateRecentProjectsMenu()
         UpdateTemplatesMenuAsync()
         IsLoading = False
-        'Refresh()
-        Invalidate(True)
+        Refresh()
         ProcessCommandLine(Environment.GetCommandLineArgs)
         StaxRip.StaxRipUpdate.ShowUpdateQuestion()
         StaxRip.StaxRipUpdate.CheckForUpdate(False, s.CheckForUpdatesBeta, Environment.Is64BitProcess)
@@ -6146,7 +6148,7 @@ Public Class MainForm
     Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
         MyBase.OnFormClosing(args)
 
-        If IsSaveCanceled() Then
+        If Not ForceClose AndAlso IsSaveCanceled() Then
             args.Cancel = True
         End If
     End Sub
@@ -6154,11 +6156,11 @@ Public Class MainForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         MyBase.OnFormClosed(e)
 
-        If Not g.ProcForm Is Nothing Then
+        If g.ProcForm IsNot Nothing Then
             g.ProcForm.Invoke(Sub() g.ProcForm.Close())
         End If
 
-        g.SaveSettings()
+        If Not ForceClose Then g.SaveSettings()
         g.RaiseAppEvent(ApplicationEvent.ApplicationExit)
     End Sub
 

@@ -1,12 +1,15 @@
 ﻿
+Imports JM.LinqFaster
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
 
 Public Class CommandLineForm
     Private Params As CommandLineParams
     Private SearchIndex As Integer
-    Private Items As New List(Of Item)
+    Private Items As List(Of Item)
     Private HighlightedControl As Control
+    Private ComboBoxUpdated As Boolean
+    Private WasHandleCreated As Boolean
 
     Property HTMLHelp As String
 
@@ -14,33 +17,36 @@ Public Class CommandLineForm
 
     Sub New(params As CommandLineParams)
         InitializeComponent()
-        SimpleUI.ScaleClientSize(44, 38)
+        'SimpleUI.ScaleClientSize(44, 38)
+        SimpleUI.ScaleClientSize(48, 38)
 
         rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
-        rtbCommandLine.ContextMenuStrip.Dispose()
+        rtbCommandLine.ContextMenuStrip?.Dispose()
         rtbCommandLine.ContextMenuStrip = cmsCommandLine
-
-        Dim singleList As New List(Of String)
-
+        Dim pItC As Integer = params.Items.Count
+        Items = New List(Of Item)(pItC)
+        Dim singleList As New HashSet(Of String)(pItC, StringComparer.Ordinal)
+        ' Dim singleList As New List(Of String)(params.Items.Count)
         For Each param In params.Items
-            If param.GetKey.NullOrEmptyS OrElse singleList.Contains(param.GetKey) Then
+            If param.GetKey.NullOrEmptyS OrElse Not singleList.Add(param.GetKey) Then
                 Throw New Exception("key found twice: " + param.GetKey)
             End If
-
-            singleList.Add(param.GetKey)
+            ' singleList.Add(param.GetKey)
         Next
 
         Me.Params = params
-        Text = params.Title + " (" & params.Items.Count & " options)"
+        Text = params.Title + " (" & pItC & " options)"
+
 
         InitUI()
         SelectLastPage()
         AddHandler params.ValueChanged, AddressOf ValueChanged
         params.RaiseValueChanged(Nothing)
 
-        cbGoTo.Sorted = True
+        cbGoTo.Sorted = False 'true 
         cbGoTo.SendMessageCue("Search")
         cbGoTo.Select()
+        AddHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
 
         cms.SuspendLayout()
         cms.Add("Execute Command Line", Sub() params.Execute(), p.SourceFile.NotNullOrEmptyS).SetImage(Symbol.fa_terminal)
@@ -65,12 +71,18 @@ Public Class CommandLineForm
     Sub ValueChanged(item As CommandLineParam)
         rtbCommandLine.SetText(Params.GetCommandLine(False, False))
         rtbCommandLine.SelectionLength = 0
-        rtbCommandLine.UpdateHeight()
-        UpdateSearchComboBox()
+        If WasHandleCreated Then
+            Threading.Tasks.Task.Run(Sub() BeginInvoke(Sub() rtbCommandLine.UpdateHeight()))
+        Else
+            rtbCommandLine.UpdateHeight()
+        End If
+        ComboBoxUpdated = False
+        'UpdateSearchComboBox()
     End Sub
 
     Sub InitUI()
-        Dim flowPanels As New List(Of Control)
+        'Dim flowPanels As New List(Of Control)'Test Opt.??
+        Dim flowPanels As New HashSet(Of Control)(17)
         Dim helpControl As Control
         Dim currentFlow As SimpleUI.FlowPage
 
@@ -79,8 +91,9 @@ Public Class CommandLineForm
             Dim parent As FlowLayoutPanelEx = SimpleUI.GetFlowPage(param.Path)
             currentFlow = DirectCast(parent, SimpleUI.FlowPage)
 
-            If Not flowPanels.Contains(parent) Then
-                flowPanels.Add(parent)
+            'If Not flowPanels.Contains(parent) Then
+            If flowPanels.Add(parent) Then
+                'flowPanels.Add(parent)
                 parent.SuspendLayout()
             End If
 
@@ -121,7 +134,7 @@ Public Class CommandLineForm
             help += BR
 
             If Not param.URLs.NothingOrEmpty Then
-                help += String.Join(BR, param.URLs.Select(Function(val) "[" + val + " " + val + "]"))
+                help += String.Join(BR, param.URLs.SelectF(Function(val) "[" + val + " " + val + "]"))
             End If
 
             If param.Help.NotNullOrEmptyS Then
@@ -192,9 +205,11 @@ Public Class CommandLineForm
                     menuBlock.Button.Expand = True
                 End If
 
-                For x2 = 0 To oParam.Options.Length - 1
+                menuBlock.Button.Menu.SuspendLayout()
+                For x2 = 0 To oParam.Options.Length - 1 ' Main Slowdown, add ButtMenu & ActionMenu
                     menuBlock.Button.Add(oParam.Options(x2), x2)
                 Next
+                menuBlock.Button.Menu.ResumeLayout(False)
 
                 oParam.InitParam(menuBlock.Button)
             ElseIf TypeOf param Is StringParam Then
@@ -228,7 +243,7 @@ Public Class CommandLineForm
                 tempItem.InitParam(textBlock)
             End If
 
-            If Not helpControl Is Nothing Then
+            If helpControl IsNot Nothing Then
                 Dim item As New Item
                 item.Control = helpControl
                 item.Page = currentFlow
@@ -248,14 +263,37 @@ Public Class CommandLineForm
         Property Param As CommandLineParam
     End Class
 
+    Protected Overrides Sub OnShown(e As EventArgs)
+        WasHandleCreated = True
+        Threading.Tasks.Task.Run(Sub()
+                                     Threading.Thread.Sleep(60)
+                                     If WasHandleCreated Then BeginInvoke(Sub() UpdateSearchComboBox())
+                                 End Sub)
+        MyBase.OnShown(e)
+    End Sub
+
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        WasHandleCreated = False
         SimpleUI.SaveLast(Params.Title + "page selection")
         RemoveHandler Params.ValueChanged, AddressOf ValueChanged
+        RemoveHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
+        g.MainForm.PopulateProfileMenu(DynamicMenuItemID.EncoderProfiles)  'Sub CommandLineForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles Me.FormClosed
         MyBase.OnFormClosed(e)
     End Sub
 
-    Sub CommandLineForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         ShowHelp()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent) 'Sub CommandLineForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+    End Sub
+
+    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+        If e.KeyData = (Keys.Control Or Keys.F) Then
+            cbGoTo.Focus()
+            e.SuppressKeyPress = True
+            If Not ComboBoxUpdated Then UpdateSearchComboBox()
+        End If
+        MyBase.OnKeyDown(e)
     End Sub
 
     Sub ShowHelp()
@@ -296,101 +334,110 @@ Public Class CommandLineForm
     End Sub
 
     Sub cbGoTo_TextChanged(sender As Object, e As EventArgs) Handles cbGoTo.TextChanged
-        If Not HighlightedControl Is Nothing Then
+
+        If Not ComboBoxUpdated Then
+            UpdateSearchComboBox()
+        End If
+
+        If HighlightedControl IsNot Nothing Then
             HighlightedControl.Font = New Font(HighlightedControl.Font.FontFamily, HighlightedControl.Font.Size, FontStyle.Regular)
             HighlightedControl = Nothing
         End If
 
-        Dim find = cbGoTo.Text.ToLowerInvariant
+        Dim cbGText As String = cbGoTo.Text
+        Dim find = cbGText.ToLowerInvariant
         Dim findNoSpace = find.Replace(" ", "")
-        Dim matchedItems As New HashSet(Of Item)(50)
+        Dim matchedItems As New HashSet(Of Item)(37)
 
         If find.Length > 1 Then
             For Each item In Items
-                If item.Param.Switch = cbGoTo.Text OrElse
-                    item.Param.NoSwitch = cbGoTo.Text OrElse
-                    item.Param.HelpSwitch = cbGoTo.Text Then
+                If item.Param.Visible Then
+                    If String.Equals(item.Param.Switch, cbGText) OrElse String.Equals(item.Param.NoSwitch, cbGText) OrElse String.Equals(item.Param.HelpSwitch, cbGText) Then
 
-                    matchedItems.Add(item)
-                End If
+                        matchedItems.Add(item)
+                    End If
 
-                If Not item.Param.Switches Is Nothing Then
-                    For Each switch In item.Param.Switches
-                        If switch = cbGoTo.Text Then
-                            matchedItems.Add(item)
-                        End If
-                    Next
+                    If item.Param.Switches IsNot Nothing Then
+                        For Each switch In item.Param.Switches
+                            If String.Equals(switch, cbGText) Then
+                                matchedItems.Add(item)
+                            End If
+                        Next
+                    End If
                 End If
-            Next
+            Next item
 
             For Each item In Items
-                If item.Param.Switch.ToLowerEx.Contains(find) OrElse
+                If item.Param.Visible Then
+                    If item.Param.Switch.ToLowerEx.Contains(find) OrElse
                     item.Param.NoSwitch.ToLowerEx.Contains(find) OrElse
                     item.Param.HelpSwitch.ToLowerEx.Contains(find) OrElse
                     item.Param.Help.ToLowerEx.Contains(find) OrElse
                     item.Param.Text.ToLowerEx.Contains(find) Then
 
-                    matchedItems.Add(item)
-                End If
+                        matchedItems.Add(item)
+                    End If
 
-                If Not item.Param.Switches Is Nothing Then
-                    For Each switch In item.Param.Switches
-                        If switch.ToLowerInvariant.Contains(find) Then
-                            matchedItems.Add(item)
+                    If item.Param.Switches IsNot Nothing Then
+                        For Each switch In item.Param.Switches
+                            If switch.ToLowerInvariant.Contains(find) Then
+                                matchedItems.Add(item)
+                            End If
+                        Next
+                    End If
+
+                    If TypeOf item.Param Is OptionParam Then
+                        Dim param = DirectCast(item.Param, OptionParam)
+
+                        If param.Options IsNot Nothing Then
+                            For Each value In param.Options
+                                Dim valToL As String = value.ToLowerInvariant
+                                If valToL.Contains(find) Then
+                                    matchedItems.Add(item)
+                                End If
+
+                                Dim valNoSpaceToLow As String = value.Replace(" ", "").ToLowerInvariant
+                                If valNoSpaceToLow.Contains(findNoSpace) Then
+                                    matchedItems.Add(item)
+                                End If
+
+                                If valToL.Contains(findNoSpace) Then
+                                    matchedItems.Add(item)
+                                End If
+
+                                If valNoSpaceToLow.Contains(find) Then
+                                    matchedItems.Add(item)
+                                End If
+                            Next
                         End If
-                    Next
-                End If
 
-                If TypeOf item.Param Is OptionParam Then
-                    Dim param = DirectCast(item.Param, OptionParam)
+                        If param.Values IsNot Nothing Then
+                            For Each value In param.Values
+                                Dim valToLow As String = value.ToLowerInvariant
+                                If valToLow.Contains(find) Then
+                                    matchedItems.Add(item)
+                                End If
 
-                    If Not param.Options Is Nothing Then
-                        For Each value In param.Options
-                            Dim valueNoSpace = value.Replace(" ", "")
+                                Dim valNoSpaceToLow As String = value.Replace(" ", "").ToLowerInvariant
+                                If valNoSpaceToLow.Contains(findNoSpace) Then
+                                    matchedItems.Add(item)
+                                End If
 
-                            If value.ToLowerInvariant.Contains(find) Then
-                                matchedItems.Add(item)
-                            End If
+                                If valToLow.Contains(findNoSpace) Then
+                                    matchedItems.Add(item)
+                                End If
 
-                            If valueNoSpace.ToLowerInvariant.Contains(findNoSpace) Then
-                                matchedItems.Add(item)
-                            End If
-
-                            If value.ToLowerInvariant.Contains(findNoSpace) Then
-                                matchedItems.Add(item)
-                            End If
-
-                            If valueNoSpace.ToLowerInvariant.Contains(find) Then
-                                matchedItems.Add(item)
-                            End If
-                        Next
-                    End If
-
-                    If Not param.Values Is Nothing Then
-                        For Each value In param.Values
-                            Dim valueNoSpace = value.Replace(" ", "")
-
-                            If value.ToLowerInvariant.Contains(find) Then
-                                matchedItems.Add(item)
-                            End If
-
-                            If valueNoSpace.ToLowerInvariant.Contains(findNoSpace) Then
-                                matchedItems.Add(item)
-                            End If
-
-                            If value.ToLowerInvariant.Contains(findNoSpace) Then
-                                matchedItems.Add(item)
-                            End If
-
-                            If valueNoSpace.ToLowerInvariant.Contains(find) Then
-                                matchedItems.Add(item)
-                            End If
-                        Next
+                                If valNoSpaceToLow.Contains(find) Then
+                                    matchedItems.Add(item)
+                                End If
+                            Next
+                        End If
                     End If
                 End If
-            Next
+            Next item
 
-            Dim visibleItems = matchedItems.Where(Function(arg) arg.Param.Visible).ToArray
+            Dim visibleItems(matchedItems.Count - 1) As Item 'matchedItems.Where(Function(arg) arg.Param.Visible).ToArray
+            matchedItems.CopyTo(visibleItems)
 
             If visibleItems.Length > 0 Then
                 If SearchIndex >= visibleItems.Length Then
@@ -405,42 +452,61 @@ Public Class CommandLineForm
             End If
         End If
     End Sub
-    Sub UpdateSearchComboBox()
-        cbGoTo.Items.Clear()
 
+    Sub cbGoTo_DropDown(sender As Object, e As EventArgs) Handles cbGoTo.Click, cbGoTo.DropDown ' AddHandler cbGoTo.Enter
+        If Not ComboBoxUpdated Then
+            UpdateSearchComboBox()
+        End If
+    End Sub
+
+    Sub UpdateSearchComboBox()
+        ComboBoxUpdated = True
+        'cbGoTo.BeginUpdate()
+        cbGoTo.Items.Clear()
+        Dim sItems As New HashSet(Of String)(Items.Count + 7, StringComparer.Ordinal)
         For Each i In Items
             If i.Param.Visible Then
                 If Not i.Param.Switches Is Nothing Then
                     For Each switch In i.Param.Switches
-                        If Not cbGoTo.Items.Contains(switch) Then
-                            cbGoTo.Items.Add(switch)
-                        End If
-                    Next
+                        'If Not cbGoTo.Items.Contains(switch) Then
+                        '    cbGoTo.Items.Add(switch)
+                        'End If
+                        sItems.Add(switch)
+                    Next switch
                 End If
 
-                If i.Param.Switch.NotNullOrEmptyS AndAlso Not cbGoTo.Items.Contains(i.Param.Switch) Then
-                    cbGoTo.Items.Add(i.Param.Switch)
+                If i.Param.Switch.NotNullOrEmptyS Then  ' AndAlso Not cbGoTo.Items.Contains(i.Param.Switch) Then
+                    'cbGoTo.Items.Add(i.Param.Switch)
+                    sItems.Add(i.Param.Switch)
                 End If
 
-                If i.Param.NoSwitch.NotNullOrEmptyS AndAlso Not cbGoTo.Items.Contains(i.Param.NoSwitch) Then
-                    cbGoTo.Items.Add(i.Param.NoSwitch)
+                If i.Param.NoSwitch.NotNullOrEmptyS Then 'AndAlso Not cbGoTo.Items.Contains(i.Param.NoSwitch) Then
+                    'cbGoTo.Items.Add(i.Param.NoSwitch)
+                    sItems.Add(i.Param.NoSwitch)
                 End If
 
-                If i.Param.HelpSwitch.NotNullOrEmptyS AndAlso Not cbGoTo.Items.Contains(i.Param.HelpSwitch) Then
-                    cbGoTo.Items.Add(i.Param.HelpSwitch)
+                If i.Param.HelpSwitch.NotNullOrEmptyS Then 'AndAlso Not cbGoTo.Items.Contains(i.Param.HelpSwitch) Then
+                    'cbGoTo.Items.Add(i.Param.HelpSwitch)
+                    sItems.Add(i.Param.HelpSwitch)
                 End If
             End If
-        Next
-    End Sub
+        Next i
 
-    Sub CommandLineForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles Me.FormClosed
-        g.MainForm.PopulateProfileMenu(DynamicMenuItemID.EncoderProfiles)
+        Dim ia(sItems.Count - 1) As String
+        sItems.CopyTo(ia)
+        Array.Sort(ia, StringComparer.Ordinal)
+
+        cbGoTo.Items.AddRange(ia)
+        cbGoTo.SelectionStart = cbGoTo.Text.Length
+        'cbGoTo.EndUpdate()
+
+        'Console.Beep(3000, 30) ' Debug
     End Sub
 
     Sub rtbCommandLine_MouseUp(sender As Object, e As MouseEventArgs) Handles rtbCommandLine.MouseUp
         If e.Button = MouseButtons.Right Then
             cmsCommandLine.SuspendLayout()
-            cmsCommandLine.Items.Clear()
+            cmsCommandLine.Items.ClearAndDisplose()
 
             Dim copyItem = cmsCommandLine.Add("Copy Selection", Sub() Clipboard.SetText(rtbCommandLine.SelectedText))
             copyItem.KeyDisplayString = "Ctrl+C"
@@ -478,7 +544,7 @@ Public Class CommandLineForm
                                                      End Sub)
             End If
 
-            cms.ResumeLayout(True)
+            cmsCommandLine.ResumeLayout()
             cmsCommandLine.Show(rtbCommandLine, e.Location)
         End If
     End Sub
@@ -488,4 +554,5 @@ Public Class CommandLineForm
             rtbCommandLine.SelectionStart = rtbCommandLine.GetCharIndexFromPosition(e.Location)
         End If
     End Sub
+
 End Class

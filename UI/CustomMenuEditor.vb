@@ -1,6 +1,10 @@
 
+Imports System.Management
 Imports System.Reflection
+Imports System.Threading
 Imports System.Threading.Tasks
+Imports JM.LinqFaster
+Imports JM.LinqFaster.Parallel
 Imports KGySoft.CoreLibraries
 
 Namespace UI
@@ -10,27 +14,27 @@ Namespace UI
 #Region " Designer "
         Protected Overloads Overrides Sub Dispose(disposing As Boolean)
             If disposing Then
-                'If cmsSymbol IsNot Nothing Then
-                '    For Each itm1 As ActionMenuItem In cmsSymbol.Items
-                '        For Each itm2 As ActionMenuItem In itm1.DropDownItems
-                '            itm2.DropDownItems.ClearAndDisplose
-                '        Next itm2
-                '        itm1.DropDownItems.ClearAndDisplose
-                '    Next itm1
-                '    cmsSymbol.Items.ClearAndDisplose
-                '    cmsSymbol.Dispose()
-                'End If
-                'If cmsCommand IsNot Nothing Then
-                '    cmsCommand.Items.ClearAndDisplose
-                '    cmsCommand.Dispose()
-                'End If
-                'If ToolStrip IsNot Nothing Then
-                '    ToolStrip.Items.ClearAndDisplose
-                '    ToolStrip.Dispose()
-                'End If
-                'If Not (components Is Nothing) Then
-                '    components.Dispose()
-                'End If
+                '    If cmsSymbol IsNot Nothing Then
+                '        For Each itm1 As ActionMenuItem In cmsSymbol.Items
+                '            For Each itm2 As ActionMenuItem In itm1.DropDownItems
+                '                itm2.DropDownItems.ClearAndDisplose
+                '            Next itm2
+                '            itm1.DropDownItems.ClearAndDisplose
+                '        Next itm1
+                '        cmsSymbol.Items.ClearAndDisplose
+                '        cmsSymbol.Dispose()
+                '    End If
+                '    If cmsCommand IsNot Nothing Then
+                '        cmsCommand.Items.ClearAndDisplose
+                '        cmsCommand.Dispose()
+                '    End If
+                '    If ToolStrip IsNot Nothing Then
+                '        ToolStrip.Items.ClearAndDisplose
+                '        ToolStrip.Dispose()
+                '    End If
+                If Not (components Is Nothing) Then
+                    components.Dispose()
+                End If
             End If
             MyBase.Dispose(disposing)
         End Sub
@@ -573,85 +577,175 @@ Namespace UI
         Private Block As Boolean
         Private GridTypeDescriptor As GridTypeDescriptor
         Private ClipboardNode As TreeNode
-        Private IsClosing As Boolean
 
         Property GenericMenu As CustomMenu
 
         Sub New(menu As CustomMenu)
             MyBase.New()
+            SWWT1.Restart()
+            SWWT2.Restart()
+            SWW.Restart()
+            Dim imgNew = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Page).ResizeToSmallIconSize)
+            Dim imgCopy = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Copy).ResizeToSmallIconSize)
+            Dim imgCut = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Cut).ResizeToSmallIconSize)
+            Dim imgPaste = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Paste).ResizeToSmallIconSize)
+            Dim imgRem = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Remove).ResizeToSmallIconSize)
+            Dim imgLeft = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Back).ResizeToSmallIconSize)
+            Dim ImgUp = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Up).ResizeToSmallIconSize)
+            Dim imgRight = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Forward).ResizeToSmallIconSize)
+            Dim imgDown = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Down).ResizeToSmallIconSize)
+            Dim imgMoreTTSDD = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.More).ResizeToSmallIconSize)
+
+            Dim esv = [Enum](Of Symbol).GetValues
+            Dim enumSag = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
+            Dim enumAwe = esv.WhereF(Function(s) s > 61400)
+            Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
+            Array.Sort(enumSag, symbComparer)
+            Array.Sort(enumAwe, symbComparer)
+
+            SWW.Stop()
+            TTNsw &= SWW.ElapsedTicks / SWFreq & "msEnumPr| "
+            SWW.Restart()
+
+            Dim eSagImgsT = Task.Run(Function()
+                                         SWWT1.Restart()
+                                         Dim retA(enumSag.Length - 1) As Image
+                                         Parallel.For(0, enumSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(s) retA(s) = ImageHelp.GetSymbolImage(enumSag(s)))
+                                         SWWT1.Stop()
+                                         TTT1sw = SWWT1.ElapsedTicks / SWFreq & "msTImS| "
+                                         Return retA
+                                     End Function)
+            Dim eAweImgsT = Task.Run(Function()
+                                         SWWT2.Restart()
+                                         Dim retA(enumAwe.Length - 1) As Image
+                                         Parallel.For(0, enumAwe.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(s) retA(s) = ImageHelp.GetSymbolImage(enumAwe(s)))
+                                         SWWT2.Stop()
+                                         TTT2sw = SWWT1.ElapsedTicks / SWFreq & "msTImA| "
+                                         Return retA
+                                     End Function)
+
             InitializeComponent()
             ScaleClientSize(32, 30)
-            g.SetRenderer(ToolStrip)
-
-            ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
-
-            tsbNew.Image = ImageHelp.GetSymbolImage(Symbol.Page)
-            tsbCopy.Image = ImageHelp.GetSymbolImage(Symbol.Copy)
-            tsbCut.Image = ImageHelp.GetSymbolImage(Symbol.Cut)
-            tsbPaste.Image = ImageHelp.GetSymbolImage(Symbol.Paste)
-            tsbRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
-
-            tsbMoveLeft.Image = ImageHelp.GetSymbolImage(Symbol.Back)
-            tsbMoveUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-            tsbMoveRight.Image = ImageHelp.GetSymbolImage(Symbol.Forward)
-            tsbMoveDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
-
-            ToolsToolStripDropDownButton.Image = ImageHelp.GetSymbolImage(Symbol.More)
 
             GenericMenu = menu
             GridTypeDescriptor = New GridTypeDescriptor
+            tv.BeginUpdate()
             PopulateTreeView(menu.MenuItem.GetClone, Nothing)
             tv.ExpandAll()
+            tv.SelectedNode = tv.Nodes(0)
+            tv.EndUpdate()
+            CancelButton = Nothing
 
             cmsCommand.SuspendLayout()
             Command.PopulateCommandMenu(cmsCommand.Items, GenericMenu.CommandManager.Commands.Values.ToList, AddressOf SetCommand)
-            cmsCommand.ResumeLayout(True)
-
-            g.SetRenderer(cmsSymbol)
-
-            tv.SelectedNode = tv.Nodes(0)
-            CancelButton = Nothing
-            ToolStrip.ImageScalingSize = SystemInformation.SmallIconSize
-
-            For Each i In ToolStrip.Items.OfType(Of ToolStripItem)()
-                i.Image = i.Image.ResizeToSmallIconSize
-            Next
-
+            cmsCommand.ResumeLayout(False)
 
             TipProvider.SetTip("Parameters used when the command is executed. Please make a feature request if useful parameters are missing.", pg, lParameters)
             TipProvider.SetTip("Text to be displayed. Enter minus to create a separator.", tbText, laText)
             TipProvider.SetTip("A key can be deleted by pressing it two times.", tbHotkey, laHotkey)
             TipProvider.SetTip("Command to be executed. Please make a feature request if useful commands are missing.", tbCommand, laCommand)
+
+            g.SetRenderer(ToolStrip)
+            ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+            ToolStrip.ImageScalingSize = SystemInformation.SmallIconSize
+            'tsbNew.Image = ImageHelp.GetSymbolImage(Symbol.Page).ResizeToSmallIconSize
+            'tsbCopy.Image = ImageHelp.GetSymbolImage(Symbol.Copy).ResizeToSmallIconSize
+            'tsbCut.Image = ImageHelp.GetSymbolImage(Symbol.Cut).ResizeToSmallIconSize
+            'tsbPaste.Image = ImageHelp.GetSymbolImage(Symbol.Paste).ResizeToSmallIconSize
+            'tsbRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove).ResizeToSmallIconSize
+            'tsbMoveLeft.Image = ImageHelp.GetSymbolImage(Symbol.Back).ResizeToSmallIconSize
+            'tsbMoveUp.Image = ImageHelp.GetSymbolImage(Symbol.Up).ResizeToSmallIconSize
+            'tsbMoveRight.Image = ImageHelp.GetSymbolImage(Symbol.Forward).ResizeToSmallIconSize
+            'tsbMoveDown.Image = ImageHelp.GetSymbolImage(Symbol.Down).ResizeToSmallIconSize
+            'ToolsToolStripDropDownButton.Image = ImageHelp.GetSymbolImage(Symbol.More).ResizeToSmallIconSize
+            'For Each i In ToolStrip.Items.OfType(Of ToolStripItem)()
+            '    i.Image = i.Image.ResizeToSmallIconSize
+            'Next
+            tsbNew.Image = imgNew.Result
+            tsbCopy.Image = imgCopy.Result
+            tsbCut.Image = imgCut.Result
+            tsbPaste.Image = imgPaste.Result
+            tsbRemove.Image = imgRem.Result
+            tsbMoveLeft.Image = imgLeft.Result
+            tsbMoveUp.Image = ImgUp.Result
+            tsbMoveRight.Image = imgRight.Result
+            tsbMoveDown.Image = imgDown.Result
+            ToolsToolStripDropDownButton.Image = imgMoreTTSDD.Result
+
+            g.SetRenderer(cmsSymbol)
+            cmsSymbol.SuspendLayout()
+            SWW.Stop()
+            TTNsw &= SWW.ElapsedTicks / SWFreq & "msNew| "
+            SWW.Restart()
+            PopulateSymbolMenu()
+            cmsSymbol.ResumeLayout(False)
+
+            SWW.Stop()
+            TTNsw &= SWW.ElapsedTicks / SWFreq & "msPop| "
+            SWW.Restart()
+        End Sub
+
+        Public SWW As New Stopwatch  'debug
+        Public SWWT1 As New Stopwatch  'debug
+        Public SWWT2 As New Stopwatch  'debug
+        Public TTNsw As String
+        Public TTT1sw As String
+        Public TTT2sw As String
+        Protected Overrides Sub OnShown(e As EventArgs)
+            MyBase.OnShown(e)
+            SWW.Stop()
+            Me.Text = TTNsw & SWW.ElapsedTicks / SWFreq & "msShow| " & TTT1sw & TTT2sw
+            SWW = Nothing
+            SWWT1 = Nothing
+            SWWT2 = Nothing
+        End Sub
+        Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs) 'Debug
+            Me.Text = "Menu Editor"
+            MyBase.OnFormClosing(args)
         End Sub
 
         Sub PopulateSymbolMenu()
-            ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, "No Icon", AddressOf HandleSymbol, Symbol.None)
-            Dim enumNames = [Enum](Of Symbol).GetNames
-            Array.Sort(enumNames, StringComparer.Ordinal)
+            Dim esv = [Enum](Of Symbol).GetValues
+            Dim enumSag = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
+            Dim enumAwe = esv.WhereF(Function(s) s > 61400)
+            Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
+            Array.Sort(enumSag, symbComparer)
+            Array.Sort(enumAwe, symbComparer)
+            Dim tsmiS = New ActionMenuItem("Segoe MDL2 Assets")
+            Dim tsmiA = New ActionMenuItem("FontAwesome")
+            cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
 
-            For Each iName In enumNames
-                If iName.StartsWith("fa_", StringComparison.Ordinal) Then Continue For
-                If IsClosing Then Exit For
-                Dim symbol = [Enum](Of Symbol).Parse(iName)
-                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbol))
-                Dim path = "Segoe MDL2 Assets    | " + iName.Substring(0, 1).ToUpperInvariant + " | " + iName
-                Dim am = ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol) '.SetImage(symbol)
-                am.ImageScaling = ToolStripItemImageScaling.None
-                am.Image = imT.Result  'ImageHelp.GetSymbolImage(symbol)
-                Application.DoEvents()
+            Dim amiSeg(enumSag.Length - 1) As (Char, ActionMenuItem)
+            tsmiS.DropDown.SuspendLayout()
+            Dim mSe = tsmiS.DropDownItems
+
+            For i = 0 To enumSag.Length - 1
+                Dim symbS = enumSag(i)
+                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbS))
+                Dim sName = [Enum](Of Symbol).GetName(symbS)
+                Dim t1 = CChar(sName.Substring(0, 1).ToUpperInvariant)
+                Dim path = t1 & " | " & sName
+                amiSeg(i) = (t1, ActionMenuItem.Add2(mSe, path, Sub() HandleSymbol(symbS), imT))
             Next
 
-            For Each iName In enumNames
-                If Not iName.StartsWith("fa_", StringComparison.Ordinal) Then Continue For
-                If IsClosing Then Exit For
-                Dim symbol = [Enum](Of Symbol).Parse(iName)
-                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbol))
-                Dim path = "FontAwesome | " + iName.Substring(3, 1).ToUpperInvariant + " | " + iName.Substring(3).ToTitleCase.Replace("_", " ")
-                Dim am = ActionMenuItem.Add(Of Symbol)(cmsSymbol.Items, path, AddressOf HandleSymbol, symbol) '.SetImage(symbol)
-                am.ImageScaling = ToolStripItemImageScaling.None
-                am.Image = imT.Result   ' ImageHelp.GetSymbolImage(symbol)
-                Application.DoEvents()
-            Next
+            Dim amiAwe(enumAwe.Length - 1) As (Char, ActionMenuItem)
+            tsmiA.DropDown.SuspendLayout()
+            Dim mAw = tsmiA.DropDownItems
+
+            For i = 0 To enumAwe.Length - 1
+                Dim symbA = enumAwe(i)
+                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbA))
+                Dim sName = [Enum](Of Symbol).GetName(symbA)
+                Dim t1 = CChar(sName.Substring(3, 1).ToUpperInvariant)
+                Dim path = t1 & " | " & sName.Substring(3).ToTitleCase.Replace("_", " ")
+                amiAwe(i) = (t1, ActionMenuItem.Add2(mAw, path, Sub() HandleSymbol(symbA), imT))
+            Next i
+
+            ActionMenuItem.AddRange2Menu(mSe, amiSeg)
+            ActionMenuItem.AddRange2Menu(mAw, amiAwe)
+            tsmiS.DropDown.ResumeLayout(False)
+            tsmiA.DropDown.ResumeLayout(False)
+            [Enum](Of Symbol).ClearCaches()
         End Sub
 
         Sub HandleSymbol(symbol As Symbol)
@@ -784,12 +878,13 @@ Namespace UI
         Sub tbText_TextChanged() Handles tbText.TextChanged
             If Not Block AndAlso Not tv.SelectedNode Is Nothing Then
                 Dim item = DirectCast(tv.SelectedNode.Tag, CustomMenuItem)
+                Dim tbt As Boolean = String.Equals(tbText.Text, "-")
 
-                tbCommand.Enabled = tbText.Text <> "-"
-                bnCommand.Enabled = tbText.Text <> "-"
-                tbHotkey.Enabled = tbText.Text <> "-"
+                tbCommand.Enabled = Not tbt
+                bnCommand.Enabled = Not tbt
+                tbHotkey.Enabled = Not tbt
 
-                If tbText.Text = "-" Then
+                If tbt Then
                     tbCommand.Text = ""
                     item.KeyData = Keys.None
                 End If
@@ -923,7 +1018,7 @@ Namespace UI
 
                             If current.KeyData = item.KeyData AndAlso Not item Is current Then
                                 current.KeyData = Keys.None
-                                MsgInfo(KeysHelp.GetKeyString(item.KeyData) + " detached from " + current.Text.TrimEnd("."c) + " and assigned to " + item.Text.TrimEnd("."c) + " instead.")
+                                MsgInfo(KeysHelp.GetKeyString(item.KeyData) + " detached from " + current.Text.TrimEnd("."c) + " And assigned To " + item.Text.TrimEnd("."c) + " instead.")
                             End If
                         End If
                     Next
@@ -967,7 +1062,7 @@ Namespace UI
         End Sub
 
         Sub ResetToolStripMenuItem_Click() Handles ResetToolStripMenuItem.Click
-            If MsgOK("Please confirm to reset the entire menu.") Then
+            If MsgOK("Please confirm To reset the entire menu.") Then
                 tv.BeginUpdate()
                 tv.Nodes.Clear()
                 PopulateTreeView(GenericMenu.DefaultMenu.Invoke, Nothing)
@@ -1074,32 +1169,16 @@ Namespace UI
             End If
         End Sub
 
-        Protected Overrides Sub OnShown(e As EventArgs)
-            PopulateSymbolMenu()
-            MyBase.OnShown(e)
-        End Sub
-
-        Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
-            MyBase.OnFormClosing(args)
-            IsClosing = True
-        End Sub
-
-        Sub bnOK_Click(sender As Object, e As EventArgs) Handles bnOK.Click
-            IsClosing = True
-        End Sub
-
-        Sub bnCancel_Click(sender As Object, e As EventArgs) Handles bnCancel.Click
-            IsClosing = True
-        End Sub
-
-        Sub CustomMenuEditor_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+        Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
             Dim form As New HelpForm()
             form.Doc.WriteStart(Text)
-            form.Doc.WriteParagraph("The menu editor allows to customize the text, location, shortcut key and command of a menu item. Menu items can be rearranged with '''Drag & Drop'''. Pressing Ctrl while dragging moves as sub-item.")
+            form.Doc.WriteParagraph("The menu editor allows To customize the text, Location, Shortcut key And command of a menu item. Menu items can be rearranged with '''Drag & Drop'''. Pressing Ctrl while dragging moves as sub-item.")
             form.Doc.WriteParagraph("[http://fontawesome.io/cheatsheet FontAwesome icons]")
             form.Doc.WriteParagraph("[https://docs.microsoft.com/en-us/windows/uwp/style/segoe-ui-symbol-font Segoe MDL2 icons]")
             form.Doc.WriteTable("Commands", GenericMenu.CommandManager.GetTips)
             form.Show()
+            hevent.Handled = True
+            MyBase.OnHelpRequested(hevent)
         End Sub
     End Class
 End Namespace

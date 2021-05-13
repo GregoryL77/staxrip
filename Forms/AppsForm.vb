@@ -373,8 +373,8 @@ Public Class AppsForm
 
     Private CurrentPackage As Package
     Private Nodes As New List(Of TreeNode)
-    Private Headers As New Dictionary(Of String, Label)
-    Private Contents As New Dictionary(Of String, Label)
+    Private Headers As New Dictionary(Of String, Label)(7, StringComparer.Ordinal)
+    Private Contents As New Dictionary(Of String, Label)(7, StringComparer.Ordinal)
     Private SetupButton As New ButtonEx
     Private DownloadButton As New ButtonEx
     Private ToolUpdate As ToolUpdate

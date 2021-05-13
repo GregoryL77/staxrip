@@ -647,7 +647,8 @@ Public Class MkvMuxer
             args += " --no-audio --no-subs --no-chapters --no-attachments --no-track-tags --no-global-tags"
         End If
 
-        If Not String.Equals(VideoTrackLanguage.ThreeLetterCode, "und") Then
+        'If Not String.Equals(VideoTrackLanguage.ThreeLetterCode, "und") Then
+        If VideoTrackLanguage.LCID <> 127 Then
             args += " --language " & id & ":" + VideoTrackLanguage.ThreeLetterCode
         End If
 

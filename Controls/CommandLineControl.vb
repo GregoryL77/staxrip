@@ -148,7 +148,7 @@ Public Class CommandLineControl
         cms.SuspendLayout()
         cms.Items.Add(New ToolStripSeparator)
         cms.Items.Add(New ActionMenuItem("Edit Menu..." + g.MenuSpace, AddressOf EditPresets))
-        cms.ResumeLayout(True)
+        cms.ResumeLayout(False)
         cms.Show(bn, 0, bn.Height)
     End Sub
 

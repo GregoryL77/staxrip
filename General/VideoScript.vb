@@ -677,7 +677,7 @@ Public Class VideoFilter
     ReadOnly Property Name As String
         Get
             If Path.Contains("|") Then
-                'im prl = Path.RightLast("|")
+                'im prl = Path.RightLast("|") 'rare use
                 'If prl IsNot "" Then
                 'Return prl.Trim
                 Return Path.RightLast("|").Trim

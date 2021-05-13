@@ -6,7 +6,7 @@ Imports Microsoft.Win32
 <Serializable>
 Public Class LogBuilder
     Private StartTime As DateTime
-    Private Log As New StringBuilder(1024)
+    Private Log As New StringBuilder(2048) '1024
     Private Last As String
 
     Sub Append(content As String)

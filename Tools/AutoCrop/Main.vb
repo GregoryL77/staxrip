@@ -21,14 +21,20 @@ Module Module1
             Using server = FrameServerFactory.Create(scriptPath, vfw)
                 Dim len = server.Info.FrameCount \ (count + 1)
                 Dim crops(count - 1) As AutoCrop
-                Dim pos As Integer
+                Dim pos = 0
 
-                For x = 1 To count
-                    Console.WriteLine("Progress: " & ((x - 1) / count * 100) & "%")
-                    pos = len * x
+                For i = 0 To count - 1
+                    Console.WriteLine("Progress: " & (i / count * 100).ToString("f0") & "%")
+                    pos += len
+                    'For i = 0 To count - 1 ' NEW
+                    '    Console.WriteLine($"Progress: {(i / count * 100):f0}%")
+                    '    pos += len
+                    'For x = 1 To count  ' OLD:
+                    '    Console.WriteLine("Progress: " & ((x - 1) / count * 100) & "%")
+                    '    pos = len * x
 
                     Using bmp = BitmapUtil.CreateBitmap(server, pos)
-                        crops(x - 1) = AutoCrop.Start(bmp.Clone(New Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.Format32bppRgb), pos)
+                        crops(i) = AutoCrop.Start(bmp.Clone(New Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.Format32bppRgb), pos)
                     End Using
                 Next
 
@@ -174,7 +180,7 @@ Public Class DirectFrameServer
     Private NativeServer As INativeFrameServer
 
     Sub New(path As String)
-        If path.ToLower.EndsWith(".avs") Then
+        If path.EndsWith(".avs", StringComparison.OrdinalIgnoreCase) Then
             NativeServer = CreateAviSynthServer()
         Else
             NativeServer = CreateVapourSynthServer()

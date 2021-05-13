@@ -115,27 +115,28 @@ Public Class Project
     End Function
 
     Sub Init() Implements ISafeSerialization.Init
-        If Versions Is Nothing Then Versions = New Dictionary(Of String, Integer)
+        If Versions Is Nothing Then Versions = New Dictionary(Of String, Integer)(7, StringComparer.Ordinal)
         If TempDir Is Nothing Then TempDir = ""
         If Log Is Nothing Then Log = New LogBuilder
         If Storage Is Nothing Then Storage = New ObjectStorage
         If Ranges Is Nothing Then Ranges = New List(Of Range)
         If SourceFile Is Nothing Then SourceFile = ""
         If TargetFile Is Nothing Then TargetFile = ""
+        Dim currCult As Language = Language.CurrentCulture
 
         If Check(PreferredSubtitles, "Automatically Included Subtitles", 2) Then
-            If Language.CurrentCulture.TwoLetterCode.Equals("en") Then
+            If currCult.TwoLetterCode.Equals("en") Then
                 PreferredSubtitles = "eng und"
             Else
-                PreferredSubtitles = Language.CurrentCulture.ThreeLetterCode + " eng und"
+                PreferredSubtitles = currCult.ThreeLetterCode + " eng und"
             End If
         End If
 
         If Check(PreferredAudio, "Preferred Audio Languages", 1) Then
-            If Language.CurrentCulture.TwoLetterCode.Equals("en") Then
+            If currCult.TwoLetterCode.Equals("en") Then
                 PreferredAudio = "eng und"
             Else
-                PreferredAudio = Language.CurrentCulture.ThreeLetterCode + " eng und"
+                PreferredAudio = currCult.ThreeLetterCode + " eng und"
             End If
         End If
 
@@ -148,12 +149,13 @@ Public Class Project
 
         If Check(Audio0, "Audio Track 1", 36) Then
             Audio0 = New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 256}
-            Audio0.Language = New Language(CultureInfo.CurrentCulture.TwoLetterISOLanguageName, True)
+            'Audio0.Language = New Language(CultureInfo.CurrentCulture.TwoLetterISOLanguageName, True)
+            Audio0.Language = currCult
         End If
 
         If Check(Audio1, "Audio Track 2", 36) Then
             Audio1 = New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 256}
-            Audio1.Language = New Language("en", True)
+            Audio1.Language = New Language(9, True) ' "en"
         End If
 
         If Check(Script, "Filter Setup", 50) Then Script = StaxRip.VideoScript.GetDefaults()(0)

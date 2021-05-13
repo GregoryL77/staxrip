@@ -74,13 +74,17 @@ Public Class ObjectHelp
 
     <DebuggerHidden()>
     Shared Function GetCopy(Of T)(o As T) As T
-        'Using ms As New MemoryStream
-        '    Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-        '    bf.Serialize(ms, o)
-        '    ms.Position = 0
-        '    Return DirectCast(bf.Deserialize(ms), T)
-        'End Using
-        Return DeepClonerExtensions.DeepClone(Of T)(o)  '+ Imports Force.DeepCloner
+        'Return DeepClonerExtensions.DeepClone(Of T)(o)  '+ Imports Force.DeepCloner
+        Return o.DeepClone
+    End Function
+    <DebuggerHidden()>
+    Shared Function GetCopySys(Of T)(o As T) As T
+        Using ms As New MemoryStream
+            Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            bf.Serialize(ms, o)
+            ms.Position = 0
+            Return DirectCast(bf.Deserialize(ms), T)
+        End Using
     End Function
 End Class
 

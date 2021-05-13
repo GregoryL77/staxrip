@@ -1,4 +1,5 @@
 
+Imports System.ComponentModel
 Imports StaxRip.UI
 
 Public Class FiltersListView
@@ -68,7 +69,8 @@ Public Class FiltersListView
         Menu.SuspendLayout()
         Menu.Items.ClearAndDisplose
         Dim filterProfiles = If(p.Script.Engine = ScriptEngine.AviSynth, s.AviSynthProfiles, s.VapourSynthProfiles)
-        Dim selectedFunc = Function() SelectedItems.Count > 0
+        Dim isSelItm As Boolean = SelectedItems.Count > 0
+        Dim selectedFunc = Function() isSelItm
         Menu.Add("active").VisibleFunc = selectedFunc
         Dim sep0 = New ToolStripSeparator
         Menu.Items.Add(sep0)
@@ -117,37 +119,39 @@ Public Class FiltersListView
 
         Dim moveUpItem = Menu.Add("Move Up", AddressOf MoveUp, "Moves the selected item up.")
         moveUpItem.SetImage(Symbol.Up)
-        moveUpItem.EnabledFunc = Function() SelectedItems.Count > 0 AndAlso SelectedItems(0).Index > 0
+        moveUpItem.EnabledFunc = Function() isSelItm AndAlso SelectedItems(0).Index > 0
 
         Dim moveDownItem = Menu.Add("Move Down", AddressOf MoveDown, "Moves the selected item down.")
         moveDownItem.SetImage(Symbol.Down)
-        moveDownItem.EnabledFunc = Function() SelectedItems.Count > 0 AndAlso SelectedItems(0).Index < Items.Count - 1
+        moveDownItem.EnabledFunc = Function() isSelItm AndAlso SelectedItems(0).Index < Items.Count - 1
 
         Menu.Add("-")
         Dim setup = Menu.Add("Filter Setup")
         setup.SetImage(Symbol.MultiSelect)
         g.PopulateProfileMenu(setup.DropDownItems, s.FilterSetupProfiles, AddressOf g.MainForm.ShowFilterSetupProfilesDialog, AddressOf g.MainForm.LoadFilterSetup)
 
-        AddHandler Menu.Opening, Sub()
-                                     Dim active = DirectCast(Menu.Items(0), ActionMenuItem)
-                                     active.DropDownItems.ClearAndDisplose
-                                     sep0.Visible = SelectedItems.Count > 0
+        Dim mop As CancelEventHandler = Sub()
+                                            Dim active = DirectCast(Menu.Items(0), ActionMenuItem)
+                                            active.DropDownItems.ClearAndDisplose()
+                                            sep0.Visible = isSelItm
 
-                                     If SelectedItems.Count = 0 Then
-                                         Exit Sub
-                                     End If
+                                            If Not isSelItm Then
+                                                Exit Sub
+                                            End If
 
-                                     Dim selectedFilter = DirectCast(SelectedItems(0).Tag, VideoFilter)
-                                     active.Text = selectedFilter.Category
+                                            Dim selectedFilter = DirectCast(SelectedItems(0).Tag, VideoFilter)
+                                            active.Text = selectedFilter.Category
 
-                                     For Each i In filterProfiles
-                                         If i.Name = selectedFilter.Category Then
-                                             For Each i2 In i.Filters
-                                                 ActionMenuItem.Add(active.DropDownItems, i2.Path, AddressOf ReplaceClick, i2.GetCopy, i2.Script)
-                                             Next
-                                         End If
-                                     Next
-                                 End Sub
+                                            For Each i In filterProfiles
+                                                If i.Name.EqualsEx(selectedFilter.Category) Then
+                                                    For Each i2 In i.Filters
+                                                        ActionMenuItem.Add(active.DropDownItems, i2.Path, AddressOf ReplaceClick, i2.GetCopy, i2.Script)
+                                                    Next
+                                                End If
+                                            Next
+                                        End Sub
+        RemoveHandler Menu.Opening, mop
+        AddHandler Menu.Opening, mop
         Menu.ResumeLayout()
     End Sub
 
@@ -204,7 +208,7 @@ Public Class FiltersListView
         If val.Caption.NotNullOrEmptyS AndAlso Not val.Value.Equals(filter.Script) Then
             Dim path = filter.Path.Replace("...", "")
 
-            If val.Caption.EndsWith(path) Then
+            If val.Caption.EndsWith(path, StringComparison.Ordinal) Then
                 filter.Path = val.Caption
             Else
                 filter.Path = path + " " + val.Caption
@@ -228,7 +232,7 @@ Public Class FiltersListView
         If val.Caption.NotNullOrEmptyS AndAlso Not val.Value.Equals(filter.Script) Then
             Dim path = filter.Path.Replace("...", "")
 
-            If val.Caption.EndsWith(path) Then
+            If val.Caption.EndsWith(path, StringComparison.Ordinal) Then
                 filter.Path = val.Caption
             Else
                 filter.Path = path + " " + val.Caption
@@ -252,7 +256,7 @@ Public Class FiltersListView
         If val.Caption.NotNullOrEmptyS AndAlso Not val.Value.Equals(filter.Script) Then
             Dim path = filter.Path.Replace("...", "")
 
-            If val.Caption.EndsWith(path) Then
+            If val.Caption.EndsWith(path, StringComparison.Ordinal) Then
                 filter.Path = val.Caption
             Else
                 filter.Path = path + " " + val.Caption

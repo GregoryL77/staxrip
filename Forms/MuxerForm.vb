@@ -673,7 +673,7 @@ Public Class MuxerForm
         CommandLineControl.tb.Text = muxer.AdditionalSwitches
         tcMain.SelectedIndex = s.Storage.GetInt("last selected muxer tab")
 
-        lbAttachments.Items.AddRange(muxer.Attachments.Select(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
+        lbAttachments.Items.AddRange(muxer.Attachments.SelectF(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
         lbAttachments.RemoveButton = bnAttachmentRemove
 
         'AudioBindingSource.DataSource = ObjectHelp.GetCopy(p.AudioTracks)
@@ -840,11 +840,12 @@ Public Class MuxerForm
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
 
-        Dim lastAction As Action
+        'Dim lastAction As Action
 
         Dim UI = SimpleUI
         UI.Store = Muxer
         UI.BackColor = Color.Transparent
+        Application.DoEvents()
 
         Dim page = UI.CreateFlowPage("main page")
         page.SuspendLayout()
@@ -862,6 +863,7 @@ Public Class MuxerForm
         mb.Property = NameOf(Muxer.ChapterFile)
         mb.AddMenu("Browse File...", Function() g.BrowseFile("txt, xml|*.txt;*.xml"))
         mb.AddMenu("Edit with chapterEditor...", Sub() g.ShellExecute(Package.chapterEditor.Path, Muxer.ChapterFile.Escape))
+        Application.DoEvents()
 
         If TypeOf Muxer Is MkvMuxer Then
             CommandLineControl.Presets = s.CmdlPresetsMKV
@@ -909,19 +911,21 @@ Public Class MuxerForm
             compression.Text = "Subtitle Compression"
             compression.Property = NameOf(MkvMuxer.Compression)
 
-            lastAction = Sub()
-                             ml.Button.Menu.SuspendLayout()
-                             For Each i In Language.Languages
-                                 If i.IsCommon Then
-                                     ml.Button.Add(i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
-                                 Else
-                                     ml.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpperInvariant + " | " + i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
-                                 End If
+            Application.DoEvents()
+            ml.Button.BuildLangMenu(True)
+            'lastAction = Sub()
+            '                 ml.Button.Menu.SuspendLayout()
+            '                 For Each i In Language.Languages
+            '                     If i.IsCommon Then
+            '                         ml.Button.Add(i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
+            '                     Else
+            '                         ml.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpperInvariant + " | " + i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
+            '                     End If
 
-                                 Application.DoEvents()
-                             Next i
-                             ml.Button.Menu.ResumeLayout(False)
-                         End Sub
+            '                     Application.DoEvents()
+            '                 Next i
+            '                 ml.Button.Menu.ResumeLayout(False)
+            '             End Sub
 
         ElseIf TypeOf Muxer Is MP4Muxer Then
             tpAttachments.Enabled = False
@@ -942,7 +946,7 @@ Public Class MuxerForm
         End If
 
         page.ResumeLayout()
-        lastAction?.Invoke
+        'lastAction?.Invoke
         UpdateControls()
     End Sub
 
@@ -991,7 +995,7 @@ Public Class MuxerForm
         attachmentItems.AddRange(paths)
         attachmentItems.Sort()
         lbAttachments.Items.Clear()
-        lbAttachments.Items.AddRange(attachmentItems.Select(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
+        lbAttachments.Items.AddRange(attachmentItems.SelectF(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
         UpdateControls()
     End Sub
 

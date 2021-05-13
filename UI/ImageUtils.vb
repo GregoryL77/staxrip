@@ -5,19 +5,39 @@ Imports System.Globalization
 Imports System.Threading.Tasks
 
 Public Class ImageHelp
-    'Public Shared Coll As PrivateFontCollection
     'Private Shared ReadOnly AwesomePath As String = Folder.Apps & "Fonts\FontAwesome.ttf"
-    'Private Shared FontFilesExist As Boolean = File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") 'AndAlso File.Exists(Folder.Apps & "Fonts\Segoe-MDL2-Assets.ttf")
-    Private Shared ReadOnly FamilySagoe As New FontFamily("Segoe MDL2 Assets")
-    Private Shared FamilyAwesome As FontFamily
+    Private Shared FontFilesExist As Boolean = File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") 'AndAlso File.Exists(Folder.Apps & "Fonts\Segoe-MDL2-Assets.ttf")
+    ' Private Shared ReadOnly FamilySagoe As New FontFamily("Segoe MDL2 Assets")
+    ' Private Shared FamilyAwesome As FontFamily
+    'Private Shared ReadOnly FontSagoe As New Font(FamilySagoe, 12)
+    Private Shared CollFontPrv As New PrivateFontCollection
+    Private Shared FontSagoe As New Font("Segoe MDL2 Assets", 12)
+    Private Shared FontAwesome As Font
 
-    Public Shared Sub CreateAwesomeFontFamily()
-        If File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") Then
-            Using Coll As New PrivateFontCollection
-                Coll.AddFontFile(Folder.Apps & "Fonts\FontAwesome.ttf")
-                FamilyAwesome = Coll.Families(0)
-            End Using
+    Public Shared Sub CreateFonts()
+        If FontSagoe Is Nothing Then FontSagoe = New Font("Segoe MDL2 Assets", 12)
+        If FontFilesExist Then
+            If CollFontPrv Is Nothing Then CollFontPrv = New PrivateFontCollection
+            If CollFontPrv.Families.Length = 0 Then CollFontPrv.AddFontFile(Folder.Apps & "Fonts\FontAwesome.ttf")
+            'Using EndUsing FamilyAwesome = CollFontPrv.Families(0)
+            If FontAwesome Is Nothing Then FontAwesome = New Font(CollFontPrv.Families(0), 12)
         End If
+    End Sub
+    Public Shared Sub DisposeFonts()
+        If FontSagoe IsNot Nothing Then
+            FontSagoe.Dispose()
+            FontSagoe = Nothing
+        End If
+        If FontAwesome IsNot Nothing Then
+            FontAwesome?.Dispose()
+            FontAwesome = Nothing
+        End If
+        If CollFontPrv IsNot Nothing Then
+            CollFontPrv?.Dispose()
+            CollFontPrv = Nothing
+        End If
+        'FamilyAwesome?.Dispose()
+        'FamilySagoe?.Dispose()
     End Sub
 
     Shared Async Function GetSymbolImageAsync(symbol As Symbol) As Task(Of Image)
@@ -25,37 +45,21 @@ Public Class ImageHelp
     End Function
 
     Shared Function GetSymbolImage(symbol As Symbol) As Image
-        'If Not FontFilesExist Then Return Nothing
-        'If Coll Is Nothing OrElse FamilyAwesome Is Nothing Then
-        '    Coll = New PrivateFontCollection
-        '    Coll.AddFontFile(AwesomePath)
-        '    FamilyAwesome = Coll.Families(0)
-        'End If
-        'Dim family As FontFamily
-        'If symbol > 61400 Then
-        '    'If FamilyAwesome Is Nothing Then  'Init in MainForm New
-        '    '        Dim Coll = New PrivateFontCollection
-        '    '        Coll.AddFontFile(AwesomePath)
-        '    '        FamilyAwesome = Coll.Families(0)
-        '    'End If
-        '    family = FamilyAwesome 'Coll.Families(0)
-        'Else
-        '    family = FamilySagoe ' New FontFamily("Segoe MDL2 Assets")
-        'End If
         'If family Is Nothing Then Return Nothing
-        If symbol > 61400 AndAlso FamilyAwesome Is Nothing Then Return Nothing
+        'If symbol > 61400 AndAlso FamilyAwesome Is Nothing Then Return Nothing
+        If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
         Dim bitmap As Bitmap
-        'Using font As New Font(family, 12)
-        Using font As New Font(If(symbol > 61400, FamilyAwesome, FamilySagoe), 12)
-            Dim fontHeight = 16 ' font.Height
-            bitmap = New Bitmap(CInt(fontHeight * 1.1F), CInt(fontHeight * 1.1F))
-            Using graphics = Drawing.Graphics.FromImage(bitmap)
-                graphics.TextRenderingHint = TextRenderingHint.AntiAlias
-                graphics.DrawString(Convert.ToChar(symbol), font, Brushes.Black, -fontHeight * 0.1F, fontHeight * 0.07F)
-            End Using
+        'Using font As New Font(If(symbol > 61400, FamilyAwesome, FamilySagoe), 12)
+        'dim fontheight = 16 font.Height
+        bitmap = New Bitmap(CInt(16.0 * 1.1), CInt(16.0 * 1.1))
+        Using graphics = Drawing.Graphics.FromImage(bitmap)
+            graphics.TextRenderingHint = TextRenderingHint.AntiAlias
+            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 16.0F * 0.07F)
         End Using
+        'End Using
         Return bitmap
     End Function
+
 End Class
 
 Public Class Thumbnails

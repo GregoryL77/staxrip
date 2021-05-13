@@ -172,7 +172,7 @@ Namespace UI
                 Dim found = False
 
                 For Each iNode As TreeNode In currentNodeList
-                    If iNode.Text = " " + iNodeName Then
+                    If String.Equals(iNode.Text, " " & iNodeName) Then
                         ret = iNode
                         currentNodeList = iNode.Nodes
                         found = True
@@ -486,7 +486,7 @@ Namespace UI
             pasteItem.KeyDisplayString = "Ctrl+V"
 
             cms.Add("Copy Everything", Sub() Clipboard.SetText(Text))
-            cms.ResumeLayout(True)
+            cms.ResumeLayout(False)
 
             AddHandler cutItem.Click, Sub()
                                           Clipboard.SetText(SelectedText)
@@ -508,8 +508,8 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)
-            MyBase.Dispose(disposing)
             ContextMenuStrip?.Dispose()
+            MyBase.Dispose(disposing)
         End Sub
 
         Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
@@ -690,14 +690,16 @@ Namespace UI
             If Description.NotNullOrEmptyS Then
                 HelpVisible = True
 
-                Dim lines = CInt(Math.Ceiling(CreateGraphics.MeasureString(
-                    Description, Font, Width).Height / Font.Height))
+                Using g = CreateGraphics()
+                    Dim lines = CInt(Math.Ceiling(g.MeasureString(Description, Font, Width).Height / Font.Height))
 
-                Dim grid As New Reflector(Me, GetType(PropertyGrid))
-                Dim doc = grid.Invoke("doccomment")
-                doc.Invoke("Lines", lines + 1)
-                doc.Invoke("userSized", True)
-                grid.Invoke("OnLayoutInternal", False)
+                    Dim grid As New Reflector(Me, GetType(PropertyGrid))
+                    Dim doc = grid.Invoke("doccomment")
+                    doc.Invoke("Lines", lines + 1)
+                    doc.Invoke("userSized", True)
+                    grid.Invoke("OnLayoutInternal", False)
+                End Using
+
             Else
                 HelpVisible = False
             End If
@@ -824,7 +826,7 @@ Namespace UI
                     End If
                 End If
 
-                If Not value Is Nothing Then
+                If value IsNot Nothing Then
                     For Each i In Menu.Items.OfType(Of ActionMenuItem)()
                         If value.Equals(i.Tag) Then Text = i.Text
 
@@ -896,6 +898,50 @@ Namespace UI
             Return DirectCast(Value, Integer)
         End Function
 
+        Public Sub BuildLangMenu(Optional setButtonText As Boolean = False)
+            'Dim lastCh As Char
+            Dim mLl As New List(Of ActionMenuItem)(18) '18
+            Dim mL2Alph As New List(Of ActionMenuItem)(26) '26
+            Dim mL3 As New List(Of (Char, ActionMenuItem))(292) '285
+            Dim ML2chs As New HashSet(Of Char)(29) '26 Or lastChar<> Version
+            Dim sb As New Text.StringBuilder(52) 'Maxis 50
+            Dim languages = Language.Languages '302
+
+            For Each lng In languages
+                Dim lngS = lng.ToString
+                Dim onAct As Action = If(setButtonText, Sub() OnAction(lngS, lng), Sub() OnAction("", lng))
+                sb.Clear()
+                If lng.IsCommon Then
+                    sb.Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+                    mLl.Add(New ActionMenuItem(sb.ToString, onAct))
+                Else
+                    Dim lAmiCh = CChar(lngS.Substring(0, 1).ToUpperInvariant)
+
+                    'If lAmiCh <> lastCh Then
+                    '    lastCh = lAmiCh
+                    '    mL2Alph.Add(New ActionMenuItem(lAmiCh))
+                    'End If
+                    If ML2chs.Add(lAmiCh) Then
+                        mL2Alph.Add(New ActionMenuItem(lAmiCh))
+                    End If
+
+                    sb.Append(lngS).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+                    mL3.Add((lAmiCh, New ActionMenuItem(sb.ToString, onAct)))
+                End If
+            Next lng
+
+            Dim miMore = New ActionMenuItem("More")
+            Menu.SuspendLayout()
+            miMore.DropDown.SuspendLayout()
+            mLl.Add(miMore)
+            Menu.Items.AddRange(mLl.ToArray)
+            Dim mItm = miMore.DropDownItems
+            mItm.AddRange(mL2Alph.ToArray)
+            ActionMenuItem.AddRange2Menu(mItm, mL3.ToArray)
+            miMore.DropDown.ResumeLayout(False)
+            Menu.ResumeLayout(False)
+        End Sub
+
         Protected Overrides Sub Dispose(disposing As Boolean)
             Menu.Dispose()
             MyBase.Dispose(disposing)
@@ -905,6 +951,12 @@ Namespace UI
     Public Class CommandLineRichTextBox
         Inherits RichTextBoxEx
 
+        Public Sub New()
+        End Sub
+
+        Public Sub New(createMenu As Boolean)
+            MyBase.New(createMenu)
+        End Sub
         Property LastCommandLine As String
 
         Sub SetText(commandLine As String)
@@ -1669,15 +1721,15 @@ Namespace UI
 
         <Category("Data")>
         <DefaultValue(GetType(Double), "-9000000000")>
-        Property Minimum As Double = -9000000000
+        Property Minimum As Double = -9000000000.0R
 
         <Category("Data")>
         <DefaultValue(GetType(Double), "9000000000")>
-        Property Maximum As Double = 9000000000
+        Property Maximum As Double = 9000000000.0R
 
         <Category("Data")>
         <DefaultValue(GetType(Double), "1")>
-        Property Increment As Double = 1
+        Property Increment As Double = 1.0R
 
         Private ValueValue As Double
 
@@ -1799,8 +1851,9 @@ Namespace UI
         End Sub
 
         Sub TextBox_TextChanged(sender As Object, e As EventArgs) Handles TextBox.TextChanged
-            If TextBox.Text.IsDouble Then
-                SetValue(TextBox.Text.ToDouble, False)
+            Dim td As Double = TextBox.Text.ToDouble(Double.NaN) 'opt IsDouble
+            If Not Double.IsNaN(td) Then
+                SetValue(td, False)
             End If
         End Sub
 
@@ -2020,6 +2073,10 @@ Namespace UI
             Columns.Add(ret)
             Return ret
         End Function
+
+        Public Sub EventsDispose()
+            Events.Dispose()
+        End Sub
     End Class
 
     Public Class TabControlEx

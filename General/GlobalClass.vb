@@ -904,7 +904,7 @@ Public Class GlobalClass
 
     Function GetFilesInTempDirAndParent() As List(Of String)
         Dim ret As New List(Of String)(16)
-        Dim dirs As New HashSet(Of String)
+        Dim dirs As New HashSet(Of String)(7, StringComparer.Ordinal)
 
         If p.TempDir.NotNullOrEmptyS Then
             dirs.Add(p.TempDir)
@@ -988,19 +988,19 @@ Public Class GlobalClass
 
     Public Sub KillMeAll()
         Try
+            g.ProcForm?.Invoke(Sub() g.ProcForm.Close())
+            If g.MainForm IsNot Nothing Then
+                g.MainForm.ForceClose = True
+                g.MainForm.Close()
+            End If
+            Application.Exit()
+            Application.ExitThread()
+            Application.UnregisterMessageLoop()
             RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
             RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-            If Not g.ProcForm Is Nothing Then
-                g.ProcForm.Invoke(Sub() g.ProcForm.Close())
-            End If
-            'g.MainForm = Nothing
-            'g.MainForm?.Close()
-            'Application.Exit()
-            'RaiseAppEvent(ApplicationEvent.ApplicationExit)
-            Process.GetCurrentProcess.CloseMainWindow()
-            Process.GetCurrentProcess.Close()
-            Thread.Sleep(60)
+        Catch
         Finally
+            Console.Beep(350, 30)
             Process.GetCurrentProcess.Kill()
         End Try
     End Sub
@@ -1055,7 +1055,7 @@ Public Class GlobalClass
             Dim di As New DirectoryInfo(logFolder)
 
             While di.GetFiles("*.log").Length > s.LogFileNum
-                FileHelp.Delete(di.GetFiles("*.log").OrderBy(Function(val) val.LastWriteTime).First.FullName)
+                FileHelp.Delete(di.GetFiles("*.log").OrderByF(Function(val) val.LastWriteTime).FirstF.FullName)
             End While
         Catch ex As Exception
             ShowException(ex, "Failed to archive log file")

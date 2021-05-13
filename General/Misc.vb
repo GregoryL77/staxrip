@@ -4,6 +4,7 @@ Imports System.Drawing.Design
 Imports System.Drawing.Imaging
 Imports System.Globalization
 Imports System.Management
+Imports System.Runtime
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
@@ -183,17 +184,23 @@ Public Class Calc
         If value.NotNullOrEmptyS AndAlso (value.Contains(":") OrElse value.Contains("/")) Then
             Dim a = value.Split(":/".ToCharArray)
 
-            If a.Length = 2 AndAlso a(0).IsInt AndAlso a(1).IsInt Then
-                Return Reduce(New Point(a(0).ToInt, a(1).ToInt))
+            If a.Length = 2 Then
+                Dim a0i = a(0).ToIntM
+                If a0i <> -2147483646I Then
+                    Dim a1i = a(1).ToIntM
+                    If a1i <> -2147483646I Then
+                        Return Reduce(New Point(a0i, a1i))
+                    End If
+                End If
             End If
-        ElseIf value.IsDouble Then
-            Dim val = value.ToDouble
-
-            If val > 0 Then
-                Return Reduce(New Point(CInt(val * 1000000), 1000000))
+        Else
+            Dim val = value.ToDouble(Double.NaN) 'Opt
+            If Not Double.IsNaN(val) Then
+                If val > 0 Then
+                    Return Reduce(New Point(CInt(val * 1000000), 1000000))
+                End If
             End If
         End If
-
         Return New Point(defaultX, defaultY)
     End Function
 
@@ -483,16 +490,22 @@ End Structure
 Public Class Language
     Implements IComparable(Of Language)
 
-    <NonSerialized>
-    Public IsCommon As Boolean
+    <NonSerialized> Public IsCommon As Boolean
 
     Sub New()
-        Me.New("")
+        Me.New(127) 'Invariant
     End Sub
 
     Sub New(ci As CultureInfo, Optional isCommon As Boolean = False)
         Me.IsCommon = isCommon
         CultureInfoValue = ci
+        LCIDValue = ci.LCID
+    End Sub
+
+    Sub New(lcid As Integer, Optional isCommon As Boolean = False)
+        Me.IsCommon = isCommon
+        CultureInfoValue = New CultureInfo(lcid)
+        LCIDValue = lcid
     End Sub
 
     Sub New(twoLetterCode As String, Optional isCommon As Boolean = False)
@@ -507,8 +520,10 @@ Public Class Language
             End Select
 
             CultureInfoValue = New CultureInfo(twoLetterCode)
+            LCIDValue = CultureInfoValue.LCID
         Catch ex As Exception
             CultureInfoValue = CultureInfo.InvariantCulture
+            LCIDValue = 127
         End Try
     End Sub
 
@@ -517,6 +532,14 @@ Public Class Language
     ReadOnly Property CultureInfo() As CultureInfo
         Get
             Return CultureInfoValue
+        End Get
+    End Property
+
+    Private LCIDValue As Integer
+    Public ReadOnly Property LCID() As Integer
+        Get
+            Return LCIDValue
+            'Return CultureInfo.LCID
         End Get
     End Property
 
@@ -531,40 +554,71 @@ Public Class Language
     ReadOnly Property ThreeLetterCode() As String
         Get
             If ThreeLetterCodeValue Is Nothing Then
-                If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
-                    ThreeLetterCodeValue = "und"
-                Else
-                    Select Case CultureInfo.ThreeLetterISOLanguageName
-                        Case "deu"
-                            ThreeLetterCodeValue = "ger"
-                        Case "ces"
-                            ThreeLetterCodeValue = "cze"
-                        Case "zho"
-                            ThreeLetterCodeValue = "chi"
-                        'Case "nld"
-                        '    ThreeLetterCodeValue = "dut"
-                        Case "ell"
-                            ThreeLetterCodeValue = "gre"
-                        'Case "fra"
-                        '    ThreeLetterCodeValue = "fre"
-                        Case "sqi"
-                            ThreeLetterCodeValue = "alb"
-                        Case "hye"
-                            ThreeLetterCodeValue = "arm"
-                        'Case "eus"
-                        '    ThreeLetterCodeValue = "baq"
-                        Case "mya"
-                            ThreeLetterCodeValue = "bur"
-                            'Case "kat"
-                            '    ThreeLetterCodeValue = "geo"
-                            'Case "isl"
-                            '    ThreeLetterCodeValue = "ice"
-                            'Case "bng"
-                            '    ThreeLetterCodeValue = "ben"
-                        Case Else
-                            ThreeLetterCodeValue = CultureInfo.ThreeLetterISOLanguageName
-                    End Select
-                End If
+                'If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
+                '    ThreeLetterCodeValue = "und"
+                'Else
+                '    Select Case CultureInfo.ThreeLetterISOLanguageName
+                '        Case "deu" '7
+                '            ThreeLetterCodeValue = "ger"
+                '        Case "ces" '5
+                '            ThreeLetterCodeValue = "cze"
+                '        Case "zho" '30724, 4, 31748
+                '            ThreeLetterCodeValue = "chi"
+                '        Case "nld" '19
+                '            ThreeLetterCodeValue = "dut"
+                '        Case "ell" '8
+                '            ThreeLetterCodeValue = "gre"
+                '        Case "fra" '12
+                '            ThreeLetterCodeValue = "fre"
+                '        Case "sqi" '28
+                '            ThreeLetterCodeValue = "alb"
+                '        Case "hye" ' 43
+                '            ThreeLetterCodeValue = "arm"
+                '        Case "eus" '45
+                '            ThreeLetterCodeValue = "baq"
+                '        Case "mya" '85
+                '            ThreeLetterCodeValue = "bur"
+                '        Case "kat" '55
+                '            ThreeLetterCodeValue = "geo"
+                '        Case "isl" '15
+                '            ThreeLetterCodeValue = "ice"
+                '        Case "bng" '69
+                '            ThreeLetterCodeValue = "ben"
+                '        Case Else
+                '            ThreeLetterCodeValue = CultureInfo.ThreeLetterISOLanguageName
+                '    End Select
+                Select Case LCIDValue
+                    Case 127 'CultureInfo.LCID
+                        ThreeLetterCodeValue = "und"
+                    Case 7
+                        ThreeLetterCodeValue = "ger"
+                    Case 5
+                        ThreeLetterCodeValue = "cze"
+                    Case 30724, 4, 31748
+                        ThreeLetterCodeValue = "chi"
+                    Case 19
+                        ThreeLetterCodeValue = "dut"
+                    Case 8
+                        ThreeLetterCodeValue = "gre"
+                    Case 12
+                        ThreeLetterCodeValue = "fre"
+                    Case 28
+                        ThreeLetterCodeValue = "alb"
+                    Case 43
+                        ThreeLetterCodeValue = "arm"
+                    Case 45
+                        ThreeLetterCodeValue = "baq"
+                    Case 85
+                        ThreeLetterCodeValue = "bur"
+                    Case 55
+                        ThreeLetterCodeValue = "geo"
+                    Case 15
+                        ThreeLetterCodeValue = "ice"
+                    Case 69
+                        ThreeLetterCodeValue = "ben"
+                    Case Else
+                        ThreeLetterCodeValue = CultureInfo.ThreeLetterISOLanguageName
+                End Select
             End If
 
             Return ThreeLetterCodeValue
@@ -573,7 +627,8 @@ Public Class Language
 
     ReadOnly Property Name() As String
         Get
-            If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
+            'If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
+            If LCIDValue = 127 Then 'CultureInfo.LCID  127 = InvarintCulture LCID 
                 Return "Undetermined"
             Else
                 Return CultureInfo.EnglishName
@@ -586,35 +641,36 @@ Public Class Language
     Shared ReadOnly Property Languages() As List(Of Language)
         Get
             If LanguagesValue Is Nothing Then
-                Dim l As New List(Of Language)(304)
+                Dim l As New List(Of Language)(308) 'Is now(2021) 296 (Full 303)
 
-                l.Add(New Language("pl", True))
-                l.Add(New Language("zh", True))
-                l.Add(New Language("en", True))
-                l.Add(New Language("fr", True))
-                l.Add(New Language("de", True))
-                l.Add(New Language("it", True))
-                l.Add(New Language("ja", True))
-                l.Add(New Language("pt", True))
-                l.Add(New Language("ru", True))
-                l.Add(New Language("es", True))
-                'l.Add(New Language("hi", True))
-                'l.Add(New Language("ar", True))
-                'l.Add(New Language("bn", True))
-                'l.Add(New Language("pa", True))
-                'l.Add(New Language("ms", True))
-                'l.Add(New Language("ko", True))
+                l.Add(New Language(1, True))  '1 "ar"
+                l.Add(New Language(30724, True)) '30724 "zh"
+                l.Add(New Language(9, True))  '9 "en"
+                l.Add(New Language(12, True)) '12 "fr"
+                l.Add(New Language(7, True))  '7 "de"
+                l.Add(New Language(57, True)) '57 "hi"
+                l.Add(New Language(16, True)) '16 "it"
+                l.Add(New Language(17, True)) '17 "ja"
+                l.Add(New Language(18, True)) '18 "ko"
+                l.Add(New Language(21, True)) '21 "pl"
+                l.Add(New Language(22, True)) '22 "pt"
+                l.Add(New Language(25, True)) '25 "ru"
+                l.Add(New Language(10, True)) '10 "es"
+                'l.Add(New Language(69, True)) '69 "bn"
+                'l.Add(New Language(62, True)) '62 "ms"
+                'l.Add(New Language(70, True)) '70 "pa"
 
-                l.Add(New Language(CultureInfo.InvariantCulture, True))
+                l.Add(New Language(CultureInfo.InvariantCulture, True)) '127
 
-                Dim current = l.Find(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
+                'Dim current = l.Find(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
+                Dim curNLCID As Integer = CultureInfo.CurrentCulture.NeutralCulture.LCID
+                Dim current = l.Find(Function(a) a.LCIDValue = curNLCID)
 
                 If current Is Nothing Then
                     l.Add(CurrentCulture)
                 End If
 
                 l.Sort()
-
                 Dim l2 As New List(Of Language)(296)
 
                 For Each i In CultureInfo.GetCultures(CultureTypes.NeutralCultures)
@@ -629,21 +685,27 @@ Public Class Language
             Return LanguagesValue
         End Get
     End Property
-
+    'Shared Sub WriteLang() 'debug
+    '    Dim lll = Languages
+    '    Dim nn As String
+    '    For Each l In lll
+    '        nn = If(l.CultureInfo.Name.Equals(l.TwoLetterCode), l.CultureInfo.Name, $"{l.CultureInfo.Name} | {l.TwoLetterCode}")
+    '        Log.WriteLine($"{l.LCID} ; {l.Name} ; {l.ThreeLetterCode } ; {nn}")
+    '    Next
+    'End Sub
     Shared ReadOnly Property CurrentCulture As Language
         Get
             Return New Language(CultureInfo.CurrentCulture.NeutralCulture, True)
         End Get
     End Property
 
-
     Overrides Function ToString() As String
         Return Name
     End Function
 
     Function CompareTo(other As Language) As Integer Implements System.IComparable(Of Language).CompareTo
-        Return String.CompareOrdinal(Name, other.Name)
-        'Return Name.CompareTo(other.Name)
+        'Return String.CompareOrdinal(Name, other.Name)
+        Return String.Compare(Name, other.Name, StringComparison.OrdinalIgnoreCase)
     End Function
 
     Overrides Function Equals(o As Object) As Boolean
@@ -788,21 +850,22 @@ Public MustInherit Class Profile
     End Function
 
     Function CompareTo(other As Profile) As Integer Implements System.IComparable(Of Profile).CompareTo
-        Return Name.CompareTo(other.Name)
+        '  Return Name.CompareTo(other.Name)
+        Return String.CompareOrdinal(Name, other.Name)
     End Function
 End Class
 
 <Serializable()>
 Public Class ObjectStorage
-    Private StringDictionary As New Dictionary(Of String, String)
-    Private IntDictionary As New Dictionary(Of String, Integer)
-    Private DoubleDictionary As New Dictionary(Of String, Double)
+    Private StringDictionary As New Dictionary(Of String, String)(7, StringComparer.Ordinal)
+    Private IntDictionary As New Dictionary(Of String, Integer)(7, StringComparer.Ordinal)
+    Private DoubleDictionary As New Dictionary(Of String, Double)(7, StringComparer.Ordinal)
     Private BoolDictionaryValue As Dictionary(Of String, Boolean)
 
     ReadOnly Property BoolDictionary() As Dictionary(Of String, Boolean)
         Get
             If BoolDictionaryValue Is Nothing Then
-                BoolDictionaryValue = New Dictionary(Of String, Boolean)
+                BoolDictionaryValue = New Dictionary(Of String, Boolean)(7, StringComparer.Ordinal)
             End If
 
             Return BoolDictionaryValue
@@ -930,7 +993,11 @@ Public Class Startup
         Application.Run(New MainForm())
         'RemoveHandler My.Application.UnhandledException, AddressOf g.OnUnhandledException
         ' RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        ' RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
+        Console.Beep(320, 30)
+        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
     End Sub
 End Class
 
@@ -1080,7 +1147,8 @@ Public Class AudioStream
                 sb.Append(" ").Append(Delay.ToInvariantString).Append("ms")
             End If
 
-            If Not String.Equals(Language.TwoLetterCode, "iv") Then
+            'If Not String.Equals(Language.TwoLetterCode, "iv") Then
+            If Language.LCID <> 127 Then
                 sb.Append(" ").Append(Language.Name)
             End If
 
@@ -1366,12 +1434,12 @@ Public Class Subtitle
 
         For Each st In ret
             If p.DefaultSubtitle = DefaultSubtitleMode.English Then
-                If st.Language.TwoLetterCode = "en" Then
+                If String.Equals(st.Language.TwoLetterCode, "en") Then
                     st.Default = True
                     Exit For
                 End If
             ElseIf p.DefaultSubtitle = DefaultSubtitleMode.Native Then
-                If st.Language.TwoLetterCode = Language.CurrentCulture.TwoLetterCode Then
+                If String.Equals(st.Language.TwoLetterCode, Language.CurrentCulture.TwoLetterCode) Then
                     st.Default = True
                     Exit For
                 End If
@@ -1488,10 +1556,10 @@ End Class
 
 <Serializable>
 Public Class PrimitiveStore
-    Property Bool As New Dictionary(Of String, Boolean)
-    Property Int As New Dictionary(Of String, Integer)
-    Property [Double] As New Dictionary(Of String, Double)
-    Property [String] As New Dictionary(Of String, String)
+    Property Bool As New Dictionary(Of String, Boolean)(7, StringComparer.Ordinal)
+    Property Int As New Dictionary(Of String, Integer)(7, StringComparer.Ordinal)
+    Property [Double] As New Dictionary(Of String, Double)(7, StringComparer.Ordinal)
+    Property [String] As New Dictionary(Of String, String)(7, StringComparer.Ordinal)
 End Class
 
 Public Enum ContainerStreamType
@@ -1804,8 +1872,8 @@ Public Enum Symbol
     AllAppsMirrored = &HEA40
     Annotation = &HE924
     AppIconDefault = &HECAA
-    ArrowHTMLLegacy = &HED5
-    ArrowHTMLLegacyMirrored = &HEAE
+    'ArrowHTMLLegacy = &HED5
+    'ArrowHTMLLegacyMirrored = &HEAE
     AspectRatio = &HE799
     Asterisk = &HEA38
     AsteriskBadge12 = &HEDAD
@@ -1816,11 +1884,11 @@ Public Enum Symbol
     Audio = &HE8D6
     AudioLegacy = &HE189
     Back = &HE72B
-    BackBttnArrow20Legacy = &HEC4
-    BackBttnArrow42Legacy = &HEA6
-    BackBttnMirroredArrow20Legacy = &HEAD
-    BackBttnMirroredArrow42Legacy = &HEAB
-    BackgroundToggle = &HEF1F
+    'BackBttnArrow20Legacy = &HEC4
+    'BackBttnArrow42Legacy = &HEA6
+    'BackBttnMirroredArrow20Legacy = &HEAD
+    'BackBttnMirroredArrow42Legacy = &HEAB
+    'BackgroundToggle = &HEF1F
     BackLegacy = &HE112
     BackSpaceQWERTY = &HE750
     BackSpaceQWERTYLg = &HEB96
@@ -1945,53 +2013,53 @@ Public Enum Symbol
     ChatBubbles = &HE8F2
     Checkbox = &HE739
     CheckboxComposite = &HE73A
-    CheckboxCompositeLegacy = &HEA2
+    'CheckboxCompositeLegacy = &HEA2
     CheckboxCompositeReversed = &HE73D
-    CheckboxCompositeReversedLegacy = &HE5
+    'CheckboxCompositeReversedLegacy = &HE5
     CheckboxFill = &HE73B
-    CheckboxFillLegacy = &HE2
-    CheckboxFillZeroWidthLegacy = &HE9
+    'CheckboxFillLegacy = &HE2
+    'CheckboxFillZeroWidthLegacy = &HE9
     CheckboxIndeterminate = &HE73C
-    CheckboxIndeterminateLegacy = &HE4
-    CheckboxLegacy = &HE3
+    'CheckboxIndeterminateLegacy = &HE4
+    'CheckboxLegacy = &HE3
     CheckMark = &HE73E
-    CheckMarkLegacy = &HE1
-    CheckmarkListviewLegacy = &HE81
-    CheckmarkMenuLegacy = &HEE7
-    CheckMarkZeroWidthLegacy = &HE8
+    'CheckMarkLegacy = &HE1
+    'CheckmarkListviewLegacy = &HE81
+    'CheckmarkMenuLegacy = &HEE7
+    'CheckMarkZeroWidthLegacy = &HE8
     ChevronDown = &HE70D
-    ChevronDown1Legacy = &HE99
-    ChevronDown2Legacy = &HE9D
-    ChevronDown3Legacy = &HE15
-    ChevronDown4Legacy = &HEA1
+    'ChevronDown1Legacy = &HE99
+    'ChevronDown2Legacy = &HE9D
+    'ChevronDown3Legacy = &HE15
+    'ChevronDown4Legacy = &HEA1
     ChevronDownMed = &HE972
     ChevronDownSmall = &HE96E
     ChevronDownSmLegacy = &HE228
-    ChevronFlipDownLegacy = &HEE5
-    ChevronFlipLeftLegacy = &HEE2
-    ChevronFlipRightLegacy = &HEE3
-    ChevronFlipUpLegacy = &HEE4
+    'ChevronFlipDownLegacy = &HEE5
+    'ChevronFlipLeftLegacy = &HEE2
+    'ChevronFlipRightLegacy = &HEE3
+    'ChevronFlipUpLegacy = &HEE4
     ChevronLeft = &HE76B
-    ChevronLeft1Legacy = &HE96
-    ChevronLeft2Legacy = &HE9A
-    ChevronLeft3Legacy = &HE12
-    ChevronLeft4Legacy = &HE9E
+    'ChevronLeft1Legacy = &HE96
+    'ChevronLeft2Legacy = &HE9A
+    'ChevronLeft3Legacy = &HE12
+    'ChevronLeft4Legacy = &HE9E
     ChevronLeftMed = &HE973
     ChevronLeftSmall = &HE96F
     ChevronLeftSmLegacy = &HE26C
     ChevronRight = &HE76C
-    ChevronRight1Legacy = &HE97
-    ChevronRight2Legacy = &HE9B
-    ChevronRight3Legacy = &HE13
-    ChevronRight4Legacy = &HE9F
+    'ChevronRight1Legacy = &HE97
+    'ChevronRight2Legacy = &HE9B
+    'ChevronRight3Legacy = &HE13
+    'ChevronRight4Legacy = &HE9F
     ChevronRightMed = &HE974
     ChevronRightSmall = &HE970
     ChevronRightSmLegacy = &HE26B
     ChevronUp = &HE70E
-    ChevronUp1Legacy = &HE98
-    ChevronUp2Legacy = &HE9C
-    ChevronUp3Legacy = &HE14
-    ChevronUp4Legacy = &HEA0
+    'ChevronUp1Legacy = &HE98
+    'ChevronUp2Legacy = &HE9C
+    'ChevronUp3Legacy = &HE14
+    'ChevronUp4Legacy = &HEA0
     ChevronUpMed = &HE971
     ChevronUpSmall = &HE96D
     ChineseBoPoMoFo = &HE989
@@ -2132,7 +2200,7 @@ Public Enum Symbol
     DullSound = &HE911
     DullSoundKey = &HE9AF
     EaseOfAccess = &HE776
-    EaseOfAccessLegacy = &HE7F
+    ' EaseOfAccessLegacy = &HE7F
     Edit = &HE70F
     EditLegacy = &HE104
     EditLegacyMirrored = &HE1C2
@@ -2262,12 +2330,12 @@ Public Enum Symbol
     Health = &HE95E
     Heart = &HEB51
     HeartBroken = &HEA92
-    HeartBrokenLegacy = &HE7
-    HeartBrokenZeroWidthLegacy = &HEC
+    'HeartBrokenLegacy = &HE7
+    'HeartBrokenZeroWidthLegacy = &HEC
     HeartFill = &HEB52
-    HeartFillLegacy = &HEA5
-    HeartFillZeroWidthLegacy = &HEB
-    HeartLegacy = &HE6
+    'HeartFillLegacy = &HEA5
+    'HeartFillZeroWidthLegacy = &HEB
+    'HeartLegacy = &HE6
     Help = &HE897
     HelpLegacy = &HE11B
     HelpLegacyMirrored = &HE1F3
@@ -2337,9 +2405,9 @@ Public Enum Symbol
     KeyboardRightHanded = &HE764
     KeyboardShortcut = &HEDA7
     KeyboardSplit = &HE766
-    KeyboardSplitLegacy = &HE8F
+    ' KeyboardSplitLegacy = &HE8F
     KeyboardStandard = &HE92E
-    KeyboardStandardLegacy = &HE87
+    ' KeyboardStandardLegacy = &HE87
     Korean = &HE97D
     Label = &HE932
     LangJPN = &HE7DE
@@ -2664,10 +2732,10 @@ Public Enum Symbol
     RadioBtnOn = &HECCB
     RadioBullet = &HE915
     RadioBullet2 = &HECCC
-    RatingStarFillLegacy = &HEB4
-    RatingStarFillReducedPaddingHTMLLegacy = &HE82
-    RatingStarFillSmallLegacy = &HEB5
-    RatingStarFillZeroWidthLegacy = &HEA
+    'RatingStarFillLegacy = &HEB4
+    'RatingStarFillReducedPaddingHTMLLegacy = &HE82
+    'RatingStarFillSmallLegacy = &HEB5
+    'RatingStarFillZeroWidthLegacy = &HEA
     RatingStarLegacy = &HE224
     Read = &HE8C3
     ReadingList = &HE7BC
@@ -2726,7 +2794,7 @@ Public Enum Symbol
     ReturnKeySm = &HE966
     ReturnToWindow = &HE944
     ReturnToWindowLegacy = &HE2B3
-    RevealPasswordLegacy = &HE52
+    '  RevealPasswordLegacy = &HE52
     RevToggleKey = &HE845
     Rewind = &HEB9E
     RightArrowKeyTime0 = &HEBE7
@@ -2759,23 +2827,23 @@ Public Enum Symbol
     SaveLocalLegacy = &HE159
     Scan = &HE8FE
     ScanLegacy = &HE294
-    ScrollChevronDownBoldLegacy = &HE19
-    ScrollChevronDownLegacy = &HE11
-    ScrollChevronLeftBoldLegacy = &HE16
-    ScrollChevronLeftLegacy = &HEE
-    ScrollChevronRightBoldLegacy = &HE17
-    ScrollChevronRightLegacy = &HEF
-    ScrollChevronUpBoldLegacy = &HE18
-    ScrollChevronUpLegacy = &HE10
+    ' ScrollChevronDownBoldLegacy = &HE19
+    ' ScrollChevronDownLegacy = &HE11
+    ' ScrollChevronLeftBoldLegacy = &HE16
+    ' ScrollChevronLeftLegacy = &HEE
+    ' ScrollChevronRightBoldLegacy = &HE17
+    ' ScrollChevronRightLegacy = &HEF
+    ' ScrollChevronUpBoldLegacy = &HE18
+    ' ScrollChevronUpLegacy = &HE10
     ScrollMode = &HECE7
     ScrollUpDown = &HEC8F
     SDCard = &HE7F1
     Search = &HE721
     SearchAndApps = &HE773
-    SearchboxLegacy = &HE94
+    '  SearchboxLegacy = &HE94
     SelectAll = &HE8B3
     SelectAllLegacy = &HE14E
-    SemanticZoomLegacy = &HEB8
+    ' SemanticZoomLegacy = &HEB8
     Send = &HE724
     SendFill = &HE725
     SendFillMirrored = &HEA64

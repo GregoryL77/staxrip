@@ -262,7 +262,11 @@ Public Class VideoComparisonForm
             Dim script As New VideoScript
             script.Engine = ScriptEngine.AviSynth
             script.Path = Folder.Temp + Guid.NewGuid.ToString + ".avs"
-            AddHandler Disposed, Sub() FileHelp.Delete(script.Path)
+            Dim deh1 As EventHandler = Sub()
+                                           RemoveHandler Me.Disposed, deh1
+                                           FileHelp.Delete(script.Path)
+                                       End Sub
+            AddHandler Disposed, deh1
 
             script.Filters.Add(New VideoFilter("SetMemoryMax(512)"))
 
@@ -271,7 +275,11 @@ Public Class VideoComparisonForm
             Else
                 Try
                     Dim cachePath = Folder.Temp + Guid.NewGuid.ToString + ".ffindex"
-                    AddHandler Disposed, Sub() FileHelp.Delete(cachePath)
+                    Dim deh2 As EventHandler = Sub()
+                                                   RemoveHandler Me.Disposed, deh2
+                                                   FileHelp.Delete(cachePath)
+                                               End Sub
+                    AddHandler Disposed, deh2
                 Catch
                 End Try
 

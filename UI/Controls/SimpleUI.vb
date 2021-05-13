@@ -1,4 +1,5 @@
 ﻿
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class SimpleUI
@@ -11,7 +12,7 @@ Public Class SimpleUI
     Public Event SaveValues()
     Public Event ValueChanged()
 
-    Public Pages As New List(Of IPage)
+    Public Pages As New List(Of IPage)(8)
 
     Public ActivePage As IPage
     Public Store As Object
@@ -47,8 +48,9 @@ Public Class SimpleUI
                         Tree.ItemHeight = CInt(Tree.Height / (Tree.Nodes.Count)) - 2
                     End If
 
-                    If Tree.ItemHeight > CInt(Tree.Font.Height * 1.5) Then
-                        Tree.ItemHeight = CInt(Tree.Font.Height * 1.5)
+                    Dim tFH As Integer = Tree.Font.Height
+                    If Tree.ItemHeight > CInt(tFH * 1.5) Then
+                        Tree.ItemHeight = CInt(tFH * 1.5)
                     End If
                 End Sub
         End If
@@ -59,15 +61,16 @@ Public Class SimpleUI
         Tree.Left = 0
         Tree.Width = 0
         Tree.Height = Height
+        Dim fh As Integer = FontHeight
 
         If Tree.Nodes.Count > 1 Then
-            Tree.Width = (Aggregate i In Tree.GetNodes Into Max(i.Bounds.Right)) + FontHeight
+            Tree.Width = (Aggregate i In Tree.GetNodes Into Max(i.Bounds.Right)) + fh
         End If
 
         Host.Top = 0
-        Host.Left = Tree.Right + CInt(FontHeight / 3)
+        Host.Left = Tree.Right + CInt(fh / 3)
         Host.Height = Height
-        Host.Width = Width - Tree.Width - CInt(FontHeight / 3)
+        Host.Width = Width - Tree.Width - CInt(fh / 3)
 
         MyBase.OnLayout(levent)
     End Sub
@@ -84,11 +87,12 @@ Public Class SimpleUI
         Dim node = e.Node
 
         For Each i In Pages
-            If Not i.Node Is node Then
+            If i.Node IsNot node Then
                 DirectCast(i, Control).Visible = False
             End If
         Next
 
+        Dim nodeExists As Boolean
         For Each i In Pages
             If i.Node Is node Then
                 If i.FormSizeScaleFactor <> Size.Empty Then
@@ -102,11 +106,12 @@ Public Class SimpleUI
                 ActivePage = i
                 PerformLayout()
 
+                nodeExists = True
                 Exit For
             End If
         Next
-
-        If Pages.Where(Function(arg) arg.Node Is node).Count = 0 Then
+        ''If Pages.Where(Function(arg) arg.Node Is node).Count = 0 Then
+        If Not nodeExists Then
             If node.Nodes.Count > 0 Then
                 Tree.SelectedNode = node.Nodes(0)
             End If
@@ -115,7 +120,7 @@ Public Class SimpleUI
 
     Sub ShowPage(pagePath As String)
         For Each i In Pages
-            If i.Path = pagePath Then
+            If String.Equals(i.Path, pagePath) Then
                 Tree.SelectedNode = i.Node
             End If
         Next
@@ -158,10 +163,10 @@ Public Class SimpleUI
             path = "unknown"
         End If
 
-        Dim q = From i In Pages Where i.Path = path
+        Dim q = Pages.FirstOrDefaultF(Function(i) String.Equals(i.Path, path))
 
-        If q.Count > 0 Then
-            Return DirectCast(q.First, FlowPage)
+        If q IsNot Nothing Then
+            Return DirectCast(q, FlowPage)
         Else
             Return CreateFlowPage(path)
         End If
@@ -368,7 +373,11 @@ Public Class SimpleUI
 
         Sub New()
             TipProvider = New TipProvider(Nothing)
-            AddHandler Disposed, Sub() TipProvider.Dispose()
+            Dim deh As EventHandler = Sub()
+                                          RemoveHandler Me.Disposed, deh
+                                          TipProvider.Dispose()
+                                      End Sub
+            AddHandler Disposed, deh
         End Sub
     End Class
 
@@ -385,7 +394,11 @@ Public Class SimpleUI
 
         Sub New()
             TipProvider = New TipProvider(Nothing)
-            AddHandler Disposed, Sub() TipProvider.Dispose()
+            Dim deh As EventHandler = Sub()
+                                          RemoveHandler Me.Disposed, deh
+                                          TipProvider.Dispose()
+                                      End Sub
+            AddHandler Disposed, deh
             FlowDirection = FlowDirection.TopDown
         End Sub
 
@@ -489,7 +502,7 @@ Public Class SimpleUI
                     parent = parent.Parent
                 End While
 
-                If value.StartsWith("http") Then
+                If value.StartsWith("http", StringComparison.Ordinal) Then
                     value = $"[{value} {value}]"
                 End If
 
@@ -811,7 +824,7 @@ Public Class SimpleUI
 
         WriteOnly Property Help As String
             Set(value As String)
-                If value.StartsWith("http") Then
+                If value.StartsWith("http", StringComparison.Ordinal) Then
                     value = $"[{value} {value}]"
                 End If
 
@@ -888,7 +901,7 @@ Public Class SimpleUI
                 Return Label.Text
             End Get
             Set(value As String)
-                If value.EndsWith(":") Then
+                If value.EndsWith(":", StringComparison.Ordinal) Then
                     Label.Text = value
                 Else
                     Label.Text = value + ":"
@@ -1216,8 +1229,8 @@ Public Class SimpleUI
                     parent = parent.Parent
                 End While
 
-        'Help for audio form menu, opus mapping family
-                If value.StartsWith("http") Then
+                'Help for audio form menu, opus mapping family
+                If value.StartsWith("http", StringComparison.Ordinal) Then
                     value = $"[{value} {value}]"
                 End If
 

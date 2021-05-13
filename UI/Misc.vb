@@ -69,16 +69,17 @@ Namespace UI
             End If
 
             If DefaultWidthScale <> 0 Then
-                Dim fh As Integer = Font.Height
+                Dim fh As Integer = FontHeight 'Font.Height
                 Dim defaultWidth = CInt(fh * DefaultWidthScale)
                 Dim defaultHeight = CInt(fh * DefaultHeightScale)
 
-                Dim w = s.Storage.GetInt(Me.GetType().Name + "width")
-                Dim h = s.Storage.GetInt(Me.GetType().Name + "height")
+                Dim fName As String = Me.GetType().Name
+                Dim w = s.Storage.GetInt(fName + "width")
+                Dim h = s.Storage.GetInt(fName + "height")
 
                 Dim workingArea = Screen.FromControl(Me).WorkingArea
 
-                If w = 0 OrElse w < (defaultWidth / 2) OrElse h = 0 OrElse h < (defaultHeight / 2) Then
+                If w = 0 OrElse w < (defaultWidth \ 2) OrElse h = 0 OrElse h < (defaultHeight \ 2) Then
                     w = defaultWidth
                     h = defaultHeight
                 End If
@@ -199,14 +200,15 @@ Namespace UI
         End Function
 
         Function CompareTo(other As ListBag(Of T)) As Integer Implements IComparable(Of ListBag(Of T)).CompareTo
-            Return Text.CompareTo(other.Text)
+            'Return Text.CompareTo(other.Text)
+            Return String.CompareOrdinal(Text, other.Text)
         End Function
     End Class
 
     <Serializable()>
     Public Class WindowPositions
-        Public Positions As New Dictionary(Of String, Point)
-        Private WindowStates As New Dictionary(Of String, FormWindowState)
+        Public Positions As New Dictionary(Of String, Point)(7, StringComparer.Ordinal)
+        Private WindowStates As New Dictionary(Of String, FormWindowState)(7, StringComparer.Ordinal)
 
         Sub Save(form As Form)
             SavePosition(form)
@@ -252,7 +254,7 @@ Namespace UI
 
             If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso Not TypeOf form Is UI.InputBoxForm Then
                 For Each i In s.WindowPositionsRemembered
-                    If text.StartsWith(i) OrElse i = "all" Then
+                    If text.StartsWith(i, StringComparison.Ordinal) OrElse String.Equals(i, "all") Then
                         RestorePositionInternal(form)
                         Exit For
                     End If
@@ -327,7 +329,7 @@ Namespace UI
         Shared ReadOnly Property IsDesignMode As Boolean
             Get
                 If Not IsDesignModeValue.HasValue Then
-                    IsDesignModeValue = Process.GetCurrentProcess.ProcessName = "devenv"
+                    IsDesignModeValue = String.Equals(Process.GetCurrentProcess.ProcessName, "devenv")
                 End If
 
                 Return IsDesignModeValue.Value

@@ -68,8 +68,11 @@ Public Class ProcController
         End If
 
         If ret.Skip Then
-            If Proc.IntegerFrameOutput AndAlso Proc.FrameCount > 0 AndAlso ret.Data.IsInt Then
-                ret.Data = "Progress: " & (ret.Data.ToInt / Proc.FrameCount * 100).ToString("0.00") & "%"
+            If Proc.IntegerFrameOutput AndAlso Proc.FrameCount > 0 Then
+                Dim rdi = ret.Data.ToIntM
+                If rdi <> -2147483646I Then
+                    ret.Data = "Progress: " & (rdi / Proc.FrameCount * 100).ToString("0.00") & "%"
+                End If
             End If
 
             If Proc.IntegerPercentOutput AndAlso ret.Data.IsInt Then
@@ -113,8 +116,10 @@ Public Class ProcController
                 value = value.RightLast(" ")
             End If
 
-            If value.IsDouble Then
-                Dim val = value.ToDouble
+            'If value.IsDouble Then  'Opt
+            '    Dim val = value.ToDouble
+            Dim val = value.ToDouble(Double.NaN)
+            If Not Double.IsNaN(val) Then
 
                 If LastProgress <> val Then
                     ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
@@ -185,29 +190,31 @@ Public Class ProcController
 
         ElseIf Proc.FrameCount > 0 AndAlso value.Contains("frame=") AndAlso value.Contains("fps=") Then
             Dim frameString = value.Left("fps=").Right("frame=")
+            Dim frame = frameString.ToIntM ' opt.
+            If frame <> -2147483646I Then
+                'If frameString.IsInt Then
+                '    Dim frame = frameString.ToInt
 
-                If frameString.IsInt Then
-                    Dim frame = frameString.ToInt
+                If frame < Proc.FrameCount Then
+                    Dim progressValue = CSng(frame / Proc.FrameCount * 100)
 
-                    If frame < Proc.FrameCount Then
-                        Dim progressValue = CSng(frame / Proc.FrameCount * 100)
-
-                        If LastProgress <> progressValue Then
-                            ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
-                            ProcForm.Taskbar?.SetValue(Math.Max(progressValue, 1), 100)
-                            ProcForm.NotifyIcon.Text = progressValue & "%"
-                            ProgressBar.Value = progressValue
-                            LastProgress = progressValue
-                        End If
-
-                        Exit Sub
+                    If LastProgress <> progressValue Then
+                        ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
+                        ProcForm.Taskbar?.SetValue(Math.Max(progressValue, 1), 100)
+                        ProcForm.NotifyIcon.Text = progressValue & "%"
+                        ProgressBar.Value = progressValue
+                        LastProgress = progressValue
                     End If
-                End If
-            ElseIf value.Contains("/100)") Then
-                Dim percentString = value.Right("(").Left("/")
 
-            If percentString.IsInt Then
-                Dim percent = percentString.ToInt
+                    Exit Sub
+                End If
+            End If
+        ElseIf value.Contains("/100)") Then
+            Dim percentString = value.Right("(").Left("/")
+            Dim percent = percentString.ToIntM ' opt.
+            If percent <> -2147483646I Then
+                'If percentString.IsInt Then
+                '    Dim percent = percentString.ToInt
 
                 If LastProgress <> percent Then
                     ProcForm.Taskbar?.SetState(TaskbarStates.Normal)
@@ -308,6 +315,7 @@ Public Class ProcController
             RemoveHandler Proc.ProcDisposed, AddressOf ProcDisposed
             RemoveHandler Proc.OutputDataReceived, AddressOf DataReceived
             RemoveHandler Proc.ErrorDataReceived, AddressOf DataReceived
+            RemoveHandler CheckBox.Click, AddressOf Click
 
             ProcForm.flpNav.Controls.Remove(CheckBox)
             ProcForm.pnLogHost.Controls.Remove(LogTextBox)

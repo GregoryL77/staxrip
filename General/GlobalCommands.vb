@@ -944,7 +944,11 @@ Public Class GlobalCommands
         Dim batchPath = Folder.Temp + Guid.NewGuid.ToString + ".bat"
         Dim batchCode = Macro.Expand(batchScript)
         File.WriteAllText(batchPath, batchCode, Encoding.Default)
-        AddHandler g.MainForm.Disposed, Sub() FileHelp.Delete(batchPath)
+        Dim mfdeh As EventHandler = Sub()
+                                        RemoveHandler g.MainForm.Disposed, mfdeh
+                                        FileHelp.Delete(batchPath)
+                                    End Sub
+        AddHandler g.MainForm.Disposed, mfdeh
 
         Using proc As New Proc
             proc.Header = "Execute Batch Script"

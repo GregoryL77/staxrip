@@ -12,6 +12,7 @@ Imports System.Security.Permissions
 Imports StaxRip.UI
 Imports VB6 = Microsoft.VisualBasic
 Imports Microsoft.Win32
+Imports KGySoft.Collections
 
 Public Class Folder
     Shared ReadOnly Property Desktop As String
@@ -798,8 +799,9 @@ Public Class StringPair
     End Sub
 
     Function CompareTo(other As StringPair) As Integer Implements IComparable(Of StringPair).CompareTo
-        If Not Name Is Nothing Then
-            Return Name.CompareTo(other.Name)
+        If Name IsNot Nothing Then
+            '   Return Name.CompareTo(other.Name)
+            Return String.CompareOrdinal(Name, other.Name)
         End If
     End Function
 End Class
@@ -910,7 +912,7 @@ Public Class Command
     Property MethodInfo As MethodInfo
 
     Function FixParameters(params As List(Of Object)) As List(Of Object)
-        Dim copiedParams As New List(Of Object)(params)
+        Dim copiedParams As New CircularList(Of Object)(params)
         Dim checkedParams As New List(Of Object)(GetDefaultParameters)
 
         For i = 0 To checkedParams.Count - 1
@@ -960,7 +962,8 @@ Public Class Command
     Property [Object] As Object
 
     Function CompareTo(other As Command) As Integer Implements System.IComparable(Of Command).CompareTo
-        Return MethodInfo.Name.CompareTo(other.MethodInfo.Name)
+        'Return MethodInfo.Name.CompareTo(other.MethodInfo.Name)
+        Return String.CompareOrdinal(MethodInfo.Name, other.MethodInfo.Name)
     End Function
 
     Shared Sub PopulateCommandMenu(items As ToolStripItemCollection,
@@ -968,19 +971,38 @@ Public Class Command
                                    clickSub As Action(Of Command))
         commands.Sort()
 
+        Dim tsmi As New List(Of (String, ActionMenuItem))(96)
+
         For Each i In commands
             Dim path = i.MethodInfo.Name
 
-            If path.StartsWith("Run", StringComparison.Ordinal) Then path = "Run | " + path
-            If path.StartsWith("Save", StringComparison.Ordinal) Then path = "Save | " + path
-            If path.StartsWith("Show", StringComparison.Ordinal) Then path = "Show | " + path
-            If path.StartsWith("Set", StringComparison.Ordinal) Then path = "Set | " + path
-            If path.StartsWith("Start", StringComparison.Ordinal) Then path = "Start | " + path
-            If path.StartsWith("Execute", StringComparison.Ordinal) Then path = "Execute | " + path
-            If path.StartsWith("Add", StringComparison.Ordinal) Then path = "Add | " + path
-
-            ActionMenuItem.Add(items, path, clickSub, i, i.Attribute.Description)
+            If path.StartsWith("Show", StringComparison.Ordinal) Then
+                path = "Show | " + path
+                tsmi.Add(("Show", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            ElseIf path.StartsWith("Save", StringComparison.Ordinal) Then
+                path = "Save | " + path
+                tsmi.Add(("Save", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            ElseIf path.StartsWith("Set", StringComparison.Ordinal) Then
+                path = "Set | " + path
+                tsmi.Add(("Set", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            ElseIf path.StartsWith("Start", StringComparison.Ordinal) Then
+                path = "Start | " + path
+                tsmi.Add(("Start", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            ElseIf path.StartsWith("Execute", StringComparison.Ordinal) Then
+                path = "Execute | " + path
+                tsmi.Add(("Execute", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            ElseIf path.StartsWith("Add", StringComparison.Ordinal) Then
+                path = "Add | " + path
+                tsmi.Add(("Add", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            ElseIf path.StartsWith("Run", StringComparison.Ordinal) Then
+                path = "Run | " + path
+                tsmi.Add(("Run", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+            Else
+                ActionMenuItem.Add(items, path, clickSub, i, i.Attribute.Description)
+            End If
         Next
+
+        ActionMenuItem.AddRange2Menu(items, tsmi.ToArray)
     End Sub
 
     Function GetParameterHelp(parameters As List(Of Object)) As String
@@ -1014,7 +1036,7 @@ Public Class CommandAttribute
 End Class
 
 Public Class CommandManager
-    Property Commands As New Dictionary(Of String, Command)(89)
+    Property Commands As New Dictionary(Of String, Command)(89, StringComparer.Ordinal)
 
     Function HasCommand(name As String) As Boolean
         If name.NullOrEmptyS Then

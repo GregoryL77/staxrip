@@ -95,7 +95,7 @@ Public Class ApplicationSettings
 
     Sub Init() Implements ISafeSerialization.Init
         If Versions Is Nothing Then
-            Versions = New Dictionary(Of String, Integer)
+            Versions = New Dictionary(Of String, Integer)(37, StringComparer.Ordinal)
         End If
 
         If Check(Storage, "Misc", 2) Then
@@ -199,7 +199,7 @@ Public Class ApplicationSettings
         End If
 
         If PackagePaths Is Nothing Then
-            PackagePaths = New Dictionary(Of String, String)
+            PackagePaths = New Dictionary(Of String, String)(7, StringComparer.Ordinal)
         End If
 
         If RecentProjects Is Nothing Then
@@ -212,7 +212,7 @@ Public Class ApplicationSettings
         End If
 
         If StringDictionary Is Nothing Then
-            StringDictionary = New Dictionary(Of String, String)
+            StringDictionary = New Dictionary(Of String, String)(7, StringComparer.Ordinal)
         End If
 
         If RecentOptionsPage Is Nothing Then

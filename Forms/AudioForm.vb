@@ -693,13 +693,13 @@ Public Class AudioForm
     Private MbCompressionLevelH As NumEdit.ValueChangedEventHandler
     Private MbWavPackMode As SimpleUI.MenuBlock(Of Integer)
     Private MbWavPackModeH As MenuButton.ValueChangedUserEventHandler
-    Private IsRunning As Boolean
+    Private WasHandleCtreated As Boolean
 
     Sub New()
         MyBase.New()
         InitializeComponent()
-        'rtbCommandLine.ReadOnly = True
-        mbSamplingRate.SuspendLayout()
+        'rtbCommandLine.ReadOnly = True'InDesigner
+        mbSamplingRate.Menu.SuspendLayout()
         mbSamplingRate.Add("Original", 0)
         mbSamplingRate.Add("11025 Hz", 11025)
         mbSamplingRate.Add("22050 Hz", 22050)
@@ -707,19 +707,15 @@ Public Class AudioForm
         mbSamplingRate.Add("48000 Hz", 48000)
         mbSamplingRate.Add("88200 Hz", 88200)
         mbSamplingRate.Add("96000 Hz", 96000)
-        mbSamplingRate.ResumeLayout(False)
+        mbSamplingRate.Menu.ResumeLayout(False)
         'numBitrate.Minimum = 1 'InDesigner
         'numBitrate.Maximum = 25000
         'numGain.DecimalPlaces = 1
         'numGain.Increment = 0.5
         cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
         cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
-
-        If components Is Nothing Then
-            components = New System.ComponentModel.Container
-        End If
-
-        ' rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
+        'If components Is Nothing then components = New System.ComponentModel.Container '????
+        'rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None'InDesigner
 
         Dim cms As New ContextMenuStripEx(components)
         cms.SuspendLayout()
@@ -747,49 +743,30 @@ Public Class AudioForm
         TipProvider.SetTip("Default MKV Track.", cbDefaultTrack)
         TipProvider.SetTip("Forced MKV Track.", cbForcedTrack)
 
-        mbLanguage.Menu.SuspendLayout()
-        Dim sb As New Text.StringBuilder(40)
-        For Each lng In Language.Languages
-            If lng.IsCommon Then
-                sb.Clear()
-                sb.Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
-                mbLanguage.Add(sb.ToString, lng)
-                'mbLanguage.Add(lng.ToString + " (" + lng.TwoLetterCode + ", " + lng.ThreeLetterCode + ")", lng)
-            End If
-        Next lng
-        mbLanguage.Menu.ResumeLayout(False)
-
+        mbLanguage.BuildLangMenu(False)
+        ActiveControl = mbCodec
     End Sub
 
+
+
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        IsRunning = False
+        WasHandleCtreated = False
         If DialogResult = DialogResult.OK Then
             SetValues(Profile)
         End If
     End Sub
 
     Protected Overrides Sub OnShown(e As EventArgs)
-        Task.Run(Sub()
-                     Thread.Sleep(60)
-                     IsRunning = True
-                     BeginInvoke(Sub()
-                                     UpdateControlsA()
-                                     ActiveControl = mbCodec
-                                     Dim sb As New Text.StringBuilder(64)
-                                     mbLanguage.Menu.SuspendLayout()
-                                     For Each lng In Language.Languages
-                                         If Not lng.IsCommon Then
-                                             sb.Clear()
-                                             sb.Append("More | ").Append(lng.ToString.Substring(0, 1).ToUpperInvariant).Append(" | ").Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
-                                             mbLanguage.Add(sb.ToString, lng)
-                                             'mbLanguage.Add("More | " + lng.ToString.Substring(0, 1).ToUpper + " | " + lng.ToString + " (" + lng.TwoLetterCode + ", " + lng.ThreeLetterCode + ")", lng)
-                                         End If
-                                     Next lng
-                                     mbLanguage.Menu.ResumeLayout()
-                                     mbLanguage.Invalidate(True)
-                                     Invalidate(True)
-                                 End Sub)
-                 End Sub)
+        WasHandleCtreated = True
+        UpdateControls() ' Needed???
+        'mbLanguage.Menu.Invalidate(True) 
+        'Invalidate(True)
+    End Sub
+
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        ShowHelp()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Sub SetValues(gap As GUIAudioProfile)
@@ -844,7 +821,7 @@ Public Class AudioForm
     End Sub
 
     Sub UpdateControls()
-        If IsRunning OrElse IsHandleCreated Then BeginInvoke(Sub() UpdateControlsA())
+        If WasHandleCtreated Then BeginInvoke(Sub() UpdateControlsA())
     End Sub
     Sub UpdateControlsA()
         If TempProfile.ExtractCore Then
@@ -989,6 +966,15 @@ Public Class AudioForm
         TempProfile.GetCommandLine(False) 'set encoder
         LoadAdvanced()
         UpdateControls()
+    End Sub
+
+    Private Sub ChannelsModeToChannel(Channels As Integer)
+        Select Case Channels
+            Case 1, 2, 6 To 8
+                Dim channV = [Enum](Of ChannelsMode).Parse("_" & Channels)
+                TempProfile.Params.ChannelsMode = channV
+                mbChannels.Value = channV
+        End Select
     End Sub
 
     Sub SetQuality(value As Single)
@@ -1863,18 +1849,5 @@ Public Class AudioForm
     Sub cbNormalize_CheckedChanged(sender As Object, e As EventArgs) Handles cbNormalize.CheckedChanged
         TempProfile.Params.Normalize = cbNormalize.Checked
         UpdateControls()
-    End Sub
-
-    Sub AudioForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
-        ShowHelp()
-    End Sub
-
-    Private Sub ChannelsModeToChannel(Channels As Integer)
-        Select Case Channels
-            Case 1, 2, 6 To 8
-                Dim channV = [Enum](Of ChannelsMode).Parse("_" & Channels)
-                TempProfile.Params.ChannelsMode = channV
-                mbChannels.Value = channV
-        End Select
     End Sub
 End Class

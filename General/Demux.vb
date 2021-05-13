@@ -900,7 +900,7 @@ Public Class mkvDemuxer
             End If
         Next
 
-        Dim audioOutPaths As New Dictionary(Of String, AudioStream)
+        Dim audioOutPaths As New Dictionary(Of String, AudioStream)(StringComparer.Ordinal)
 
         For Each stream In audioStreams
             Dim ext = stream.Ext

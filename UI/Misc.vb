@@ -68,6 +68,7 @@ Namespace UI
                 Scale(New SizeF(1 * s.UIScaleFactor, 1 * s.UIScaleFactor))
             End If
 
+            Dim workingArea As Rectangle
             If DefaultWidthScale <> 0 Then
                 Dim fh As Integer = FontHeight 'Font.Height
                 Dim defaultWidth = CInt(fh * DefaultWidthScale)
@@ -77,7 +78,7 @@ Namespace UI
                 Dim w = s.Storage.GetInt(fName + "width")
                 Dim h = s.Storage.GetInt(fName + "height")
 
-                Dim workingArea = Screen.FromControl(Me).WorkingArea
+                workingArea = Screen.FromControl(Me).WorkingArea
 
                 If w = 0 OrElse w < (defaultWidth \ 2) OrElse h = 0 OrElse h < (defaultHeight \ 2) Then
                     w = defaultWidth
@@ -94,11 +95,11 @@ Namespace UI
             End If
 
             If StartPosition = FormStartPosition.CenterScreen Then
-                WindowPositions.CenterScreen(Me)
+                WindowPositions.CenterScreen(Me, If(workingArea.IsEmpty, Screen.FromControl(Me).WorkingArea.Size, workingArea.Size))
             End If
 
             If Not DesignHelp.IsDesignMode Then
-                s.WindowPositions?.RestorePosition(Me)
+                s.WindowPositions?.RestorePosition(Me, If(workingArea.IsEmpty, Screen.FromControl(Me).WorkingArea.Size, workingArea.Size))
             End If
 
             MyBase.OnLoad(args)
@@ -118,7 +119,6 @@ Namespace UI
 
         Sub SetTabIndexes(c As Control)
             Dim index = 0
-
             Dim controls = From i In c.Controls.OfType(Of Control)()
                            Order By Math.Sqrt(i.Top * i.Top + i.Left * i.Left)
 
@@ -225,37 +225,32 @@ Namespace UI
             WindowStates(GetKey(form)) = form.WindowState
         End Sub
 
-        Sub RestorePositionInternal(form As Form)
-            If Positions.ContainsKey(GetKey(form)) Then
-                Dim pos = Positions(GetKey(form))
-                Dim wa = Screen.FromControl(form).WorkingArea
-
-                If pos.X < 0 OrElse pos.Y < 0 OrElse
-                    pos.X + form.Width > wa.Width OrElse
-                    pos.Y + form.Height > wa.Height Then
-
-                    CenterScreen(form)
-                Else
-                    form.StartPosition = FormStartPosition.Manual
-                    form.Location = pos
-                End If
-            End If
-        End Sub
-
-        Shared Sub CenterScreen(form As Form)
+        Shared Sub CenterScreen(form As Form, screenSize As Size) ' Screen.FromControl(form).WorkingArea
             form.StartPosition = FormStartPosition.Manual
-            Dim wa = Screen.FromControl(form).WorkingArea
-            form.Left = (wa.Width - form.Width) \ 2
-            form.Top = (wa.Height - form.Height) \ 2
+            'form.Left = (wa.Width - form.Width) \ 2
+            'form.Top = (wa.Height - form.Height) \ 2
+            form.Location = New Point((screenSize.Width - form.Width) \ 2, (screenSize.Height - form.Height) \ 2)
         End Sub
 
-        Sub RestorePosition(form As Form)
+        Sub RestorePosition(form As Form, screenSize As Size)
             Dim text = GetText(form)
 
             If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso Not TypeOf form Is UI.InputBoxForm Then
                 For Each i In s.WindowPositionsRemembered
                     If text.StartsWith(i, StringComparison.Ordinal) OrElse String.Equals(i, "all") Then
-                        RestorePositionInternal(form)
+
+                        If Positions.ContainsKey(GetKey(form)) Then
+                            Dim pos = Positions(GetKey(form))
+                            Dim wa = screenSize
+
+                            If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > wa.Width OrElse pos.Y + form.Height > wa.Height Then
+                                CenterScreen(form, wa)
+                            Else
+                                form.StartPosition = FormStartPosition.Manual
+                                form.Location = pos
+                            End If
+                        End If
+
                         Exit For
                     End If
                 Next
@@ -267,6 +262,7 @@ Namespace UI
         End Function
 
         Function GetText(form As Form) As String
+
             If TypeOf form Is AudioConverterForm Then
                 Return "AudioConverter"
             ElseIf TypeOf form Is MainForm Then

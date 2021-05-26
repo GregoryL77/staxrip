@@ -247,10 +247,10 @@ Public Class CommandLineAudioEncoderForm
         'mbLanguage
         '
         Me.mbLanguage.Anchor = System.Windows.Forms.AnchorStyles.Left
-        Me.mbLanguage.Location = New System.Drawing.Point(392, 28)
-        Me.mbLanguage.Margin = New System.Windows.Forms.Padding(2)
+        Me.mbLanguage.Location = New System.Drawing.Point(392, 27)
+        Me.mbLanguage.Margin = New System.Windows.Forms.Padding(2, 1, 2, 1)
         Me.mbLanguage.ShowMenuSymbol = True
-        Me.mbLanguage.Size = New System.Drawing.Size(140, 22)
+        Me.mbLanguage.Size = New System.Drawing.Size(140, 24)
         '
         'tbProfileName
         '
@@ -458,7 +458,7 @@ Public Class CommandLineAudioEncoderForm
         InitializeComponent()
 
         Me.Profile = profile
-        TempProfile = ObjectHelp.GetCopy(Of BatchAudioProfile)(profile)
+        TempProfile = profile.GetDeepClone
         tbType.Text = TempProfile.OutputFileType
         tbInput.Text = TempProfile.SupportedInput.Join(" ")
 
@@ -507,7 +507,7 @@ Public Class CommandLineAudioEncoderForm
     End Sub
 
     Sub SaveProfile()
-        Dim gap = ObjectHelp.GetCopy(Of BatchAudioProfile)(TempProfile)
+        Dim gap = TempProfile.GetDeepClone
         Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
 
         If name.NotNullOrEmptyS Then
@@ -535,8 +535,8 @@ Public Class CommandLineAudioEncoderForm
     End Sub
 
     Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
-        ShowHelp()
         hevent.Handled = True
+        ShowHelp()
         MyBase.OnHelpRequested(hevent)
     End Sub
 

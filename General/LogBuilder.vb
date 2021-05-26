@@ -99,7 +99,7 @@ Public Class LogBuilder
             "Language:" + CultureInfo.CurrentCulture.EnglishName + BR +
             "CPU:" + Registry.LocalMachine.GetString("HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString") + BR +
             "GPU:" + String.Join(", ", OS.VideoControllers) + BR + 'OS.VideoControllers.Item2) + BR +
-            "Resolution:" & Screen.PrimaryScreen.Bounds.Width & " x " & Screen.PrimaryScreen.Bounds.Height & BR +
+            "Resolution:" & ScreenResolutionPrim.Width & " x " & ScreenResolutionPrim.Height & BR +
             "DPI:" & g.DPI
 
         WriteLine(EnvironmentString.FormatColumn(":"))

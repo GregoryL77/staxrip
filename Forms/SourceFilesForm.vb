@@ -177,7 +177,7 @@ Public Class SourceFilesForm
         MyBase.New()
         InitializeComponent()
 
-        ScaleClientSize(36, 22)
+        ScaleClientSize(36, 22, FontHeight)
         MinimumSize = New Size(Width \ 2, CInt(Height * 0.6))
 
         bnUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)

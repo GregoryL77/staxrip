@@ -136,10 +136,10 @@ Namespace UI
             Me.laHotkey.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.laHotkey.AutoSize = True
-            Me.laHotkey.Location = New System.Drawing.Point(686, 224)
-            Me.laHotkey.Margin = New System.Windows.Forms.Padding(0, 20, 0, 0)
+            Me.laHotkey.Location = New System.Drawing.Point(292, 78)
+            Me.laHotkey.Margin = New System.Windows.Forms.Padding(0, 7, 0, 0)
             Me.laHotkey.Name = "laHotkey"
-            Me.laHotkey.Size = New System.Drawing.Size(671, 48)
+            Me.laHotkey.Size = New System.Drawing.Size(287, 15)
             Me.laHotkey.TabIndex = 5
             Me.laHotkey.Text = "Shortcut Key:"
             '
@@ -148,10 +148,10 @@ Namespace UI
             Me.lParameters.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.lParameters.AutoSize = True
-            Me.lParameters.Location = New System.Drawing.Point(686, 647)
-            Me.lParameters.Margin = New System.Windows.Forms.Padding(0, 20, 0, 0)
+            Me.lParameters.Location = New System.Drawing.Point(292, 221)
+            Me.lParameters.Margin = New System.Windows.Forms.Padding(0, 7, 0, 0)
             Me.lParameters.Name = "lParameters"
-            Me.lParameters.Size = New System.Drawing.Size(671, 48)
+            Me.lParameters.Size = New System.Drawing.Size(287, 15)
             Me.lParameters.TabIndex = 9
             Me.lParameters.Text = "Command Parameters:"
             Me.lParameters.Visible = False
@@ -163,11 +163,11 @@ Namespace UI
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.pg.HelpVisible = False
             Me.pg.LineColor = System.Drawing.SystemColors.ScrollBar
-            Me.pg.Location = New System.Drawing.Point(686, 695)
+            Me.pg.Location = New System.Drawing.Point(292, 236)
             Me.pg.Margin = New System.Windows.Forms.Padding(0)
             Me.pg.Name = "pg"
             Me.pg.PropertySort = System.Windows.Forms.PropertySort.NoSort
-            Me.pg.Size = New System.Drawing.Size(671, 354)
+            Me.pg.Size = New System.Drawing.Size(287, 245)
             Me.pg.TabIndex = 10
             Me.pg.ToolbarVisible = False
             Me.pg.Visible = False
@@ -176,10 +176,10 @@ Namespace UI
             '
             Me.tbText.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.tbText.Location = New System.Drawing.Point(686, 149)
+            Me.tbText.Location = New System.Drawing.Point(292, 48)
             Me.tbText.Margin = New System.Windows.Forms.Padding(0)
             Me.tbText.Name = "tbText"
-            Me.tbText.Size = New System.Drawing.Size(671, 55)
+            Me.tbText.Size = New System.Drawing.Size(287, 23)
             Me.tbText.TabIndex = 4
             '
             'laText
@@ -187,10 +187,10 @@ Namespace UI
             Me.laText.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.laText.AutoSize = True
-            Me.laText.Location = New System.Drawing.Point(686, 101)
+            Me.laText.Location = New System.Drawing.Point(292, 33)
             Me.laText.Margin = New System.Windows.Forms.Padding(0)
             Me.laText.Name = "laText"
-            Me.laText.Size = New System.Drawing.Size(671, 48)
+            Me.laText.Size = New System.Drawing.Size(287, 15)
             Me.laText.TabIndex = 3
             Me.laText.Text = "Text:"
             '
@@ -201,11 +201,11 @@ Namespace UI
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.tv.HideSelection = False
-            Me.tv.Location = New System.Drawing.Point(15, 101)
-            Me.tv.Margin = New System.Windows.Forms.Padding(0, 0, 15, 0)
+            Me.tv.Location = New System.Drawing.Point(5, 33)
+            Me.tv.Margin = New System.Windows.Forms.Padding(0, 0, 5, 0)
             Me.tv.Name = "tv"
             Me.tlpMain.SetRowSpan(Me.tv, 10)
-            Me.tv.Size = New System.Drawing.Size(656, 948)
+            Me.tv.Size = New System.Drawing.Size(282, 448)
             Me.tv.TabIndex = 2
             '
             'tbHotkey
@@ -214,28 +214,28 @@ Namespace UI
             Me.tbHotkey.AcceptsTab = True
             Me.tbHotkey.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.tbHotkey.Location = New System.Drawing.Point(686, 272)
+            Me.tbHotkey.Location = New System.Drawing.Point(292, 93)
             Me.tbHotkey.Margin = New System.Windows.Forms.Padding(0)
             Me.tbHotkey.Name = "tbHotkey"
-            Me.tbHotkey.Size = New System.Drawing.Size(671, 55)
+            Me.tbHotkey.Size = New System.Drawing.Size(287, 23)
             Me.tbHotkey.TabIndex = 6
             '
             'tbCommand
             '
             Me.tbCommand.Anchor = CType((System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.tbCommand.Location = New System.Drawing.Point(0, 7)
+            Me.tbCommand.Location = New System.Drawing.Point(0, 0)
             Me.tbCommand.Margin = New System.Windows.Forms.Padding(0)
             Me.tbCommand.Name = "tbCommand"
-            Me.tbCommand.Size = New System.Drawing.Size(591, 55)
+            Me.tbCommand.Size = New System.Drawing.Size(261, 23)
             Me.tbCommand.TabIndex = 8
             '
             'bnCommand
             '
             Me.bnCommand.Anchor = System.Windows.Forms.AnchorStyles.None
-            Me.bnCommand.Location = New System.Drawing.Point(601, 0)
-            Me.bnCommand.Margin = New System.Windows.Forms.Padding(10, 0, 0, 0)
+            Me.bnCommand.Location = New System.Drawing.Point(264, 0)
+            Me.bnCommand.Margin = New System.Windows.Forms.Padding(3, 0, 0, 0)
             Me.bnCommand.ShowMenuSymbol = True
-            Me.bnCommand.Size = New System.Drawing.Size(70, 70)
+            Me.bnCommand.Size = New System.Drawing.Size(23, 23)
             '
             'cmsCommand
             '
@@ -247,10 +247,10 @@ Namespace UI
             'laCommand
             '
             Me.laCommand.AutoSize = True
-            Me.laCommand.Location = New System.Drawing.Point(686, 509)
-            Me.laCommand.Margin = New System.Windows.Forms.Padding(0, 20, 0, 0)
+            Me.laCommand.Location = New System.Drawing.Point(292, 176)
+            Me.laCommand.Margin = New System.Windows.Forms.Padding(0, 7, 0, 0)
             Me.laCommand.Name = "laCommand"
-            Me.laCommand.Size = New System.Drawing.Size(192, 48)
+            Me.laCommand.Size = New System.Drawing.Size(67, 15)
             Me.laCommand.TabIndex = 7
             Me.laCommand.Text = "Command:"
             '
@@ -258,9 +258,9 @@ Namespace UI
             '
             Me.bnCancel.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
             Me.bnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
-            Me.bnCancel.Location = New System.Drawing.Point(265, 0)
-            Me.bnCancel.Margin = New System.Windows.Forms.Padding(15, 0, 0, 0)
-            Me.bnCancel.Size = New System.Drawing.Size(250, 70)
+            Me.bnCancel.Location = New System.Drawing.Point(88, 0)
+            Me.bnCancel.Margin = New System.Windows.Forms.Padding(5, 0, 0, 0)
+            Me.bnCancel.Size = New System.Drawing.Size(83, 23)
             Me.bnCancel.Text = "Cancel"
             '
             'bnOK
@@ -269,7 +269,7 @@ Namespace UI
             Me.bnOK.DialogResult = System.Windows.Forms.DialogResult.OK
             Me.bnOK.Location = New System.Drawing.Point(0, 0)
             Me.bnOK.Margin = New System.Windows.Forms.Padding(0)
-            Me.bnOK.Size = New System.Drawing.Size(250, 70)
+            Me.bnOK.Size = New System.Drawing.Size(83, 23)
             Me.bnOK.Text = "OK"
             '
             'ImageList1
@@ -281,10 +281,10 @@ Namespace UI
             'tlpMain
             '
             Me.tlpMain.ColumnCount = 4
-            Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 15.0!))
+            Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 5.0!))
             Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
             Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-            Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 15.0!))
+            Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 6.0!))
             Me.tlpMain.Controls.Add(Me.flpBottom, 2, 11)
             Me.tlpMain.Controls.Add(Me.pg, 2, 10)
             Me.tlpMain.Controls.Add(Me.lParameters, 2, 9)
@@ -300,6 +300,7 @@ Namespace UI
             Me.tlpMain.Controls.Add(Me.tlpSymbol, 2, 6)
             Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
             Me.tlpMain.Location = New System.Drawing.Point(0, 0)
+            Me.tlpMain.Margin = New System.Windows.Forms.Padding(1)
             Me.tlpMain.Name = "tlpMain"
             Me.tlpMain.RowCount = 12
             Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
@@ -314,20 +315,19 @@ Namespace UI
             Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
             Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
             Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
-            Me.tlpMain.Size = New System.Drawing.Size(1372, 1149)
+            Me.tlpMain.Size = New System.Drawing.Size(585, 514)
             Me.tlpMain.TabIndex = 11
             '
             'flpBottom
             '
-            Me.flpBottom.Anchor = System.Windows.Forms.AnchorStyles.Right
             Me.flpBottom.AutoSize = True
             Me.flpBottom.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
             Me.flpBottom.Controls.Add(Me.bnOK)
             Me.flpBottom.Controls.Add(Me.bnCancel)
-            Me.flpBottom.Location = New System.Drawing.Point(842, 1064)
-            Me.flpBottom.Margin = New System.Windows.Forms.Padding(0, 15, 0, 15)
+            Me.flpBottom.Location = New System.Drawing.Point(292, 486)
+            Me.flpBottom.Margin = New System.Windows.Forms.Padding(0, 5, 0, 5)
             Me.flpBottom.Name = "flpBottom"
-            Me.flpBottom.Size = New System.Drawing.Size(515, 70)
+            Me.flpBottom.Size = New System.Drawing.Size(171, 23)
             Me.flpBottom.TabIndex = 12
             '
             'tlpCommand
@@ -341,12 +341,12 @@ Namespace UI
             Me.tlpCommand.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
             Me.tlpCommand.Controls.Add(Me.bnCommand, 1, 0)
             Me.tlpCommand.Controls.Add(Me.tbCommand, 0, 0)
-            Me.tlpCommand.Location = New System.Drawing.Point(686, 557)
+            Me.tlpCommand.Location = New System.Drawing.Point(292, 191)
             Me.tlpCommand.Margin = New System.Windows.Forms.Padding(0)
             Me.tlpCommand.Name = "tlpCommand"
             Me.tlpCommand.RowCount = 1
             Me.tlpCommand.RowStyles.Add(New System.Windows.Forms.RowStyle())
-            Me.tlpCommand.Size = New System.Drawing.Size(671, 70)
+            Me.tlpCommand.Size = New System.Drawing.Size(287, 23)
             Me.tlpCommand.TabIndex = 12
             '
             'ToolStrip
@@ -356,13 +356,12 @@ Namespace UI
             Me.tlpMain.SetColumnSpan(Me.ToolStrip, 4)
             Me.ToolStrip.Dock = System.Windows.Forms.DockStyle.None
             Me.ToolStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden
-            Me.ToolStrip.ImageScalingSize = New System.Drawing.Size(24, 24)
             Me.ToolStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.tsbNew, Me.ToolStripSeparator3, Me.tsbCut, Me.tsbCopy, Me.tsbPaste, Me.ToolStripSeparator4, Me.tsbMoveLeft, Me.tsbMoveRight, Me.tsbMoveUp, Me.tsbMoveDown, Me.ToolStripSeparator1, Me.tsbRemove, Me.ToolsToolStripDropDownButton})
             Me.ToolStrip.Location = New System.Drawing.Point(0, 0)
-            Me.ToolStrip.Margin = New System.Windows.Forms.Padding(0, 0, 0, 10)
+            Me.ToolStrip.Margin = New System.Windows.Forms.Padding(0, 0, 0, 3)
             Me.ToolStrip.Name = "ToolStrip"
-            Me.ToolStrip.Padding = New System.Windows.Forms.Padding(7, 2, 2, 0)
-            Me.ToolStrip.Size = New System.Drawing.Size(1372, 91)
+            Me.ToolStrip.Padding = New System.Windows.Forms.Padding(2, 1, 1, 0)
+            Me.ToolStrip.Size = New System.Drawing.Size(585, 30)
             Me.ToolStrip.TabIndex = 1
             Me.ToolStrip.Text = "ToolStrip"
             '
@@ -372,13 +371,13 @@ Namespace UI
             Me.tsbNew.ImageTransparentColor = System.Drawing.Color.Magenta
             Me.tsbNew.Name = "tsbNew"
             Me.tsbNew.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbNew.Size = New System.Drawing.Size(69, 80)
+            Me.tsbNew.Size = New System.Drawing.Size(24, 26)
             Me.tsbNew.Text = "New"
             '
             'ToolStripSeparator3
             '
             Me.ToolStripSeparator3.Name = "ToolStripSeparator3"
-            Me.ToolStripSeparator3.Size = New System.Drawing.Size(6, 89)
+            Me.ToolStripSeparator3.Size = New System.Drawing.Size(6, 29)
             '
             'tsbCut
             '
@@ -386,7 +385,7 @@ Namespace UI
             Me.tsbCut.ImageTransparentColor = System.Drawing.Color.Magenta
             Me.tsbCut.Name = "tsbCut"
             Me.tsbCut.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbCut.Size = New System.Drawing.Size(69, 80)
+            Me.tsbCut.Size = New System.Drawing.Size(24, 26)
             Me.tsbCut.Text = "Cut"
             '
             'tsbCopy
@@ -395,7 +394,7 @@ Namespace UI
             Me.tsbCopy.ImageTransparentColor = System.Drawing.Color.Magenta
             Me.tsbCopy.Name = "tsbCopy"
             Me.tsbCopy.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbCopy.Size = New System.Drawing.Size(69, 80)
+            Me.tsbCopy.Size = New System.Drawing.Size(24, 26)
             Me.tsbCopy.Text = "Copy"
             '
             'tsbPaste
@@ -404,20 +403,20 @@ Namespace UI
             Me.tsbPaste.ImageTransparentColor = System.Drawing.Color.Magenta
             Me.tsbPaste.Name = "tsbPaste"
             Me.tsbPaste.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbPaste.Size = New System.Drawing.Size(69, 80)
+            Me.tsbPaste.Size = New System.Drawing.Size(24, 26)
             Me.tsbPaste.Text = "Paste"
             '
             'ToolStripSeparator4
             '
             Me.ToolStripSeparator4.Name = "ToolStripSeparator4"
-            Me.ToolStripSeparator4.Size = New System.Drawing.Size(6, 89)
+            Me.ToolStripSeparator4.Size = New System.Drawing.Size(6, 29)
             '
             'tsbMoveLeft
             '
             Me.tsbMoveLeft.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
             Me.tsbMoveLeft.Name = "tsbMoveLeft"
             Me.tsbMoveLeft.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbMoveLeft.Size = New System.Drawing.Size(69, 80)
+            Me.tsbMoveLeft.Size = New System.Drawing.Size(24, 26)
             Me.tsbMoveLeft.ToolTipText = "Move Left"
             '
             'tsbMoveRight
@@ -425,7 +424,7 @@ Namespace UI
             Me.tsbMoveRight.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
             Me.tsbMoveRight.Name = "tsbMoveRight"
             Me.tsbMoveRight.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbMoveRight.Size = New System.Drawing.Size(69, 80)
+            Me.tsbMoveRight.Size = New System.Drawing.Size(24, 26)
             Me.tsbMoveRight.ToolTipText = "Move Right"
             '
             'tsbMoveUp
@@ -433,7 +432,7 @@ Namespace UI
             Me.tsbMoveUp.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
             Me.tsbMoveUp.Name = "tsbMoveUp"
             Me.tsbMoveUp.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbMoveUp.Size = New System.Drawing.Size(69, 80)
+            Me.tsbMoveUp.Size = New System.Drawing.Size(24, 26)
             Me.tsbMoveUp.ToolTipText = "Move Up"
             '
             'tsbMoveDown
@@ -441,13 +440,13 @@ Namespace UI
             Me.tsbMoveDown.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image
             Me.tsbMoveDown.Name = "tsbMoveDown"
             Me.tsbMoveDown.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbMoveDown.Size = New System.Drawing.Size(69, 80)
+            Me.tsbMoveDown.Size = New System.Drawing.Size(24, 26)
             Me.tsbMoveDown.ToolTipText = "Move Down"
             '
             'ToolStripSeparator1
             '
             Me.ToolStripSeparator1.Name = "ToolStripSeparator1"
-            Me.ToolStripSeparator1.Size = New System.Drawing.Size(6, 89)
+            Me.ToolStripSeparator1.Size = New System.Drawing.Size(6, 29)
             '
             'tsbRemove
             '
@@ -455,7 +454,7 @@ Namespace UI
             Me.tsbRemove.ImageTransparentColor = System.Drawing.Color.Magenta
             Me.tsbRemove.Name = "tsbRemove"
             Me.tsbRemove.Padding = New System.Windows.Forms.Padding(10, 4, 10, 4)
-            Me.tsbRemove.Size = New System.Drawing.Size(69, 80)
+            Me.tsbRemove.Size = New System.Drawing.Size(24, 26)
             Me.tsbRemove.Text = "Remove"
             '
             'ToolsToolStripDropDownButton
@@ -464,28 +463,30 @@ Namespace UI
             Me.ToolsToolStripDropDownButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text
             Me.ToolsToolStripDropDownButton.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.NewFromDefaultsToolStripMenuItem, Me.ResetToolStripMenuItem})
             Me.ToolsToolStripDropDownButton.Name = "ToolsToolStripDropDownButton"
-            Me.ToolsToolStripDropDownButton.Size = New System.Drawing.Size(162, 80)
+            Me.ToolsToolStripDropDownButton.Size = New System.Drawing.Size(56, 26)
             Me.ToolsToolStripDropDownButton.Text = " Tools  "
             '
             'NewFromDefaultsToolStripMenuItem
             '
+            Me.NewFromDefaultsToolStripMenuItem.Help = Nothing
             Me.NewFromDefaultsToolStripMenuItem.Name = "NewFromDefaultsToolStripMenuItem"
-            Me.NewFromDefaultsToolStripMenuItem.Size = New System.Drawing.Size(546, 67)
+            Me.NewFromDefaultsToolStripMenuItem.Size = New System.Drawing.Size(184, 22)
             Me.NewFromDefaultsToolStripMenuItem.Text = "New From Defaults..."
             '
             'ResetToolStripMenuItem
             '
+            Me.ResetToolStripMenuItem.Help = Nothing
             Me.ResetToolStripMenuItem.Name = "ResetToolStripMenuItem"
-            Me.ResetToolStripMenuItem.Size = New System.Drawing.Size(546, 67)
+            Me.ResetToolStripMenuItem.Size = New System.Drawing.Size(184, 22)
             Me.ResetToolStripMenuItem.Text = "Reset Everything"
             '
             'laIcon
             '
             Me.laIcon.AutoSize = True
-            Me.laIcon.Location = New System.Drawing.Point(686, 347)
-            Me.laIcon.Margin = New System.Windows.Forms.Padding(0, 20, 0, 0)
+            Me.laIcon.Location = New System.Drawing.Point(292, 123)
+            Me.laIcon.Margin = New System.Windows.Forms.Padding(0, 7, 0, 0)
             Me.laIcon.Name = "laIcon"
-            Me.laIcon.Size = New System.Drawing.Size(96, 48)
+            Me.laIcon.Size = New System.Drawing.Size(33, 15)
             Me.laIcon.TabIndex = 13
             Me.laIcon.Text = "Icon:"
             '
@@ -499,12 +500,12 @@ Namespace UI
             Me.tlpSymbol.Controls.Add(Me.laSymbol, 1, 0)
             Me.tlpSymbol.Controls.Add(Me.pbSymbol, 0, 0)
             Me.tlpSymbol.Controls.Add(Me.bnSymbol, 2, 0)
-            Me.tlpSymbol.Location = New System.Drawing.Point(686, 395)
+            Me.tlpSymbol.Location = New System.Drawing.Point(292, 138)
             Me.tlpSymbol.Margin = New System.Windows.Forms.Padding(0)
             Me.tlpSymbol.Name = "tlpSymbol"
             Me.tlpSymbol.RowCount = 1
             Me.tlpSymbol.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-            Me.tlpSymbol.Size = New System.Drawing.Size(671, 94)
+            Me.tlpSymbol.Size = New System.Drawing.Size(287, 31)
             Me.tlpSymbol.TabIndex = 14
             '
             'laSymbol
@@ -512,10 +513,10 @@ Namespace UI
             Me.laSymbol.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-            Me.laSymbol.Location = New System.Drawing.Point(98, 0)
-            Me.laSymbol.Margin = New System.Windows.Forms.Padding(7, 0, 7, 0)
+            Me.laSymbol.Location = New System.Drawing.Point(32, 0)
+            Me.laSymbol.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
             Me.laSymbol.Name = "laSymbol"
-            Me.laSymbol.Size = New System.Drawing.Size(496, 94)
+            Me.laSymbol.Size = New System.Drawing.Size(230, 31)
             Me.laSymbol.TabIndex = 1
             Me.laSymbol.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             '
@@ -528,7 +529,7 @@ Namespace UI
             Me.pbSymbol.Location = New System.Drawing.Point(0, 0)
             Me.pbSymbol.Margin = New System.Windows.Forms.Padding(0)
             Me.pbSymbol.Name = "pbSymbol"
-            Me.pbSymbol.Size = New System.Drawing.Size(91, 94)
+            Me.pbSymbol.Size = New System.Drawing.Size(30, 31)
             Me.pbSymbol.TabIndex = 2
             Me.pbSymbol.TabStop = False
             '
@@ -536,10 +537,10 @@ Namespace UI
             '
             Me.bnSymbol.Anchor = System.Windows.Forms.AnchorStyles.None
             Me.bnSymbol.ContextMenuStrip = Me.cmsSymbol
-            Me.bnSymbol.Location = New System.Drawing.Point(601, 12)
+            Me.bnSymbol.Location = New System.Drawing.Point(264, 4)
             Me.bnSymbol.Margin = New System.Windows.Forms.Padding(0)
             Me.bnSymbol.ShowMenuSymbol = True
-            Me.bnSymbol.Size = New System.Drawing.Size(70, 70)
+            Me.bnSymbol.Size = New System.Drawing.Size(23, 23)
             '
             'cmsSymbol
             '
@@ -550,13 +551,14 @@ Namespace UI
             'CustomMenuEditor
             '
             Me.AcceptButton = Me.bnOK
-            Me.AutoScaleDimensions = New System.Drawing.SizeF(288.0!, 288.0!)
+            Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
             Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
             Me.CancelButton = Me.bnCancel
-            Me.ClientSize = New System.Drawing.Size(1372, 1149)
+            Me.ClientSize = New System.Drawing.Size(585, 514)
             Me.Controls.Add(Me.tlpMain)
+            Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
             Me.KeyPreview = True
-            Me.Margin = New System.Windows.Forms.Padding(13, 14, 13, 14)
+            Me.Margin = New System.Windows.Forms.Padding(4, 5, 4, 5)
             Me.Name = "CustomMenuEditor"
             Me.Text = "Menu Editor"
             Me.tlpMain.ResumeLayout(False)
@@ -577,56 +579,58 @@ Namespace UI
         Private Block As Boolean
         Private GridTypeDescriptor As GridTypeDescriptor
         Private ClipboardNode As TreeNode
+        Private EnumSag As Symbol()
+        Private EnumAwe As Symbol()
+        Private ESagImgsT As Task(Of Image())
+        Private EAweImgsT As Task(Of Image())
 
         Property GenericMenu As CustomMenu
 
         Sub New(menu As CustomMenu)
             MyBase.New()
-            SWWT1.Restart()
-            SWWT2.Restart()
-            SWW.Restart()
-            Dim imgNew = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Page).ResizeToSmallIconSize)
-            Dim imgCopy = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Copy).ResizeToSmallIconSize)
-            Dim imgCut = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Cut).ResizeToSmallIconSize)
-            Dim imgPaste = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Paste).ResizeToSmallIconSize)
-            Dim imgRem = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Remove).ResizeToSmallIconSize)
-            Dim imgLeft = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Back).ResizeToSmallIconSize)
-            Dim ImgUp = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Up).ResizeToSmallIconSize)
-            Dim imgRight = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Forward).ResizeToSmallIconSize)
-            Dim imgDown = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Down).ResizeToSmallIconSize)
-            Dim imgMoreTTSDD = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.More).ResizeToSmallIconSize)
+            Dim sic = SystemInformation.SmallIconSize
+            Dim imgNew = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Page).ResizeIconSize(sic))
+            Dim imgCopy = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Copy).ResizeIconSize(sic))
+            Dim imgCut = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Cut).ResizeIconSize(sic))
+            Dim imgPaste = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Paste).ResizeIconSize(sic))
+            Dim imgRem = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Remove).ResizeIconSize(sic))
 
-            Dim esv = [Enum](Of Symbol).GetValues
-            Dim enumSag = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
-            Dim enumAwe = esv.WhereF(Function(s) s > 61400)
             Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
-            Array.Sort(enumSag, symbComparer)
-            Array.Sort(enumAwe, symbComparer)
+            Dim esv = [Enum](Of Symbol).GetValues
+            Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
+            Array.Sort(eSag, symbComparer)
 
-            SWW.Stop()
-            TTNsw &= SWW.ElapsedTicks / SWFreq & "msEnumPr| "
-            SWW.Restart()
+            Dim imgLeft = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Back).ResizeIconSize(sic))
+            Dim ImgUp = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Up).ResizeIconSize(sic))
+            Dim imgRight = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Forward).ResizeIconSize(sic))
+            Dim imgDown = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Down).ResizeIconSize(sic))
+            Dim imgMoreTTSDD = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.More).ResizeIconSize(sic))
 
-            Dim eSagImgsT = Task.Run(Function()
-                                         SWWT1.Restart()
-                                         Dim retA(enumSag.Length - 1) As Image
-                                         Parallel.For(0, enumSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(s) retA(s) = ImageHelp.GetSymbolImage(enumSag(s)))
-                                         SWWT1.Stop()
-                                         TTT1sw = SWWT1.ElapsedTicks / SWFreq & "msTImS| "
-                                         Return retA
-                                     End Function)
-            Dim eAweImgsT = Task.Run(Function()
-                                         SWWT2.Restart()
-                                         Dim retA(enumAwe.Length - 1) As Image
-                                         Parallel.For(0, enumAwe.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(s) retA(s) = ImageHelp.GetSymbolImage(enumAwe(s)))
-                                         SWWT2.Stop()
-                                         TTT2sw = SWWT1.ElapsedTicks / SWFreq & "msTImA| "
-                                         Return retA
-                                     End Function)
+            Dim eAwe As Symbol() = esv.WhereF(Function(s) s > 61400)
+            Array.Sort(eAwe, symbComparer)
+
+            EAweImgsT = Task.Run(Function()
+                                     EnumAwe = eAwe
+                                     Dim retA(eAwe.Length - 1) As Image
+                                     'Parallel.For(0, EnumAwe.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(EnumAwe(n)))
+                                     For n = 0 To eAwe.Length - 1
+                                         retA(n) = ImageHelp.GetSymbolImage(eAwe(n))
+                                     Next n
+                                     Return retA
+                                 End Function)
+
+            ESagImgsT = Task.Run(Function()
+                                     EnumSag = eSag
+                                     Dim retA(eSag.Length - 1) As Image
+                                     Parallel.For(0, eSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(eSag(n)))
+                                     'For n = 0 To EnumSag.Length - 1
+                                     'retA(n) = ImageHelp.GetSymbolImage(EnumSag(n))
+                                     'Next n
+                                     Return retA
+                                 End Function)
 
             InitializeComponent()
-            ScaleClientSize(32, 30)
-
+            ScaleClientSize(38, 38, FontHeight)
             GenericMenu = menu
             GridTypeDescriptor = New GridTypeDescriptor
             tv.BeginUpdate()
@@ -647,20 +651,7 @@ Namespace UI
 
             g.SetRenderer(ToolStrip)
             ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
-            ToolStrip.ImageScalingSize = SystemInformation.SmallIconSize
-            'tsbNew.Image = ImageHelp.GetSymbolImage(Symbol.Page).ResizeToSmallIconSize
-            'tsbCopy.Image = ImageHelp.GetSymbolImage(Symbol.Copy).ResizeToSmallIconSize
-            'tsbCut.Image = ImageHelp.GetSymbolImage(Symbol.Cut).ResizeToSmallIconSize
-            'tsbPaste.Image = ImageHelp.GetSymbolImage(Symbol.Paste).ResizeToSmallIconSize
-            'tsbRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove).ResizeToSmallIconSize
-            'tsbMoveLeft.Image = ImageHelp.GetSymbolImage(Symbol.Back).ResizeToSmallIconSize
-            'tsbMoveUp.Image = ImageHelp.GetSymbolImage(Symbol.Up).ResizeToSmallIconSize
-            'tsbMoveRight.Image = ImageHelp.GetSymbolImage(Symbol.Forward).ResizeToSmallIconSize
-            'tsbMoveDown.Image = ImageHelp.GetSymbolImage(Symbol.Down).ResizeToSmallIconSize
-            'ToolsToolStripDropDownButton.Image = ImageHelp.GetSymbolImage(Symbol.More).ResizeToSmallIconSize
-            'For Each i In ToolStrip.Items.OfType(Of ToolStripItem)()
-            '    i.Image = i.Image.ResizeToSmallIconSize
-            'Next
+            ToolStrip.ImageScalingSize = sic
             tsbNew.Image = imgNew.Result
             tsbCopy.Image = imgCopy.Result
             tsbCut.Image = imgCut.Result
@@ -673,78 +664,80 @@ Namespace UI
             ToolsToolStripDropDownButton.Image = imgMoreTTSDD.Result
 
             g.SetRenderer(cmsSymbol)
-            cmsSymbol.SuspendLayout()
-            SWW.Stop()
-            TTNsw &= SWW.ElapsedTicks / SWFreq & "msNew| "
-            SWW.Restart()
-            PopulateSymbolMenu()
-            cmsSymbol.ResumeLayout(False)
-
-            SWW.Stop()
-            TTNsw &= SWW.ElapsedTicks / SWFreq & "msPop| "
-            SWW.Restart()
+            '   PopulateSymbolMenu()
         End Sub
 
-        Public SWW As New Stopwatch  'debug
-        Public SWWT1 As New Stopwatch  'debug
-        Public SWWT2 As New Stopwatch  'debug
-        Public TTNsw As String
-        Public TTT1sw As String
-        Public TTT2sw As String
         Protected Overrides Sub OnShown(e As EventArgs)
             MyBase.OnShown(e)
-            SWW.Stop()
-            Me.Text = TTNsw & SWW.ElapsedTicks / SWFreq & "msShow| " & TTT1sw & TTT2sw
-            SWW = Nothing
-            SWWT1 = Nothing
-            SWWT2 = Nothing
-        End Sub
-        Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs) 'Debug
-            Me.Text = "Menu Editor"
-            MyBase.OnFormClosing(args)
+            Task.Run(Sub()
+                         Thread.Sleep(45) '30
+                         EAweImgsT.Wait()
+                         ESagImgsT.Wait()
+                         If IsHandleCreated Then BeginInvoke(Sub() PopulateSymbolMenu())
+                     End Sub)
         End Sub
 
         Sub PopulateSymbolMenu()
-            Dim esv = [Enum](Of Symbol).GetValues
-            Dim enumSag = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
-            Dim enumAwe = esv.WhereF(Function(s) s > 61400)
-            Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
-            Array.Sort(enumSag, symbComparer)
-            Array.Sort(enumAwe, symbComparer)
-            Dim tsmiS = New ActionMenuItem("Segoe MDL2 Assets")
-            Dim tsmiA = New ActionMenuItem("FontAwesome")
-            cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
+            Dim lastCh As Char
+            Dim ImgSagA = ESagImgsT.Result
+            Dim m2LAlphSag As New List(Of ActionMenuItem)(26)
+            Dim eSag = EnumSag
+            Dim m3Sag(eSag.Length - 1) As (Char, ActionMenuItem)
 
-            Dim amiSeg(enumSag.Length - 1) As (Char, ActionMenuItem)
-            tsmiS.DropDown.SuspendLayout()
-            Dim mSe = tsmiS.DropDownItems
+            For i = 0 To eSag.Length - 1
+                Dim symb = eSag(i)
+                Dim sName = [Enum](Of Symbol).GetName(symb)
+                Dim c1 = CChar(sName.Substring(0, 1).ToUpperInvariant)
 
-            For i = 0 To enumSag.Length - 1
-                Dim symbS = enumSag(i)
-                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbS))
-                Dim sName = [Enum](Of Symbol).GetName(symbS)
-                Dim t1 = CChar(sName.Substring(0, 1).ToUpperInvariant)
-                Dim path = t1 & " | " & sName
-                amiSeg(i) = (t1, ActionMenuItem.Add2(mSe, path, Sub() HandleSymbol(symbS), imT))
-            Next
+                If c1 <> lastCh Then
+                    lastCh = c1
+                    m2LAlphSag.Add(New ActionMenuItem(c1))
+                End If
 
-            Dim amiAwe(enumAwe.Length - 1) As (Char, ActionMenuItem)
-            tsmiA.DropDown.SuspendLayout()
-            Dim mAw = tsmiA.DropDownItems
-
-            For i = 0 To enumAwe.Length - 1
-                Dim symbA = enumAwe(i)
-                Dim imT = Task.Run(Function() ImageHelp.GetSymbolImage(symbA))
-                Dim sName = [Enum](Of Symbol).GetName(symbA)
-                Dim t1 = CChar(sName.Substring(3, 1).ToUpperInvariant)
-                Dim path = t1 & " | " & sName.Substring(3).ToTitleCase.Replace("_", " ")
-                amiAwe(i) = (t1, ActionMenuItem.Add2(mAw, path, Sub() HandleSymbol(symbA), imT))
+                m3Sag(i) = (c1, New ActionMenuItem(sName, Sub() HandleSymbol(symb), ImgSagA(i)))
             Next i
 
-            ActionMenuItem.AddRange2Menu(mSe, amiSeg)
-            ActionMenuItem.AddRange2Menu(mAw, amiAwe)
-            tsmiS.DropDown.ResumeLayout(False)
-            tsmiA.DropDown.ResumeLayout(False)
+            Application.DoEvents()
+            lastCh = Char.MinValue
+            Dim ImgAweA = EAweImgsT.Result
+            Dim m2LAlphAwe As New List(Of ActionMenuItem)(26)
+            Dim eAwe = EnumAwe
+            Dim m3Awe(eAwe.Length - 1) As (Char, ActionMenuItem)
+
+            For i = 0 To eAwe.Length - 1
+                Dim symb = eAwe(i)
+                Dim sName = [Enum](Of Symbol).GetName(symb)
+                Dim c1 = CChar(sName.Substring(3, 1).ToUpperInvariant)
+
+                If c1 <> lastCh Then
+                    lastCh = c1
+                    m2LAlphAwe.Add(New ActionMenuItem(c1))
+                End If
+
+                m3Awe(i) = (c1, New ActionMenuItem(sName.Substring(3).ToTitleCase.Replace("_", " "), Sub() HandleSymbol(symb), ImgAweA(i)))
+            Next i
+
+            cmsSymbol.SuspendLayout()
+            Dim tsmiS = New ActionMenuItem("Segoe MDL2 Assets")
+            Dim tsmiA = New ActionMenuItem("FontAwesome")
+            Dim ddSag As ToolStripDropDown = tsmiS.DropDown
+            ddSag.SuspendLayout()
+            Dim ddAwe As ToolStripDropDown = tsmiA.DropDown
+            ddAwe.SuspendLayout()
+            cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
+            tsmiS.DropDownItems.AddRange(m2LAlphSag.ToArray)
+            tsmiA.DropDownItems.AddRange(m2LAlphAwe.ToArray)
+            ActionMenuItem.AddRange2Menu(tsmiS.DropDownItems, m3Sag)
+            ActionMenuItem.AddRange2Menu(tsmiA.DropDownItems, m3Awe)
+            ddSag.ResumeLayout(False)
+            ddAwe.ResumeLayout(False)
+            cmsSymbol.ResumeLayout(False)
+
+            Erase EnumSag, EnumAwe
+            EAweImgsT.Dispose()
+            ESagImgsT.Dispose()
+            EAweImgsT = Nothing
+            ESagImgsT = Nothing
             [Enum](Of Symbol).ClearCaches()
         End Sub
 
@@ -1171,13 +1164,13 @@ Namespace UI
 
         Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
             Dim form As New HelpForm()
+            hevent.Handled = True
             form.Doc.WriteStart(Text)
             form.Doc.WriteParagraph("The menu editor allows To customize the text, Location, Shortcut key And command of a menu item. Menu items can be rearranged with '''Drag & Drop'''. Pressing Ctrl while dragging moves as sub-item.")
             form.Doc.WriteParagraph("[http://fontawesome.io/cheatsheet FontAwesome icons]")
             form.Doc.WriteParagraph("[https://docs.microsoft.com/en-us/windows/uwp/style/segoe-ui-symbol-font Segoe MDL2 icons]")
             form.Doc.WriteTable("Commands", GenericMenu.CommandManager.GetTips)
             form.Show()
-            hevent.Handled = True
             MyBase.OnHelpRequested(hevent)
         End Sub
     End Class

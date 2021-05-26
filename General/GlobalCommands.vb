@@ -29,7 +29,7 @@ Public Class GlobalCommands
     <Command("Allows to use StaxRip's demuxing GUIs independently.")>
     Sub ShowDemuxTool()
         Using form As New SimpleSettingsForm("Demux")
-            form.ScaleClientSize(27, 10)
+            form.ScaleClientSize(27, 10, form.FontHeight)
             Dim ui = form.SimpleUI
             Dim page = ui.CreateFlowPage("main page")
             page.SuspendLayout()
@@ -460,71 +460,75 @@ Public Class GlobalCommands
 
             If dialog.ShowDialog = DialogResult.OK Then
                 Using form As New SimpleSettingsForm("Gif Options")
-                    form.ScaleClientSize(27, 18)
+                    form.ScaleClientSize(27, 18, form.FontHeight)
 
                     Dim ui = form.SimpleUI
                     Dim page = ui.CreateFlowPage("main page")
                     ui.Store = s
                     page.SuspendLayout()
 
-                    Dim paletteGen = ui.AddMenu(Of String)
-                    Dim compression = ui.AddMenu(Of String)
-                    Dim paletteUse = ui.AddMenu(Of String)
+                    Dim paletteGen = ui.AddMenu(Of String)(page)
+                    Dim compression = ui.AddMenu(Of String)(page)
+                    Dim paletteUse = ui.AddMenu(Of String)(page)
 
-                    Dim time = ui.AddNum()
+                    Dim time = ui.AddNum(page)
                     time.Text = "Starting Time:"
                     time.Config = {1.0, 3600.0, 0.2, 1}
                     time.Help = "The Time Position Where the Animation Should start at in Seconds"
                     time.NumEdit.Value = s.Storage.GetDouble("GifTime", 15.0)
                     time.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("GifTime", value)
 
-                    Dim length = ui.AddNum()
+                    Dim length = ui.AddNum(page)
                     length.Text = "Length:"
                     length.Config = {1.0, 9.0, 0.2, 1}
                     length.Help = "The Length of the Animation in Seconds"
                     length.NumEdit.Value = s.Storage.GetDouble("GifLength", 4.2)
                     length.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("GifLength", value)
 
-                    Dim frameRate = ui.AddNum()
+                    Dim frameRate = ui.AddNum(page)
                     frameRate.Text = "Framerate:"
                     frameRate.Config = {15, 60}
                     frameRate.NumEdit.Value = s.Storage.GetInt("GifFrameRate", 15)
                     frameRate.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("GifFrameRate", CInt(value))
 
-                    Dim scale = ui.AddNum()
+                    Dim scale = ui.AddNum(page)
                     scale.Text = "Scale:"
                     scale.Config = {240, 2160}
                     scale.NumEdit.Value = s.Storage.GetInt("GifScale", 480)
                     scale.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("GifScale", CInt(value))
 
                     paletteGen.Text = "Statistics Mode:"
-                    paletteGen.Add("Full", "full")
-                    paletteGen.Add("Difference", "diff")
+                    'paletteGen.Add2("Full", "full")
+                    'paletteGen.Add2("Difference", "diff")
+                    paletteGen.Button.AddRange({("Full", "full"), ("Difference", "diff")})
                     paletteGen.Button.Value = s.Storage.GetString("PaletteGen", "diff")
                     paletteGen.Button.SaveAction = Sub(value) s.Storage.SetString("PaletteGen", value)
 
                     paletteUse.Text = "Diff Mode:"
-                    paletteUse.Add("Rectangle", "rectangle")
-                    paletteUse.Add("None", "none")
+                    'paletteUse.Add2("Rectangle", "rectangle")
+                    'paletteUse.Add2("None", "none")
+                    paletteUse.Button.AddRange({("Rectangle", "rectangle"), ("None", "none")})
                     paletteUse.Button.Value = s.Storage.GetString("PaletteUse", "rectangle")
                     paletteUse.Button.SaveAction = Sub(value) s.Storage.SetString("PaletteUse", value)
 
                     compression.Text = "Dither:"
-                    compression.Add("Bayer Scale", "dither=bayer:bayer_scale=5")
-                    compression.Add("Heckbert", "dither=heckbert")
-                    compression.Add("Floyd Steinberg", "dither=floyd_steinberg")
-                    compression.Add("Sierra 2", "dither=sierra2")
-                    compression.Add("Sierra 2_4a", "dither=sierra2_4a")
-                    compression.Add("None", "dither=none")
+                    'compression.Add2("Bayer Scale", "dither=bayer:bayer_scale=5")
+                    'compression.Add2("Heckbert", "dither=heckbert")
+                    'compression.Add2("Floyd Steinberg", "dither=floyd_steinberg")
+                    'compression.Add2("Sierra 2", "dither=sierra2")
+                    'compression.Add2("Sierra 2_4a", "dither=sierra2_4a")
+                    'compression.Add2("None", "dither=none")
+                    compression.Button.AddRange({("Bayer Scale", "dither=bayer:bayer_scale=5"), ("Heckbert", "dither=heckbert"), ("Floyd Steinberg", "dither=floyd_steinberg"),
+                                                ("Sierra 2", "dither=sierra2"), ("Sierra 2_4a", "dither=sierra2_4a"), ("None", "dither=none")})
                     compression.Button.Value = s.Storage.GetString("GifDither", "dither=floyd_steinberg")
                     compression.Button.SaveAction = Sub(value) s.Storage.SetString("GifDither", value)
 
-                    Dim output = ui.AddBool()
+                    Dim output = ui.AddBool(page)
                     output.Text = "Output Path"
                     output.Checked = s.Storage.GetBool("GifOutput", False)
                     output.SaveAction = Sub(value) s.Storage.SetBool("GifOutput", value)
 
-                    Dim customDirectory = ui.AddTextMenu() 'Custom Output Folder
+                    Dim customDirectory = ui.AddTextMenu(page) 'Custom Output Folder
                     customDirectory.Label.Visible = False
                     customDirectory.Edit.Text = s.Storage.GetString("GifDirectory", p.DefaultTargetFolder)
                     customDirectory.Edit.SaveAction = Sub(value) s.Storage.SetString("GifDirectory", value)
@@ -559,55 +563,55 @@ Public Class GlobalCommands
 
             If dialog.ShowDialog = DialogResult.OK Then
                 Using form As New SimpleSettingsForm("Thumbnail Options")
-                    form.ScaleClientSize(27, 15)
+                    form.ScaleClientSize(27, 15, form.FontHeight)
 
                     Dim ui = form.SimpleUI
                     Dim page = ui.CreateFlowPage("main page")
                     ui.Store = s
                     page.SuspendLayout()
 
-                    Dim column = ui.AddNum()
+                    Dim column = ui.AddNum(page)
                     column.Text = "Columns:"
                     column.Config = {1, 12}
                     column.NumEdit.Value = s.Storage.GetInt("MTNColumn", 4)
                     column.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNColumn", CInt(value))
 
-                    Dim row = ui.AddNum()
+                    Dim row = ui.AddNum(page)
                     row.Text = "Rows:"
                     row.Config = {1, 12}
                     row.NumEdit.Value = s.Storage.GetInt("MTNRow", 6)
                     row.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNRow", CInt(value))
 
-                    Dim quality = ui.AddNum()
+                    Dim quality = ui.AddNum(page)
                     quality.Text = "Quality:"
                     quality.Config = {25, 100}
                     quality.NumEdit.Value = s.Storage.GetInt("MTNQuality", 95)
                     quality.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNQuality", CInt(value))
 
-                    Dim height = ui.AddNum()
+                    Dim height = ui.AddNum(page)
                     height.Text = "Height:"
                     height.Config = {150, 500}
                     height.NumEdit.Value = s.Storage.GetInt("MTNHeight", 250)
                     height.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNHeight", CInt(value))
 
-                    Dim width = ui.AddNum()
+                    Dim width = ui.AddNum(page)
                     width.Text = "Width:"
                     width.Config = {960, 2000}
                     width.NumEdit.Value = s.Storage.GetInt("MTNWidth", 1920)
                     width.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNWidth", CInt(value))
 
-                    Dim depth = ui.AddNum()
+                    Dim depth = ui.AddNum(page)
                     depth.Text = "Depth:"
                     depth.Config = {4, 12}
                     depth.NumEdit.Value = s.Storage.GetInt("MTNDepth", 12)
                     depth.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("MTNDepth", CInt(value))
 
-                    Dim output = ui.AddBool()
+                    Dim output = ui.AddBool(page)
                     output.Text = "Custom Output"
                     output.Checked = s.Storage.GetBool("MTNOutput", False)
                     output.SaveAction = Sub(value) s.Storage.SetBool("MTNOutput", value)
 
-                    Dim customDir = ui.AddTextMenu() 'Custom Output Directory
+                    Dim customDir = ui.AddTextMenu(page) 'Custom Output Directory
                     customDir.Label.Visible = False
                     customDir.Edit.Text = s.Storage.GetString("MTNDirectory", p.DefaultTargetFolder)
                     customDir.Edit.SaveAction = Sub(value) s.Storage.SetString("MTNDirectory", value)
@@ -645,7 +649,7 @@ Public Class GlobalCommands
 
             If dialog.ShowDialog = DialogResult.OK Then
                 Using form As New SimpleSettingsForm("PNG Options")
-                    form.ScaleClientSize(27, 15)
+                    form.ScaleClientSize(27, 15, form.FontHeight)
 
                     Dim ui = form.SimpleUI
                     Dim page = ui.CreateFlowPage("main page")
@@ -653,35 +657,36 @@ Public Class GlobalCommands
                     page.SuspendLayout()
 
                     Dim opt = ui.AddMenu(Of String)
+                    opt.Button.Menu.SuspendLayout()
 
-                    Dim time = ui.AddNum()
+                    Dim time = ui.AddNum(page)
                     time.Text = "Starting Time:"
                     time.Config = {1.0, 3600.0, 0.2, 1}
                     time.Help = "The Time Position Where the Animation Should start at in Seconds"
                     time.NumEdit.Value = s.Storage.GetDouble("PNGTime", 15.0)
                     time.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("PNGTime", value)
 
-                    Dim len = ui.AddNum()
+                    Dim len = ui.AddNum(page)
                     len.Text = "Length:"
                     len.Config = {1.0, 9.0, 0.2, 1}
                     len.Help = "The Length of the Animation in Seconds"
                     len.NumEdit.Value = s.Storage.GetDouble("PNGLength", 3.8)
                     len.NumEdit.SaveAction = Sub(value) s.Storage.SetDouble("PNGLength", value)
 
-                    Dim frameRate = ui.AddNum()
+                    Dim frameRate = ui.AddNum(page)
                     frameRate.Text = "FrameRate:"
                     frameRate.Config = {15, 60}
                     frameRate.NumEdit.Value = s.Storage.GetInt("PNGFrameRate", 15)
                     frameRate.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("PNGFrameRate", CInt(value))
 
-                    Dim scale = ui.AddNum()
+                    Dim scale = ui.AddNum(page)
                     scale.Text = "Scale:"
                     scale.Config = {240, 2160}
                     scale.Help = "The Size to Scale the Resolution to"
                     scale.NumEdit.Value = s.Storage.GetInt("PNGScale", 480)
                     scale.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("PNGScale", CInt(value))
 
-                    Dim settings = ui.AddBool()
+                    Dim settings = ui.AddBool(page)
                     settings.Text = "Enable Opt"
                     settings.Help = "Enable or Disable the Usage of PNG Opt"
                     settings.Checked = s.Storage.GetBool("OptSetting", False)
@@ -699,13 +704,14 @@ Public Class GlobalCommands
                     opt.Button.SaveAction = Sub(value) s.Storage.SetString("PNGopt", value)
 
                     opt.Visible = settings.Checked = True
+                    opt.Button.Menu.ResumeLayout(False)
 
-                    Dim output = ui.AddBool()
+                    Dim output = ui.AddBool(page)
                     output.Text = "Output Path"
                     output.Checked = s.Storage.GetBool("PNGOutput", False)
                     output.SaveAction = Sub(value) s.Storage.SetBool("PNGOutput", value)
 
-                    Dim customDir = ui.AddTextMenu() 'Custom Output Directory
+                    Dim customDir = ui.AddTextMenu(page) 'Custom Output Directory
                     customDir.Label.Visible = False
                     customDir.Edit.Text = s.Storage.GetString("PNGDirectory", p.DefaultTargetFolder)
                     customDir.Edit.SaveAction = Sub(value) s.Storage.SetString("PNGDirectory", value)
@@ -743,7 +749,7 @@ Public Class GlobalCommands
 
             If dialog.ShowDialog = DialogResult.OK Then
                 Using form As New SimpleSettingsForm("Thumbnail Options")
-                    form.ScaleClientSize(27, 20)
+                    form.ScaleClientSize(27, 20, form.FontHeight)
 
                     Dim ui = form.SimpleUI
                     Dim page = ui.CreateFlowPage("main page")
@@ -753,7 +759,7 @@ Public Class GlobalCommands
                     Dim row As SimpleUI.NumBlock
                     Dim interval As SimpleUI.NumBlock
 
-                    Dim mode = ui.AddMenu(Of Integer)
+                    Dim mode = ui.AddMenu(Of Integer)(page)
                     mode.Text = "Row Count Mode"
                     mode.Expandet = True
                     mode.Add("Manual", 0)
@@ -765,7 +771,8 @@ Public Class GlobalCommands
                                                                  row.Visible = mode.Button.Value = 0
                                                                  interval.Visible = mode.Button.Value = 1
                                                              End Sub
-                    Dim m = ui.AddMenu(Of Integer)
+                    Dim m = ui.AddMenu(Of Integer)(page)
+                    m.Button.Menu.SuspendLayout()
                     m.Text = "Timestamp Position"
                     m.Add("Left Top", 0)
                     m.Add("Right Top", 1)
@@ -773,8 +780,10 @@ Public Class GlobalCommands
                     m.Add("Right Bottom", 3)
                     m.Button.Value = s.Storage.GetInt("Thumbnail Position", 3)
                     m.Button.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Position", value)
+                    m.Button.Menu.ResumeLayout(False)
 
-                    Dim k = ui.AddMenu(Of String)
+                    Dim k = ui.AddMenu(Of String)(page)
+                    k.Button.Menu.SuspendLayout()
                     k.Text = "Picture Format:"
                     k.Add("JPG", "jpg")
                     k.Add("PNG", "png")
@@ -782,30 +791,31 @@ Public Class GlobalCommands
                     k.Add("BMP", "bmp")
                     k.Button.Value = s.Storage.GetString("Picture Format", "png")
                     k.Button.SaveAction = Sub(value) s.Storage.SetString("Picture Format", CStr(value))
+                    k.Button.Menu.ResumeLayout(False)
 
-                    Dim cp = ui.AddColorPicker()
+                    Dim cp = ui.AddColorPicker(page)
                     cp.Text = "Background Color"
                     cp.Field = NameOf(s.ThumbnailBackgroundColor)
 
-                    Dim nb = ui.AddNum()
+                    Dim nb = ui.AddNum(page)
                     nb.Text = "Thumbnail Width:"
                     nb.Config = {200, 4000, 10}
                     nb.NumEdit.Value = s.Storage.GetInt("Thumbnail Width", 500)
                     nb.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Width", CInt(value))
 
-                    nb = ui.AddNum()
+                    nb = ui.AddNum(page)
                     nb.Text = "Column Count:"
                     nb.Config = {1, 20}
                     nb.NumEdit.Value = s.Storage.GetInt("Thumbnail Columns", 4)
                     nb.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Columns", CInt(value))
 
-                    row = ui.AddNum()
+                    row = ui.AddNum(page)
                     row.Text = "Row Count:"
                     row.Config = {1, 20}
                     row.NumEdit.Value = s.Storage.GetInt("Thumbnail Rows", 6)
                     row.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Rows", CInt(value))
 
-                    interval = ui.AddNum()
+                    interval = ui.AddNum(page)
                     interval.Text = "Interval (seconds):"
                     interval.NumEdit.Value = s.Storage.GetInt("Thumbnail Interval")
                     interval.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Interval", CInt(value))
@@ -813,31 +823,31 @@ Public Class GlobalCommands
                     row.Visible = mode.Button.Value = 0
                     interval.Visible = mode.Button.Value = 1
 
-                    Dim margin = ui.AddNum()
+                    Dim margin = ui.AddNum(page)
                     margin.Text = "Margin:"
                     margin.Config = {0, 100}
                     margin.NumEdit.Value = s.Storage.GetInt("Thumbnail Margin", 5)
                     margin.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Margin", CInt(value))
 
-                    Dim cq = ui.AddNum()
+                    Dim cq = ui.AddNum(page)
                     cq.Text = "Compression Quality:"
                     cq.Config = {1, 100}
                     cq.NumEdit.Value = s.Storage.GetInt("Thumbnail Compression Quality", 95)
                     cq.NumEdit.SaveAction = Sub(value) s.Storage.SetInt("Thumbnail Compression Quality", CInt(value))
                     AddHandler k.Button.ValueChangedUser, Sub() cq.Visible = k.Button.Value = "jpg"
 
-                    Dim logo = ui.AddBool()
+                    Dim logo = ui.AddBool(page)
                     logo.Text = "Disable StaxRip Logo"
                     logo.Help = "Enable or disable the StaxRip Watermark"
                     logo.Checked = s.Storage.GetBool("Logo", False)
                     logo.SaveAction = Sub(value) s.Storage.SetBool("Logo", CBool(value))
 
-                    Dim output = ui.AddBool()
+                    Dim output = ui.AddBool(page)
                     output.Text = "Output Path"
                     output.Checked = s.Storage.GetBool("StaxRipOutput", False)
                     output.SaveAction = Sub(value) s.Storage.SetBool("StaxRipOutput", value)
 
-                    Dim customDir = ui.AddTextButton()
+                    Dim customDir = ui.AddTextButton(page)
                     customDir.Visible = output.Checked
                     customDir.Expandet = True
                     customDir.Label.Visible = False

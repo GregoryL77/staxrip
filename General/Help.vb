@@ -6,7 +6,6 @@ Imports System.Reflection
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports Microsoft.VisualBasic.FileIO
-Imports Force.DeepCloner
 
 Public Class ObjectHelp
     Shared Function GetCompareString(obj As Object) As String
@@ -74,11 +73,6 @@ Public Class ObjectHelp
 
     <DebuggerHidden()>
     Shared Function GetCopy(Of T)(o As T) As T
-        'Return DeepClonerExtensions.DeepClone(Of T)(o)  '+ Imports Force.DeepCloner
-        Return o.DeepClone
-    End Function
-    <DebuggerHidden()>
-    Shared Function GetCopySys(Of T)(o As T) As T
         Using ms As New MemoryStream
             Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             bf.Serialize(ms, o)

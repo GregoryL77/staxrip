@@ -26,9 +26,10 @@ Public MustInherit Class Demuxer
 
     Overridable Function ShowConfigDialog() As DialogResult
         Using form As New SimpleSettingsForm(Name)
-            form.ScaleClientSize(23, 11)
+            form.ScaleClientSize(23, 11, form.FontHeight)
             Dim ui = form.SimpleUI
             Dim page = ui.CreateFlowPage("main page")
+            page.SuspendLayout()
 
             Dim tb = ui.AddText(page)
             tb.Label.Text = "Supported Input File Types:"
@@ -50,6 +51,7 @@ Public MustInherit Class Demuxer
             cb.Help = "Demux even when ouput files already exist."
             cb.Checked = OverrideExisting
             cb.SaveAction = Sub(val) OverrideExisting = val
+            page.ResumeLayout()
 
             Dim ret = form.ShowDialog()
 

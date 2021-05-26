@@ -606,7 +606,7 @@ Public Class eac3toForm
         MyBase.New()
         InitializeComponent()
         Project = proj
-        ScaleClientSize(40, 30)
+        ScaleClientSize(40, 30, FontHeight)
 
         cbAudioOutput.Sorted = True
         cbAudioOutput.Items.AddRange(AudioOutputFormats)

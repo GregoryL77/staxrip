@@ -176,8 +176,9 @@ Namespace UI
                         ret = iNode
                         currentNodeList = iNode.Nodes
                         found = True
+                        Exit For 'Added Test This !!!
                     End If
-                Next
+                Next iNode
 
                 If Not found Then
                     ret = New TreeNode
@@ -185,13 +186,13 @@ Namespace UI
                     currentNodeList.Add(ret)
                     currentNodeList = ret.Nodes
                 End If
-            Next
+            Next iNodeName
 
             Return ret
         End Function
 
         Function GetNodes() As List(Of TreeNode)
-            Dim ret As New List(Of TreeNode)(32)
+            Dim ret As New List(Of TreeNode)(16) '32
             AddNodesRecursive(Nodes, ret)
             Return ret
         End Function
@@ -501,7 +502,7 @@ Namespace UI
             AddHandler cms.Opening, Sub()
                                         cutItem.Visible = SelectionLength > 0 AndAlso Not Me.ReadOnly
                                         copyItem.Visible = SelectionLength > 0
-                                        pasteItem.Visible = Clipboard.GetText.NotNullOrEmptyS AndAlso Not Me.ReadOnly
+                                        pasteItem.Visible = Clipboard.GetText IsNot "" AndAlso Not Me.ReadOnly
                                     End Sub
 
             ContextMenuStrip = cms
@@ -817,25 +818,34 @@ Namespace UI
             Set(value As Object)
                 If Menu.Items.Count = 0 Then
                     If TypeOf value Is System.Enum Then
+
+                        Menu.SuspendLayout()
                         For Each i In System.Enum.GetValues(value.GetType)
                             Dim text = DispNameAttribute.GetValueForEnum(i)
                             Dim temp = i
-
                             ActionMenuItem.Add(Menu.Items, text, Sub(o As Object) OnAction(text, o), temp, Nothing).Tag = temp
-                        Next
+                        Next i
+                        Menu.ResumeLayout(False) 'Test This !!!
+
                     End If
                 End If
 
                 If value IsNot Nothing Then
                     For Each i In Menu.Items.OfType(Of ActionMenuItem)()
-                        If value.Equals(i.Tag) Then Text = i.Text
+                        If value.Equals(i.Tag) Then
+                            Text = i.Text
+                            Exit For
+                        End If
 
                         If i.DropDownItems.Count > 0 Then
                             For Each i2 In i.DropDownItems.OfType(Of ActionMenuItem)()
-                                If value.Equals(i2.Tag) Then Text = i2.Text
-                            Next
+                                If value.Equals(i2.Tag) Then
+                                    Text = i2.Text
+                                    Exit For
+                                End If
+                            Next i2
                         End If
-                    Next
+                    Next i
                 End If
 
                 If Text.NullOrEmptyS AndAlso Not value Is Nothing Then Text = value.ToString
@@ -857,28 +867,78 @@ Namespace UI
         End Sub
 
         Sub Add(items As IEnumerable(Of Object))
+            Menu.SuspendLayout()
+            ActionMenuItem.LayoutSuspendCreate()
             For Each i In items
                 Add(i.ToString, i, Nothing)
             Next
+            ActionMenuItem.LayoutResume()
+            Menu.ResumeLayout()
         End Sub
 
         Sub Add(ParamArray items As Object())
+            Menu.SuspendLayout()
+            ActionMenuItem.LayoutSuspendCreate()
             For Each i In items
                 Add(i.ToString, i, Nothing)
             Next
+            ActionMenuItem.LayoutResume()
+            Menu.ResumeLayout()
         End Sub
 
         Function Add(path As String, obj As Object, Optional tip As String = Nothing) As ActionMenuItem
             Items.Add(obj)
             Dim name = path
-            'If path.Contains("|") Then name = path.RightLast("|").Trim
-            Dim rp = path.RightLast("|")
-            If rp IsNot "" Then name = rp.Trim
+            If path.Contains("|") Then name = path.RightLast("|").Trim
+            'Dim rp = path.RightLast("|")
+            'If rp IsNot "" Then name = rp.Trim
             Dim ret = ActionMenuItem.Add(Menu.Items, path, Sub(o As Object) OnAction(name, o), obj, tip)
             ret.Tag = obj
             Return ret
         End Function
 
+        Function Add2(path As String, obj As Object) As ActionMenuItem ', Optional tip As String = Nothing Test it Debug ???
+            'Items.Add(obj)
+            ' If LayoutSuspendHS IsNot Nothing AndAlso LayoutSuspendHS.Add(Menu) Then Menu.SuspendLayout()
+            Dim ret = New ActionMenuItem(path, Sub() OnAction(path, obj), obj) ' ,tip
+            Menu.Items.Add(ret)
+            Return ret
+        End Function
+
+        Sub AddRange(menuTup As (path As String, obj As Object)()) 'As ActionMenuItem() 'Test it Debug ???
+            Dim retA(menuTup.Length - 1) As ActionMenuItem
+            For t = 0 To menuTup.Length - 1
+                Dim ob = menuTup(t).obj
+                'Items.Add(ob)
+                Dim p = menuTup(t).path
+                retA(t) = New ActionMenuItem(p, Sub() OnAction(p, ob), ob)
+            Next t
+
+            Menu.SuspendLayout()
+            Menu.Items.AddRange(retA)
+            Menu.ResumeLayout(False)
+            ' Return ret
+        End Sub
+        'Public Shared LayoutSuspendHS As HashSet(Of ContextMenuStripEx) 'ToDO Testing 'AddRange Replace, maybe other use ??
+        'Public Shared Sub LayoutResume()
+        '    If LayoutSuspendHS IsNot Nothing Then
+        '        For Each tsdd In LayoutSuspendHS
+        '            tsdd.ResumeLayout()
+        '        Next tsdd
+        '        LayoutSuspendHS = Nothing
+        '    End If
+        'End Sub
+        'Public Shared Sub LayoutResume(performLayout As Boolean)
+        '    If LayoutSuspendHS IsNot Nothing Then
+        '        For Each tsdd In LayoutSuspendHS
+        '            tsdd.ResumeLayout(performLayout)
+        '        Next tsdd
+        '        LayoutSuspendHS = Nothing
+        '    End If
+        'End Sub
+        'Public Shared Sub LayoutSuspendCreate(Optional capacity As Integer = 3) 'As List(Of ToolStripDropDown)
+        '    LayoutSuspendHS = If(capacity = 3, New HashSet(Of ContextMenuStripEx), New HashSet(Of ContextMenuStripEx)(capacity))
+        'End Sub
         Sub Clear()
             Items.Clear()
             Menu.Items.ClearAndDisplose
@@ -899,11 +959,11 @@ Namespace UI
         End Function
 
         Public Sub BuildLangMenu(Optional setButtonText As Boolean = False)
-            'Dim lastCh As Char
+            Dim lastCh As Char
             Dim mLl As New List(Of ActionMenuItem)(18) '18
             Dim mL2Alph As New List(Of ActionMenuItem)(26) '26
             Dim mL3 As New List(Of (Char, ActionMenuItem))(292) '285
-            Dim ML2chs As New HashSet(Of Char)(29) '26 Or lastChar<> Version
+            ' Dim ML2chs As New HashSet(Of Char)(29) '26 Or lastChar<> Version
             Dim sb As New Text.StringBuilder(52) 'Maxis 50
             Dim languages = Language.Languages '302
 
@@ -913,18 +973,17 @@ Namespace UI
                 sb.Clear()
                 If lng.IsCommon Then
                     sb.Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
-                    mLl.Add(New ActionMenuItem(sb.ToString, onAct))
+                    mLl.Add(New ActionMenuItem(sb.ToString, onAct, lng))
                 Else
                     Dim lAmiCh = CChar(lngS.Substring(0, 1).ToUpperInvariant)
 
-                    'If lAmiCh <> lastCh Then
-                    '    lastCh = lAmiCh
-                    '    mL2Alph.Add(New ActionMenuItem(lAmiCh))
-                    'End If
-                    If ML2chs.Add(lAmiCh) Then
+                    If lAmiCh <> lastCh Then
+                        lastCh = lAmiCh
                         mL2Alph.Add(New ActionMenuItem(lAmiCh))
                     End If
-
+                    'If ML2chs.Add(lAmiCh) Then
+                    'mL2Alph.Add(New ActionMenuItem(lAmiCh))
+                    'End If
                     sb.Append(lngS).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
                     mL3.Add((lAmiCh, New ActionMenuItem(sb.ToString, onAct)))
                 End If
@@ -1564,18 +1623,18 @@ Namespace UI
 
                     Dim indices(SelectedIndices.Count - 1) As Integer
                     SelectedIndices.CopyTo(indices, 0)
-
-                    SelectedIndex = -1
-
+                    'SelectedIndex = -1
                     For i = indices.Length - 1 To 0 Step -1
                         Items.RemoveAt(indices(i))
                     Next
 
-                    If iFirst > Items.Count - 1 Then
-                        SelectedIndex = Items.Count - 1
+                    Dim iC As Integer = Items.Count
+                    If iFirst > iC - 1 Then
+                        SelectedIndex = iC - 1
                     Else
                         SelectedIndex = iFirst
                     End If
+                    If iFirst <> 0 AndAlso iC > 1 Then SetSelected(0, False)
                 End If
             End If
         End Sub
@@ -1761,6 +1820,7 @@ Namespace UI
         Protected Overrides Sub Dispose(disposing As Boolean)
             TipProvider?.Dispose()
             MyBase.Dispose(disposing)
+            'Events.Dispose () '???
         End Sub
 
         Sub Wheel(sender As Object, e As MouseEventArgs)

@@ -23,6 +23,7 @@ Public Class VideoComparisonForm
 
         Dim enabledFunc = Function() Not TabControl.SelectedTab Is Nothing
         Menu = New ContextMenuStripEx()
+        Menu.SuspendLayout()
         Menu.Form = Me
 
         bnMenu.ContextMenuStrip = Menu
@@ -40,6 +41,7 @@ Public Class VideoComparisonForm
         Menu.Add("Navigate | 100 frame backward", Sub() TrackBar.Value -= 100, Keys.Left Or Keys.Control, enabledFunc)
         Menu.Add("Navigate | 100 frame forward", Sub() TrackBar.Value += 100, Keys.Right Or Keys.Control, enabledFunc)
         Menu.Add("Help", AddressOf Me.Help, Keys.F1)
+        Menu.ResumeLayout(False)
     End Sub
 
     Protected Overrides ReadOnly Property CreateParams() As CreateParams

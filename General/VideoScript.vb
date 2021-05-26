@@ -577,7 +577,7 @@ clipname.set_output()
     End Function
     Overrides Function Edit() As DialogResult
         Using f As New CodeEditor(Me)
-            f.StartPosition = FormStartPosition.CenterParent
+            'f.StartPosition = FormStartPosition.CenterParent
 
             If f.ShowDialog() = DialogResult.OK Then
                 Filters = f.GetFilters

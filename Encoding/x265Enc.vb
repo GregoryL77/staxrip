@@ -420,7 +420,7 @@ Public Class x265Params
 
     Property SAOnonDeblock As New BoolParam With {
         .Switch = "--sao-non-deblock",
-        .Text = "Use non-deblocked pixels for SAO (SAO && deblock filter dependency)"}
+        .Text = "Use non-deblocked pixels for SAO (SAO + deblock filter dependency)"}
 
     Property SAO As New BoolParam With {
         .Switch = "--sao",
@@ -863,7 +863,7 @@ Public Class x265Params
         .Text = "Limit References",
         .IntegerValue = True,
         .Expand = True,
-        .Options = {"0 - No refs limit", "1 - Limit refs per depth", "2 - Limit refs per CU", "3 - Limit per depth && CU"},
+        .Options = {"0 - No refs limit", "1 - Limit refs per depth", "2 - Limit refs per CU", "3 - Limit per depth + CU"},
         .Init = 4}
 
     Property csvloglevel As New OptionParam With {
@@ -907,7 +907,7 @@ Public Class x265Params
         .IntegerValue = True,
         .Expand = True,
         .Options = {"0 - Disabled, Default for Placebo and Grain",
-                    "1 - Default RD L0-4 Neighbour costs&&CU homogenity, RD L5-6 Comparison with inter2Nx2N",
+                    "1 - Default RD L0-4 Neighbour costs+CU homogenity, RD L5-6 Comparison with inter2Nx2N",
                     "2 - RD Level 0-6 CU edge denstiy"},
         .Init = 1}
     '"3 - RD Level 0-6 CU edge denstiy with forceful skip for lower levels of CTU"
@@ -919,7 +919,7 @@ Public Class x265Params
         .Expand = True,
         .Options = {"0 - Disable SAO for all slices",
                     "1 - Enable SAO only for I-slices",
-                    "2 - Enable SAO for I && P slices",
+                    "2 - Enable SAO for I + P slices",
                     "3 - Enable SAO for all ref slices",
                     "4 - Enable SAO for all slices"}}
 

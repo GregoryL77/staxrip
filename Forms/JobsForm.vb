@@ -209,7 +209,7 @@ Friend Class JobsForm
         lv.AddItems(JobManager.GetJobs())
         lv.SelectFirst()
 
-        Dim cms As New ContextMenuStripEx(components)
+        Dim cms As New ContextMenuStripEx()
         cms.Form = Me
         bnMenu.ContextMenuStrip = cms
         lv.ContextMenuStrip = cms

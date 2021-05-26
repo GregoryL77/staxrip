@@ -6,7 +6,7 @@ Namespace UI
         Private Shared KeysTexts As Dictionary(Of Keys, String)
 
         Shared Sub New()
-            KeysTexts = New Dictionary(Of Keys, String)
+            KeysTexts = New Dictionary(Of Keys, String)(47)
             KeysTexts(Keys.Add) = "+ (Numpad)"
             KeysTexts(Keys.Back) = "Back"
             KeysTexts(Keys.Decimal) = "Decimal"

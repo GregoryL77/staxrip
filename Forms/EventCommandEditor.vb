@@ -374,7 +374,7 @@ Public Class EventCommandEditor
         MyBase.New()
         InitializeComponent()
 
-        ScaleClientSize(37, 30)
+        ScaleClientSize(37, 30, FontHeight)
         EventCommandValue = ev
         tbName.Text = EventCommandValue.Name
 

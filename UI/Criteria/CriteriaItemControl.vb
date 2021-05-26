@@ -7,35 +7,35 @@ Namespace UI
         Sub New(allCriteria As List(Of Criteria))
             InitializeComponent()
 
+            mbProperties.Menu.SuspendLayout()
+            ActionMenuItem.LayoutSuspendCreate(32)
             For Each c In allCriteria
-                If c.Name?.StartsWith("Source ") Then
+                If c.Name?.StartsWith("Source ", StringComparison.Ordinal) Then
                     mbProperties.Add("Source | " + c.Name, c, c.Description)
-                ElseIf c.Name?.StartsWith("Target ") Then
+                ElseIf c.Name?.StartsWith("Target ", StringComparison.Ordinal) Then
                     mbProperties.Add("Target | " + c.Name, c, c.Description)
-                ElseIf c.Name?.StartsWith("Audio ") Then
+                ElseIf c.Name?.StartsWith("Audio ", StringComparison.Ordinal) Then
                     mbProperties.Add("Audio | " + c.Name, c, c.Description)
-                ElseIf c.Name?.StartsWith("Crop ") Then
+                ElseIf c.Name?.StartsWith("Crop ", StringComparison.Ordinal) Then
                     mbProperties.Add("Crop | " + c.Name, c, c.Description)
-                ElseIf c.Name?.StartsWith("Encoder ") Then
+                ElseIf c.Name?.StartsWith("Encoder ", StringComparison.Ordinal) Then
                     mbProperties.Add("Encoder | " + c.Name, c, c.Description)
-                ElseIf c.Name?.StartsWith("AviSynth/VapourSynth") Then
+                ElseIf c.Name?.StartsWith("AviSynth/VapourSynth", StringComparison.Ordinal) Then
                     mbProperties.Add("AviSynth/VapourSynth | " + c.Name, c, c.Description)
-                ElseIf Not c.Name?.EndsWith(" Directory") AndAlso Not c.Name?.EndsWith(" File") Then
+                ElseIf Not c.Name?.EndsWith(" Directory", StringComparison.Ordinal) AndAlso Not c.Name?.EndsWith(" File", StringComparison.Ordinal) Then
                     mbProperties.Add(c.Name, c, c.Description)
                 End If
 
-                If c.Name?.EndsWith(" Directory") Then
+                If c.Name?.EndsWith(" Directory", StringComparison.Ordinal) Then
                     mbProperties.Add("Directories | " + c.Name, c, c.Description)
-                End If
-
-                If c.Name?.EndsWith(" Folder") Then
+                ElseIf c.Name?.EndsWith(" Folder", StringComparison.Ordinal) Then
                     mbProperties.Add("Folders | " + c.Name, c, c.Description)
-                End If
-
-                If c.Name?.EndsWith(" File") Then
+                ElseIf c.Name?.EndsWith(" File", StringComparison.Ordinal) Then
                     mbProperties.Add("Files | " + c.Name, c, c.Description)
                 End If
-            Next
+            Next c
+            ActionMenuItem.LayoutResume(False)
+            mbProperties.Menu.ResumeLayout(False)
         End Sub
 
         Protected Overrides Sub OnLayout(e As LayoutEventArgs)

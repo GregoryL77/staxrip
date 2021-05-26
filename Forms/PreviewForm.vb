@@ -60,9 +60,9 @@ Public Class PreviewForm
         Me.bnDelete.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnDelete.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnDelete.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnDelete.Location = New System.Drawing.Point(671, 629)
-        Me.bnDelete.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnDelete.Size = New System.Drawing.Size(70, 70)
+        Me.bnDelete.Location = New System.Drawing.Point(224, 210)
+        Me.bnDelete.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnDelete.Size = New System.Drawing.Size(23, 23)
         Me.bnDelete.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Delete
         Me.bnDelete.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnDelete, "Deletes the cut selection that encloses the current position.")
@@ -72,9 +72,9 @@ Public Class PreviewForm
         Me.bnRight1.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnRight1.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnRight1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnRight1.Location = New System.Drawing.Point(425, 629)
-        Me.bnRight1.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnRight1.Size = New System.Drawing.Size(70, 70)
+        Me.bnRight1.Location = New System.Drawing.Point(142, 210)
+        Me.bnRight1.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnRight1.Size = New System.Drawing.Size(23, 23)
         Me.bnRight1.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Right1
         Me.bnRight1.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnRight1, "Forward 1 Frames")
@@ -84,9 +84,9 @@ Public Class PreviewForm
         Me.bnLeft1.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnLeft1.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnLeft1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnLeft1.Location = New System.Drawing.Point(179, 629)
-        Me.bnLeft1.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnLeft1.Size = New System.Drawing.Size(70, 70)
+        Me.bnLeft1.Location = New System.Drawing.Point(60, 210)
+        Me.bnLeft1.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnLeft1.Size = New System.Drawing.Size(23, 23)
         Me.bnLeft1.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Left1
         Me.bnLeft1.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnLeft1, "Backward 1 Frame")
@@ -96,9 +96,9 @@ Public Class PreviewForm
         Me.bnStartCutRange.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnStartCutRange.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnStartCutRange.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnStartCutRange.Location = New System.Drawing.Point(261, 629)
-        Me.bnStartCutRange.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnStartCutRange.Size = New System.Drawing.Size(70, 70)
+        Me.bnStartCutRange.Location = New System.Drawing.Point(87, 210)
+        Me.bnStartCutRange.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnStartCutRange.Size = New System.Drawing.Size(23, 23)
         Me.bnStartCutRange.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Open
         Me.bnStartCutRange.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnStartCutRange, "Sets a start cut point. Press F1 for help about cutting")
@@ -108,9 +108,9 @@ Public Class PreviewForm
         Me.bnEndCutRange.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnEndCutRange.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnEndCutRange.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnEndCutRange.Location = New System.Drawing.Point(343, 629)
-        Me.bnEndCutRange.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnEndCutRange.Size = New System.Drawing.Size(70, 70)
+        Me.bnEndCutRange.Location = New System.Drawing.Point(114, 210)
+        Me.bnEndCutRange.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnEndCutRange.Size = New System.Drawing.Size(23, 23)
         Me.bnEndCutRange.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Close
         Me.bnEndCutRange.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnEndCutRange, "Sets a end cut point. Press F1 for help about cutting")
@@ -120,9 +120,9 @@ Public Class PreviewForm
         Me.bnRight2.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnRight2.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnRight2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnRight2.Location = New System.Drawing.Point(507, 629)
-        Me.bnRight2.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnRight2.Size = New System.Drawing.Size(70, 70)
+        Me.bnRight2.Location = New System.Drawing.Point(169, 210)
+        Me.bnRight2.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnRight2.Size = New System.Drawing.Size(23, 23)
         Me.bnRight2.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Right2
         Me.bnRight2.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnRight2, "Forward 10 Frames")
@@ -132,9 +132,9 @@ Public Class PreviewForm
         Me.bnLeft2.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnLeft2.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnLeft2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
-        Me.bnLeft2.Location = New System.Drawing.Point(97, 629)
-        Me.bnLeft2.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnLeft2.Size = New System.Drawing.Size(70, 70)
+        Me.bnLeft2.Location = New System.Drawing.Point(32, 210)
+        Me.bnLeft2.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnLeft2.Size = New System.Drawing.Size(23, 23)
         Me.bnLeft2.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Left2
         Me.bnLeft2.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnLeft2, "Backward 10 Frames")
@@ -144,9 +144,9 @@ Public Class PreviewForm
         Me.bnMenu.Anchor = System.Windows.Forms.AnchorStyles.Bottom
         Me.bnMenu.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnMenu.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.bnMenu.Location = New System.Drawing.Point(753, 629)
-        Me.bnMenu.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnMenu.Size = New System.Drawing.Size(70, 70)
+        Me.bnMenu.Location = New System.Drawing.Point(251, 210)
+        Me.bnMenu.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnMenu.Size = New System.Drawing.Size(23, 23)
         Me.bnMenu.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Menu
         Me.bnMenu.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnMenu, "Shows the menu")
@@ -157,9 +157,9 @@ Public Class PreviewForm
         Me.bnRight3.BackColor = System.Drawing.Color.WhiteSmoke
         Me.bnRight3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.bnRight3.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.bnRight3.Location = New System.Drawing.Point(589, 629)
-        Me.bnRight3.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnRight3.Size = New System.Drawing.Size(70, 70)
+        Me.bnRight3.Location = New System.Drawing.Point(196, 210)
+        Me.bnRight3.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnRight3.Size = New System.Drawing.Size(23, 23)
         Me.bnRight3.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Right3
         Me.bnRight3.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnRight3, "Forward 100 Frames")
@@ -171,9 +171,9 @@ Public Class PreviewForm
         Me.bnLeft3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.bnLeft3.Font = New System.Drawing.Font("Segoe UI", 4.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.bnLeft3.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.bnLeft3.Location = New System.Drawing.Point(15, 629)
-        Me.bnLeft3.Margin = New System.Windows.Forms.Padding(6)
-        Me.bnLeft3.Size = New System.Drawing.Size(70, 70)
+        Me.bnLeft3.Location = New System.Drawing.Point(5, 210)
+        Me.bnLeft3.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
+        Me.bnLeft3.Size = New System.Drawing.Size(23, 23)
         Me.bnLeft3.Symbol = StaxRip.UI.ButtonEx.ButtonSymbol.Left3
         Me.bnLeft3.TabStop = False
         Me.ToolTip.SetToolTip(Me.bnLeft3, "Backward 100 Frames")
@@ -194,9 +194,9 @@ Public Class PreviewForm
         Me.pnVideo.Controls.Add(Me.pnTrack)
         Me.pnVideo.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnVideo.Location = New System.Drawing.Point(0, 0)
-        Me.pnVideo.Margin = New System.Windows.Forms.Padding(2)
+        Me.pnVideo.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
         Me.pnVideo.Name = "pnVideo"
-        Me.pnVideo.Size = New System.Drawing.Size(837, 714)
+        Me.pnVideo.Size = New System.Drawing.Size(279, 238)
         Me.pnVideo.TabIndex = 50
         '
         'cmsMain
@@ -212,10 +212,10 @@ Public Class PreviewForm
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.pnTrack.BackColor = System.Drawing.SystemColors.Control
         Me.pnTrack.Cursor = System.Windows.Forms.Cursors.SizeNS
-        Me.pnTrack.Location = New System.Drawing.Point(15, 587)
-        Me.pnTrack.Margin = New System.Windows.Forms.Padding(2)
+        Me.pnTrack.Location = New System.Drawing.Point(5, 196)
+        Me.pnTrack.Margin = New System.Windows.Forms.Padding(1, 1, 1, 1)
         Me.pnTrack.Name = "pnTrack"
-        Me.pnTrack.Size = New System.Drawing.Size(807, 25)
+        Me.pnTrack.Size = New System.Drawing.Size(269, 8)
         Me.pnTrack.TabIndex = 51
         '
         'ToolTip
@@ -227,13 +227,13 @@ Public Class PreviewForm
         '
         'PreviewForm
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(288.0!, 288.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.BackColor = System.Drawing.Color.Black
-        Me.ClientSize = New System.Drawing.Size(837, 714)
+        Me.ClientSize = New System.Drawing.Size(279, 238)
         Me.Controls.Add(Me.pnVideo)
         Me.KeyPreview = True
-        Me.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
+        Me.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
         Me.Name = "PreviewForm"
         Me.ShowInTaskbar = True
         Me.Text = "Preview"
@@ -270,15 +270,97 @@ Public Class PreviewForm
         CommandManager.AddCommandsFromObject(Me)
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
 
+        cmsMain.SuspendLayout()
         GenericMenu = New CustomMenu(AddressOf GetDefaultMenu,
             s.CustomMenuPreview, CommandManager, cmsMain)
 
         GenericMenu.AddKeyDownHandler(Me)
         GenericMenu.BuildMenu()
+        cmsMain.ResumeLayout(False)
 
         Instances.Add(Me)
 
         PreviewScript = script
+    End Sub
+
+    Protected Overrides Sub OnLoad(args As EventArgs)
+        MyBase.OnLoad(args)
+
+        PreviewScript.Synchronize(True, True, True)
+        FrameServer = FrameServerFactory.Create(PreviewScript.Path)
+        Renderer = New VideoRenderer(pnVideo, FrameServer)
+        Renderer.Info = PreviewScript.OriginalInfo
+        Renderer.ShowInfo = s.ShowPreviewInfo
+
+        If s.LastPosition < FrameServer.Info.FrameCount - 1 Then
+            Renderer.Position = s.LastPosition
+        End If
+
+        Dim info = FrameServer.Info
+
+        If Calc.IsARSignalingRequired Then
+            VideoSize = New Size(CInt(info.Height * Calc.GetTargetDAR), CInt(info.Height))
+        Else
+            VideoSize = New Size(CInt(info.Width), CInt(info.Height))
+        End If
+
+        Dim workingArea = Screen.FromControl(Me).WorkingArea
+        Dim initHeight = CInt((workingArea.Height / 100) * s.PreviewSize)
+
+        SetSize(initHeight)
+
+        If s.PreviewFormBorderStyle = FormBorderStyle.None Then
+            Fullscreen()
+        Else
+            NormalScreen()
+        End If
+
+        AfterPositionChanged()
+        ShowButtons(Not s.HidePreviewButtons)
+    End Sub
+
+    Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
+        MyBase.OnFormClosing(args)
+        Instances.Remove(Me)
+        UpdateTrim(p.Script)
+        s.LastPosition = Renderer.Position
+        p.CutFrameCount = FrameServer.Info.FrameCount
+        p.CutFrameRate = FrameServer.FrameRate
+        g.MainForm.UpdateFilters()
+        Renderer.Dispose()
+        FrameServer.Dispose()
+    End Sub
+
+    Protected Overrides Sub OnHelpButtonClicked(e As CancelEventArgs)
+        e.Cancel = True
+        OpenHelp()
+    End Sub
+
+    Protected Overrides Sub WndProc(ByRef m As Message)
+        If m.Msg = &H214 Then 'WM_SIZING
+            Dim rc = Marshal.PtrToStructure(Of Native.RECT)(m.LParam)
+            Dim r = rc
+            SubtractWindowBorders(Handle, r)
+            Dim c_w = r.Right - r.Left, c_h = r.Bottom - r.Top
+            Dim aspect = VideoSize.Width / VideoSize.Height
+            Dim d_w = CInt(c_h * aspect - c_w)
+            Dim d_h = CInt(c_w / aspect - c_h)
+            Dim d_w2 = CInt(c_h * aspect - c_w)
+            Dim d_h2 = CInt(c_w / aspect - c_h)
+            Dim d_corners = {d_w, d_h, -d_w, -d_h}
+            Dim corners = {rc.Left, rc.Top, rc.Right, rc.Bottom}
+            Dim corner = GetResizeBorder(m.WParam.ToInt32())
+
+            If corner >= 0 Then
+                corners(corner) -= d_corners(corner)
+            End If
+
+            Marshal.StructureToPtr(Of Native.RECT)(New Native.RECT(corners(0), corners(1), corners(2), corners(3)), m.LParam, False)
+            m.Result = New IntPtr(1)
+            Exit Sub
+        End If
+
+        MyBase.WndProc(m)
     End Sub
 
     Sub Fullscreen()
@@ -1031,47 +1113,6 @@ Public Class PreviewForm
         End If
     End Function
 
-    Protected Overrides Sub OnHelpButtonClicked(e As CancelEventArgs)
-        e.Cancel = True
-        OpenHelp()
-    End Sub
-
-    Protected Overrides Sub OnLoad(args As EventArgs)
-        MyBase.OnLoad(args)
-
-        PreviewScript.Synchronize(True, True, True)
-        FrameServer = FrameServerFactory.Create(PreviewScript.Path)
-        Renderer = New VideoRenderer(pnVideo, FrameServer)
-        Renderer.Info = PreviewScript.OriginalInfo
-        Renderer.ShowInfo = s.ShowPreviewInfo
-
-        If s.LastPosition < FrameServer.Info.FrameCount - 1 Then
-            Renderer.Position = s.LastPosition
-        End If
-
-        Dim info = FrameServer.Info
-
-        If Calc.IsARSignalingRequired Then
-            VideoSize = New Size(CInt(info.Height * Calc.GetTargetDAR), CInt(info.Height))
-        Else
-            VideoSize = New Size(CInt(info.Width), CInt(info.Height))
-        End If
-
-        Dim workingArea = Screen.FromControl(Me).WorkingArea
-        Dim initHeight = CInt((workingArea.Height / 100) * s.PreviewSize)
-
-        SetSize(initHeight)
-
-        If s.PreviewFormBorderStyle = FormBorderStyle.None Then
-            Fullscreen()
-        Else
-            NormalScreen()
-        End If
-
-        AfterPositionChanged()
-        ShowButtons(Not s.HidePreviewButtons)
-    End Sub
-
     Sub SetSize(newHeight As Integer)
         Dim workingArea = Screen.FromControl(Me).WorkingArea
         Dim bordersHeight = Height - ClientSize.Height
@@ -1090,45 +1131,6 @@ Public Class PreviewForm
 
         Width = clientWidth + (Width - ClientSize.Width)
         Height = clientHeight + bordersHeight
-    End Sub
-
-    Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
-        MyBase.OnFormClosing(args)
-        Instances.Remove(Me)
-        UpdateTrim(p.Script)
-        s.LastPosition = Renderer.Position
-        p.CutFrameCount = FrameServer.Info.FrameCount
-        p.CutFrameRate = FrameServer.FrameRate
-        g.MainForm.UpdateFilters()
-        Renderer.Dispose()
-        FrameServer.Dispose()
-    End Sub
-
-    Protected Overrides Sub WndProc(ByRef m As Message)
-        If m.Msg = &H214 Then 'WM_SIZING
-            Dim rc = Marshal.PtrToStructure(Of Native.RECT)(m.LParam)
-            Dim r = rc
-            SubtractWindowBorders(Handle, r)
-            Dim c_w = r.Right - r.Left, c_h = r.Bottom - r.Top
-            Dim aspect = VideoSize.Width / VideoSize.Height
-            Dim d_w = CInt(c_h * aspect - c_w)
-            Dim d_h = CInt(c_w / aspect - c_h)
-            Dim d_w2 = CInt(c_h * aspect - c_w)
-            Dim d_h2 = CInt(c_w / aspect - c_h)
-            Dim d_corners = {d_w, d_h, -d_w, -d_h}
-            Dim corners = {rc.Left, rc.Top, rc.Right, rc.Bottom}
-            Dim corner = GetResizeBorder(m.WParam.ToInt32())
-
-            If corner >= 0 Then
-                corners(corner) -= d_corners(corner)
-            End If
-
-            Marshal.StructureToPtr(Of Native.RECT)(New Native.RECT(corners(0), corners(1), corners(2), corners(3)), m.LParam, False)
-            m.Result = New IntPtr(1)
-            Exit Sub
-        End If
-
-        MyBase.WndProc(m)
     End Sub
 
     Shared Function GetResizeBorder(v As Integer) As Integer

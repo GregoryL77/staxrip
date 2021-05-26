@@ -570,35 +570,47 @@ Public Class GlobalClass
         dialogAction As Action,
         loadAction As Action(Of Profile))
 
+        Dim laySL As New List(Of ToolStripDropDown)  'Test This !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         For Each iProfile As Profile In profiles
+
             Dim a = iProfile.Name.SplitNoEmpty("|")
             Dim l = ic
-
             For i = 0 To a.Length - 1
                 Dim found = False
 
-                For Each iItem As ToolStripItem In l
-                    If i < a.Length - 1 Then
-                        If iItem.Text = a(i) + "     " Then
+                If i < a.Length - 1 Then
+                    For Each iItem As ToolStripItem In l
+                        If String.Equals(iItem.Text, a(i) + "     ") Then
                             found = True
                             l = DirectCast(iItem, ToolStripMenuItem).DropDownItems
+                            Exit For
                         End If
-                    End If
-                Next
+                    Next iItem
+                End If
 
                 If Not found Then
                     If i = a.Length - 1 Then
                         Dim item As New ActionMenuItem(a(i) + "     ", Sub() loadAction(iProfile))
                         l.Add(item)
-                        l = item.DropDownItems
+                        'l = item.DropDownItems 'Test This !!!
                     Else
                         Dim item As New MenuItemEx(a(i) + "     ")
+
+                        Dim tsdd = item.DropDown
+                        laySL.Add(tsdd)
+                        tsdd.SuspendLayout()
+
                         l.Add(item)
                         l = item.DropDownItems
                     End If
                 End If
-            Next
-        Next
+            Next i
+        Next iProfile
+
+        For Each tsdd In laySL
+            tsdd.ResumeLayout(False)
+        Next tsdd
 
         If Not dialogAction Is Nothing Then
             ic.Add(New ToolStripSeparator)
@@ -996,8 +1008,8 @@ Public Class GlobalClass
             Application.Exit()
             Application.ExitThread()
             Application.UnregisterMessageLoop()
-            RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
             RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+            RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
         Catch
         Finally
             Console.Beep(350, 30)
@@ -1128,10 +1140,7 @@ Public Class GlobalClass
     Sub OnUnhandledException(sender As Object, e As UnhandledExceptionEventArgs)
         OnException(DirectCast(e.ExceptionObject, Exception))
     End Sub
-    'Sub OnUnhandledException(sender As Object, e As Microsoft.VisualBasic.ApplicationServices.UnhandledExceptionEventArgs)
-    '    e.ExitApplication = False
-    '    OnException(e.Exception)
-    'End Sub
+
     Private IconValue As Icon
     Private LastIconFile As String
 
@@ -1141,7 +1150,7 @@ Public Class GlobalClass
 
     Public Property Icon As Icon
         Get
-            If IconValue Is Nothing OrElse s.IconFile <> LastIconFile Then
+            If IconValue Is Nothing OrElse Not String.Equals(s.IconFile, LastIconFile) Then
                 If File.Exists(s.IconFile) Then
                     IconValue = New Icon(s.IconFile)
                     LastIconFile = s.IconFile
@@ -1255,7 +1264,9 @@ Public Class GlobalClass
 
     Sub CodePreview(code As String)
         Using form As New StringEditorForm
-            form.ScaleClientSize(50, 30)
+            form.Panel1.SuspendLayout()
+            form.SuspendLayout()
+            form.ScaleClientSize(50, 30, form.FontHeight)
             form.rtb.ReadOnly = True
             form.cbWrap.Checked = False
             form.cbWrap.Visible = False
@@ -1263,6 +1274,8 @@ Public Class GlobalClass
             form.Text = "Code Preview"
             form.bnOK.Visible = False
             form.bnCancel.Text = "Close"
+            form.Panel1.ResumeLayout()
+            form.ResumeLayout()
             form.ShowDialog()
         End Using
     End Sub
@@ -1273,7 +1286,9 @@ Public Class GlobalClass
         text = BR + "  " + text.FixBreak.Replace(BR, BR + "  ") + BR
 
         Using form As New StringEditorForm
-            form.ScaleClientSize(25, 15)
+            form.Panel1.SuspendLayout()
+            form.SuspendLayout()
+            form.ScaleClientSize(25, 15, form.FontHeight)
             form.MaximizeBox = False
             form.rtb.ReadOnly = True
             form.cbWrap.Checked = False
@@ -1282,6 +1297,8 @@ Public Class GlobalClass
             form.Text = script.Path
             form.bnOK.Visible = False
             form.bnCancel.Text = "Close"
+            form.Panel1.ResumeLayout()
+            form.ResumeLayout()
             form.ShowDialog()
         End Using
     End Sub

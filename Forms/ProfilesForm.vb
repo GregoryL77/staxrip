@@ -364,7 +364,7 @@ Public Class ProfilesForm
         Dim pro = DirectCast(lbMain.SelectedItem, Profile)
         Dim count = lbMain.SelectedItems.Count
         bnClone.Enabled = count = 1
-        bnEdit.Enabled = count = 1 AndAlso pro.CanEdit
+        bnEdit.Enabled = count = 1 AndAlso (pro.CanEdit) 'OrElse (TypeOf pro Is MkvMuxer AndAlso pro.Name.ToLowerInvariant.Contains("mkvmerge")))
         bnLoad.Enabled = count = 1 AndAlso Not LoadProfileMethod Is Nothing
         bnRemove.Enabled = count > 0
         bnRename.Enabled = count = 1
@@ -404,7 +404,8 @@ Public Class ProfilesForm
 
     Sub bnLoad_Click() Handles bnLoad.Click
         LoadProfileMethod(DirectCast(lbMain.SelectedItem, Profile))
-        TextValues(bnLoad) = bnLoad.Text
+        '   TextValues(bnLoad) = bnLoad.Text 'Added ,Dead, Not used???
+        Dim _unused = bnLoad.Text
         bnLoad.ShowBold()
     End Sub
 
@@ -543,11 +544,13 @@ Public Class ProfilesForm
         End If
     End Sub
 
-    Sub ProfilesForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         Dim form As New HelpForm()
+        hevent.Handled = True
         form.Doc.WriteStart(Text)
         form.Doc.WriteTips(TipProvider.GetTips)
         form.Show()
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Sub bnOK_Click(sender As Object, e As EventArgs) Handles bnOK.Click

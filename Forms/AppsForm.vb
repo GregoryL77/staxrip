@@ -857,7 +857,7 @@ Public Class AppsForm
 
         If paths.Count > 0 Then
             Using form As New SimpleSettingsForm("Choose Path")
-                form.ScaleClientSize(35, 20)
+                form.ScaleClientSize(35, 20, FontHeight)
                 form.bnOK.Visible = False
                 form.bnCancel.Visible = False
                 form.LineControl.Visible = False

@@ -225,8 +225,9 @@ Public Class EventCommandsEditor
         MyBase.New()
         InitializeComponent()
 
-        ScaleClientSize(25, 20)
+        ScaleClientSize(25, 20, FontHeight)
 
+        lv.BeginUpdate()
         lv.UpButton = bnUp
         lv.DownButton = bnDown
         lv.RemoveButton = bnRemove
@@ -239,6 +240,7 @@ Public Class EventCommandsEditor
         lv.ItemCheckProperty = NameOf(EventCommand.Enabled)
         lv.AddItems(ObjectHelp.GetCopy(eventCommands))
         lv.SelectFirst()
+        lv.EndUpdate()
 
         bnUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
         bnDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)

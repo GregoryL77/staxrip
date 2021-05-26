@@ -8,7 +8,6 @@ Imports System.Runtime.Serialization
 
 Imports JM.LinqFaster
 Imports VB6 = Microsoft.VisualBasic
-Imports LinqFasterer
 
 <Serializable()>
 Public MustInherit Class Muxer
@@ -246,7 +245,8 @@ Public MustInherit Class Muxer
     Shared Function GetDefaults() As List(Of Muxer)
         Dim ret As New List(Of Muxer)
 
-        ret.AddRange({New MkvMuxer(), New MP4Muxer(), New WebMMuxer()})
+        'ret.AddRange({New MkvMuxer(), New MP4Muxer(), New WebMMuxer()}) - Org, Test - No Edit MKV WorkAround
+        ret.AddRange({New MkvMuxer("MKV (mkvmerge)"), New MP4Muxer(), New WebMMuxer()})
         ret.AddRange(ffmpegMuxer.SupportedFormats.SelectF(Function(val) New ffmpegMuxer("ffmpeg | " + val) With {.OutputFormat = val}))
         ret.AddRange({New BatchMuxer("Command Line"), New NullMuxer("No Muxing")})
 
@@ -358,14 +358,14 @@ Public Class MP4Muxer
             args.Append(" ").Append(Macro.Expand(AdditionalSwitches))
         End If
 
-        Dim tagList As New List(Of String)
+        Dim tagList As New List(Of String)(Tags.Count + 1)
 
         If CoverFile.NotNullOrEmptyS AndAlso File.Exists(CoverFile) Then
             tagList.Add("cover=" + CoverFile.ToShortFilePath.Escape)
         End If
 
         If Tags.Count > 0 Then
-            tagList.AddRange(Tags.SelectF(Function(val) val.Name + "=" + val.Value))
+            tagList.AddRange(Tags.ToArray.SelectF(Function(val) val.Name + "=" + val.Value))
         End If
 
         If tagList.Count > 0 Then
@@ -509,6 +509,7 @@ Public Class BatchMuxer
 
             Dim ui = form.SimpleUI
             Dim page = ui.CreateFlowPage("main page")
+            page.SuspendLayout()
 
             Dim tb = ui.AddText(page)
             tb.Label.Text = "Output File Type:"
@@ -527,6 +528,7 @@ Public Class BatchMuxer
             tb.Edit.Text = CommandLines
             tb.Edit.UseCommandlineEditor = True
             tb.Edit.SaveAction = Sub(value) CommandLines = value
+            page.ResumeLayout()
 
             Dim ret = form.ShowDialog()
             If ret = DialogResult.OK Then
@@ -1004,7 +1006,7 @@ Public Class ffmpegMuxer
 
     Overrides Function Edit() As DialogResult
         Using form As New SimpleSettingsForm("ffmpeg Container Options")
-            form.ScaleClientSize(25, 10)
+            form.ScaleClientSize(25, 10, form.FontHeight)
             Dim ui = form.SimpleUI
             ui.Store = Me
             ui.CreateFlowPage()

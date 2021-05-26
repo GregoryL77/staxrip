@@ -1,4 +1,5 @@
 ﻿
+Imports System.ComponentModel
 Imports JM.LinqFaster
 Imports StaxRip.UI
 
@@ -42,17 +43,20 @@ Public Class SimpleUI
         MyBase.OnHandleCreated(e)
 
         If Not DesignMode Then
-            AddHandler FindForm.Load,
-                Sub()
-                    If Tree.Nodes.Count > 0 Then
-                        Tree.ItemHeight = CInt(Tree.Height / (Tree.Nodes.Count)) - 2
-                    End If
+            Dim fF As Form = FindForm()
+            Dim eh As EventHandler = Sub()
+                                         If Tree.Nodes.Count > 0 Then
+                                             Tree.ItemHeight = CInt(Tree.Height / (Tree.Nodes.Count)) - 2
+                                         End If
 
-                    Dim tFH As Integer = Tree.Font.Height
-                    If Tree.ItemHeight > CInt(tFH * 1.5) Then
-                        Tree.ItemHeight = CInt(tFH * 1.5)
-                    End If
-                End Sub
+                                         Dim tFH As Integer = Tree.Font.Height
+                                         If Tree.ItemHeight > CInt(tFH * 1.5) Then
+                                             Tree.ItemHeight = CInt(tFH * 1.5)
+                                         End If
+                                         RemoveHandler fF.Load, eh 'Test !!!
+                                     End Sub
+
+            AddHandler fF.Load, eh
         End If
     End Sub
 
@@ -64,7 +68,8 @@ Public Class SimpleUI
         Dim fh As Integer = FontHeight
 
         If Tree.Nodes.Count > 1 Then
-            Tree.Width = (Aggregate i In Tree.GetNodes Into Max(i.Bounds.Right)) + fh
+            'Tree.Width = (Aggregate i In Tree.GetNodes Into Max(i.Bounds.Right)) + fh
+            Tree.Width = Tree.GetNodes.MaxF(Function(i) i.Bounds.Right) + fh
         End If
 
         Host.Top = 0
@@ -86,12 +91,12 @@ Public Class SimpleUI
     Sub Tree_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles Tree.AfterSelect
         Dim node = e.Node
 
+        Tree.BeginUpdate() 'Test this
         For Each i In Pages
             If i.Node IsNot node Then
                 DirectCast(i, Control).Visible = False
             End If
         Next
-
         Dim nodeExists As Boolean
         For Each i In Pages
             If i.Node Is node Then
@@ -116,6 +121,7 @@ Public Class SimpleUI
                 Tree.SelectedNode = node.Nodes(0)
             End If
         End If
+        Tree.EndUpdate()
     End Sub
 
     Sub ShowPage(pagePath As String)
@@ -172,13 +178,30 @@ Public Class SimpleUI
         End If
     End Function
 
+    Public SaveValEventHList As List(Of SaveValuesEventHandler) 'Debug Test
+    Sub SaveValEventsHCreate(Optional capacity As Integer = 4)
+        SaveValEventHList = If(capacity = 4, New List(Of SaveValuesEventHandler), New List(Of SaveValuesEventHandler)(capacity))
+    End Sub
+    Public Sub SaveValEventsHRemove()
+        If SaveValEventHList IsNot Nothing Then
+            For h = 0 To SaveValEventHList.Count - 1
+                RemoveHandler SaveValues, SaveValEventHList(h)
+            Next h
+            SaveValEventHList = Nothing
+        End If
+    End Sub
+
     Function AddBool(Optional parent As FlowLayoutPanelEx = Nothing) As SimpleUICheckBox
         If parent Is Nothing Then
             parent = GetActiveFlowPage()
         End If
 
         Dim ret As New SimpleUICheckBox(Me)
-        AddHandler SaveValues, AddressOf ret.Save
+
+        Dim sveh As SaveValuesEventHandler = AddressOf ret.Save
+        If SaveValEventHList IsNot Nothing Then SaveValEventHList.Add(sveh)
+
+        AddHandler SaveValues, sveh
         parent.Controls.Add(ret)
         Return ret
     End Function
@@ -223,7 +246,11 @@ Public Class SimpleUI
         Dim ret As New NumBlock(Me)
         ret.AutoSize = True
         ret.UseParenWidth = True
-        AddHandler SaveValues, AddressOf ret.NumEdit.Save
+
+        Dim sveh As SaveValuesEventHandler = AddressOf ret.NumEdit.Save
+        If SaveValEventHList IsNot Nothing Then SaveValEventHList.Add(sveh)
+
+        AddHandler SaveValues, sveh
         parent.Controls.Add(ret)
         Return ret
     End Function
@@ -300,6 +327,10 @@ Public Class SimpleUI
         Dim ret As New MenuBlock(Of T)(Me)
         ret.AutoSize = True
         ret.UseParenWidth = True
+
+        Dim sveh As SaveValuesEventHandler = AddressOf ret.Button.Save
+        If SaveValEventHList IsNot Nothing Then SaveValEventHList.Add(sveh)
+
         AddHandler SaveValues, AddressOf ret.Button.Save
         parent.Controls.Add(ret)
         Return ret
@@ -451,7 +482,8 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Margin = New Padding(CInt(FontHeight / 8)) With {.Left = If(MarginLeft <> 0, CInt(MarginLeft), CInt(FontHeight / 4))}
+            Dim fh As Integer = FontHeight
+            Margin = New Padding(CInt(fh / 8)) With {.Left = If(MarginLeft <> 0, CInt(MarginLeft), CInt(fh / 4))}
             MyBase.OnLayout(levent)
         End Sub
 
@@ -525,9 +557,10 @@ Public Class SimpleUI
         Overrides Function GetPreferredSize(proposedSize As Size) As Size
             If Offset > 0 Then
                 Dim ret = MyBase.GetPreferredSize(proposedSize)
+                Dim fhof As Integer = Offset * FontHeight
 
-                If ret.Width < Offset * FontHeight Then
-                    ret.Width = Offset * FontHeight
+                If ret.Width < fhof Then
+                    ret.Width = fhof
                 End If
 
                 Return ret
@@ -549,9 +582,10 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-    'dialog size
-            Height = CInt(Font.Height * 1.3)
-            Width = CInt(Font.Height * 4.5)
+            'dialog size
+            Dim fh As Integer = Font.Height
+            Height = CInt(fh * 1.3)
+            Width = CInt(fh * 4.5)
             MyBase.OnLayout(levent)
         End Sub
 
@@ -640,14 +674,15 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
+            Dim fh As Integer = FontHeight
             If TextBox.Multiline Then
-                Height = FontHeight * MultilineHeightFactor
+                Height = fh * MultilineHeightFactor
             Else
                 If Not Expand Then
-                    Width = FontHeight * WidthFactor
+                    Width = fh * WidthFactor
                 End If
 
-                Height = CInt(FontHeight * 1.45)
+                Height = CInt(fh * 1.45)
             End If
 
             MyBase.OnLayout(levent)
@@ -661,6 +696,7 @@ Public Class SimpleUI
             ElseIf [Property].NotNullOrEmptyS Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Text)
             End If
+
         End Sub
 
         Private FieldValue As String
@@ -772,6 +808,7 @@ Public Class SimpleUI
                 Dim prop = SimpleUI.Store.GetType.GetProperty([Property])
                 prop.SetValue(SimpleUI.Store, Convert.ChangeType(Value, prop.PropertyType))
             End If
+
         End Sub
 
         Private PropertyValue As String
@@ -859,9 +896,10 @@ Public Class SimpleUI
         Public Overrides Function GetPreferredSize(proposedSize As Size) As Size
             If Offset > 0 Then
                 Dim ret = MyBase.GetPreferredSize(proposedSize)
+                Dim fhoff As Integer = CInt(Offset * FontHeight)
 
-                If ret.Width < Offset * FontHeight Then
-                    ret.Width = CInt(Offset * FontHeight)
+                If ret.Width < fhoff Then
+                    ret.Width = fhoff
                 End If
 
                 Return ret
@@ -879,8 +917,9 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
+            Dim fh15 As Integer = FontHeight \ 15
             For Each ctrl As Control In Controls
-                ctrl.Margin = New Padding(FontHeight \ 15)
+                ctrl.Margin = New Padding(fh15)
             Next
 
             MyBase.OnLayout(levent)
@@ -1023,15 +1062,20 @@ Public Class SimpleUI
 
         Sub New(ui As SimpleUI)
             MyBase.New(ui)
-            Button.Width = FontHeight * 2
-            Button.Height = CInt(FontHeight * 1.5)
+            Dim fh As Integer = FontHeight
+            Button.Width = fh * 2
+            Button.Height = CInt(fh * 1.5)
             Button.ShowMenuSymbol = True
             Button.ContextMenuStrip = New ContextMenuStripEx
             Controls.Add(Button)
-            AddHandler Edit.EnabledChanged, Sub() Button.Enabled = Edit.Enabled
+            'AddHandler Edit.EnabledChanged, Sub() Button.Enabled = Edit.Enabled
+            AddHandler Edit.EnabledChanged, AddressOf ButtonEnChangedEH 'Test This 
         End Sub
-
+        Sub ButtonEnChangedEH(sender As Object, e As EventArgs)
+            Button.Enabled = Edit.Enabled
+        End Sub
         Protected Overrides Sub Dispose(disposing As Boolean)
+            RemoveHandler Edit.EnabledChanged, AddressOf ButtonEnChangedEH
             Button.ContextMenuStrip.Dispose()
             MyBase.Dispose(disposing)
         End Sub
@@ -1145,8 +1189,9 @@ Public Class SimpleUI
 
         Sub New(ui As SimpleUI)
             MyBase.New(ui)
-            Button.Width = FontHeight * 2
-            Button.Height = CInt(FontHeight * 1.45)
+            Dim fh As Integer = FontHeight
+            Button.Width = fh * 2
+            Button.Height = CInt(fh * 1.45)
             Button.AutoSizeMode = AutoSizeMode.GrowOnly
             Button.AutoSize = True
             Button.Text = "..."
@@ -1202,8 +1247,9 @@ Public Class SimpleUI
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             If Not Button Is Nothing Then
-                Button.Height = CInt(FontHeight * 1.5)
-                Button.Width = FontHeight * 10
+                Dim fh As Integer = FontHeight
+                Button.Height = CInt(fh * 1.5)
+                Button.Width = fh * 10
             End If
 
             MyBase.OnLayout(levent)
@@ -1219,6 +1265,10 @@ Public Class SimpleUI
 
         Sub Add(path As String, obj As T)
             Button.Add(path, obj)
+        End Sub
+
+        Sub Add2(path As String, obj As T)
+            Button.Add2(path, obj)
         End Sub
 
         Public Shadows WriteOnly Property Help As String

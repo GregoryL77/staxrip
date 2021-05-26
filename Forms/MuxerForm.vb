@@ -15,8 +15,8 @@ Public Class MuxerForm
             If Not (components Is Nothing) Then
                 components.Dispose()
             End If
-            If SubFBL IsNot Nothing Then SubFBL.Dispose()
-            If AudioFBL IsNot Nothing Then AudioFBL.Dispose()
+            SubFBL?.Dispose()
+            AudioFBL?.Dispose()
         End If
         MyBase.Dispose(disposing)
     End Sub
@@ -657,7 +657,7 @@ Public Class MuxerForm
 
     Private Muxer As Muxer
     'Private AudioBindingSource As New BindingSource
-    Private AudioFBL As New FastBindingList(Of AudioProfile)(Force.DeepCloner.DeepClonerExtensions.DeepClone(p.AudioTracks).ToCircularList) With {.CheckConsistency = False, .RaiseListChangedEvents = True, .AllowNew = False}
+    Private AudioFBL As New FastBindingList(Of AudioProfile)(p.AudioTracks.GetDeepClone.ToCircularList) With {.CheckConsistency = False, .RaiseListChangedEvents = True, .AllowNew = False}
     'Private SubtitleBindingSource As New BindingSource
     'Private SubtitleItems As New BindingList(Of SubtitleItem)
     Private SubFBL As New FastBindingList(Of SubtitleItem) With {.CheckConsistency = False, .RaiseListChangedEvents = True, .AllowNew = False}
@@ -848,6 +848,8 @@ Public Class MuxerForm
         Application.DoEvents()
 
         Dim page = UI.CreateFlowPage("main page")
+        UI.Host.SuspendLayout()
+        UI.SuspendLayout()
         page.SuspendLayout()
 
         Dim tb = UI.AddTextButton()
@@ -945,6 +947,8 @@ Public Class MuxerForm
             textMenu.AddMenu(s.ParMenu)
         End If
 
+        UI.Host.ResumeLayout()
+        UI.ResumeLayout()
         page.ResumeLayout()
         'lastAction?.Invoke
         UpdateControls()
@@ -1058,7 +1062,7 @@ Public Class MuxerForm
             Exit Sub
         End If
 
-        Dim ap = ObjectHelp.GetCopy(profileSelection.SelectedValue)
+        Dim ap = profileSelection.SelectedValue.GetDeepClone
         ap.File = path
 
         If Not p.Script.GetFilter("Source").Script.Contains("DirectShowSource") Then

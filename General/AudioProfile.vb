@@ -113,8 +113,8 @@ Public MustInherit Class AudioProfile
         Get
             If AudioConverterForm.AudioConverterMode Then
                 If DisplayNameValue IsNot Nothing Then Return DisplayNameValue
-                If FileValue Is "" Then Return ""
             End If
+            If FileValue Is "" Then Return ""
 
             Dim ret As String
             If Stream Is Nothing Then
@@ -488,6 +488,12 @@ Public Class BatchAudioProfile
         End Using
     End Function
 
+    Overrides Sub EditProject()
+        Using f As New CommandLineAudioEncoderForm(Me)
+            f.ShowDialog()
+        End Using
+    End Sub
+
     Function GetCode() As String
         Return ExpandMacros(CommandLines).Trim
     End Function
@@ -556,12 +562,6 @@ Public Class BatchAudioProfile
         End If
     End Sub
 
-    Overrides Sub EditProject()
-        Using f As New CommandLineAudioEncoderForm(Me)
-            f.ShowDialog()
-        End Using
-    End Sub
-
     Overrides Function HandlesDelay() As Boolean
         Return CommandLines.Contains("%delay%")
     End Function
@@ -580,7 +580,7 @@ Public Class NullAudioProfile
 
     Overrides Sub EditProject()
         Using form As New SimpleSettingsForm("Null Audio Profile Options")
-            form.ScaleClientSize(20, 10)
+            form.ScaleClientSize(20, 10, form.FontHeight)
             Dim ui = form.SimpleUI
             ui.Store = Me
 
@@ -669,7 +669,7 @@ Public Class MuxAudioProfile
         Using form As New SimpleSettingsForm("Audio Mux Options",
             "The Audio Mux options allow to add a audio file without reencoding.")
 
-            form.ScaleClientSize(30, 15)
+            form.ScaleClientSize(30, 15, form.FontHeight)
 
             Dim ui = form.SimpleUI
             Dim page = ui.CreateFlowPage("main page")
@@ -1034,7 +1034,7 @@ Public Class GUIAudioProfile
                     End If
                 End If
 
-                Const UpSampleF As Integer = 4   'upsample true peak
+                Dim UpSampleF As Integer = 4   'upsample true peak
                 Dim SRate As Integer = SourceSamplingRate * UpSampleF
                 If SRate < 44100 * UpSampleF Then SRate = 48000 * UpSampleF
                 If SRate > 48000 * 256 Then SRate = 48000 * 256
@@ -2205,7 +2205,7 @@ End Enum
 '    auto
 '    music
 '    speech
-'    <DispName("music && speech")> both
+'    <DispName("music + speech")> both
 'End Enum
 'Public Enum OpusEncMode
 'VBR

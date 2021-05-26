@@ -493,7 +493,7 @@ Public Class Language
     <NonSerialized> Public IsCommon As Boolean
 
     Sub New()
-        Me.New(127) 'Invariant
+        Me.New(CultureInfo.InvariantCulture) 'or(127) Invariant
     End Sub
 
     Sub New(ci As CultureInfo, Optional isCommon As Boolean = False)
@@ -535,10 +535,11 @@ Public Class Language
         End Get
     End Property
 
-    Private LCIDValue As Integer
-    Public ReadOnly Property LCID() As Integer
+    <NonSerialized()> Private LCIDValue As Integer = -1 ' <NonSerialized()> Or NOt ???  Seems like DeepCloner doesn't care about NS attribute
+    Public ReadOnly Property LCID() As Integer 'ToDO Remove Field, use RO prop only ???
         Get
             Return LCIDValue
+            'Return If(LCIDValue > 0, LCIDValue, CultureInfo.LCID)
             'Return CultureInfo.LCID
         End Get
     End Property
@@ -842,7 +843,8 @@ Public MustInherit Class Profile
     End Sub
 
     Overridable Function GetCopy() As Profile
-        Return DirectCast(ObjectHelp.GetCopy(Me), Profile)
+        Return ObjectHelp.GetCopy(Me)
+        'Return DirectCast(ObjectHelp.GetCopy(Me), Profile)
     End Function
 
     Overrides Function ToString() As String
@@ -974,9 +976,9 @@ End Enum
 Public Class Startup
     <STAThread()>
     Shared Sub Main()
-        'AddHandler My.Application.UnhandledException, AddressOf g.OnUnhandledException
         'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
+        'Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException)
         AddHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
         Application.EnableVisualStyles()
         Application.SetCompatibleTextRenderingDefault(False)
@@ -991,13 +993,12 @@ Public Class Startup
         '    Exit Sub
         'End If
         Application.Run(New MainForm())
-        'RemoveHandler My.Application.UnhandledException, AddressOf g.OnUnhandledException
         ' RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
         Console.Beep(320, 30)
-        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
     End Sub
 End Class
 

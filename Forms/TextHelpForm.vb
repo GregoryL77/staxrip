@@ -9,7 +9,7 @@ Public Class TextHelpForm
         rtb.ForeColor = Color.White
         rtb.ReadOnly = True
         Me.Find = find
-        ScaleClientSize(45, 30)
+        ScaleClientSize(45, 30, FontHeight)
     End Sub
 
     Sub TextHelpForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown

@@ -15,8 +15,12 @@ Public Class StreamDemuxForm
         cbDemuxChapters.Visible = MediaInfo.GetMenu(sourceFile, "Chapters_Pos_End").ToInt - MediaInfo.GetMenu(sourceFile, "Chapters_Pos_Begin").ToInt > 0
         cbDemuxVideo.Checked = demuxer.VideoDemuxing
 
-        ScaleClientSize(42, 30)
+        ScaleClientSize(42, 30, FontHeight)
         StartPosition = FormStartPosition.CenterParent
+
+        lvAudio.BeginUpdate()
+        lvSubtitles.BeginUpdate()
+        lvAttachments.BeginUpdate()
 
         lvAudio.View = View.Details
         lvAudio.Columns.Add("")
@@ -47,14 +51,16 @@ Public Class StreamDemuxForm
         gbSubtitles.Enabled = Subtitles.Count > 0
         gbAttachments.Enabled = Not attachments.NothingOrEmpty
 
+        Dim langName As String = CultureInfo.CurrentCulture.NeutralCulture.EnglishName
+        Dim notEng As Boolean = Not CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals("en")
         bnAudioEnglish.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals("en"))
-        bnAudioNative.Visible = Not CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals("en")
-        bnAudioNative.Text = CultureInfo.CurrentCulture.NeutralCulture.EnglishName
+        bnAudioNative.Visible = notEng
+        bnAudioNative.Text = langName
         bnAudioNative.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
 
         bnSubtitleEnglish.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals("en"))
-        bnSubtitleNative.Visible = Not CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals("en")
-        bnSubtitleNative.Text = CultureInfo.CurrentCulture.NeutralCulture.EnglishName
+        bnSubtitleNative.Visible = notEng
+        bnSubtitleNative.Text = langName
         bnSubtitleNative.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
 
         For Each audioStream In AudioStreams
@@ -77,6 +83,9 @@ Public Class StreamDemuxForm
                 item.Checked = attachment.Enabled
             Next
         End If
+        lvAudio.EndUpdate()
+        lvSubtitles.EndUpdate()
+        lvAttachments.EndUpdate()
     End Sub
 
     Sub lvAudio_ItemChecked(sender As Object, e As ItemCheckedEventArgs) Handles lvAudio.ItemChecked

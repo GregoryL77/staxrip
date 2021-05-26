@@ -241,13 +241,27 @@ Public Class MacrosForm
 
     Sub New()
         InitializeComponent()
-        ScaleClientSize(30, 25)
+        ScaleClientSize(30, 25, FontHeight)
         lv.View = View.Tile
         lv.FullRowSelect = True
         lv.MultiSelect = False
         lv.Columns.Add(New ColumnHeader())
         Native.SetWindowTheme(lv.Handle, "explorer", Nothing)
         ActiveControl = stb
+    End Sub
+
+    Protected Overrides Sub OnLoad(args As EventArgs)
+        MyBase.OnLoad(args)
+        Populate(False)
+        lDescriptionTitle.SetFontStyle(FontStyle.Bold)
+        lNameTitle.SetFontStyle(FontStyle.Bold)
+        lValueTitle.SetFontStyle(FontStyle.Bold)
+    End Sub
+
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        hevent.Handled = True
+        g.ShellExecute("https://staxrip.readthedocs.io/macros.html")
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Shared Sub ShowDialogForm()
@@ -297,10 +311,6 @@ Public Class MacrosForm
 
     Sub tbFilter_TextChanged() Handles stb.TextChanged
         Populate()
-    End Sub
-
-    Sub MacrosForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
-        g.ShellExecute("https://staxrip.readthedocs.io/macros.html")
     End Sub
 
     Sub TaskForm_KeyDown(sender As Object, e As KeyEventArgs) Handles Me.KeyDown
@@ -369,12 +379,5 @@ Public Class MacrosForm
         Application.DoEvents()
         Thread.Sleep(300)
         bnCopy.SetFontStyle(FontStyle.Regular)
-    End Sub
-
-    Sub MacrosForm_Load(sender As Object, e As EventArgs) Handles Me.Load
-        Populate(False)
-        lDescriptionTitle.SetFontStyle(FontStyle.Bold)
-        lNameTitle.SetFontStyle(FontStyle.Bold)
-        lValueTitle.SetFontStyle(FontStyle.Bold)
     End Sub
 End Class

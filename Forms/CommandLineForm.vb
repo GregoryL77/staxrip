@@ -9,7 +9,6 @@ Public Class CommandLineForm
     Private Items As List(Of Item)
     Private HighlightedControl As Control
     Private ComboBoxUpdated As Boolean
-    Private WasHandleCreated As Boolean
 
     Property HTMLHelp As String
 
@@ -17,8 +16,11 @@ Public Class CommandLineForm
 
     Sub New(params As CommandLineParams)
         InitializeComponent()
-        'SimpleUI.ScaleClientSize(44, 38)
-        SimpleUI.ScaleClientSize(48, 38)
+        Me.tlpMain.SuspendLayout()
+        Me.tlpRTB.SuspendLayout()
+        Me.SuspendLayout()
+        'SimpleUI.ScaleClientSize(44, 34)
+        SimpleUI.ScaleClientSize(46, 34, FontHeight)
 
         rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
         rtbCommandLine.ContextMenuStrip?.Dispose()
@@ -26,17 +28,14 @@ Public Class CommandLineForm
         Dim pItC As Integer = params.Items.Count
         Items = New List(Of Item)(pItC)
         Dim singleList As New HashSet(Of String)(pItC, StringComparer.Ordinal)
-        ' Dim singleList As New List(Of String)(params.Items.Count)
         For Each param In params.Items
             If param.GetKey.NullOrEmptyS OrElse Not singleList.Add(param.GetKey) Then
                 Throw New Exception("key found twice: " + param.GetKey)
             End If
-            ' singleList.Add(param.GetKey)
         Next
 
         Me.Params = params
         Text = params.Title + " (" & pItC & " options)"
-
 
         InitUI()
         SelectLastPage()
@@ -64,6 +63,40 @@ Public Class CommandLineForm
         cms.ResumeLayout(False)
     End Sub
 
+    Protected Overrides Sub OnLoad(args As EventArgs)
+        Me.tlpMain.ResumeLayout(False)
+        Me.tlpRTB.ResumeLayout(False)
+        Me.ResumeLayout(False)
+        MyBase.OnLoad(args)
+        Threading.Tasks.Task.Run(Sub()
+                                     Threading.Thread.Sleep(60)
+                                     If IsHandleCreated Then BeginInvoke(Sub() UpdateSearchComboBox())
+                                 End Sub)
+    End Sub
+
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        SimpleUI.SaveLast(Params.Title + "page selection")
+        RemoveHandler Params.ValueChanged, AddressOf ValueChanged
+        RemoveHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
+        g.MainForm.PopulateProfileMenu(DynamicMenuItemID.EncoderProfiles)
+        MyBase.OnFormClosed(e)
+    End Sub
+
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        hevent.Handled = True
+        ShowHelp()
+        MyBase.OnHelpRequested(hevent)
+    End Sub
+
+    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+        If e.KeyData = (Keys.Control Or Keys.F) Then
+            cbGoTo.Focus()
+            e.SuppressKeyPress = True
+            If Not ComboBoxUpdated Then UpdateSearchComboBox()
+        End If
+        MyBase.OnKeyDown(e)
+    End Sub
+
     Sub SelectLastPage()
         SimpleUI.SelectLast(Params.Title + "page selection")
     End Sub
@@ -71,7 +104,7 @@ Public Class CommandLineForm
     Sub ValueChanged(item As CommandLineParam)
         rtbCommandLine.SetText(Params.GetCommandLine(False, False))
         rtbCommandLine.SelectionLength = 0
-        If WasHandleCreated Then
+        If IsHandleCreated Then
             Threading.Tasks.Task.Run(Sub() BeginInvoke(Sub() rtbCommandLine.UpdateHeight()))
         Else
             rtbCommandLine.UpdateHeight()
@@ -81,7 +114,6 @@ Public Class CommandLineForm
     End Sub
 
     Sub InitUI()
-        'Dim flowPanels As New List(Of Control)'Test Opt.??
         Dim flowPanels As New HashSet(Of Control)(17)
         Dim helpControl As Control
         Dim currentFlow As SimpleUI.FlowPage
@@ -91,9 +123,7 @@ Public Class CommandLineForm
             Dim parent As FlowLayoutPanelEx = SimpleUI.GetFlowPage(param.Path)
             currentFlow = DirectCast(parent, SimpleUI.FlowPage)
 
-            'If Not flowPanels.Contains(parent) Then
             If flowPanels.Add(parent) Then
-                'flowPanels.Add(parent)
                 parent.SuspendLayout()
             End If
 
@@ -190,10 +220,11 @@ Public Class CommandLineForm
                 Dim menuBlock = SimpleUI.AddMenu(Of Integer)(parent)
                 menuBlock.Label.Text = If(param.Text.EndsWith(":", StringComparison.Ordinal), param.Text, param.Text + ":")
 
+                Dim menuBlBn As SimpleUI.SimpleUIMenuButton(Of Integer) = menuBlock.Button
                 If param.HelpSwitch.NotNullOrEmptyS Then
                     Dim helpID = param.HelpSwitch
                     menuBlock.Label.HelpAction = Sub() Params.ShowHelp(helpID)
-                    menuBlock.Button.HelpAction = Sub() Params.ShowHelp(helpID)
+                    menuBlBn.HelpAction = Sub() Params.ShowHelp(helpID)
                 Else
                     menuBlock.Help = help
                 End If
@@ -202,16 +233,17 @@ Public Class CommandLineForm
                 AddHandler menuBlock.Label.MouseDoubleClick, Sub() tempOptionParam.ValueChangedUser(tempOptionParam.DefaultValue)
 
                 If oParam.Expand Then
-                    menuBlock.Button.Expand = True
+                    menuBlBn.Expand = True
                 End If
 
-                menuBlock.Button.Menu.SuspendLayout()
-                For x2 = 0 To oParam.Options.Length - 1 ' Main Slowdown, add ButtMenu & ActionMenu
-                    menuBlock.Button.Add(oParam.Options(x2), x2)
+                Dim oPo As String() = oParam.Options
+                menuBlBn.Menu.SuspendLayout()
+                For x2 = 0 To oPo.Length - 1 ' Main Slowdown, add ButtMenu & ActionMenu
+                    menuBlBn.Add(oPo(x2), x2)
                 Next
-                menuBlock.Button.Menu.ResumeLayout(False)
+                menuBlBn.Menu.ResumeLayout(False)
 
-                oParam.InitParam(menuBlock.Button)
+                oParam.InitParam(menuBlBn)
             ElseIf TypeOf param Is StringParam Then
                 Dim tempItem = DirectCast(param, StringParam)
                 Dim textBlock As SimpleUI.TextBlock
@@ -250,7 +282,7 @@ Public Class CommandLineForm
                 item.Param = param
                 Items.Add(item)
             End If
-        Next
+        Next x
 
         For Each panel In flowPanels
             panel.ResumeLayout()
@@ -262,39 +294,6 @@ Public Class CommandLineForm
         Property Control As Control
         Property Param As CommandLineParam
     End Class
-
-    Protected Overrides Sub OnShown(e As EventArgs)
-        WasHandleCreated = True
-        Threading.Tasks.Task.Run(Sub()
-                                     Threading.Thread.Sleep(60)
-                                     If WasHandleCreated Then BeginInvoke(Sub() UpdateSearchComboBox())
-                                 End Sub)
-        MyBase.OnShown(e)
-    End Sub
-
-    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        WasHandleCreated = False
-        SimpleUI.SaveLast(Params.Title + "page selection")
-        RemoveHandler Params.ValueChanged, AddressOf ValueChanged
-        RemoveHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
-        g.MainForm.PopulateProfileMenu(DynamicMenuItemID.EncoderProfiles)  'Sub CommandLineForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles Me.FormClosed
-        MyBase.OnFormClosed(e)
-    End Sub
-
-    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
-        ShowHelp()
-        hevent.Handled = True
-        MyBase.OnHelpRequested(hevent) 'Sub CommandLineForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
-    End Sub
-
-    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
-        If e.KeyData = (Keys.Control Or Keys.F) Then
-            cbGoTo.Focus()
-            e.SuppressKeyPress = True
-            If Not ComboBoxUpdated Then UpdateSearchComboBox()
-        End If
-        MyBase.OnKeyDown(e)
-    End Sub
 
     Sub ShowHelp()
         RaiseEvent BeforeHelp()
@@ -461,32 +460,26 @@ Public Class CommandLineForm
 
     Sub UpdateSearchComboBox()
         ComboBoxUpdated = True
-        'cbGoTo.BeginUpdate()
+        'cbGoTo.BeginUpdate() 'No gain
         cbGoTo.Items.Clear()
         Dim sItems As New HashSet(Of String)(Items.Count + 7, StringComparer.Ordinal)
         For Each i In Items
             If i.Param.Visible Then
                 If Not i.Param.Switches Is Nothing Then
                     For Each switch In i.Param.Switches
-                        'If Not cbGoTo.Items.Contains(switch) Then
-                        '    cbGoTo.Items.Add(switch)
-                        'End If
                         sItems.Add(switch)
                     Next switch
                 End If
 
-                If i.Param.Switch.NotNullOrEmptyS Then  ' AndAlso Not cbGoTo.Items.Contains(i.Param.Switch) Then
-                    'cbGoTo.Items.Add(i.Param.Switch)
+                If i.Param.Switch.NotNullOrEmptyS Then
                     sItems.Add(i.Param.Switch)
                 End If
 
-                If i.Param.NoSwitch.NotNullOrEmptyS Then 'AndAlso Not cbGoTo.Items.Contains(i.Param.NoSwitch) Then
-                    'cbGoTo.Items.Add(i.Param.NoSwitch)
+                If i.Param.NoSwitch.NotNullOrEmptyS Then
                     sItems.Add(i.Param.NoSwitch)
                 End If
 
-                If i.Param.HelpSwitch.NotNullOrEmptyS Then 'AndAlso Not cbGoTo.Items.Contains(i.Param.HelpSwitch) Then
-                    'cbGoTo.Items.Add(i.Param.HelpSwitch)
+                If i.Param.HelpSwitch.NotNullOrEmptyS Then
                     sItems.Add(i.Param.HelpSwitch)
                 End If
             End If
@@ -498,9 +491,6 @@ Public Class CommandLineForm
 
         cbGoTo.Items.AddRange(ia)
         cbGoTo.SelectionStart = cbGoTo.Text.Length
-        'cbGoTo.EndUpdate()
-
-        'Console.Beep(3000, 30) ' Debug
     End Sub
 
     Sub rtbCommandLine_MouseUp(sender As Object, e As MouseEventArgs) Handles rtbCommandLine.MouseUp

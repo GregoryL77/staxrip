@@ -208,15 +208,15 @@ Public Class ProcessingForm
     Property Taskbar As Taskbar
 
     Sub New()
-        InitializeComponent()
-        'RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException ' In dispose InitializeComponent
         AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        InitializeComponent()
+
         mbShutdown.Add(System.Enum.GetValues(GetType(ShutdownMode)).Cast(Of Object))
         Icon = g.Icon
         NotifyIcon.Icon = g.Icon
         NotifyIcon.Text = "StaxRip"
         TaskbarButtonCreatedMessage = Native.RegisterWindowMessage("TaskbarButtonCreated")
-        ScaleClientSize(54, 50)
+        ScaleClientSize(54, 50, FontHeight)
 
         CMS = New ContextMenuStripEx(components)
         CMS.SuspendLayout()

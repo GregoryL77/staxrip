@@ -912,19 +912,21 @@ Public Class Command
     Property MethodInfo As MethodInfo
 
     Function FixParameters(params As List(Of Object)) As List(Of Object)
-        Dim copiedParams As New CircularList(Of Object)(params)
         Dim checkedParams As New List(Of Object)(GetDefaultParameters)
+        If checkedParams.Count > 0 Then
 
-        For i = 0 To checkedParams.Count - 1
-            If copiedParams.Count > 0 Then
-                If Not copiedParams(0) Is Nothing AndAlso
-                    checkedParams(i).GetType Is copiedParams(0).GetType Then
+            Dim copiedParams As New CircularList(Of Object)(params)
+            For i = 0 To checkedParams.Count - 1
+                If copiedParams.Count > 0 Then
+                    If Not copiedParams(0) Is Nothing AndAlso
+                        checkedParams(i).GetType Is copiedParams(0).GetType Then
 
-                    checkedParams(i) = copiedParams(0)
-                    copiedParams.RemoveAt(0)
+                        checkedParams(i) = copiedParams(0)
+                        copiedParams.RemoveAt(0)
+                    End If
                 End If
-            End If
-        Next
+            Next i
+        End If
 
         Return checkedParams
     End Function
@@ -971,38 +973,50 @@ Public Class Command
                                    clickSub As Action(Of Command))
         commands.Sort()
 
-        Dim tsmi As New List(Of (String, ActionMenuItem))(96)
+        Dim s1 As String
+        Dim path As String
+        Dim l2Tsi As New List(Of (String, ActionMenuItem))(80)
+        Dim l1Tsi As New List(Of ActionMenuItem)(32)
+        Dim l1Hs As New HashSet(Of String)(7, StringComparer.Ordinal)
 
         For Each i In commands
-            Dim path = i.MethodInfo.Name
+            path = i.MethodInfo.Name
 
             If path.StartsWith("Show", StringComparison.Ordinal) Then
-                path = "Show | " + path
-                tsmi.Add(("Show", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Show"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             ElseIf path.StartsWith("Save", StringComparison.Ordinal) Then
-                path = "Save | " + path
-                tsmi.Add(("Save", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Save"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             ElseIf path.StartsWith("Set", StringComparison.Ordinal) Then
-                path = "Set | " + path
-                tsmi.Add(("Set", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Set"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             ElseIf path.StartsWith("Start", StringComparison.Ordinal) Then
-                path = "Start | " + path
-                tsmi.Add(("Start", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Start"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             ElseIf path.StartsWith("Execute", StringComparison.Ordinal) Then
-                path = "Execute | " + path
-                tsmi.Add(("Execute", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Execute"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             ElseIf path.StartsWith("Add", StringComparison.Ordinal) Then
-                path = "Add | " + path
-                tsmi.Add(("Add", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Add"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             ElseIf path.StartsWith("Run", StringComparison.Ordinal) Then
-                path = "Run | " + path
-                tsmi.Add(("Run", ActionMenuItem.Add2(items, path, clickSub, i, i.Attribute.Description)))
+                s1 = "Run"
+                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
+                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
             Else
-                ActionMenuItem.Add(items, path, clickSub, i, i.Attribute.Description)
+                l1Tsi.Add(New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description))
             End If
         Next
 
-        ActionMenuItem.AddRange2Menu(items, tsmi.ToArray)
+        items.AddRange(l1Tsi.ToArray)
+        ActionMenuItem.AddRange2Menu(items, l2Tsi.ToArray)
     End Sub
 
     Function GetParameterHelp(parameters As List(Of Object)) As String
@@ -1168,6 +1182,7 @@ Public Module MainModule
     Public Const BR As String = VB6.vbCrLf
     Public Const BR2 As String = VB6.vbCrLf + VB6.vbCrLf
     Public Const BR3 As String = VB6.vbCrLf + VB6.vbCrLf + VB6.vbCrLf
+    Public ScreenResolutionPrim As Rectangle = Screen.PrimaryScreen.Bounds
     Public Log As LogBuilder
 
     Sub MsgInfo(text As Object, Optional content As Object = Nothing)

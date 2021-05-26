@@ -29,11 +29,11 @@ Public Class ImageHelp
             FontSagoe = Nothing
         End If
         If FontAwesome IsNot Nothing Then
-            FontAwesome?.Dispose()
+            FontAwesome.Dispose()
             FontAwesome = Nothing
         End If
         If CollFontPrv IsNot Nothing Then
-            CollFontPrv?.Dispose()
+            CollFontPrv.Dispose()
             CollFontPrv = Nothing
         End If
         'FamilyAwesome?.Dispose()
@@ -48,18 +48,29 @@ Public Class ImageHelp
         'If family Is Nothing Then Return Nothing
         'If symbol > 61400 AndAlso FamilyAwesome Is Nothing Then Return Nothing
         If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
-        Dim bitmap As Bitmap
         'Using font As New Font(If(symbol > 61400, FamilyAwesome, FamilySagoe), 12)
-        'dim fontheight = 16 font.Height
-        bitmap = New Bitmap(CInt(16.0 * 1.1), CInt(16.0 * 1.1))
+        'dim fHeight = 16 font.Height 'New Bitmap(CInt(fHeight * 1.1), CInt(fHeight * 1.1))
+
+        Dim bitmap As Bitmap = New Bitmap(CInt(16.0 * 1.1), CInt(16.0 * 1.1))
         Using graphics = Drawing.Graphics.FromImage(bitmap)
             graphics.TextRenderingHint = TextRenderingHint.AntiAlias
             graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 16.0F * 0.07F)
         End Using
-        'End Using
+
         Return bitmap
     End Function
 
+    Shared Function GetSymbolImageSmall(symbol As Symbol) As Image
+        If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
+        'Using fontS As New Font("Segoe MDL2 Assets", 11) FH15
+        Dim bitmap As Bitmap = New Bitmap(16, 16) '=SystemInformation.SmallIconSize
+        Using graphics = Drawing.Graphics.FromImage(bitmap)
+            graphics.TextRenderingHint = TextRenderingHint.AntiAlias
+            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 0)
+        End Using
+
+        Return bitmap
+    End Function
 End Class
 
 Public Class Thumbnails

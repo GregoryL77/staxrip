@@ -126,21 +126,21 @@ Public Class MacroEditorDialog
         Text = "Batch Editor"
         HelpText = "Editor for batch script editing."
         MacroEditorControl.SetCommandLineDefaults()
-        ScaleClientSize(35, 22)
+        ScaleClientSize(35, 22, FontHeight)
     End Sub
 
     Sub SetMacroDefaults()
         Text = "Macro Editor"
         HelpText = "Editor for strings that may contain macros."
         MacroEditorControl.SetMacroDefaults()
-        ScaleClientSize(35, 25)
+        ScaleClientSize(35, 25, FontHeight)
     End Sub
 
     Sub SetScriptDefaults()
         Text = "Script Editor"
         HelpText = "Editor for scripts that may contain macros."
         MacroEditorControl.SetScriptDefaults()
-        ScaleClientSize(45, 30)
+        ScaleClientSize(45, 30, FontHeight)
     End Sub
 
     Sub UniversalEditor_HelpRequested(sender As Object, e As HelpEventArgs) Handles Me.HelpRequested

@@ -9,12 +9,10 @@ Imports System.Text
 Imports System.Text.RegularExpressions
 Imports JM.LinqFaster
 Imports JM.LinqFaster.SIMD
-Imports JM.LinqFaster.Parallel
-Imports JM.LinqFaster.SIMD.Parallel
-Imports LinqFasterer
 Imports KGySoft.CoreLibraries
 Imports Microsoft.Win32
 Imports VB6 = Microsoft.VisualBasic
+Imports Force.DeepCloner
 
 Module StringExtensions
     Public SeparatorD As Char = Path.DirectorySeparatorChar
@@ -768,7 +766,7 @@ Module StringExtensions
             If a(i) IsNot "" Then 'ToDo: Test this for Is ""!!!
                 ret.Add(a(i))
             Else
-                Console.Beep(2900, 120) 'debug!!!
+                Console.Beep(2900, 150) 'debug!!!
             End If
         Next
 
@@ -835,8 +833,13 @@ End Module
 
 Module MiscExtensions
 
-    Public ReadOnly CPUsC As Integer = Math.Max(Environment.ProcessorCount, 1)
+    Public ReadOnly CPUsC As Integer = Environment.ProcessorCount
     Public ReadOnly SWFreq As Double = Stopwatch.Frequency / 1000
+
+    <Extension()>
+    Function GetDeepClone(Of T)(obj As T) As T
+        Return DeepClonerExtensions.DeepClone(Of T)(obj)
+    End Function
 
     <Extension()>
     Function ToInvariantString(value As Double, format As String) As String
@@ -1044,19 +1047,21 @@ Module MiscExtensions
     End Function
 
     Public Sub WarmUpCpu()
-        Const itr As Integer = 1000000 '~200ms
+        Dim itr As Integer = 1000000 '~200ms
         Dim wr1 As Double
         Dim wr2 As Double
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
         Application.DoEvents()
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
         For w = 1 To itr
             If w / 5.34567 > 10.2343 Then wr2 = Math.Sin(wr1 / 1.3153957) ^ (w / 45234633.2342492) / Math.Cos(wr1 / 23456.242361) * 1.34645743
             If w / 35.6346 > 25.2353 Then wr1 = Math.Atan(w / 573214.245763) * Math.Exp(wr2 / 45645531.6151) ^ (w / 73234541.435716) * 1.3234476
         Next w
+        Application.DoEvents()
     End Sub
 End Module
 
@@ -1137,8 +1142,9 @@ End Module
 
 Module ControlExtension
     <Extension()>
-    Sub ScaleClientSize(instance As Control, width As Single, height As Single)
-        instance.ClientSize = New Size(CInt(instance.Font.Height * width), CInt(instance.Font.Height * height))
+    Sub ScaleClientSize(instance As Control, width As Single, height As Single, Optional fontHeightC As Integer = -1)
+        Dim fh = If(fontHeightC > 0, fontHeightC, instance.Font.Height)
+        instance.ClientSize = New Size(CInt(fh * width), CInt(fh * height))
     End Sub
 
     <Extension()>
@@ -1190,9 +1196,10 @@ Module UIExtensions
     End Sub
 
     <Extension()>
-    Function ResizeToSmallIconSize(img As Image) As Image
-        If img IsNot Nothing AndAlso img.Size <> SystemInformation.SmallIconSize Then
-            Dim s = SystemInformation.SmallIconSize
+    Function ResizeIconSize(img As Image, newSize As Size) As Image
+
+        If img IsNot Nothing AndAlso img.Size <> newSize Then
+            Dim s = newSize
             Dim r As New Bitmap(s.Width, s.Height)
 
             Using g = Graphics.FromImage(DirectCast(r, Image))

@@ -187,7 +187,7 @@ Public Class ApplicationSettings
         End If
 
         If Check(WindowPositionsRemembered, "Remembered Window Positions", 1) Then
-            WindowPositionsRemembered = {"StaxRip", "Crop", "Preview", "Help"}
+            WindowPositionsRemembered = {"StaxRip", "AudioConv", "Crop", "Preview", "Help"}
         End If
 
         If Check(WindowPositions, "Remembered Window Positions 2", 1) Then

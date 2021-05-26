@@ -3,6 +3,7 @@ Imports System.Runtime.InteropServices
 Imports System.Text.RegularExpressions
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports KGySoft.Collections
 Imports KGySoft.CoreLibraries
 
 Public Class MediaInfo
@@ -379,6 +380,7 @@ Public Class MediaInfo
     End Function
 
     Public Shared Cache As New Dictionary(Of Long, MediaInfo)(199)
+    'Public Shared CacheTS As LockingDictionary(Of Long, MediaInfo) = Cache.AsThreadSafe()
     'Public Shared CacheTS As KGySoft.Collections.LockingDictionary(Of Long, MediaInfo) = Cache.AsThreadSafe
 
     Shared Function GetMediaInfo(path As String, Optional Key As Long = KeyDefault) As MediaInfo
@@ -404,22 +406,19 @@ Public Class MediaInfo
 #Region "IDisposable"
 
     Private Disposed As Boolean
-
     Sub Dispose() Implements IDisposable.Dispose
-
-        If Not Disposed AndAlso Loaded Then ' added loaded, debugger mode error workaround
+        If Not Disposed Then 'AndAlso Loaded Then
             Disposed = True
-            'Try
-            MediaInfo_Close(Handle)
-            MediaInfo_Delete(Handle)
-            'Catch ex As Exception
-            'Dim ll = Loaded
-            'Microsoft.VisualBasic.MsgBox("MediaInfo Dispose Exception:" & BR & ex.ToString)
-            'End Try
-        Else
-
+            Try
+                MediaInfo_Close(Handle)
+                MediaInfo_Delete(Handle)
+            Catch ex As Exception
+                If Not g.MainForm.ForceClose AndAlso Not g.MainForm.IsDisposed Then 'debug
+                    'Microsoft.VisualBasic.MsgBox(Loaded & "-Loaded|MediaInfo Dispose Exception, (Ignore):" & BR & ex.ToString)
+                    Console.Beep(500, 300)
+                End If
+            End Try
         End If
-
     End Sub
 
     Protected Overrides Sub Finalize()

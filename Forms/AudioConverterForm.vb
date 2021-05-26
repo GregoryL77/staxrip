@@ -10,13 +10,11 @@ Imports Force.DeepCloner
 Imports KGySoft.Collections
 Imports KGySoft.ComponentModel
 Imports KGySoft.CoreLibraries
-Imports Microsoft.Toolkit.HighPerformance
 Imports Microsoft.VisualBasic
 Imports JM.LinqFaster
 Imports JM.LinqFaster.Parallel
 Imports JM.LinqFaster.SIMD
 Imports JM.LinqFaster.SIMD.Parallel
-Imports LinqFasterer
 Imports StaxRip.UI
 
 Public Class AudioConverterForm
@@ -394,7 +392,7 @@ Public Class AudioConverterForm
     Private Shared MaxThreads As Integer
     Private Shared OutPath As String
     Private Shared LastLogPath As String
-    Private Shared LogHeader As Boolean
+    Private LogHeader As Boolean
     Private ReadOnly AudioCL As CircularList(Of AudioProfile)
     Private ReadOnly AudioSBL As SortableBindingList(Of AudioProfile)
 
@@ -457,7 +455,7 @@ Public Class AudioConverterForm
         AudioCL = New CircularList(Of AudioProfile)
         AudioSBL = New SortableBindingList(Of AudioProfile)(AudioCL) With {.CheckConsistency = False, .SortOnChange = False, .RaiseListChangedEvents = True, .AllowNew = False}
         Icon = g.Icon
-        Dim fh As Integer = 16 'MyBase.Font.Height '16
+        Dim fh As Integer = 16 'FontHeight '16
         MinimumSize = New Size(fh * 22, fh * 12)
         RestoreClientSize(54.0F, 29.0F)
         Dim imgRep = Task.Run(Function() ImageHelp.GetSymbolImage(Symbol.Repair))
@@ -477,11 +475,11 @@ Public Class AudioConverterForm
         CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         With dgvAudio
-            GetType(DataGridViewEx).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or BindingFlags.Instance Or BindingFlags.NonPublic, Nothing, dgvAudio, New Object() {True})
+            'GetType(DataGridViewEx).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or BindingFlags.Instance Or BindingFlags.NonPublic, Nothing, dgvAudio, New Object() {True}) ' It's overrides in Parent Class
             .DefaultCellStyle.DataSourceNullValue = Nothing
             .DefaultCellStyle.FormatProvider = CultureInfo.InvariantCulture
             .ColumnHeadersDefaultCellStyle.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-            .RowTemplate.Height = 20 'Font.Height[16] + 4 'or *1.25 ?, AutoResize=20, def=22
+            .RowTemplate.Height = 20 'FontHeight[16] + 4 'or *1.25 ?, AutoResize=20, def=22
             '[InDesigner-InitSub]-dgvAudio.RowHeadersWidth = 24 ' (0)=42 +6 per number char
             .AutoGenerateColumns = False
             .DataSource = AudioSBL
@@ -579,20 +577,32 @@ Public Class AudioConverterForm
             bnMenuAudio.ContextMenuStrip = CMS
             .ResumeLayout(False)
         End With
+        'Me.tlpMain.ResumeLayout()
+        'CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
+        'Me.ResumeLayout()
+    End Sub
 
+    Protected Overrides Sub OnLoad(args As EventArgs)
+        MyBase.OnLoad(args)
+        AudioConverterMode = True
+        dgvAudio.Columns.Item(3).HeaderCell.SortGlyphDirection = SortOrder.Ascending
+        UpdateControls()
         Me.tlpMain.ResumeLayout()
         CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout()
     End Sub
 
     Protected Overrides Sub OnShown(e As EventArgs)
-        AudioConverterMode = True
-        dgvAudio.Columns.Item(3).HeaderCell.SortGlyphDirection = SortOrder.Ascending
-        UpdateControls()
         MyBase.OnShown(e)
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Optimized, True, True)
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        Task.Run(Sub()
+                     Thread.Sleep(90) '60-105
+                     If IsHandleCreated Then Me.BeginInvoke(Sub()
+                                                                If g.MainForm.Visible Then g.MainForm.Hide()
+                                                                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
+                                                                GC.Collect(2, GCCollectionMode.Forced, True, True)
+                                                                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+                                                            End Sub)
+                 End Sub)
     End Sub
 
     Protected Overrides Sub OnFormClosing(e As FormClosingEventArgs)
@@ -604,12 +614,12 @@ Public Class AudioConverterForm
         AudioSBL.Clear()
         dgvAudio.Columns.Clear()
         MyBase.OnFormClosing(e)
+        If Not g.MainForm.Visible Then g.MainForm.Show()
     End Sub
 
     Private Sub UpdateCMS(sender As Object, e As CancelEventArgs) Handles CMS.Opening
         'Language.WriteLang()
-        'Dim s1 = "e::\\11TestDEl\bekowe\sdfsdf345dfgsdrhdrthdrtjhw456e44thfthjtgjh\dfgdfh456rrfgh456dfthdrtjdtyykTDHRHesfgrtye568fgtnhTHJFTGJKFT\fghFGH456utjDTGJFGHJFHJdfg456fge457fhjcghjfgjh\dxfgh456fghfghcfgHDRTHSRKSDFGHFJGHJRDGJHDRJDT\djkfbsdgkdbfjEFGDFGSDFSDGedghdfgherd34FGHFTHDFH\Akademia Pana Kleksa - 7 smuteczków.mp3"
-        'Dim s2 = "<<GooDForYou/|GooDForYou>"
+        'Dim s1 = "<<GooDForYou/|GooDForYou>"
         'RemoveHandlersDGV(True)
         'tlpMain.SuspendLayout()
         'SuspendLayout()
@@ -622,31 +632,12 @@ Public Class AudioConverterForm
         'WarmUpCpu()
         'SW2.Restart()
         'For n = 1 To itr
-        '    'If ta1.ContainsString(s2) Then r1 += 1 'ContainsF Ordinal is fastest & Contains<NoStrCompOpt> is faster,forLoopEquals Is Fastest of ALL
-        '    'Dim s2ca As Char() = s2.ToCharArray 'String.Contains-6100ms'2550ms-ContainsF ; ForLoop 2400ms ; 2xForLoop NoCharArray 2350ms-Fastest NoSimd
-        '    'For c = 0 To InvalidFileSystemCh.Length - 1
-        '    '    For cc = 0 To s2.Length - 1
-        '    '        If s2(cc) = InvalidFileSystemCh(c) Then
-        '    '            r1 += 1
-        '    '            Exit For
-        '    '        End If
-        '    '        If r1 > 0 Then Exit For
-        '    '    Next cc
-        '    'Next c
         'Next n
         'SW2.Stop()
         'Dim tt1 = SW2.ElapsedTicks / SWFreq
         'WarmUpCpu()
         SW2.Restart()
         'For n = 1 To itr
-        '    'Dim invCu16 = InvalidFileSystemCh.SelectF(Function(c) System.Convert.ToUInt16(c))
-        '    'For c = 0 To s2.Length - 1
-        '    '    Dim chInt As UShort = System.Convert.ToUInt16(s2(c))
-        '    '    If invCu16.ContainsS(chInt) Then '1150ms UInt16 is fastest String>Char Simd Op
-        '    '        r2 += 1
-        '    '        Exit For
-        '    '    End If
-        '    'Next c
         'Next n
         'SW2.Stop()
         'MsgBox($"{itr:N0}ARev. {tt1}msForLoopRev| {SW2.ElapsedTicks / SWFreq}msREf {r1 = r2 } {r1 = New String(s1.Reverse.ToArray)}")
@@ -1073,7 +1064,7 @@ Again: 'Debug StopWatch Use
         If fPath.Length <= 3 Then
             'For c = 0 To InvalidPathCh.Length - 1
             For c = fPath.Length - 1 To 0 Step -1
-                If InvalidPathChHS.Contains(fPath(c)) Then fPath = fPath.Replace(fPath(c), "") 'or Inv as Hashset
+                If InvalidPathChHS.Contains(fPath(c)) Then fPath = fPath.Replace(fPath(c), "")
                 'fPath = fPath.Replace(InvalidPathCh(c), "")
             Next c
             Return If(fPath.Length > 0, fPath & SeparatorD, "")
@@ -1803,6 +1794,7 @@ Again: 'Debug StopWatch Use
             End If
         ElseIf ekd = (Keys.Cancel Or Keys.Control) Then
             If Not Log.IsEmpty Then Log.Save()
+            ActionMenuItem.LayoutSuspendList = Nothing
             MediaInfo.ClearCache()
             g.MainForm.ForceClose = True
             Me.Close()
@@ -2254,6 +2246,7 @@ Again: 'Debug StopWatch Use
 
             SW2.Stop()
             laThreads.Text = $"{st1:F4}|{st2:F4}|{SW2.ElapsedTicks / SWFreq:F4}"
+            ActionMenuItem.LayoutSuspendList = Nothing
             dgvAudio.Refresh()
             Refresh()
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce

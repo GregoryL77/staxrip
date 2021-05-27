@@ -26,10 +26,10 @@ Partial Class CodeEditor
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
+        Me.MainFlowLayoutPanel = New System.Windows.Forms.FlowLayoutPanel()
         Me.FlowLayoutPanel1 = New System.Windows.Forms.FlowLayoutPanel()
         Me.bnCancel = New StaxRip.UI.ButtonEx()
         Me.bnOK = New StaxRip.UI.ButtonEx()
-        Me.MainFlowLayoutPanel = New System.Windows.Forms.FlowLayoutPanel()
         Me.tlpMain.SuspendLayout()
         Me.FlowLayoutPanel1.SuspendLayout()
         Me.SuspendLayout()
@@ -39,48 +39,18 @@ Partial Class CodeEditor
         Me.tlpMain.AutoSize = True
         Me.tlpMain.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.tlpMain.ColumnCount = 1
-        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpMain.Controls.Add(Me.FlowLayoutPanel1, 0, 1)
+        Me.tlpMain.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
         Me.tlpMain.Controls.Add(Me.MainFlowLayoutPanel, 0, 0)
+        Me.tlpMain.Controls.Add(Me.FlowLayoutPanel1, 0, 1)
         Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlpMain.Location = New System.Drawing.Point(0, 0)
         Me.tlpMain.Margin = New System.Windows.Forms.Padding(0)
         Me.tlpMain.Name = "tlpMain"
         Me.tlpMain.RowCount = 2
-        Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25.0!))
+        Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
+        Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23.0!))
         Me.tlpMain.Size = New System.Drawing.Size(749, 438)
         Me.tlpMain.TabIndex = 0
-        '
-        'FlowLayoutPanel1
-        '
-        Me.FlowLayoutPanel1.Anchor = System.Windows.Forms.AnchorStyles.Right
-        Me.FlowLayoutPanel1.Controls.Add(Me.bnCancel)
-        Me.FlowLayoutPanel1.Controls.Add(Me.bnOK)
-        Me.FlowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft
-        Me.FlowLayoutPanel1.Location = New System.Drawing.Point(553, 414)
-        Me.FlowLayoutPanel1.Margin = New System.Windows.Forms.Padding(1, 1, 15, 1)
-        Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
-        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(181, 23)
-        Me.FlowLayoutPanel1.TabIndex = 0
-        '
-        'bnCancel
-        '
-        Me.bnCancel.Anchor = System.Windows.Forms.AnchorStyles.Right
-        Me.bnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.bnCancel.Location = New System.Drawing.Point(98, 0)
-        Me.bnCancel.Margin = New System.Windows.Forms.Padding(15, 0, 0, 0)
-        Me.bnCancel.Size = New System.Drawing.Size(83, 23)
-        Me.bnCancel.Text = "Cancel"
-        '
-        'bnOK
-        '
-        Me.bnOK.Anchor = System.Windows.Forms.AnchorStyles.Right
-        Me.bnOK.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.bnOK.Location = New System.Drawing.Point(0, 0)
-        Me.bnOK.Margin = New System.Windows.Forms.Padding(0)
-        Me.bnOK.Size = New System.Drawing.Size(83, 23)
-        Me.bnOK.Text = "OK"
         '
         'MainFlowLayoutPanel
         '
@@ -92,9 +62,39 @@ Partial Class CodeEditor
         Me.MainFlowLayoutPanel.Margin = New System.Windows.Forms.Padding(0)
         Me.MainFlowLayoutPanel.Name = "MainFlowLayoutPanel"
         Me.MainFlowLayoutPanel.Padding = New System.Windows.Forms.Padding(6, 2, 1, 2)
-        Me.MainFlowLayoutPanel.Size = New System.Drawing.Size(749, 413)
+        Me.MainFlowLayoutPanel.Size = New System.Drawing.Size(749, 4)
         Me.MainFlowLayoutPanel.TabIndex = 1
         Me.MainFlowLayoutPanel.WrapContents = False
+        '
+        'FlowLayoutPanel1
+        '
+        Me.FlowLayoutPanel1.Controls.Add(Me.bnCancel)
+        Me.FlowLayoutPanel1.Controls.Add(Me.bnOK)
+        Me.FlowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Bottom
+        Me.FlowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft
+        Me.FlowLayoutPanel1.Location = New System.Drawing.Point(0, 415)
+        Me.FlowLayoutPanel1.Margin = New System.Windows.Forms.Padding(0, 0, 15, 0)
+        Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
+        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(734, 23)
+        Me.FlowLayoutPanel1.TabIndex = 0
+        '
+        'bnCancel
+        '
+        Me.bnCancel.Anchor = System.Windows.Forms.AnchorStyles.Right
+        Me.bnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
+        Me.bnCancel.Location = New System.Drawing.Point(651, 0)
+        Me.bnCancel.Margin = New System.Windows.Forms.Padding(15, 0, 0, 0)
+        Me.bnCancel.Size = New System.Drawing.Size(83, 23)
+        Me.bnCancel.Text = "Cancel"
+        '
+        'bnOK
+        '
+        Me.bnOK.Anchor = System.Windows.Forms.AnchorStyles.Left
+        Me.bnOK.DialogResult = System.Windows.Forms.DialogResult.OK
+        Me.bnOK.Location = New System.Drawing.Point(553, 0)
+        Me.bnOK.Margin = New System.Windows.Forms.Padding(0)
+        Me.bnOK.Size = New System.Drawing.Size(83, 23)
+        Me.bnOK.Text = "OK"
         '
         'CodeEditor
         '
@@ -119,10 +119,10 @@ Partial Class CodeEditor
 
     End Sub
     Friend WithEvents tlpMain As System.Windows.Forms.TableLayoutPanel
-    Friend WithEvents FlowLayoutPanel1 As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents bnCancel As StaxRip.UI.ButtonEx
     Friend WithEvents bnOK As StaxRip.UI.ButtonEx
     Friend WithEvents MainFlowLayoutPanel As System.Windows.Forms.FlowLayoutPanel
+    Friend WithEvents FlowLayoutPanel1 As FlowLayoutPanel
 End Class
 'Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
 'Me.KeyPreview = True

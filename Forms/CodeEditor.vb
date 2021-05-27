@@ -28,8 +28,8 @@ Public Class CodeEditor
         Me.MainFlowLayoutPanel.SuspendLayout()
 
         Engine = doc.Engine
-        'MainFlowLayoutPanel.MaximumSize = New Size(CInt(ScreenResolutionPrim.Width * 0.95), CInt(ScreenResolutionPrim.Height * 0.85))
-        MaximumSize = New Size(CInt(ScreenResolutionPrim.Width * 0.99), CInt(ScreenResolutionPrim.Height * 0.96))
+        MainFlowLayoutPanel.MaximumSize = New Size(CInt(ScreenResolutionPrim.Width - 32), CInt(ScreenResolutionPrim.Height * 0.99 - 67))
+        'MaximumSize = New Size(CInt(ScreenResolutionPrim.Width * 0.99), CInt(ScreenResolutionPrim.Height * 0.96))
 
         Using rtbScrFont As Font = New Font("Consolas", 10 * s.UIScaleFactor)
             Dim RTBFontHeight = rtbScrFont.Height
@@ -48,7 +48,7 @@ Public Class CodeEditor
                 ttsA(f).Width = maxTextWidth + RTBFontHeight '- 1
                 Dim th As Integer = ttsA(f).Height
                 If th > RTBFontHeight * 15 Then th = RTBFontHeight * 15
-                ttsA(f).Height = th + If(th < RTBFontHeight * 15 * 1.05, CInt(RTBFontHeight * 1.1), 0) '- 1
+                ttsA(f).Height = th + If(th < RTBFontHeight * 15 * 1.05, CInt(RTBFontHeight * 1.1), 0) - 1
                 'totalHeigth += filterTables(f).Height
             Next f
 
@@ -81,7 +81,10 @@ Public Class CodeEditor
     Protected Overrides Sub OnLoad(args As EventArgs)
         MyBase.OnLoad(args)
 
-
+        MainFlowLayoutPanelLayout(Nothing, Nothing)
+        tlpMain.ResumeLayout()
+        MainFlowLayoutPanel.ResumeLayout()
+        ResumeLayout()
 
         sssw.Stop()
         ttt2 &= sssw.ElapsedTicks / SWFreq & "msLoad| "
@@ -90,12 +93,9 @@ Public Class CodeEditor
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
 
-        tlpMain.ResumeLayout()
-        MainFlowLayoutPanel.ResumeLayout()
-        ResumeLayout()
-
         AddHandler MainFlowLayoutPanel.Layout, AddressOf MainFlowLayoutPanelLayout
-        Refresh()
+
+        ' Refresh()
         sssw.Stop()
         Text = ttt2 & sssw.ElapsedTicks / SWFreq & "msShow"
     End Sub
@@ -104,7 +104,8 @@ Public Class CodeEditor
         If MainFlowLayoutPanel.Height + 67 > CInt(ScreenResolutionPrim.Height * 0.95) Then
             If Not ScrollON Then
                 ScrollON = True
-                MainFlowLayoutPanel.Padding = New Padding(16, 2, 1, 2) 'New Padding(9, 2, 9, 2)
+                MainFlowLayoutPanel.Padding = New Padding(5, 2, 12, 2)  '(16, 2, 1, 2) 
+                MainFlowLayoutPanel.AutoScrollMargin = New Size(8, 8)
                 MainFlowLayoutPanel.AutoScroll = True
                 Console.Beep(6700, 30) 'Debug
             End If
@@ -112,6 +113,7 @@ Public Class CodeEditor
             If ScrollON Then
                 ScrollON = False
                 Me.MainFlowLayoutPanel.Padding = New System.Windows.Forms.Padding(6, 2, 1, 2)
+                MainFlowLayoutPanel.AutoScrollMargin = Size.Empty
                 MainFlowLayoutPanel.AutoScroll = False
                 Console.Beep(600, 30) 'Debug
             End If
@@ -337,35 +339,66 @@ Public Class CodeEditor
         Sub New(filter As VideoFilter, Optional rtbSize As Size = Nothing)
             Me.SuspendLayout()
             'cbActive.AutoSize = True
-            cbActive.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+            cbActive.Dock = DockStyle.Top
             cbActive.Margin = New Padding(0)
+            'cbActive.Location = New Point(0, 0)
             cbActive.Checked = filter.Active
             cbActive.Text = filter.Category
-            cbActive.Size = cbActive.PreferredSize 'Test!!!
+            Dim fh As Integer = 13 'Font.Height '=13(MSSansSer8.5), 16(Sagoe,Consolas9)
+            cbActive.Size = New Size(fh * 8, CInt(fh * 1.3))
 
-            tbName.Dock = DockStyle.Top
+            tbName.Dock = DockStyle.Bottom
             tbName.Margin = New Padding(0, 0, 0, 0)
-            Dim fh As Integer = 13 'Font.Height 'Opt.13(MSSansSer8) Disabled OnLayout in FilterTable Class 'was 16(Sagoe,Consolas10) in RTBfilterTableConsolas class
-            tbName.Size = New Size(fh * 8, CInt(fh * 1.2)) '7 , '1.2 or +3 or +7
+            'tbName.Location = New Point(0, CInt(fh * 1.3))
             tbName.Text = filter.Name
+            tbName.Size = New Size(fh * 8, CInt(fh * 1.5))  '7-9 
 
             rtbScript = New RichTextBoxEx(False)
             Dim rtbScrFont As Font = New Font("Consolas", 10 * s.UIScaleFactor)
+            RTBFontHeight = rtbScrFont.Height
             With rtbScript
-                .EnableAutoDragDrop = True
                 .Dock = DockStyle.Fill
-                .WordWrap = False
-                .ScrollBars = RichTextBoxScrollBars.None
-                .AcceptsTab = True
                 .Margin = New Padding(0)
                 .Font = rtbScrFont
+                .AcceptsTab = True
+                .EnableAutoDragDrop = True
+                .WordWrap = False
+                .ScrollBars = RichTextBoxScrollBars.None
                 .Text = If(filter.Script.NullOrEmptyS, "", filter.Script + BR)
                 .Size = If(rtbSize = Size.Empty, .PreferredSize, rtbSize)  'Test!!!
             End With
-            RTBFontHeight = rtbScrFont.Height
             SetColor()
 
-            RTBEventSem = False
+            Dim pn As New Panel
+            pn.SuspendLayout()
+            pn.Dock = DockStyle.Top
+            'pn.Anchor = AnchorStyles.Top
+            pn.Margin = New Padding(0)
+            pn.Controls.Add(cbActive)
+            pn.Controls.Add(tbName)
+            pn.Size = New Size(fh * 8, CInt(fh * 2.82)) '=CInt(fh * 1.3)+ CInt(fh * 1.5)
+
+            AutoSize = True
+            'Anchor = AnchorStyles.Left Or AnchorStyles.Right
+            Dock = DockStyle.Top
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+            Margin = New Padding(0)
+            ColumnCount = 2
+            ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, fh * 8))
+            ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
+            RowCount = 1 '2
+            'RowStyles.Add(New RowStyle(SizeType.Absolute, CInt(fh * 1.3)))
+            RowStyles.Add(New RowStyle(SizeType.AutoSize))
+            'Controls.Add(cbActive, 0, 0)
+            'Controls.Add(tbName, 0, 1)
+            Controls.Add(pn, 0, 0)
+            Controls.Add(rtbScript, 1, 0)
+            'SetRowSpan(rtbScript, 2)
+            Size = PreferredSize 'Test!!!
+
+            pn.ResumeLayout()
+            Me.ResumeLayout()
+
             Dim caceh As EventHandler = Sub() SetColor()
             AddHandler cbActive.CheckedChanged, caceh
             AddHandler rtbScript.MouseUp, AddressOf HandleMouseUp
@@ -449,38 +482,6 @@ Public Class CodeEditor
                                           Menu?.Dispose()
                                       End Sub
             AddHandler Disposed, deh
-
-            Dim t As New TableLayoutPanel
-            With t
-                .SuspendLayout()
-                '.AutoSize = True
-                .Dock = DockStyle.Fill
-                .Margin = New Padding(0)
-                .ColumnCount = 1
-                .ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-                .RowCount = 2
-                .RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-                .RowStyles.Add(New RowStyle(SizeType.Absolute, fh * 1.2F))
-                .Controls.Add(cbActive, 0, 0)
-                .Controls.Add(tbName, 0, 1)
-                .Size = .PreferredSize 'Test!!!
-
-            End With
-
-            ColumnCount = 2
-            ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, fh * 8))
-            ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-            RowCount = 1
-            RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-            Controls.Add(t, 0, 0)
-            Controls.Add(rtbScript, 1, 0)
-            Margin = New Padding(0)
-            AutoSize = True
-            'Size = New Size(950, 50)
-            'Size = PreferredSize 'Test!!!
-
-            t.ResumeLayout()
-            Me.ResumeLayout()
         End Sub
         'Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
         '    Dim fh As Integer = FontHeight 'RTBFontHeight

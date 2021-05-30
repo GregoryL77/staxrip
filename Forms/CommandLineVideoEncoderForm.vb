@@ -203,11 +203,8 @@ Public Class CommandLineVideoEncoderForm
         Me.ClientSize = New System.Drawing.Size(1393, 809)
         Me.Controls.Add(Me.tlpMain)
         Me.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(6)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "CommandLineVideoEncoderForm"
         Me.Text = "Command Line Video Encoder"
         Me.tlpMain.ResumeLayout(False)

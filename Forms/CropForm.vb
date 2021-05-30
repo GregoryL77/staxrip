@@ -140,11 +140,8 @@ Public Class CropForm
         Me.Controls.Add(Me.pnTopActive)
         Me.Controls.Add(Me.pnLeftActive)
         Me.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(2, 2, 2, 2)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.MinimumSize = New System.Drawing.Size(77, 93)
         Me.Name = "CropForm"
         Me.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show

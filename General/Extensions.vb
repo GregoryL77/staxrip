@@ -835,6 +835,7 @@ Module MiscExtensions
 
     Public ReadOnly CPUsC As Integer = Environment.ProcessorCount
     Public ReadOnly SWFreq As Double = Stopwatch.Frequency / 1000
+    Public ReadOnly ScreenResolutionPrim As Rectangle = Screen.PrimaryScreen.Bounds
 
     <Extension()>
     Function GetDeepClone(Of T)(obj As T) As T

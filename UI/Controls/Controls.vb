@@ -240,11 +240,8 @@ Namespace UI
                 b.Dispose()
             End If
 
-            If ShowControlBorder AndAlso VisualStyleInformation.IsEnabledByUser Then
-                ControlPaint.DrawBorder(e.Graphics,
-                                        ClientRectangle,
-                                        VisualStyleInformation.TextControlBorder,
-                                        ButtonBorderStyle.Solid)
+            If ShowControlBorder Then 'AndAlso VisualStyleInformation.IsEnabledByUser ' Windows 10 Assume Visual stryles ON
+                ControlPaint.DrawBorder(e.Graphics, ClientRectangle, VisualStyleInformation.TextControlBorder, ButtonBorderStyle.Solid)
             End If
         End Sub
 
@@ -266,9 +263,9 @@ Namespace UI
             Get
                 Dim ret = MyBase.CreateParams
 
-                If ShowControlBorder AndAlso Not VisualStyleInformation.IsEnabledByUser Then
-                    ret.ExStyle = ret.ExStyle Or &H200 'WS_EX_CLIENTEDGE
-                End If
+                'If ShowControlBorder AndAlso Not VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
+                '    ret.ExStyle = ret.ExStyle Or &H200 'WS_EX_CLIENTEDGE
+                'End If
 
                 Return ret
             End Get
@@ -412,9 +409,8 @@ Namespace UI
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
             MyBase.OnPaint(e)
 
-            If ShowNiceBorder AndAlso VisualStyleInformation.IsEnabledByUser Then
-                ControlPaint.DrawBorder(e.Graphics, ClientRectangle,
-                    VisualStyleInformation.TextControlBorder, ButtonBorderStyle.Solid)
+            If ShowNiceBorder Then 'AndAlso VisualStyleInformation.IsEnabledByUser 'Windows 10 Assume Visual stryles ON
+                ControlPaint.DrawBorder(e.Graphics, ClientRectangle, VisualStyleInformation.TextControlBorder, ButtonBorderStyle.Solid)
             End If
         End Sub
     End Class
@@ -461,9 +457,9 @@ Namespace UI
                 InitMenu()
             End If
 
-            If VisualStyleInformation.IsEnabledByUser Then
-                BorderStyle = BorderStyle.None
-            End If
+            'If VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
+            BorderStyle = BorderStyle.None
+            'End If
         End Sub
 
         Sub InitMenu()
@@ -527,13 +523,13 @@ Namespace UI
             Const WM_NCCALCSIZE = &H83
             Const WM_THEMECHANGED = &H31A
 
-            Select Case m.Msg
-                Case 15, 20 'WM_PAINT, WM_ERASEBKGND
-                    If BlockPaint Then
+            If BlockPaint Then
+                Select Case m.Msg
+                    Case 15, 20 'WM_PAINT, WM_ERASEBKGND
                         Exit Sub
-                    End If
-                Case Else
-            End Select
+                    Case Else
+                End Select
+            End If
 
             MyBase.WndProc(m)
 
@@ -548,9 +544,9 @@ Namespace UI
         End Sub
 
         Sub WmNccalcsize(ByRef m As Message)
-            If Not VisualStyleInformation.IsEnabledByUser Then
-                Return
-            End If
+            'If Not VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
+            'Return
+            'End If
 
             Dim par As New Native.NCCALCSIZE_PARAMS()
             Dim windowRect As Native.RECT
@@ -587,9 +583,9 @@ Namespace UI
         End Sub
 
         Sub WmNcpaint(ByRef m As Message)
-            If Not VisualStyleInformation.IsEnabledByUser Then
-                Return
-            End If
+            'If Not VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
+            'Return
+            'End If
 
             Dim rect As Native.RECT
             Native.GetWindowRect(Handle, rect)
@@ -615,10 +611,10 @@ Namespace UI
             m.Result = IntPtr.Zero
         End Sub
 
-        Protected Overrides Sub OnHandleCreated(e As EventArgs)
-            MyBase.OnHandleCreated(e)
-            AutoWordSelection = False
-        End Sub
+        'Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        '    MyBase.OnHandleCreated(e)
+        '    'AutoWordSelection = False   'It's False by Default ??
+        'End Sub
     End Class
 
     Public Class TrackBarEx

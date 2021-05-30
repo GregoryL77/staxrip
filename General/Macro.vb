@@ -292,7 +292,7 @@ Public Class Macro
             Dim matches = Regex.Matches(ret.Value, "\$select:(.+?)\$")
 
             For Each iMatch As Match In matches
-                Dim items = iMatch.Groups(1).Value.SplitNoEmpty(";").ToCircularList
+                Dim items = iMatch.Groups(1).Value.SplitNoEmpty(";").ToList
 
                 If items.Count > 0 Then
                     Using td As New TaskDialog(Of String)

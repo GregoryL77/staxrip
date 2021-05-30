@@ -655,15 +655,11 @@ Public Class AudioForm
         Me.AcceptButton = Me.bnOK
         Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        Me.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(752, 489)
         Me.Controls.Add(Me.tlpMain)
         Me.Controls.Add(Me.FlowLayoutPanel1)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "AudioForm"
         Me.Text = "Audio Settings"
         Me.gbBasic.ResumeLayout(False)
@@ -730,6 +726,7 @@ Public Class AudioForm
     End Sub
 
     Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
+        'Me.Text = "Audio Settings" 'Debug
         WasHandleCreated = False
         MyBase.OnFormClosing(args)
     End Sub
@@ -1086,10 +1083,10 @@ Public Class AudioForm
     Sub LoadAdvanced()
         RemoveHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
 
-        ' If NumFFLFEMixLevel IsNot Nothing Then
-        'RemoveHandler SimpleUI.SaveValues, AddressOf NumFFLFEMixLevel.NumEdit.Save
-        ' NumFFLFEMixLevel.Dispose()
-        ' End If
+        If NumFFLFEMixLevel IsNot Nothing Then
+            RemoveHandler SimpleUI.SaveValues, AddressOf NumFFLFEMixLevel.NumEdit.Save
+            NumFFLFEMixLevel.Dispose()
+        End If
         If CbQaacHE IsNot Nothing Then
             RemoveHandler SimpleUI.SaveValues, AddressOf CbQaacHE.Save
             RemoveHandler CbQaacHE.CheckedChanged, CbQaacHEH

@@ -155,12 +155,9 @@ Public Class SourceFilesForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(1015, 729)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.HelpButton = False
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(13, 14, 13, 14)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "SourceFilesForm"
         Me.Text = "Source Files"
         Me.tlpMain.ResumeLayout(False)

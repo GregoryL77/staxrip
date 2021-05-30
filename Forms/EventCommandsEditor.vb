@@ -201,12 +201,9 @@ Public Class EventCommandsEditor
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(805, 707)
         Me.Controls.Add(Me.TableLayoutPanel2)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(7)
         Me.MinimumSize = New System.Drawing.Size(405, 302)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "EventCommandsEditor"
         Me.Text = "Event Command"
         Me.flpButtons.ResumeLayout(False)

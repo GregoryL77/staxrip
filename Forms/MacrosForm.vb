@@ -223,11 +223,8 @@ Public Class MacrosForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(690, 559)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(11, 9, 11, 9)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "MacrosForm"
         Me.Text = "Macros"
         Me.tlpRight.ResumeLayout(False)

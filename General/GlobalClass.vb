@@ -477,8 +477,13 @@ Public Class GlobalClass
             playerPath = Package.MpcHC.Path
         End If
 
-        If Not File.Exists(playerPath) AndAlso Package.MpcBE.VerifyOK(True) Then
-            playerPath = Package.MpcBE.Path
+        If Not File.Exists(playerPath) Then
+            If Package.MpcBE.VerifyOK(True) Then
+                playerPath = Package.MpcBE.Path
+            End If
+            If Package.MpcHC.VerifyOK(True) Then
+                playerPath = Package.MpcHC.Path
+            End If
         End If
 
         If Not File.Exists(playerPath) Then
@@ -1074,12 +1079,12 @@ Public Class GlobalClass
         End Try
     End Sub
 
-    Sub SetRenderer(ms As ToolStrip)
-        If VisualStyleInformation.IsEnabledByUser Then
-            ms.Renderer = New ToolStripRendererEx(s.ToolStripRenderModeEx)
-        Else
-            ms.Renderer = New ToolStripSystemRenderer()
-        End If
+    Sub SetRenderer(ms As ToolStrip) ' Windows 10 Assume Visual stryles ON
+        'If VisualStyleInformation.IsEnabledByUser Then
+        ms.Renderer = New ToolStripRendererEx(s.ToolStripRenderModeEx)
+        'Else
+        ' ms.Renderer = New ToolStripSystemRenderer()
+        'End If
     End Sub
 
     Sub Play(file As String)

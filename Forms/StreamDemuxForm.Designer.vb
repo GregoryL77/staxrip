@@ -345,11 +345,8 @@ Partial Class StreamDemuxForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1322, 849)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(11, 10, 11, 10)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "StreamDemuxForm"
         Me.Text = "Demux"
         Me.gbAudio.ResumeLayout(False)

@@ -354,12 +354,9 @@ Public Class AppsForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1105, 609)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.HelpButton = False
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(6)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "AppsForm"
         Me.Text = "Apps"
         Me.ToolStrip.ResumeLayout(False)

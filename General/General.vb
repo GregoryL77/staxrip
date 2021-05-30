@@ -1182,7 +1182,6 @@ Public Module MainModule
     Public Const BR As String = VB6.vbCrLf
     Public Const BR2 As String = VB6.vbCrLf + VB6.vbCrLf
     Public Const BR3 As String = VB6.vbCrLf + VB6.vbCrLf + VB6.vbCrLf
-    Public ScreenResolutionPrim As Rectangle = Screen.PrimaryScreen.Bounds
     Public Log As LogBuilder
 
     Sub MsgInfo(text As Object, Optional content As Object = Nothing)

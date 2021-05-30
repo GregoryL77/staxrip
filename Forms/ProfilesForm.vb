@@ -287,10 +287,7 @@ Public Class ProfilesForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(1177, 1012)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Margin = New System.Windows.Forms.Padding(9)
         Me.Name = "ProfilesForm"
         Me.Text = "Profiles"

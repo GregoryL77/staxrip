@@ -412,11 +412,9 @@ Public Class MediaInfo
             Try
                 MediaInfo_Close(Handle)
                 MediaInfo_Delete(Handle)
-            Catch ex As Exception
-                If Not g.MainForm.ForceClose AndAlso Not g.MainForm.IsDisposed Then 'debug
-                    'Microsoft.VisualBasic.MsgBox(Loaded & "-Loaded|MediaInfo Dispose Exception, (Ignore):" & BR & ex.ToString)
-                    Console.Beep(500, 300)
-                End If
+            Catch 'ex As Exception 'debug
+                'If Not g.MainForm.ForceClose AndAlso Not g.MainForm.IsDisposed Then Microsoft.VisualBasic.MsgBox(Loaded & "-Loaded|MediaInfo Dispose Exception, (Ignore):" & BR & ex.ToString)
+                Console.Beep(500, 250)
             End Try
         End If
     End Sub

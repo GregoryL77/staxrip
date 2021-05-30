@@ -68,7 +68,7 @@ Namespace UI
                 Scale(New SizeF(1 * s.UIScaleFactor, 1 * s.UIScaleFactor))
             End If
 
-            Dim workingArea As Rectangle
+            Dim workAr As Size  'Rectangle
             If DefaultWidthScale <> 0 Then
                 Dim fh As Integer = FontHeight 'Font.Height
                 Dim defaultWidth = CInt(fh * DefaultWidthScale)
@@ -78,16 +78,15 @@ Namespace UI
                 Dim w = s.Storage.GetInt(fName + "width")
                 Dim h = s.Storage.GetInt(fName + "height")
 
-                workingArea = Screen.FromControl(Me).WorkingArea
-
                 If w = 0 OrElse w < (defaultWidth \ 2) OrElse h = 0 OrElse h < (defaultHeight \ 2) Then
                     w = defaultWidth
                     h = defaultHeight
                 End If
 
-                If w > workingArea.Width OrElse h > workingArea.Height Then
-                    w = workingArea.Width
-                    h = workingArea.Height
+                workAr = Screen.FromControl(Me).WorkingArea.Size
+                If w > workAr.Width OrElse h > workAr.Height Then
+                    w = workAr.Width
+                    h = workAr.Height
                 End If
 
                 Width = w
@@ -95,11 +94,13 @@ Namespace UI
             End If
 
             If StartPosition = FormStartPosition.CenterScreen Then
-                WindowPositions.CenterScreen(Me, If(workingArea.IsEmpty, Screen.FromControl(Me).WorkingArea.Size, workingArea.Size))
+                If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
+                WindowPositions.CenterScreen(Me, workAr)
             End If
 
             If Not DesignHelp.IsDesignMode Then
-                s.WindowPositions?.RestorePosition(Me, If(workingArea.IsEmpty, Screen.FromControl(Me).WorkingArea.Size, workingArea.Size))
+                If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
+                s.WindowPositions?.RestorePosition(Me, workAr)
             End If
 
             MyBase.OnLoad(args)
@@ -144,10 +145,10 @@ Namespace UI
         Inherits FormBase
 
         Sub New()
-            FormBorderStyle = FormBorderStyle.FixedDialog
+            'FormBorderStyle = FormBorderStyle.FixedDialog
             HelpButton = True
-            MaximizeBox = False
-            MinimizeBox = False
+            'MaximizeBox = False
+            'MinimizeBox = False
             ShowIcon = False
             ShowInTaskbar = False
             StartPosition = FormStartPosition.CenterParent
@@ -200,7 +201,6 @@ Namespace UI
         End Function
 
         Function CompareTo(other As ListBag(Of T)) As Integer Implements IComparable(Of ListBag(Of T)).CompareTo
-            'Return Text.CompareTo(other.Text)
             Return String.CompareOrdinal(Text, other.Text)
         End Function
     End Class
@@ -227,12 +227,10 @@ Namespace UI
 
         Shared Sub CenterScreen(form As Form, screenSize As Size) ' Screen.FromControl(form).WorkingArea
             form.StartPosition = FormStartPosition.Manual
-            'form.Left = (wa.Width - form.Width) \ 2
-            'form.Top = (wa.Height - form.Height) \ 2
             form.Location = New Point((screenSize.Width - form.Width) \ 2, (screenSize.Height - form.Height) \ 2)
         End Sub
 
-        Sub RestorePosition(form As Form, screenSize As Size)
+        Sub RestorePosition(form As Form, screenSz As Size)
             Dim text = GetText(form)
 
             If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso Not TypeOf form Is UI.InputBoxForm Then
@@ -241,10 +239,9 @@ Namespace UI
 
                         If Positions.ContainsKey(GetKey(form)) Then
                             Dim pos = Positions(GetKey(form))
-                            Dim wa = screenSize
 
-                            If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > wa.Width OrElse pos.Y + form.Height > wa.Height Then
-                                CenterScreen(form, wa)
+                            If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > screenSz.Width OrElse pos.Y + form.Height > screenSz.Height Then
+                                CenterScreen(form, screenSz)
                             Else
                                 form.StartPosition = FormStartPosition.Manual
                                 form.Location = pos
@@ -267,8 +264,6 @@ Namespace UI
                 Return "AudioConverter"
             ElseIf TypeOf form Is MainForm Then
                 Return "StaxRip"
-            ElseIf TypeOf form Is AudioForm Then
-                Return "Audio Settings"
             ElseIf TypeOf form Is HelpForm Then
                 Return "Help"
             ElseIf TypeOf form Is PreviewForm Then

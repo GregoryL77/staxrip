@@ -169,11 +169,8 @@ Partial Class CommandLineForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(688, 505)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(1)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "CommandLineForm"
         Me.tlpMain.ResumeLayout(False)
         Me.tlpMain.PerformLayout()

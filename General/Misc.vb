@@ -493,7 +493,7 @@ Public Class Language
     <NonSerialized> Public IsCommon As Boolean
 
     Sub New()
-        Me.New(CultureInfo.InvariantCulture) 'or(127) Invariant
+        Me.New(CultureInfo.InvariantCulture) '(127) Invariant
     End Sub
 
     Sub New(ci As CultureInfo, Optional isCommon As Boolean = False)

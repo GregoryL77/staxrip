@@ -100,9 +100,9 @@ Public Class SimpleUI
         Dim nodeExists As Boolean
         For Each i In Pages
             If i.Node Is node Then
-                If i.FormSizeScaleFactor <> Size.Empty Then
+                If Not i.FormSizeScaleFactor.IsEmpty Then
                     FindForm.ScaleClientSize(i.FormSizeScaleFactor.Width, i.FormSizeScaleFactor.Height)
-                ElseIf FormSizeScaleFactor <> Size.Empty Then
+                ElseIf Not FormSizeScaleFactor.IsEmpty Then
                     FindForm.ScaleClientSize(FormSizeScaleFactor.Width, FormSizeScaleFactor.Height)
                 End If
 

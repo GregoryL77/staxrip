@@ -165,12 +165,9 @@ Friend Class JobsForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1698, 708)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(0, 2, 0, 2)
         Me.MinimumSize = New System.Drawing.Size(323, 204)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "JobsForm"
         Me.Text = "Jobs"
         Me.tlpMain.ResumeLayout(False)

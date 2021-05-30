@@ -419,11 +419,8 @@ Public Class CommandLineAudioEncoderForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(588, 266)
         Me.Controls.Add(Me.tlpMain)
-        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(4, 3, 4, 3)
-        Me.MaximizeBox = True
-        Me.MinimizeBox = True
         Me.Name = "CommandLineAudioEncoderForm"
         Me.Text = "Audio Command Lines"
         Me.TableLayoutPanel1.ResumeLayout(False)

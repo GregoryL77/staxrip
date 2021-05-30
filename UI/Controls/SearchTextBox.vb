@@ -119,12 +119,12 @@ Public Class SearchTextBox
             If MouseIsOver Then
                 Dim rect = New Rectangle(Point.Empty, Size)
 
-                If VisualStyleInformation.IsEnabledByUser AndAlso False Then
-                    Dim Renderer = New VisualStyleRenderer(VisualStyleElement.Button.PushButton.Hot)
-                    Renderer.DrawBackground(e.Graphics, ClientRectangle)
-                Else
-                    ControlPaint.DrawButton(e.Graphics, ClientRectangle, ButtonState.Flat)
-                End If
+                'If VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
+                Dim Renderer = New VisualStyleRenderer(VisualStyleElement.Button.PushButton.Hot)
+                Renderer.DrawBackground(e.Graphics, ClientRectangle)
+                'Else
+                'ControlPaint.DrawButton(e.Graphics, ClientRectangle, ButtonState.Flat) 'This was previous - Gray Button
+                'End If
             Else
                 e.Graphics.Clear(Color.White)
             End If

@@ -419,7 +419,7 @@ Public Class AudioConverterForm
     'Private ReadOnly InvalidPathCh As Char() = {":"c, "\"c, "/"c, "?"c, "^"c, "."c}
     Private ReadOnly InvalidPathChHS As HashSet(Of Char)
 
-    Private DGVEventCount As Integer
+    'Private DGVEventCount As Integer
 
     Private StatUpdateTask As Task
     Private ReadOnly StatUpdateTaskA As Action =
@@ -427,10 +427,10 @@ Public Class AudioConverterForm
             Do While PopulateIter < 900 AndAlso AudioConverterMode
                 Dim t As String = PopulateIter.ToInvariantString & PopulateTask?.Status.ToString & PopulateWSW.ElapsedTicks / SWFreq & "msW" & PopulateTaskS.ToInvariantString & "PTS" & PopulateRSW.ElapsedTicks / SWFreq & "msR|WPT" &
                 PopulateTaskW?.Status.ToString & SW2.ElapsedTicks / SWFreq & "ms2|Sw" & SW1.ElapsedTicks / SWFreq & "MC" & MediaInfo.Cache.Count.ToInvariantString &
-                "FTL" & BuildFindT?.Status.ToString & If(BuildFindT?.IsCompleted, BuildFindT.Result.Length.ToInvariantString, "") & "FIdx" & TBFindIdx.ToInvariantString & "cmsC:" & DGVEventCount.ToInvariantString
+                "FTL" & BuildFindT?.Status.ToString & If(BuildFindT?.IsCompleted, BuildFindT.Result.Length.ToInvariantString, "") & "FIdx" & TBFindIdx.ToInvariantString ' & "cmsC:" & DGVEventCount.ToInvariantString
                 ' & StatTextSB.Length.ToInvariantString & "VC" & DGVEventCount.ToInvariantString & "SBL:"
                 Me.BeginInvoke(Sub()
-                                   DGVEventCount = CMS.Items.Count
+                                   'DGVEventCount = CMS.Items.Count
                                    Me.Text = t
                                End Sub)
                 'If StatTextSB.Length > 38 Then Me.BeginInvoke(Sub() Me.BackColor = Color.HotPink)
@@ -735,21 +735,16 @@ Public Class AudioConverterForm
     Private Sub AutoSizeColumns(Optional AllCells As Boolean = False)
         If AudioCL.Count > 1000 OrElse (AudioCL.Count > 100 AndAlso MediaInfo.Cache.Count < 100) Then StatusText("Auto Resizing Columns...")
         With dgvAudio
-            ' CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()
             .Columns.Item(0).MinimumWidth = Math.Max(28, CInt(14 + 6 * Fix(Math.Log10(AudioCL.Count + 1))))
             If .ColumnHeadersHeight <> 23 Then .ColumnHeadersHeight = 23
             If .RowHeadersWidth <> 24 Then .RowHeadersWidth = 24
-            If .AutoSizeColumnsMode <> DataGridViewAutoSizeColumnsMode.Fill Then
 
+            If .AutoSizeColumnsMode <> DataGridViewAutoSizeColumnsMode.Fill Then
                 PopulateTaskS = -1
                 Dim allc As Boolean = AllCells OrElse AudioCL.Count < 200 OrElse (AudioCL.Count < 2500 AndAlso MediaInfo.Cache.Count > 2000)
-
-                If allc Then Application.DoEvents()
-                BeginInvoke(Sub() .AutoResizeColumns(If(allc, DataGridViewAutoSizeColumnsMode.AllCellsExceptHeader, DataGridViewAutoSizeColumnsMode.DisplayedCellsExceptHeader))) ' Test BeginInvoke !!!
-                Application.DoEvents()
-
+                If allc Then Application.DoEvents() 'Needed???
+                .AutoResizeColumns(If(allc, DataGridViewAutoSizeColumnsMode.AllCellsExceptHeader, DataGridViewAutoSizeColumnsMode.DisplayedCellsExceptHeader))
             End If
-            ' CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
         End With
     End Sub
 

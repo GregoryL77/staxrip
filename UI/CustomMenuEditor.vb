@@ -556,7 +556,6 @@ Namespace UI
             Me.CancelButton = Me.bnCancel
             Me.ClientSize = New System.Drawing.Size(585, 514)
             Me.Controls.Add(Me.tlpMain)
-            Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
             Me.KeyPreview = True
             Me.Margin = New System.Windows.Forms.Padding(4, 5, 4, 5)
             Me.Name = "CustomMenuEditor"

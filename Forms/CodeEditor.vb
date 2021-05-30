@@ -8,13 +8,27 @@ Imports Microsoft.Win32
 Imports StaxRip.UI
 
 Public Class CodeEditor
-    Public RTBTextSizeL As New Dictionary(Of Integer, Size)(7)
-    Public RTBLayReq As Integer
-    Public FilterTabSLock As New Object
     Private ScrollON As Boolean
-
+    Public RTBTextSizeA As Size()
+    'Public RTBLayReq As Integer 'Is This Needed ?? try remove it, Seems Redundant
+    Public FilterTabSLock As New Object
+    Public RTBFontHeight As Integer ' = 16
     Property ActiveTable As FilterTable
     Property Engine As ScriptEngine
+
+    Public sssw As New Stopwatch 'debug !!!!!!!
+    Public ttt2 As String
+
+    ReadOnly Property MaxRTBTextWidth As Integer
+        Get
+            Return CInt(ScreenResolutionPrim.Width * 0.85)   'RTBFontHeight * 108 '108-96 fh=16 'Or: Screen.PrimaryScreen.Bounds
+        End Get
+    End Property
+    ReadOnly Property MaxRTBTextHeight As Integer
+        Get
+            Return RTBFontHeight * 15 'fh=16
+        End Get
+    End Property
 
     Sub New(doc As VideoScript)
         sssw.Restart()
@@ -24,67 +38,48 @@ Public Class CodeEditor
         sssw.Restart()
 
         Me.SuspendLayout()
-        Me.tlpMain.SuspendLayout()
         Me.MainFlowLayoutPanel.SuspendLayout()
 
         Engine = doc.Engine
-        MainFlowLayoutPanel.MaximumSize = New Size(CInt(ScreenResolutionPrim.Width - 32), CInt(ScreenResolutionPrim.Height * 0.99 - 67))
-        'MaximumSize = New Size(CInt(ScreenResolutionPrim.Width * 0.99), CInt(ScreenResolutionPrim.Height * 0.96))
+        MainFlowLayoutPanel.MaximumSize = New Size((ScreenResolutionPrim.Width - 128), (ScreenResolutionPrim.Height - 64 - 68))
+        MaximumSize = New Size((ScreenResolutionPrim.Width * 1), (ScreenResolutionPrim.Height - 64))
 
-        Using rtbScrFont As Font = New Font("Consolas", 10 * s.UIScaleFactor)
-            Dim RTBFontHeight = rtbScrFont.Height
-            Dim maxTextWidth As Integer
-            Dim filters As List(Of VideoFilter) = doc.Filters
-            Dim ttsA(filters.Count - 1) As Size
-            For f = 0 To filters.Count - 1
-                Dim fText = If(filters(f).Script.NullOrEmptyS, "", filters(f).Script + BR)
-                ttsA(f) = TextRenderer.MeasureText(fText, rtbScrFont, New Size(100000, 100000))
-                Dim tw As Integer = ttsA(f).Width
-                If tw > CInt(ScreenResolutionPrim.Width * 0.85) Then tw = CInt(ScreenResolutionPrim.Width * 0.85)
-                If tw > maxTextWidth Then maxTextWidth = tw  '= filterTables.MaxF(Function(i) i.TrimmedTextSize.Width)
-            Next f
+        Dim rtbScrFont As Font = New Font("Consolas", 10.0F * s.UIScaleFactor)
+        RTBFontHeight = rtbScrFont.Height
+        Dim maxTW As Integer
+        Dim filters As List(Of VideoFilter) = doc.Filters
+        Dim rtsA(filters.Count - 1) As Size
+        ReDim RTBTextSizeA(rtsA.Length - 1)
+        For f = 0 To rtsA.Length - 1
+            rtsA(f) = TextRenderer.MeasureText(If(filters(f).Script.NullOrEmptyS, "", filters(f).Script & BR), rtbScrFont, New Size(100000, 100000))
+            If rtsA(f).Width > MaxRTBTextWidth Then rtsA(f).Width = MaxRTBTextWidth
+            If rtsA(f).Width > maxTW Then maxTW = rtsA(f).Width
+            If rtsA(f).Height > MaxRTBTextHeight Then rtsA(f).Height = MaxRTBTextHeight
+            RTBTextSizeA(f) = rtsA(f)
+        Next f
 
-            For f = 0 To filters.Count - 1
-                ttsA(f).Width = maxTextWidth + RTBFontHeight '- 1
-                Dim th As Integer = ttsA(f).Height
-                If th > RTBFontHeight * 15 Then th = RTBFontHeight * 15
-                ttsA(f).Height = th + If(th < RTBFontHeight * 15 * 1.05, CInt(RTBFontHeight * 1.1), 0) - 1
-                'totalHeigth += filterTables(f).Height
-            Next f
+        For f = 0 To rtsA.Length - 1
+            rtsA(f).Width = maxTW + RTBFontHeight - 1 'WorkAround For no RichTextBoxEX content onShow
+            rtsA(f).Height = rtsA(f).Height + If(rtsA(f).Height < MaxRTBTextHeight * 1.05, CInt(RTBFontHeight * 1.1), 0) '- 1
+            Dim ft As FilterTable = New FilterTable(filters(f), Me, rtbScrFont, rtsA(f))
+            MainFlowLayoutPanel.Controls.Add(ft)
+        Next f
 
-            For i = 0 To filters.Count - 1
-                MainFlowLayoutPanel.Controls.Add(New FilterTable(filters(i), ttsA(i)))
-            Next i
-        End Using
-
+        'RTBLayReq = 1
         Dim ps As Size = MainFlowLayoutPanel.PreferredSize
-        MainFlowLayoutPanel.Size = ps
-        tlpMain.Size = New Size(ps.Width, ps.Height + 25)
-        Me.Size = New Size(ps.Width + 19, ps.Height + 67) '42
-
-        '  AutoSize = True
-        ' MainFlowLayoutPanelLayout(Nothing, Nothing)
-        ' tlpMain.AutoSize = True
-        ' tlpMain.AutoSizeMode = AutoSizeMode.GrowAndShrink
-        '  MainFlowLayoutPanel.AutoSize = True
-        '  MainFlowLayoutPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink
-
+        Me.Size = New Size(ps.Width + 16, ps.Height + 66)
 
         sssw.Stop()
         ttt2 &= sssw.ElapsedTicks / SWFreq & "msNew| "
         sssw.Restart()
-    End Sub
 
-    Public sssw As New Stopwatch 'debug
-    Public ttt2 As String
+    End Sub
 
     Protected Overrides Sub OnLoad(args As EventArgs)
         MyBase.OnLoad(args)
-
-        MainFlowLayoutPanelLayout(Nothing, Nothing)
-        tlpMain.ResumeLayout()
-        MainFlowLayoutPanel.ResumeLayout()
+        MainFlowLayoutPanel.ResumeLayout(False)
         ResumeLayout()
+        MainFlowLayoutPanelLayout(Nothing, Nothing)
 
         sssw.Stop()
         ttt2 &= sssw.ElapsedTicks / SWFreq & "msLoad| "
@@ -92,48 +87,18 @@ Public Class CodeEditor
     End Sub
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
-
         AddHandler MainFlowLayoutPanel.Layout, AddressOf MainFlowLayoutPanelLayout
+        AddHandler MainFlowLayoutPanel.SizeChanged, AddressOf MainFlowPanel_SizeChanged
 
-        ' Refresh()
         sssw.Stop()
         Text = ttt2 & sssw.ElapsedTicks / SWFreq & "msShow"
-    End Sub
-
-    Protected Overrides Sub OnSizeChanged(e As EventArgs)
-        If MainFlowLayoutPanel.Height + 67 > CInt(ScreenResolutionPrim.Height * 0.95) Then
-            If Not ScrollON Then
-                ScrollON = True
-                MainFlowLayoutPanel.Padding = New Padding(5, 2, 12, 2)  '(16, 2, 1, 2) 
-                MainFlowLayoutPanel.AutoScrollMargin = New Size(8, 8)
-                MainFlowLayoutPanel.AutoScroll = True
-                Console.Beep(6700, 30) 'Debug
-            End If
-        Else
-            If ScrollON Then
-                ScrollON = False
-                Me.MainFlowLayoutPanel.Padding = New System.Windows.Forms.Padding(6, 2, 1, 2)
-                MainFlowLayoutPanel.AutoScrollMargin = Size.Empty
-                MainFlowLayoutPanel.AutoScroll = False
-                Console.Beep(600, 30) 'Debug
-            End If
-        End If
-        MyBase.OnSizeChanged(e)
+        'RTBLayReq = -1
     End Sub
 
     Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs) 'Debug
         Me.Text = "Code Editor"
         'ActionMenuItem.LayoutSuspendList = Nothing
         MyBase.OnFormClosing(args)
-    End Sub
-
-    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
-        Dim form As New HelpForm()
-        hevent.Handled = True
-        form.Doc.WriteStart(Text)
-        form.Doc.WriteTable("Macros", Macro.GetTips(False, True, False))
-        form.Show()
-        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
@@ -168,13 +133,86 @@ Public Class CodeEditor
 
         MyBase.OnKeyDown(e)
     End Sub
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        Dim form As New HelpForm()
+        hevent.Handled = True
+        form.Doc.WriteStart(Text)
+        form.Doc.WriteTable("Macros", Macro.GetTips(False, True, False))
+        form.Show()
+        MyBase.OnHelpRequested(hevent)
+    End Sub
 
-    Shared Function CreateFilterTable(filter As VideoFilter) As FilterTable
-        Return New FilterTable(filter)
+    Sub MainFlowPanel_SizeChanged(sender As Object, e As EventArgs)
+        If MainFlowLayoutPanel.Height > (ScreenResolutionPrim.Height - 64 - 68 - RTBFontHeight) Then
+            If Not ScrollON Then
+                ScrollON = True
+                MainFlowLayoutPanel.Padding = New Padding(6, 2, 14, 18)
+                MainFlowLayoutPanel.AutoScroll = True
+                Console.Beep(6700, 50) 'Debug
+            End If
+        Else
+            If ScrollON Then
+                ScrollON = False
+                Me.MainFlowLayoutPanel.Padding = New System.Windows.Forms.Padding(6, 2, 3, 2)
+                MainFlowLayoutPanel.AutoScroll = False
+                Console.Beep(600, 50) 'Debug
+            End If
+        End If
+        MyBase.OnSizeChanged(e)
+    End Sub
+
+    Sub MainFlowLayoutPanelLayout(sender As Object, e As LayoutEventArgs)
+        Dim filterTables = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray
+        If filterTables.Length <= 0 Then Exit Sub
+        Dim maxTextWidth As Integer
+        Dim rtsA() As Size
+
+        If RTBTextSizeA.Length = filterTables.Length Then 'RTBLayReq > 0 AndAlso 
+            'RTBTextSizeD.Values.CopyTo(rtsA, 0) 'Dictionary version
+            rtsA = RTBTextSizeA
+            maxTextWidth = rtsA.MaxF(Function(sz) sz.Width)
+        Else
+            ReDim rtsA(filterTables.Length - 1)
+            Dim rtb As RichTextBoxEx
+            For f = 0 To filterTables.Length - 1
+                rtb = filterTables(f).rtbScript
+                rtsA(f) = TextRenderer.MeasureText(rtb.Text, rtb.Font, New Size(100000, 100000))
+                If rtsA(f).Width > MaxRTBTextWidth Then rtsA(f).Width = MaxRTBTextWidth
+                If rtsA(f).Height > MaxRTBTextHeight Then rtsA(f).Height = MaxRTBTextHeight
+                If rtsA(f).Width > maxTextWidth Then maxTextWidth = rtsA(f).Width
+            Next f
+
+            Task.Run(Sub() Console.Beep(350, 200)) 'debug
+        End If
+
+        Dim fTb As FilterTable
+        MainFlowLayoutPanel.SuspendLayout()
+        SuspendLayout()
+        For f = 0 To filterTables.Length - 1
+            fTb = filterTables(f)
+            Dim rtH As Integer = rtsA(f).Height
+            fTb.SuspendLayout() 'Faster 2x !
+            fTb.rtbScript.Size = New Size(maxTextWidth + RTBFontHeight,
+                                          rtH + If(rtH < MaxRTBTextHeight * 1.05, CInt(RTBFontHeight * 1.1), 0))
+            'fTb.rtbScript.Refresh()
+        Next f
+
+        For f = 0 To filterTables.Length - 1
+            filterTables(f).ResumeLayout(False)
+        Next f
+        MainFlowLayoutPanel.ResumeLayout(False)
+        ResumeLayout()
+
+        'MainFlowLayoutPanel.Size = MainFlowLayoutPanel.PreferredSize
+        'Me.Size = PreferredSize
+    End Sub
+
+    Shared Function CreateFilterTable(filter As VideoFilter, editorForm As CodeEditor) As FilterTable
+        Return New FilterTable(filter, editorForm, New Font("Consolas", 10.0F * s.UIScaleFactor))
     End Function
 
     Function GetFilters() As List(Of VideoFilter)
-        Dim ret As New List(Of VideoFilter)
+        Dim ret As New List(Of VideoFilter)(8)
 
         For Each table As FilterTable In MainFlowLayoutPanel.Controls
             Dim filter As New VideoFilter With {
@@ -247,10 +285,11 @@ Public Class CodeEditor
     End Sub
 
     Sub JoinFilters()
+        SuspendLayout()
+        MainFlowLayoutPanel.SuspendLayout()
         Dim firstTable = DirectCast(MainFlowLayoutPanel.Controls(0), FilterTable)
         firstTable.tbName.Text = "merged"
         firstTable.rtbScript.Text = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray.SelectF(Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" + arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " + BR))).Join(BR) + BR2 + BR2
-        MainFlowLayoutPanel.SuspendLayout()
         For x = MainFlowLayoutPanel.Controls.Count - 1 To 1 Step -1
             Dim del = MainFlowLayoutPanel.Controls.Item(x)
             MainFlowLayoutPanel.Controls.RemoveAt(x)
@@ -258,146 +297,63 @@ Public Class CodeEditor
         Next
         ActiveTable = Nothing
         MainFlowLayoutPanel.ResumeLayout()
-    End Sub
-
-    Sub MainFlowLayoutPanelLayout(sender As Object, e As LayoutEventArgs)
-        Dim filterTables = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray
-        If filterTables.Length <= 0 Then 'Any
-            Exit Sub
-        End If
-
-        'Console.Beep(If(RTBLayReq = 1, 6000, 300), 90) 'debug 
-        Dim maxTextWidth As Integer
-        'Dim totalHeigth As Integer
-        Dim sizeRTB As Size
-
-        If RTBLayReq > 0 AndAlso RTBTextSizeL.Count >= filterTables.Length Then ' e is NULL!!!!
-            Dim rtsAr = RTBTextSizeL.Values.ToArray
-            maxTextWidth = rtsAr.MaxF(Function(s) s.Width)
-            For f = 0 To filterTables.Length - 1
-                sizeRTB.Width = maxTextWidth + filterTables(f).RTBFontHeight
-                sizeRTB.Height = rtsAr(f).Height + If(rtsAr(f).Height < filterTables(f).MaxRTBTextHeight * 1.05, CInt(filterTables(f).RTBFontHeight * 1.1), 0)
-                filterTables(f).rtbScript.Size = sizeRTB
-                filterTables(f).rtbScript.Invalidate()
-                'totalHeigth += filterTables(f).Height
-            Next f
-            'Console.Beep(1000, 90)
-        Else
-            Dim ttsA(filterTables.Length - 1) As Size
-            For f = 0 To filterTables.Length - 1
-                ttsA(f) = filterTables(f).TrimmedTextSize
-                If ttsA(f).Width > maxTextWidth Then maxTextWidth = ttsA(f).Width  '= filterTables.MaxF(Function(i) i.TrimmedTextSize.Width)
-            Next f
-
-            For f = 0 To filterTables.Length - 1
-                sizeRTB.Width = maxTextWidth + filterTables(f).RTBFontHeight
-                sizeRTB.Height = ttsA(f).Height + If(ttsA(f).Height < filterTables(f).MaxRTBTextHeight * 1.05, CInt(filterTables(f).RTBFontHeight * 1.1), 0)
-                filterTables(f).rtbScript.Size = sizeRTB
-                filterTables(f).rtbScript.Invalidate()
-                'totalHeigth += filterTables(f).Height
-            Next f
-        End If
-
-        ''MainFlowLayoutPanel.VerticalScroll.Visible = totalHeigth > CInt(ScreenResolutionPrim.Height * 0.8)
-        'MainFlowLayoutPanel.AutoScroll = totalHeigth + 50 > CInt(ScreenResolutionPrim.Height * 0.85)  ' ttotH+50 ...  
-
+        ResumeLayout()
     End Sub
 
     Public Class FilterTable
         Inherits TableLayoutPanel
 
         Private RTBEventSem As Boolean
-        ReadOnly Property RTBFontHeight As Integer ' = 16
-        Property tbName As New TextEdit
+        Private LastTextSize As Size
+        Property tbName As TextEdit
         Property rtbScript As RichTextBoxEx
-        Property cbActive As New CheckBox
-        Property Menu As New ContextMenuStripEx
-        Property LastTextSize As Size
+        Property cbActive As CheckBox
+        Property Menu As ContextMenuStripEx
         Property Editor As CodeEditor
-        ReadOnly Property MaxRTBTextWidth As Integer
-            Get
-                Return CInt(ScreenResolutionPrim.Width * 0.85)   'RTBFontHeight * 108 '108-96 fh=16 'Or: Screen.PrimaryScreen.Bounds
-            End Get
-        End Property
-        ReadOnly Property MaxRTBTextHeight As Integer
-            Get
-                Return RTBFontHeight * 15
-            End Get
-        End Property
 
-        ReadOnly Property TrimmedTextSize As Size
-            Get
-                Dim ret = TextRenderer.MeasureText(rtbScript.Text, rtbScript.Font, New Size(100000, 100000))
-
-                If ret.Width > MaxRTBTextWidth Then ret.Width = MaxRTBTextWidth
-                If ret.Height > MaxRTBTextHeight Then ret.Height = MaxRTBTextHeight
-
-                Return ret
-            End Get
-        End Property
-
-        Sub New(filter As VideoFilter, Optional rtbSize As Size = Nothing)
+        Sub New(filter As VideoFilter, editorForm As CodeEditor, rtbScriptFont As Font, Optional rtbSize As Size = Nothing)
             Me.SuspendLayout()
-            'cbActive.AutoSize = True
-            cbActive.Dock = DockStyle.Top
-            cbActive.Margin = New Padding(0)
-            'cbActive.Location = New Point(0, 0)
-            cbActive.Checked = filter.Active
-            cbActive.Text = filter.Category
-            Dim fh As Integer = 13 'Font.Height '=13(MSSansSer8.5), 16(Sagoe,Consolas9)
-            cbActive.Size = New Size(fh * 8, CInt(fh * 1.3))
+            Editor = editorForm
+            Me.Font = editorForm.Font
+            Menu = New ContextMenuStripEx With {.Form = Editor}
+            Dim fh As Integer = editorForm.RTBFontHeight '16 '=13(MSSansSer8.5), 16(Sagoe,Consolas9), 16("Consolas", 10.0F); 16-After Control.Add Inheritance
+            Dim noPad As Padding = Padding.Empty
 
-            tbName.Dock = DockStyle.Bottom
-            tbName.Margin = New Padding(0, 0, 0, 0)
-            'tbName.Location = New Point(0, CInt(fh * 1.3))
-            tbName.Text = filter.Name
-            tbName.Size = New Size(fh * 8, CInt(fh * 1.5))  '7-9 
+            cbActive = New CheckBox With {.Margin = noPad,
+                                          .Checked = filter.Active,
+                                          .Text = filter.Category,
+                                          .Size = New Size(fh * 7, CInt(fh * 1.05))}
 
-            rtbScript = New RichTextBoxEx(False)
-            Dim rtbScrFont As Font = New Font("Consolas", 10 * s.UIScaleFactor)
-            RTBFontHeight = rtbScrFont.Height
-            With rtbScript
-                .Dock = DockStyle.Fill
-                .Margin = New Padding(0)
-                .Font = rtbScrFont
-                .AcceptsTab = True
-                .EnableAutoDragDrop = True
-                .WordWrap = False
-                .ScrollBars = RichTextBoxScrollBars.None
-                .Text = If(filter.Script.NullOrEmptyS, "", filter.Script + BR)
-                .Size = If(rtbSize = Size.Empty, .PreferredSize, rtbSize)  'Test!!!
-            End With
+            tbName = New TextEdit With {.Margin = noPad,
+                                        .Text = filter.Name,
+                                        .Size = New Size(fh * 7, CInt(fh * 1.25))}  'w:6-8
+
+            rtbScript = New RichTextBoxEx(False) With {.Margin = noPad,
+                                                       .AcceptsTab = True,
+                                                       .EnableAutoDragDrop = True,
+                                                       .ScrollBars = RichTextBoxScrollBars.None,
+                                                       .Font = rtbScriptFont,
+                                                       .WordWrap = False,
+                                                       .Text = If(filter.Script.NullOrEmptyS, "", filter.Script & BR),
+                                                       .Size = If(rtbSize.IsEmpty, .PreferredSize, rtbSize)}
             SetColor()
-
-            Dim pn As New Panel
-            pn.SuspendLayout()
-            pn.Dock = DockStyle.Top
-            'pn.Anchor = AnchorStyles.Top
-            pn.Margin = New Padding(0)
-            pn.Controls.Add(cbActive)
-            pn.Controls.Add(tbName)
-            pn.Size = New Size(fh * 8, CInt(fh * 2.82)) '=CInt(fh * 1.3)+ CInt(fh * 1.5)
-
             AutoSize = True
-            'Anchor = AnchorStyles.Left Or AnchorStyles.Right
-            Dock = DockStyle.Top
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-            Margin = New Padding(0)
+            ' AutoSizeMode = AutoSizeMode.GrowAndShrink 'needed ?
+            GrowStyle = TableLayoutPanelGrowStyle.FixedSize 'needed ?
+            Margin = noPad
             ColumnCount = 2
-            ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, fh * 8))
-            ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
-            RowCount = 1 '2
-            'RowStyles.Add(New RowStyle(SizeType.Absolute, CInt(fh * 1.3)))
-            RowStyles.Add(New RowStyle(SizeType.AutoSize))
-            'Controls.Add(cbActive, 0, 0)
-            'Controls.Add(tbName, 0, 1)
-            Controls.Add(pn, 0, 0)
+            ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, fh * 7))
+            ColumnStyles.Add(New ColumnStyle) '(SizeType.AutoSize, rtbSize.Width)) '(New ColumnStyle(SizeType.Percent, 100.0F)) 'Slowish - Auto is faster
+            RowCount = 2 '1 
+            RowStyles.Add(New RowStyle(SizeType.Absolute, CInt(fh * 1.05)))
+            RowStyles.Add(New RowStyle) '(SizeType.AutoSize, CInt(Math.Max(fh * 1.25, rtbSize.Height - fh * 1.05))))
+            Controls.Add(cbActive, 0, 0)
+            Controls.Add(tbName, 0, 1)
+            SetRowSpan(rtbScript, 2)
             Controls.Add(rtbScript, 1, 0)
-            'SetRowSpan(rtbScript, 2)
-            Size = PreferredSize 'Test!!!
+            'Size = PreferredSize 'New Size(1000, 200)  'Test!!!
 
-            pn.ResumeLayout()
-            Me.ResumeLayout()
+            Me.ResumeLayout(False)
 
             Dim caceh As EventHandler = Sub() SetColor()
             AddHandler cbActive.CheckedChanged, caceh
@@ -418,58 +374,57 @@ Public Class CodeEditor
                                                                         sss.Restart()
 
                                                                         Dim pcfa = Parent.Controls.OfType(Of FilterTable)().ToArray
+                                                                        If pcfa.Length <> Editor.RTBTextSizeA.Length Then ReDim Editor.RTBTextSizeA(pcfa.Length - 1)
+                                                                        Dim rtbTxtA(pcfa.Length - 1) As String
+                                                                        'Dim gt As MethodInvoker = Sub() rtbTxtA = pcfa.SelectF(Function(ft) ft.rtbScript.Text) 'Thread Safe Call
+                                                                        'Editor.Invoke(gt)
+
+                                                                        For r = 0 To pcfa.Length - 1
+                                                                            rtbTxtA(r) = pcfa(r).rtbScript.Text 'unsafe
+                                                                        Next r
+
                                                                         Dim maxTW As Integer
                                                                         Dim tmts As Size
                                                                         Dim mts As Size
-                                                                        If pcfa.Length <> Editor.RTBTextSizeL.Count Then Editor.RTBTextSizeL.Clear()
-                                                                        Dim rtbTxtA As String()
-                                                                        Dim mt As MethodInvoker = Sub() rtbTxtA = pcfa.SelectF(Function(ft) ft.rtbScript.Text)
-                                                                        If Editor.IsHandleCreated Then Editor.Invoke(mt) Else Return
-
                                                                         For i = 0 To pcfa.Length - 1
-                                                                            Dim itr = i
-                                                                            mts = TextRenderer.MeasureText(rtbTxtA(itr), rtbScrFont, New Size(100000, 100000))
-                                                                            If mts.Width > maxTW Then maxTW = mts.Width
-                                                                            If mts.Width > MaxRTBTextWidth Then
-                                                                                mts.Width = MaxRTBTextWidth
-                                                                                maxTW = MaxRTBTextWidth
-                                                                            End If
-                                                                            If mts.Height > MaxRTBTextHeight Then mts.Height = MaxRTBTextHeight
-                                                                            Editor.RTBTextSizeL(itr) = mts
-                                                                            If pcfa(itr) Is Me Then tmts = mts
-                                                                            'If mts.Width > MaxRTBTextWidth OrElse mts.Height > MaxRTBTextHeight Then Exit For 'Needs Tests???
+                                                                            mts = TextRenderer.MeasureText(rtbTxtA(i), rtbScriptFont, New Size(100000, 100000))
+                                                                            If mts.Width > Editor.MaxRTBTextWidth Then mts.Width = Editor.MaxRTBTextWidth
+                                                                            If mts.Width > maxTW Then maxTW = mts.Width 'This makes NonSense???
+                                                                            If mts.Height > Editor.MaxRTBTextHeight Then mts.Height = Editor.MaxRTBTextHeight
+                                                                            Editor.RTBTextSizeA(i) = mts
+                                                                            If pcfa(i) Is Me Then tmts = mts
                                                                         Next i
                                                                         RTBEventSem = False
 
-                                                                        sss.Stop()
+                                                                        If tmts.Width > maxTW Then Console.Beep(6500, 30) 'Debug
 
-                                                                        ttt &= CStr(sss.ElapsedTicks / SWFreq) & "ms|Measur:" & mts.ToString & " Curr:" & tmts.ToString
-                                                                        ' Editor.BeginInvoke(Sub() Editor.Text = ttt)
-
-                                                                        If tmts.Width > maxTW OrElse (tmts.Width = maxTW AndAlso tmts.Width <> LastTextSize.Width) OrElse LastTextSize.Height <> tmts.Height AndAlso tmts.Height > RTBFontHeight Then
+                                                                        If tmts.Width > maxTW OrElse (tmts.Width = maxTW AndAlso tmts.Width <> LastTextSize.Width) OrElse LastTextSize.Height <> tmts.Height AndAlso tmts.Height > Editor.RTBFontHeight Then
                                                                             'Task.Run(Sub() Console.Beep(3300, 30))
-                                                                            Editor.RTBLayReq = 1
                                                                             LastTextSize = tmts
+                                                                            'Editor.RTBLayReq = 1
                                                                             Editor.BeginInvoke(Sub()
                                                                                                    sss.Restart()
                                                                                                    Parent.PerformLayout()
-                                                                                                   Editor.RTBLayReq = -1
+                                                                                                   'Editor.RTBLayReq = -1
                                                                                                    sss.Stop()
-                                                                                                   Editor.Text = ttt & CStr(sss.ElapsedTicks / SWFreq) & "msFinLay"
+                                                                                                   Editor.Text = ttt & CStr(sss.ElapsedTicks / SWFreq) & "msLayM"
                                                                                                End Sub)
                                                                         End If
+
+                                                                        sss.Stop()
+                                                                        ttt &= Parent.Bounds.ToString & "FP" & CStr(sss.ElapsedTicks / SWFreq) & "ms|Measur:" & mts.ToString & " Curr:" & tmts.ToString
                                                                     End SyncLock
 
                                                                 End Sub)
                                             Dim lTc = layT.ContinueWith(Sub()
                                                                             If layT.Exception IsNot Nothing Then
                                                                                 RTBEventSem = False
-                                                                                Editor.RTBTextSizeL.Clear()
+                                                                                ReDim Editor.RTBTextSizeA(-1)
                                                                                 Console.Beep(5500, 200)
                                                                             End If
                                                                         End Sub) 'debug
-                                            '  End If
                                         End Sub
+
             AddHandler rtbScript.TextChanged, rtceh
             Dim deh As EventHandler = Sub()
                                           RTBEventSem = True
@@ -485,15 +440,14 @@ Public Class CodeEditor
         End Sub
         'Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
         '    Dim fh As Integer = FontHeight 'RTBFontHeight
-        ''    tbName.Height = CInt(fh * 1.2) 'Or*1.25 or +3 or +7  '  tbName.Width = fh * 8 '7
-        ' tbName.Size = New Size(fh * 8, CInt(fh * 1.2))
+        ' tbName.Size = New Size(fh * 7, CInt(fh * 1.25))
         '    MyBase.OnLayout(levent)
         'End Sub
-        Protected Overrides Sub OnHandleCreated(e As EventArgs)
-            Menu.Form = FindForm()
-            Editor = DirectCast(Menu.Form, CodeEditor)
-            MyBase.OnHandleCreated(e)
-        End Sub
+        'Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        '    Menu.Form = FindForm()
+        '    '   If Editor Is Nothing Then Editor = DirectCast(Menu.Form, CodeEditor)
+        '    MyBase.OnHandleCreated(e)
+        'End Sub
 
         Sub SetColor()
             If cbActive.Checked Then
@@ -840,7 +794,7 @@ Public Class CodeEditor
                         filter.Script = tup.Value
                         Dim flow = DirectCast(Parent, FlowLayoutPanel)
                         Dim index = flow.Controls.IndexOf(Me)
-                        Dim filterTable = CodeEditor.CreateFilterTable(filter)
+                        Dim filterTable = CodeEditor.CreateFilterTable(filter, Editor)
                         flow.SuspendLayout()
                         flow.Controls.Add(filterTable)
                         flow.Controls.SetChildIndex(filterTable, index)
@@ -866,7 +820,7 @@ Public Class CodeEditor
 
                         filter.Script = tup.Value
                         Dim flow = DirectCast(Parent, FlowLayoutPanel)
-                        Dim filterTable = CodeEditor.CreateFilterTable(filter)
+                        Dim filterTable = CodeEditor.CreateFilterTable(filter, Editor)
                         flow.Controls.Add(filterTable)
                         filterTable.rtbScript.SelectionStart = filterTable.rtbScript.Text.Length
                         filterTable.rtbScript.Focus()

@@ -833,12 +833,30 @@ End Module
 
 Module MiscExtensions
 
+    Public ReadOnly ScreenResPrim As Size = Screen.PrimaryScreen.Bounds.Size
     Public ReadOnly CPUsC As Integer = Environment.ProcessorCount
     Public ReadOnly SWFreq As Double = Stopwatch.Frequency / 1000
-    Public ReadOnly ScreenResolutionPrim As Rectangle = Screen.PrimaryScreen.Bounds
+
+    Public Sub WarmUpCpu()
+        Dim itr As Integer = 1000000 '~200ms
+        Dim wr1 As Double
+        Dim wr2 As Double
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
+        Application.DoEvents()
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
+        For w = 1 To itr
+            If w / 5.34567 > 10.2343 Then wr2 = Math.Sin(wr1 / 1.3153957) ^ (w / 45234633.2342492) / Math.Cos(wr1 / 23456.242361) * 1.34645743
+            If w / 35.6346 > 25.2353 Then wr1 = Math.Atan(w / 573214.245763) * Math.Exp(wr2 / 45645531.6151) ^ (w / 73234541.435716) * 1.3234476
+        Next w
+        Application.DoEvents()
+    End Sub
 
     <Extension()>
-    Function GetDeepClone(Of T)(obj As T) As T
+    Public Function GetDeepClone(Of T)(obj As T) As T
         Return DeepClonerExtensions.DeepClone(Of T)(obj)
     End Function
 
@@ -941,7 +959,7 @@ Module MiscExtensions
     End Function
 
     <Extension>
-    Function ConcatA(Of T)(first As T(), second As T()) As T()
+    Public Function ConcatA(Of T)(first As T(), second As T()) As T()
         'If second Is Nothing Then
         '    Return If(first, Nothing)
         'ElseIf first Is Nothing Then
@@ -1047,23 +1065,6 @@ Module MiscExtensions
         Return True
     End Function
 
-    Public Sub WarmUpCpu()
-        Dim itr As Integer = 1000000 '~200ms
-        Dim wr1 As Double
-        Dim wr2 As Double
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
-        GC.WaitForPendingFinalizers()
-        Application.DoEvents()
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
-        GC.WaitForPendingFinalizers()
-        For w = 1 To itr
-            If w / 5.34567 > 10.2343 Then wr2 = Math.Sin(wr1 / 1.3153957) ^ (w / 45234633.2342492) / Math.Cos(wr1 / 23456.242361) * 1.34645743
-            If w / 35.6346 > 25.2353 Then wr1 = Math.Atan(w / 573214.245763) * Math.Exp(wr2 / 45645531.6151) ^ (w / 73234541.435716) * 1.3234476
-        Next w
-        Application.DoEvents()
-    End Sub
 End Module
 
 Module RegistryKeyExtensions

@@ -1115,7 +1115,7 @@ Public Class MainForm
         ScaleClientSize(43, 27.5, FontHeight)
 
         g.DPI = DeviceDpi
-        g.MenuSpace = " ".Multiply(CInt(g.DPI / 96))
+        g.MenuSpace = " " '.Multiply(CInt(g.DPI / 96)) 'Optim. Test! Debug???
 
         If components Is Nothing Then
             components = New System.ComponentModel.Container
@@ -1438,7 +1438,10 @@ Public Class MainForm
                      Try
                          'Dim udmD As MethodInvoker = (Sub() UpdateDynamicMenu())
                          'Invoke(udmD)
-                         If IsHandleCreated Then BeginInvoke(Sub() UpdateDynamicMenu())
+                         If IsHandleCreated Then BeginInvoke(Sub()
+                                                                 UpdateScriptsMenuAsync() ' Opt. Moved from OnActivated for now. No Dynamic Script Menu Update
+                                                                 UpdateDynamicMenu()
+                                                             End Sub)
                      Catch
                      End Try
                  End Sub)
@@ -1481,6 +1484,10 @@ Public Class MainForm
         If IsDisposed OrElse Native.GetForegroundWindow() <> Handle OrElse files.Length = 0 Then
             Exit Sub
         End If
+        'Private lastFileC As Integer 'TODO Something like this to Update ONActivated not every time, moved to OnShow.UpdateDynamicMenuAsync() for now
+        'Dim fc = files.Length
+        'If fc = 0 OrElse fc = lastFileC Then Exit Sub
+        'lastFileC = fc
 
         'Dim events As String() = System.Enum.GetNames(GetType(ApplicationEvent))
         Dim events As String() = KGySoft.CoreLibraries.Enum(Of ApplicationEvent).GetNames
@@ -3454,7 +3461,7 @@ Public Class MainForm
 
             n = ui.AddNum(pageGen)
             n.Text = "Preview size compared to screen size (percent)"
-            n.Config = {10, 90, 5}
+            n.Config = {10, 99, 5}
             n.Field = NameOf(s.PreviewSize)
             pageGen.ResumeLayout()
 
@@ -6174,7 +6181,7 @@ Public Class MainForm
         BeginInvoke(New Action(Sub()
                                    Application.DoEvents()
                                    Assistant()
-                                   UpdateScriptsMenuAsync()
+                                   'UpdateScriptsMenuAsync() ' Opt. Moved to OnShow.UpdateDynamicMenuAsync()  for now. No Dynamic Script Menu Update
                                End Sub))
     End Sub
 

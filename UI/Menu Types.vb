@@ -373,7 +373,7 @@ Namespace UI
                 '    mi.Image = Nothing 'Test This ???
                 Exit Sub
             End If
-            Dim img = Await ImageHelp.GetSymbolImageAsync(symbol)
+            Dim img = Await ImageHelp.GetSymbolImageAsync(symbol) 'Weird Nested Awaits
             'Dim img = Await Task.Run(Function() ImageHelp.GetSymbolImage(symbol))
 
             Try
@@ -389,9 +389,9 @@ Namespace UI
 
         Protected Overrides Sub Dispose(disposing As Boolean)
             MyBase.Dispose(disposing)
-
-            Events.Dispose()
             CustomMenuItem = Nothing
+
+            Events.Dispose() 'Needed???
 
         End Sub
 
@@ -523,11 +523,12 @@ Namespace UI
             Me.Text = text
             Me.Action = action
         End Sub
-        'Sub New(text As String, image As Image)
-        '    Me.Text = text
-        '    Me.ImageScaling = ToolStripItemImageScaling.None
-        '    Me.Image = image
-        'End Sub
+
+        Sub New(text As String, image As Image)
+            Me.Text = text
+            Me.ImageScaling = ToolStripItemImageScaling.None
+            Me.Image = image
+        End Sub
         Sub New(text As String, action As Action, tag As Object)
             Me.Text = text
             Me.Action = action
@@ -547,13 +548,13 @@ Namespace UI
 
         Sub New(text As String,
                 action As Action,
-                image As Image) ',Optional tooltip As String = Nothing)
+                image As Image, Optional tooltip As String = Nothing)
 
             Me.ImageScaling = ToolStripItemImageScaling.None
             Me.Image = image
             Me.Text = text
             Me.Action = action
-            'If ToolTip IsNot Nothing Then Me.Help = ToolTip
+            If tooltip IsNot Nothing Then Me.Help = tooltip
         End Sub
 
         Sub New(text As String,
@@ -620,22 +621,25 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)
-            MyBase.Dispose(disposing)
             If Form IsNot Nothing Then
                 RemoveHandler Form.KeyDown, AddressOf KeyDown
                 Form = Nothing
             End If
 
             '' memory leak problem with cms opening event ' Events.Dispose in parent menuStrip
+            If VisibleFunc IsNot Nothing Then
+                VisibleFunc = Nothing
+                'If Owner IsNot Nothing Then  'Test Experiment???
+                RemoveHandler DirectCast(Owner, ToolStripDropDown).Opening, AddressOf Opening
+            End If
             If EnabledFunc IsNot Nothing Then
                 EnabledFunc = Nothing
-                If Owner IsNot Nothing Then RemoveHandler DirectCast(Owner, ToolStripDropDown).Opening, AddressOf Opening
+                'If Owner IsNot Nothing Then'Test Experiment???
+                RemoveHandler DirectCast(Owner, ToolStripDropDown).Opening, AddressOf Opening
             End If
 
-            'If Owner IsNot Nothing Then RemoveHandler DirectCast(Owner, ToolStripDropDown).Opening, AddressOf Opening
-
             Action = Nothing
-            VisibleFunc = Nothing
+            MyBase.Dispose(disposing)
         End Sub
 
         Shared Function Add(Of T)(
@@ -790,8 +794,8 @@ Namespace UI
                 LayoutSuspendList = Nothing
             End If
         End Sub
-        Public Shared Sub LayoutSuspendCreate(Optional capacity As Integer = 4) 'As List(Of ToolStripDropDown)
-            LayoutSuspendList = If(capacity = 4, New List(Of ToolStripDropDown), New List(Of ToolStripDropDown)(capacity))
+        Public Shared Sub LayoutSuspendCreate(Optional capacity As Integer = 0) '4 'As List(Of ToolStripDropDown)
+            LayoutSuspendList = If(capacity = 0, New List(Of ToolStripDropDown), New List(Of ToolStripDropDown)(capacity))
         End Sub
         'Public Shared Sub LayoutResume(DropDownsList As List(Of ToolStripDropDown))
         '    For Each tsdd In DropDownsList
@@ -871,9 +875,12 @@ Namespace UI
             Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
         End Sub
 
-        Protected Overrides Sub Dispose(disposing As Boolean) 'Added by me !!! EXperim!!!
+        Protected Overrides Sub Dispose(disposing As Boolean) 'Added by me !!! EXperim!!! Needed?
             MyBase.Dispose(disposing)
-            Events.Dispose()
+
+            FormValue = Nothing
+
+            Events.Dispose() 'Needed???
         End Sub
 
         <DefaultValue(GetType(Form), Nothing)>
@@ -948,12 +955,34 @@ Namespace UI
             ret.Form = Form
             ret.Shortcut = key
             ret.Enabled = enabled
-            ret.Help = help
+            If help IsNot Nothing Then ret.Help = help
 
             If enabledFunc IsNot Nothing Then
                 ret.EnabledFunc = enabledFunc
                 AddHandler Opening, AddressOf ret.Opening ' add, problem with cms dispose opening event
             End If
+            Return ret
+        End Function
+
+        Function Add2(path As String) As ActionMenuItem
+            Dim ret = New ActionMenuItem(path) 'With {.Form = Form}
+            Items.Add(ret)
+            Return ret
+        End Function
+        Function Add2(path As String, action As Action, Optional help As String = Nothing) As ActionMenuItem
+            Dim ret = New ActionMenuItem(path, action, help) 'With {.Form = Form}
+            Items.Add(ret)
+            Return ret
+        End Function
+
+        Function Add2(path As String, image As Image) As ActionMenuItem
+            Dim ret = New ActionMenuItem(path, image) 'With {.Form = Form}
+            Items.Add(ret)
+            Return ret
+        End Function
+        Function Add2(path As String, action As Action, image As Image, Optional help As String = Nothing) As ActionMenuItem
+            Dim ret = New ActionMenuItem(path, action, image, help) 'With {.Form = Form}
+            Items.Add(ret)
             Return ret
         End Function
 

@@ -75,12 +75,20 @@ Public Class FiltersListView
         Dim selectedFunc = Function() SelectedItems.Count > 0
 
         Dim m0 = New ActionMenuItem("active") With {.VisibleFunc = selectedFunc}
+        RemoveHandler Menu.Opening, AddressOf m0.Opening 'CrudeVersion ?!?
+        AddHandler Menu.Opening, AddressOf m0.Opening
         Dim replaceMenuItem = New ActionMenuItem("Replace") With {.VisibleFunc = selectedFunc}
         replaceMenuItem.SetImage(Symbol.Switch)
+        RemoveHandler Menu.Opening, AddressOf replaceMenuItem.Opening
+        AddHandler Menu.Opening, AddressOf replaceMenuItem.Opening
         Dim insertMenuItem = New ActionMenuItem("Insert") With {.VisibleFunc = selectedFunc}
         insertMenuItem.SetImage(Symbol.LeftArrowKeyTime0)
+        RemoveHandler Menu.Opening, AddressOf insertMenuItem.Opening
+        AddHandler Menu.Opening, AddressOf insertMenuItem.Opening
         Dim add = New ActionMenuItem("Add")
-        add.SetImage(Symbol.Add)
+        Dim remove = New ActionMenuItem("Remove", AddressOf RemoveClick, "Removes the selected filter.") With {.EnabledFunc = selectedFunc}
+        RemoveHandler Menu.Opening, AddressOf remove.Opening
+        AddHandler Menu.Opening, AddressOf remove.Opening
 
         replaceMenuItem.DropDown.SuspendLayout()
         For Each i In filterProfiles
@@ -90,6 +98,9 @@ Public Class FiltersListView
         Next
         replaceMenuItem.DropDown.ResumeLayout(False)
 
+        add.SetImage(Symbol.Add)
+        remove.SetImage(Symbol.Remove)
+
         insertMenuItem.DropDown.SuspendLayout()
         For Each i In filterProfiles
             For Each i2 In i.Filters
@@ -97,6 +108,9 @@ Public Class FiltersListView
             Next
         Next
         insertMenuItem.DropDown.ResumeLayout(False)
+
+        Dim editMenu = New ActionMenuItem("Edit Code...", AddressOf ShowEditor, "Dialog to edit filters.")
+        editMenu.SetImage(Symbol.Code)
 
         add.DropDown.SuspendLayout()
         For Each i In filterProfiles
@@ -107,60 +121,70 @@ Public Class FiltersListView
         add.DropDown.ResumeLayout(False)
 
         Dim sep0 As ToolStripSeparator = New ToolStripSeparator
-        Menu.Items.AddRange({m0, sep0, replaceMenuItem, insertMenuItem, add, New ToolStripSeparator})
+        Dim previeMenu = New ActionMenuItem("Preview Code...", Sub() g.CodePreview(p.Script.GetFullScript), "Script code preview.")
 
-        Dim remove = Menu.Add("Remove", AddressOf RemoveClick, "Removes the selected filter.")
-        remove.SetImage(Symbol.Remove)
-        remove.EnabledFunc = selectedFunc
+        Dim infoMenu = New ActionMenuItem("Info...", Sub() g.ShowScriptInfo(p.Script), "Shows script parameters.")
+        infoMenu.SetImage(Symbol.Info)
+        infoMenu.EnabledFunc = Function() p.SourceFile.NotNullOrEmptyS
+        RemoveHandler Menu.Opening, AddressOf infoMenu.Opening
+        AddHandler Menu.Opening, AddressOf infoMenu.Opening
 
-        Menu.Add("Edit Code...", AddressOf ShowEditor, "Dialog to edit filters.").SetImage(Symbol.Code)
-        Menu.Add("Preview Code...", Sub() g.CodePreview(p.Script.GetFullScript), "Script code preview.")
-        Menu.Add("Info...", Sub() g.ShowScriptInfo(p.Script), Function() p.SourceFile.NotNullOrEmptyS, "Shows script parameters.").SetImage(Symbol.Info)
-        Menu.Add("Play", Sub() g.PlayScript(p.Script), Function() p.SourceFile.NotNullOrEmptyS, "Plays the script with the AVI player.").SetImage(Symbol.Play)
-        Menu.Add("Profiles...", AddressOf g.MainForm.ShowFilterProfilesDialog, "Dialog to edit profiles.").SetImage(Symbol.FavoriteStar)
+        Dim playMenu = New ActionMenuItem("Play", Sub() g.PlayScript(p.Script), "Plays the script with the AVI player.")
+        playMenu.SetImage(Symbol.Play)
+        playMenu.EnabledFunc = Function() p.SourceFile.NotNullOrEmptyS
+        RemoveHandler Menu.Opening, AddressOf playMenu.Opening
+        AddHandler Menu.Opening, AddressOf playMenu.Opening
 
-        Menu.Add("-")
+        Dim profilesMenu = New ActionMenuItem("Profiles...", AddressOf g.MainForm.ShowFilterProfilesDialog, "Dialog to edit profiles.")
+        profilesMenu.SetImage(Symbol.FavoriteStar)
 
-        Dim moveUpItem = Menu.Add("Move Up", AddressOf MoveUp, "Moves the selected item up.")
+        Dim moveUpItem = New ActionMenuItem("Move Up", AddressOf MoveUp, "Moves the selected item up.")
         moveUpItem.SetImage(Symbol.Up)
         moveUpItem.EnabledFunc = Function() SelectedItems.Count > 0 AndAlso SelectedItems(0).Index > 0
+        RemoveHandler Menu.Opening, AddressOf moveUpItem.Opening
+        AddHandler Menu.Opening, AddressOf moveUpItem.Opening
 
-        Dim moveDownItem = Menu.Add("Move Down", AddressOf MoveDown, "Moves the selected item down.")
+        Dim moveDownItem = New ActionMenuItem("Move Down", AddressOf MoveDown, "Moves the selected item down.")
         moveDownItem.SetImage(Symbol.Down)
         moveDownItem.EnabledFunc = Function() SelectedItems.Count > 0 AndAlso SelectedItems(0).Index < Items.Count - 1
+        RemoveHandler Menu.Opening, AddressOf moveDownItem.Opening
+        AddHandler Menu.Opening, AddressOf moveDownItem.Opening
 
-        Menu.Add("-")
-        Dim setup = Menu.Add("Filter Setup")
+        Dim setup = New ActionMenuItem("Filter Setup")
         setup.SetImage(Symbol.MultiSelect)
         setup.DropDown.SuspendLayout()
         g.PopulateProfileMenu(setup.DropDownItems, s.FilterSetupProfiles, AddressOf g.MainForm.ShowFilterSetupProfilesDialog, AddressOf g.MainForm.LoadFilterSetup)
-
         setup.DropDown.ResumeLayout(False)
+
+        Menu.Items.AddRange({m0, sep0, replaceMenuItem, insertMenuItem, add, New ToolStripSeparator, remove, editMenu, previeMenu, infoMenu, playMenu, profilesMenu, New ToolStripSeparator, moveUpItem, moveDownItem, New ToolStripSeparator, setup})
         ActionMenuItem.LayoutResume(False)
         Menu.ResumeLayout(False)
 
         Dim mop As CancelEventHandler = Sub()
                                             Dim active = DirectCast(Menu.Items(0), ActionMenuItem)
+                                            Menu.SuspendLayout()
+                                            active.DropDown.SuspendLayout()
                                             active.DropDownItems.ClearAndDisplose()
+                                            ActionMenuItem.LayoutSuspendCreate()
                                             Dim selC As Boolean = SelectedItems.Count > 0
                                             sep0.Visible = selC
 
-                                            If Not selC Then
-                                                Exit Sub
+                                            If selC Then
+                                                Dim selectedFilter = DirectCast(SelectedItems(0).Tag, VideoFilter)
+                                                active.Text = selectedFilter.Category
+
+                                                For Each i In filterProfiles
+                                                    If i.Name.EqualsEx(selectedFilter.Category) Then
+                                                        For Each i2 In i.Filters
+                                                            ActionMenuItem.Add(active.DropDownItems, i2.Path, AddressOf ReplaceClick, i2.GetCopy, i2.Script)
+                                                        Next i2
+                                                    End If
+                                                Next i
                                             End If
 
-                                            Dim selectedFilter = DirectCast(SelectedItems(0).Tag, VideoFilter)
-                                            active.Text = selectedFilter.Category
-
-                                            For Each i In filterProfiles
-                                                If i.Name.EqualsEx(selectedFilter.Category) Then
-                                                    active.DropDown.SuspendLayout()
-                                                    For Each i2 In i.Filters
-                                                        ActionMenuItem.Add(active.DropDownItems, i2.Path, AddressOf ReplaceClick, i2.GetCopy, i2.Script)
-                                                    Next i2
-                                                    active.DropDown.ResumeLayout()
-                                                End If
-                                            Next i
+                                            ActionMenuItem.LayoutResume(False)
+                                            active.DropDown.ResumeLayout()
+                                            Menu.ResumeLayout(False)
                                         End Sub
         RemoveHandler Menu.Opening, mop
         AddHandler Menu.Opening, mop

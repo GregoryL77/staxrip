@@ -1,6 +1,7 @@
 
 Imports System.ComponentModel
 Imports System.Drawing.Design
+Imports JM.LinqFaster
 
 Namespace UI
     Public Class FormBase
@@ -56,7 +57,7 @@ Namespace UI
         End Sub
 
         Sub SetMinimumSize(w As Integer, h As Integer)
-            MinimumSize = New Size(CInt(Font.Height * w), CInt(Font.Height * h))
+            MinimumSize = New Size(CInt(FontHeight * w), CInt(FontHeight * h))
         End Sub
 
         Protected Overrides Sub OnLoad(args As EventArgs)
@@ -122,12 +123,24 @@ Namespace UI
             Dim index = 0
             Dim controls = From i In c.Controls.OfType(Of Control)()
                            Order By Math.Sqrt(i.Top * i.Top + i.Left * i.Left)
-
+            'Dim ca(c.Controls.Count - 1) As Control 'Test This!!!
+            'c.Controls.CopyTo(ca, 0)
+            'Dim ka(ca.Length - 1) As Double
+            'For i = 0 To ca.Length - 1
+            '    Dim ci = ca(i)
+            '    ka(i) = Math.Sqrt(ci.Top * ci.Top + ci.Left * ci.Left)
+            'Next i
+            'Array.Sort(ka, ca)
+            'For i = 0 To ca.Length - 1
+            '    ca(i).TabIndex = i
+            '    SetTabIndexes(ca(i))
+            'Next i
+            'Dim ttt = controls.ToArray.SequenceEqual(ca) 'Debug
             For Each i In controls
                 i.TabIndex = index
                 index += 1
                 SetTabIndexes(i)
-            Next
+            Next i
         End Sub
 
         Sub RestoreClientSize(defaultWidthScale As Single, defaultHeightScale As Single)

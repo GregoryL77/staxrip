@@ -277,7 +277,7 @@ Partial Class StreamDemuxForm
         Me.lvAttachments.TabIndex = 0
         Me.lvAttachments.UseCompatibleStateImageBehavior = False
         '
-        'TableLayoutPanel1
+        'TLPMain
         '
         Me.TableLayoutPanel1.AutoSize = True
         Me.TableLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink

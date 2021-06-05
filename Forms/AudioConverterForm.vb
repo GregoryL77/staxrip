@@ -733,7 +733,7 @@ Public Class AudioConverterForm
     End Sub
 
     Private Sub AutoSizeColumns(Optional AllCells As Boolean = False)
-        If AudioCL.Count > 1000 OrElse (AudioCL.Count > 100 AndAlso MediaInfo.Cache.Count < 100) Then StatusText("Auto Resizing Columns...")
+        If AudioCL.Count > 1000 OrElse (AudioCL.Count - MediaInfo.Cache.Count > 100) Then StatusText("Auto Resizing Columns...")
         With dgvAudio
             .Columns.Item(0).MinimumWidth = Math.Max(28, CInt(14 + 6 * Fix(Math.Log10(AudioCL.Count + 1))))
             If .ColumnHeadersHeight <> 23 Then .ColumnHeadersHeight = 23
@@ -741,12 +741,30 @@ Public Class AudioConverterForm
 
             If .AutoSizeColumnsMode <> DataGridViewAutoSizeColumnsMode.Fill Then
                 PopulateTaskS = -1
-                Dim allc As Boolean = AllCells OrElse AudioCL.Count < 200 OrElse (AudioCL.Count < 2500 AndAlso MediaInfo.Cache.Count > 2000)
-                If allc Then Application.DoEvents() 'Needed???
+                Dim allc As Boolean = AllCells OrElse AudioCL.Count < 200 OrElse (AudioCL.Count - MediaInfo.Cache.Count < 500)
+                If allc Then
+                    Application.DoEvents() 'Needed???
+                    UseWaitCursor = True '???
+                    Cursor = Cursors.WaitCursor 'This or next one is OK!
+                    Cursor.Current = Cursors.WaitCursor
+                    If AudioCL.Count - MediaInfo.Cache.Count > 500 Then Me.Enabled = False
+                    'Application.UseWaitCursor = True 'Not Working
+                    'PostMessage(Me.Handle, &H20, Me.Handle, New IntPtr(1)) 'Send WM_SETCURSOR'Not Working
+                End If
                 .AutoResizeColumns(If(allc, DataGridViewAutoSizeColumnsMode.AllCellsExceptHeader, DataGridViewAutoSizeColumnsMode.DisplayedCellsExceptHeader))
+                If allc Then
+                    Cursor = Cursors.Default
+                    Cursor.Current = Cursors.Default
+                    Me.Enabled = True
+                    UseWaitCursor = False
+                    'Application.UseWaitCursor = False
+                End If
             End If
         End With
     End Sub
+
+    '<System.Runtime.InteropServices.DllImport("user32.dll")> Shared Function PostMessage(hwnd As IntPtr, wMsg As Integer, wParam As IntPtr, lParam As IntPtr) As IntPtr'Not Working
+    'End Function
 
     Private Sub dgvAudio_SelectionChanged(sender As Object, e As EventArgs)
         If SelectChangeES Then Exit Sub
@@ -1791,6 +1809,7 @@ Again: 'Debug StopWatch Use
             If Not Log.IsEmpty Then Log.Save()
             ActionMenuItem.LayoutSuspendList = Nothing
             MediaInfo.ClearCache()
+            ImageHelp.ClearCache()
             g.MainForm.ForceClose = True
             Me.Close()
             g.MainForm.Close()
@@ -1825,7 +1844,7 @@ Again: 'Debug StopWatch Use
                 LastKeyDown = 3
                 PopulateTaskS = -1
                 SelectChangeES = True
-                If AudioCL.Count > 1000 OrElse (AudioCL.Count > 100 AndAlso MediaInfo.Cache.Count < 100) Then StatusText("Sorting...")
+                If AudioCL.Count > 1000 OrElse (AudioCL.Count - MediaInfo.Cache.Count > 100) Then StatusText("Sorting...")
                 SW2.Restart()
             End If
         Else
@@ -2178,6 +2197,7 @@ Again: 'Debug StopWatch Use
             If Not PopulateTask?.IsCompleted AndAlso Not PopulateWSW.IsRunning Then PopulateTask.Wait(60)
             Dim miT = Task.Run(Sub() MediaInfo.ClearCache())
             Text = "AudioConverter"
+            ImageHelp.ClearCache()
             If BuildFindT?.IsCompleted Then TBFind.Dispose()
             TBFind.Clear()
             TBFind_Leave(Me, EventArgs.Empty)

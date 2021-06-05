@@ -13,6 +13,7 @@ Public Class ImageHelp
     Private Shared CollFontPrv As New PrivateFontCollection
     Private Shared FontSagoe As New Font("Segoe MDL2 Assets", 12)
     Private Shared FontAwesome As Font
+    Public Shared ImageCacheD As New Dictionary(Of Symbol, Image)(37)
 
     Public Shared Sub CreateFonts()
         If FontSagoe Is Nothing Then FontSagoe = New Font("Segoe MDL2 Assets", 12)
@@ -71,6 +72,22 @@ Public Class ImageHelp
 
         Return bitmap
     End Function
+
+    Shared Function GetImageCache(symbol As Symbol) As Image
+        'If symbol = Symbol.None Then Return Nothing
+        If ImageCacheD.ContainsKey(symbol) Then Return ImageCacheD(symbol)
+        Dim img = GetSymbolImage(symbol)
+        ImageCacheD.Item(symbol) = img
+        Return img
+    End Function
+
+    Shared Sub ClearCache()
+        'For Each img In ImageCacheD.Values
+        '    img.Dispose()
+        'Next img
+        Parallel.ForEach(ImageCacheD.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(i) i.Dispose())
+        ImageCacheD.Clear()
+    End Sub
 End Class
 
 Public Class Thumbnails

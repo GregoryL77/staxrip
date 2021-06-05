@@ -179,8 +179,8 @@ Public Class SimpleUI
     End Function
 
     Public SaveValEventHList As List(Of SaveValuesEventHandler) 'Debug Test
-    Sub SaveValEventsHCreate(Optional capacity As Integer = 4)
-        SaveValEventHList = If(capacity = 4, New List(Of SaveValuesEventHandler), New List(Of SaveValuesEventHandler)(capacity))
+    Sub SaveValEventsHCreate(Optional capacity As Integer = 0)
+        SaveValEventHList = If(capacity = 0, New List(Of SaveValuesEventHandler), New List(Of SaveValuesEventHandler)(capacity))
     End Sub
     Public Sub SaveValEventsHRemove()
         If SaveValEventHList IsNot Nothing Then

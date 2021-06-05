@@ -1170,7 +1170,7 @@ Namespace UI
 
         Protected Overrides ReadOnly Property DefaultMargin As Padding
             Get
-                Return New Padding(0)
+                Return Padding.Empty
             End Get
         End Property
 

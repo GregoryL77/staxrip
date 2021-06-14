@@ -55,10 +55,10 @@ Public Class MacrosForm
         Me.lv.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lv.Location = New System.Drawing.Point(10, 82)
-        Me.lv.Margin = New System.Windows.Forms.Padding(10, 0, 0, 10)
+        Me.lv.Location = New System.Drawing.Point(3, 27)
+        Me.lv.Margin = New System.Windows.Forms.Padding(3, 0, 0, 3)
         Me.lv.Name = "lv"
-        Me.lv.Size = New System.Drawing.Size(294, 461)
+        Me.lv.Size = New System.Drawing.Size(98, 154)
         Me.lv.TabIndex = 2
         Me.lv.UseCompatibleStateImageBehavior = False
         '
@@ -68,10 +68,10 @@ Public Class MacrosForm
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.stb.BackColor = System.Drawing.Color.Aqua
-        Me.stb.Location = New System.Drawing.Point(10, 10)
-        Me.stb.Margin = New System.Windows.Forms.Padding(10, 10, 0, 10)
+        Me.stb.Location = New System.Drawing.Point(3, 3)
+        Me.stb.Margin = New System.Windows.Forms.Padding(3, 3, 0, 3)
         Me.stb.Name = "stb"
-        Me.stb.Size = New System.Drawing.Size(294, 62)
+        Me.stb.Size = New System.Drawing.Size(98, 21)
         Me.stb.TabIndex = 4
         '
         'lName
@@ -79,10 +79,10 @@ Public Class MacrosForm
         Me.lName.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lName.Location = New System.Drawing.Point(4, 50)
-        Me.lName.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lName.Location = New System.Drawing.Point(1, 17)
+        Me.lName.Margin = New System.Windows.Forms.Padding(1, 0, 1, 0)
         Me.lName.Name = "lName"
-        Me.lName.Size = New System.Drawing.Size(364, 50)
+        Me.lName.Size = New System.Drawing.Size(123, 17)
         Me.lName.TabIndex = 5
         Me.lName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
@@ -91,10 +91,10 @@ Public Class MacrosForm
         Me.lValue.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lValue.Location = New System.Drawing.Point(4, 218)
-        Me.lValue.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lValue.Location = New System.Drawing.Point(1, 78)
+        Me.lValue.Margin = New System.Windows.Forms.Padding(1, 0, 1, 0)
         Me.lValue.Name = "lValue"
-        Me.lValue.Size = New System.Drawing.Size(364, 100)
+        Me.lValue.Size = New System.Drawing.Size(123, 33)
         Me.lValue.TabIndex = 6
         Me.lValue.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
@@ -103,10 +103,10 @@ Public Class MacrosForm
         Me.lDescriptionTitle.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lDescriptionTitle.Location = New System.Drawing.Point(4, 318)
-        Me.lDescriptionTitle.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lDescriptionTitle.Location = New System.Drawing.Point(1, 111)
+        Me.lDescriptionTitle.Margin = New System.Windows.Forms.Padding(1, 0, 1, 0)
         Me.lDescriptionTitle.Name = "lDescriptionTitle"
-        Me.lDescriptionTitle.Size = New System.Drawing.Size(364, 53)
+        Me.lDescriptionTitle.Size = New System.Drawing.Size(123, 18)
         Me.lDescriptionTitle.TabIndex = 7
         Me.lDescriptionTitle.Text = "Description:"
         '
@@ -115,10 +115,10 @@ Public Class MacrosForm
         Me.lNameTitle.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lNameTitle.Location = New System.Drawing.Point(4, 0)
-        Me.lNameTitle.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lNameTitle.Location = New System.Drawing.Point(1, 0)
+        Me.lNameTitle.Margin = New System.Windows.Forms.Padding(1, 0, 1, 0)
         Me.lNameTitle.Name = "lNameTitle"
-        Me.lNameTitle.Size = New System.Drawing.Size(364, 50)
+        Me.lNameTitle.Size = New System.Drawing.Size(123, 17)
         Me.lNameTitle.TabIndex = 9
         Me.lNameTitle.Text = "Name:"
         Me.lNameTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
@@ -128,20 +128,20 @@ Public Class MacrosForm
         Me.lValueTitle.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lValueTitle.Location = New System.Drawing.Point(4, 168)
-        Me.lValueTitle.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lValueTitle.Location = New System.Drawing.Point(1, 61)
+        Me.lValueTitle.Margin = New System.Windows.Forms.Padding(1, 0, 1, 0)
         Me.lValueTitle.Name = "lValueTitle"
-        Me.lValueTitle.Size = New System.Drawing.Size(364, 50)
+        Me.lValueTitle.Size = New System.Drawing.Size(123, 17)
         Me.lValueTitle.TabIndex = 10
         Me.lValueTitle.Text = "Value:"
         Me.lValueTitle.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
         'bnCopy
         '
-        Me.bnCopy.Location = New System.Drawing.Point(4, 103)
-        Me.bnCopy.Margin = New System.Windows.Forms.Padding(4, 3, 4, 3)
+        Me.bnCopy.Location = New System.Drawing.Point(1, 35)
+        Me.bnCopy.Margin = New System.Windows.Forms.Padding(1)
         Me.bnCopy.Name = "bnCopy"
-        Me.bnCopy.Size = New System.Drawing.Size(273, 62)
+        Me.bnCopy.Size = New System.Drawing.Size(91, 25)
         Me.bnCopy.TabIndex = 11
         Me.bnCopy.Text = "Copy"
         Me.bnCopy.UseVisualStyleBackColor = True
@@ -160,8 +160,8 @@ Public Class MacrosForm
         Me.tlpRight.Controls.Add(Me.bnCopy, 0, 2)
         Me.tlpRight.Controls.Add(Me.lName, 0, 1)
         Me.tlpRight.Controls.Add(Me.lValueTitle, 0, 3)
-        Me.tlpRight.Location = New System.Drawing.Point(314, 3)
-        Me.tlpRight.Margin = New System.Windows.Forms.Padding(4, 3, 4, 3)
+        Me.tlpRight.Location = New System.Drawing.Point(104, 1)
+        Me.tlpRight.Margin = New System.Windows.Forms.Padding(1)
         Me.tlpRight.Name = "tlpRight"
         Me.tlpRight.RowCount = 7
         Me.tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle())
@@ -170,8 +170,8 @@ Public Class MacrosForm
         Me.tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 45.0!))
-        Me.tlpRight.Size = New System.Drawing.Size(372, 553)
+        Me.tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 15.0!))
+        Me.tlpRight.Size = New System.Drawing.Size(125, 184)
         Me.tlpRight.TabIndex = 12
         '
         'lDescription
@@ -179,10 +179,10 @@ Public Class MacrosForm
         Me.lDescription.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.lDescription.Location = New System.Drawing.Point(4, 371)
-        Me.lDescription.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lDescription.Location = New System.Drawing.Point(1, 129)
+        Me.lDescription.Margin = New System.Windows.Forms.Padding(1, 0, 1, 0)
         Me.lDescription.Name = "lDescription"
-        Me.lDescription.Size = New System.Drawing.Size(364, 182)
+        Me.lDescription.Size = New System.Drawing.Size(123, 55)
         Me.lDescription.TabIndex = 12
         '
         'tlpLeft
@@ -194,12 +194,13 @@ Public Class MacrosForm
         Me.tlpLeft.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.tlpLeft.Controls.Add(Me.stb, 0, 0)
         Me.tlpLeft.Controls.Add(Me.lv, 0, 1)
-        Me.tlpLeft.Location = New System.Drawing.Point(3, 3)
+        Me.tlpLeft.Location = New System.Drawing.Point(1, 1)
+        Me.tlpLeft.Margin = New System.Windows.Forms.Padding(1)
         Me.tlpLeft.Name = "tlpLeft"
         Me.tlpLeft.RowCount = 2
         Me.tlpLeft.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.tlpLeft.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.tlpLeft.Size = New System.Drawing.Size(304, 553)
+        Me.tlpLeft.Size = New System.Drawing.Size(101, 184)
         Me.tlpLeft.TabIndex = 13
         '
         'tlpMain
@@ -211,20 +212,21 @@ Public Class MacrosForm
         Me.tlpMain.Controls.Add(Me.tlpRight, 1, 0)
         Me.tlpMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlpMain.Location = New System.Drawing.Point(0, 0)
+        Me.tlpMain.Margin = New System.Windows.Forms.Padding(1)
         Me.tlpMain.Name = "tlpMain"
         Me.tlpMain.RowCount = 1
         Me.tlpMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpMain.Size = New System.Drawing.Size(690, 559)
+        Me.tlpMain.Size = New System.Drawing.Size(230, 186)
         Me.tlpMain.TabIndex = 14
         '
         'MacrosForm
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(288.0!, 288.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        Me.ClientSize = New System.Drawing.Size(690, 559)
+        Me.ClientSize = New System.Drawing.Size(230, 186)
         Me.Controls.Add(Me.tlpMain)
         Me.KeyPreview = True
-        Me.Margin = New System.Windows.Forms.Padding(11, 9, 11, 9)
+        Me.Margin = New System.Windows.Forms.Padding(4, 3, 4, 3)
         Me.Name = "MacrosForm"
         Me.Text = "Macros"
         Me.tlpRight.ResumeLayout(False)
@@ -238,7 +240,7 @@ Public Class MacrosForm
 
     Sub New()
         InitializeComponent()
-        ScaleClientSize(30, 25, FontHeight)
+        ScaleClientSize(32, 31, FontHeight)
         lv.View = View.Tile
         lv.FullRowSelect = True
         lv.MultiSelect = False
@@ -249,7 +251,7 @@ Public Class MacrosForm
 
     Protected Overrides Sub OnLoad(args As EventArgs)
         MyBase.OnLoad(args)
-        Populate(False)
+        Populate()
         lDescriptionTitle.SetFontStyle(FontStyle.Bold)
         lNameTitle.SetFontStyle(FontStyle.Bold)
         lValueTitle.SetFontStyle(FontStyle.Bold)
@@ -275,7 +277,7 @@ Public Class MacrosForm
         Next
     End Function
 
-    Sub Populate(Optional sort As Boolean = True)
+    Sub Populate() '(Optional sort As Boolean = True)
         lv.BeginUpdate()
         lv.Items.Clear()
 
@@ -297,24 +299,27 @@ Public Class MacrosForm
         If lv.Items.Count > 0 Then
             lv.Items(0).Selected = True
             lv.Items(0).EnsureVisible()
-            lv.TileSize = New Size(lv.Width - SystemInformation.VerticalScrollBarWidth - 5, CInt(Font.Height * 1.5))
+            lv.TileSize = New Size(lv.Width - SystemInformation.VerticalScrollBarWidth - 5, CInt(If(s.UIScaleFactor = 1, 16, Font.Height) * 1.5)) 'Test This Experiment!!! NoScaling
             lv.Scrollable = True
             Native.SetWindowTheme(lv.Handle, "explorer", Nothing)
         End If
 
         lv.EndUpdate()
-        lv.Refresh()
+        'lv.Refresh()
+        lv.Invalidate()
     End Sub
 
     Sub tbFilter_TextChanged() Handles stb.TextChanged
         Populate()
     End Sub
 
-    Sub TaskForm_KeyDown(sender As Object, e As KeyEventArgs) Handles Me.KeyDown
+    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         Select Case e.KeyData
             Case Keys.Enter
-                bnCopy.PerformClick()
-                Close()
+                If lName.Text.NotNullOrEmptyS Then
+                    bnCopy.PerformClick()
+                    Close()
+                End If
         End Select
 
         If lv.Items.Count > 0 Then
@@ -348,22 +353,26 @@ Public Class MacrosForm
                 lv.Items(sel).EnsureVisible()
             End If
         End If
+        MyBase.OnKeyDown(e)
     End Sub
 
     Sub lv_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles lv.MouseDoubleClick
+        If lName.Text.NullOrEmptyS Then Exit Sub
         bnCopy.PerformClick()
         Close()
     End Sub
 
     Sub lv_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lv.SelectedIndexChanged
-        bnCopy.Text = "Copy"
+        'bnCopy.Text = "Copy"
 
         If lv.SelectedItems.Count > 0 Then
+            bnCopy.Enabled = True
             Dim item = lv.SelectedItems(0)
             lName.Text = item.Text
             lValue.Text = Macro.Expand(item.Text)
             lDescription.Text = CStr(item.Tag)
         Else
+            bnCopy.Enabled = False
             lName.Text = ""
             lValue.Text = ""
             lDescription.Text = ""
@@ -371,6 +380,7 @@ Public Class MacrosForm
     End Sub
 
     Sub bnCopy_Click(sender As Object, e As EventArgs) Handles bnCopy.Click
+        If lName.Text.NullOrEmptyS Then Exit Sub
         Clipboard.SetText(lName.Text)
         bnCopy.SetFontStyle(FontStyle.Bold)
         Application.DoEvents()

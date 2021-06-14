@@ -1,4 +1,5 @@
 
+Imports System.Runtime
 Imports StaxRip.UI
 
 <Serializable()>
@@ -70,7 +71,7 @@ Public Class ApplicationSettings
     Public TargetImageSizeMenu As String
     Public ThumbnailBackgroundColor As Color = Color.AliceBlue
     Public ToolStripRenderModeEx As ToolStripRenderModeEx = ToolStripRenderModeEx.SystemDefault
-    Public UIScaleFactor As Single = 1
+    Public UIScaleFactor As Single = 1.0F
     Public VapourSynthFilterPreferences As StringPairList
     Public VapourSynthMode As FrameServerMode
     Public VapourSynthProfiles As List(Of FilterCategory)
@@ -96,6 +97,20 @@ Public Class ApplicationSettings
     Sub Init() Implements ISafeSerialization.Init
         If Versions Is Nothing Then
             Versions = New Dictionary(Of String, Integer)(37, StringComparer.Ordinal)
+        End If
+
+        If Check(ToolStripRenderModeEx, "Clear cache+Menu style", 1) Then
+            ImageHelp.ClearCache() ' Added some cleanup
+            MediaInfo.ClearCache()
+            ActionMenuItem.LayoutSuspendList?.Clear()
+            ActionMenuItem.LayoutSuspendList = Nothing
+            ToolStripRenderModeEx = ToolStripRenderModeEx.SystemDefault
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+            GC.Collect(2, GCCollectionMode.Forced, True, True)
+            GC.WaitForPendingFinalizers()
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+            GC.Collect(2, GCCollectionMode.Forced, True, True)
+            GC.WaitForPendingFinalizers()
         End If
 
         If Check(Storage, "Misc", 2) Then
@@ -172,10 +187,6 @@ Public Class ApplicationSettings
 
             'DGIndex Back:
             VapourSynthFilterPreferences.Add("dgi", "DGSource")
-        End If
-
-        If Check(ToolStripRenderModeEx, "menu style", 1) Then
-            ToolStripRenderModeEx = ToolStripRenderModeEx.SystemDefault
         End If
 
         If Check(eac3toProfiles, "eac3to Audio Stream Profiles", 4) Then

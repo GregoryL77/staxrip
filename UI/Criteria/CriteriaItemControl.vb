@@ -63,7 +63,7 @@ Namespace UI
                         End If
                     Next
 
-                    mbCondition.Menu.Items.ClearAndDisplose
+                    mbCondition.Menu.Items.ClearAndDispose
                     mbCondition.Add(CriteriaValue.ConditionNames)
                     mbCondition.Value = CriteriaValue.ConditionName
 

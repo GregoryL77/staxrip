@@ -593,7 +593,7 @@ Namespace UI
                         header.Width = 0
                         Continue For
                     Case ""
-                        Columns(0).Width = CInt(Font.Height * 1.25)
+                        Columns(0).Width = CInt(FontHeight * 1.25) 'font.height Test This Experiment!!! NoScaling
                         Continue For
                 End Select
 

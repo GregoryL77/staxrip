@@ -696,7 +696,7 @@ Public Class MuxAudioProfile
             mbi.Label.Help = "Language of the audio track."
             mbi.Button.Value = Language
             mbi.Button.SaveAction = Sub(value) Language = value
-            mbi.Button.BuildLangMenu(True)
+            mbi.Button.BuildLangMenu()
             'For Each i In Language.Languages
             '    If i.IsCommon Then mbi.Button.Add(i.ToString, i) Else mbi.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpper + " | " + i.ToString, i)
             'Next
@@ -2249,11 +2249,11 @@ End Enum
 
 Public Enum ChannelsMode
     Original
-    <DispName("1 (Mono)")> _1
-    <DispName("2 (Stereo)")> _2
-    <DispName("5.1")> _6
-    <DispName("6.1")> _7
-    <DispName("7.1")> _8
+    <DispName("1 (Mono)")> _1 = 1 '2021 Added Literal Numeric assigment = ??? Test This !
+    <DispName("2 (Stereo)")> _2 = 2
+    <DispName("5.1")> _6 = 6
+    <DispName("6.1")> _7 = 7
+    <DispName("7.1")> _8 = 8
 End Enum
 
 Public Enum FFDither

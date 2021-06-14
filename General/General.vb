@@ -968,55 +968,89 @@ Public Class Command
         Return String.CompareOrdinal(MethodInfo.Name, other.MethodInfo.Name)
     End Function
 
-    Shared Sub PopulateCommandMenu(items As ToolStripItemCollection,
-                                   commands As List(Of Command),
-                                   clickSub As Action(Of Command))
-        commands.Sort()
+    Shared Sub PopulateCommandMenu(items As ToolStripItemCollection, commands() As Command, clickSub As Action(Of Command))
+        Array.Sort(commands)
 
-        Dim s1 As String
+        Dim sssss = Stopwatch.StartNew 'Debug
+        WarmUpCpu()
+        sssss.Restart()
+
+        'Dim catS As String() = {"Show", "Save", "Set", "Start", "Execute", "Add"} ' , "Run"} No "Run" Command exists???
+        Dim catS As String() = {"Add", "Execute", "Save", "Set", "Show", "Start", "Run"} 'No "Run" Command exists???
+        Dim maxS = catS.Length - 1
+        Dim l2Tsi As List(Of ActionMenuItem)
+        Dim l2AL(maxS) As List(Of ActionMenuItem)
+        Dim l1IdxA(maxS) As Integer
+        Dim l1Tsi As New List(Of MenuItemEx)(32)
+        Dim l1HS As New HashSet(Of String)(7, StringComparer.Ordinal)
+        Dim hsIdx As Integer
+        Dim sIdx As Integer
+        Dim SStr As String
         Dim path As String
-        Dim l2Tsi As New List(Of (String, ActionMenuItem))(80)
-        Dim l1Tsi As New List(Of ActionMenuItem)(32)
-        Dim l1Hs As New HashSet(Of String)(7, StringComparer.Ordinal)
+        'Dim cccc As Integer 'debug 
 
-        For Each i In commands
-            path = i.MethodInfo.Name
-
-            If path.StartsWith("Show", StringComparison.Ordinal) Then
-                s1 = "Show"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
-            ElseIf path.StartsWith("Save", StringComparison.Ordinal) Then
-                s1 = "Save"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
-            ElseIf path.StartsWith("Set", StringComparison.Ordinal) Then
-                s1 = "Set"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
-            ElseIf path.StartsWith("Start", StringComparison.Ordinal) Then
-                s1 = "Start"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
-            ElseIf path.StartsWith("Execute", StringComparison.Ordinal) Then
-                s1 = "Execute"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
-            ElseIf path.StartsWith("Add", StringComparison.Ordinal) Then
-                s1 = "Add"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
-            ElseIf path.StartsWith("Run", StringComparison.Ordinal) Then
-                s1 = "Run"
-                If l1Hs.Add(s1) Then l1Tsi.Add(New ActionMenuItem(s1))
-                l2Tsi.Add((s1, New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description)))
+        For c = 0 To commands.Length - 1
+            Dim cmd = commands(c)
+            path = cmd.MethodInfo.Name
+            If sIdx > maxS Then sIdx = maxS
+            SStr = catS(sIdx)
+            If path.StartsWith(SStr, StringComparison.Ordinal) Then
+                If l1HS.Add(SStr) Then
+                    hsIdx = l1HS.Count - 1
+                    l1IdxA(hsIdx) = l1Tsi.Count
+                    l1Tsi.Add(New MenuItemEx(SStr))
+                    l2Tsi = New List(Of ActionMenuItem)(If(hsIdx = 4, 36, 8))
+                    l2AL(hsIdx) = l2Tsi
+                End If
+                l2Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
+                sIdx = hsIdx
+                'cccc += 1
+                'Exit For
             Else
-                l1Tsi.Add(New ActionMenuItem(path, Sub() clickSub(i), i.Attribute.Description))
+                sIdx = hsIdx + 1
             End If
-        Next
+            If sIdx = hsIdx + 1 Then
+                l1Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
+                'cccc += 1
+            End If
+        Next c
 
+        'Dim fcc = cccc = commands.Length
+
+        'Dim found As Boolean
+        'For c = 0 To commands.Length - 1
+        '    Dim cmd = commands(c)
+        '    path = cmd.MethodInfo.Name
+        '    found = False
+        '    For i = 0 To 5 'Shorter Alternative???
+        '        SStr = catS(i)
+        '        If path.StartsWith(SStr, StringComparison.Ordinal) Then
+        '            If l1Hs.Add(SStr) Then
+        '                hsIdx = l1Hs.Count - 1
+        '                l1IdxA(hsIdx) = l1Tsi.Count
+        '                l1Tsi.Add(New ActionMenuItem(SStr))
+        '                l2Tsi = New List(Of ActionMenuItem)(8)
+        '                l2AL(hsIdx) = l2Tsi
+        '            End If
+        '            l2Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
+        '            found = True
+        '            Exit For
+        '        End If
+        '    Next i
+        '    If Not found Then l1Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
+        'Next c
+
+        Dim nMI As MenuItemEx
+        For i = 0 To hsIdx
+            nMI = l1Tsi(l1IdxA(i))
+            nMI.DropDown.SuspendLayout()
+            nMI.DropDownItems.AddRange(l2AL(i).ToArray) 'if not nothing l2al
+            nMI.DropDown.ResumeLayout(False)
+        Next i
         items.AddRange(l1Tsi.ToArray)
-        ActionMenuItem.AddRange2Menu(items, l2Tsi.ToArray)
+
+        sssss.Stop()
+        Log.Write("CMD Menu Build Time ms", CStr(sssss.ElapsedTicks / SWFreq))
     End Sub
 
     Function GetParameterHelp(parameters As List(Of Object)) As String
@@ -1425,8 +1459,6 @@ End Enum
 Public Enum ToolStripRenderModeEx
     <DispName("System Theme Color")> SystemAuto
     <DispName("System Default Color")> SystemDefault
-    <DispName("Win 7 Theme Color")> Win7Auto
-    <DispName("Win 7 Default Color")> Win7Default
     <DispName("Win 10 Theme Color")> Win10Auto
     <DispName("Win 10 Default Color")> Win10Default
 End Enum

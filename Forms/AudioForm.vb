@@ -698,18 +698,18 @@ Public Class AudioForm
         Dim cms As New ContextMenuStripEx(components)
         cms.SuspendLayout()
         bnMenu.ContextMenuStrip = cms
-        cms.Add("Copy Command Line", Sub() Clipboard.SetText(TempProfile.GetCommandLine(True))).SetImage(Symbol.Copy)
-        cms.Add("Execute Command Line", AddressOf Execute).SetImage(Symbol.fa_terminal)
-        cms.Add("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Line", TempProfile.GetCommandLine(True)))
-        cms.Add("-")
-        cms.Add("Save Profile...", AddressOf SaveProfile, "Saves the current settings as profile").SetImage(Symbol.Save)
-        cms.Add("-")
-        cms.Add("Help", AddressOf ShowHelp).SetImage(Symbol.Help)
-        cms.Add("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to"))
-        cms.Add("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp())
-        cms.Add("qaac Help", Sub() Package.qaac.ShowHelp())
-        cms.Add("qaac Formats", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.qaac.Path, "--formats")))
-        cms.Add("Opus Help", Sub() Package.OpusEnc.ShowHelp())
+        cms.Items.AddRange({New ActionMenuItem("Copy Command Line", Sub() Clipboard.SetText(TempProfile.GetCommandLine(True)), ImageHelp.GetImageC(Symbol.Copy)),
+                            New ActionMenuItem("Execute Command Line", AddressOf Execute, ImageHelp.GetImageC(Symbol.fa_terminal)),
+                            New ActionMenuItem("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Line", TempProfile.GetCommandLine(True))),
+                            New ToolStripSeparator,
+                            New ActionMenuItem("Save Profile...", AddressOf SaveProfile, ImageHelp.GetImageC(Symbol.Save), "Saves the current settings as profile"),
+                            New ToolStripSeparator,
+                            New ActionMenuItem("Help", AddressOf ShowHelp, ImageHelp.GetImageC(Symbol.Help)),
+                            New ActionMenuItem("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to")),
+                            New ActionMenuItem("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp()),
+                            New ActionMenuItem("qaac Help", Sub() Package.qaac.ShowHelp()),
+                            New ActionMenuItem("qaac Formats", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.qaac.Path, "--formats"))),
+                            New ActionMenuItem("Opus Help", Sub() Package.OpusEnc.ShowHelp())})
         cms.ResumeLayout(False)
 
         TipProvider.SetTip("Defines which decoder to use and forces decoding even if not necessary.", laDecoder, mbDecoder)
@@ -721,7 +721,7 @@ Public Class AudioForm
         TipProvider.SetTip("Default MKV Track.", cbDefaultTrack)
         TipProvider.SetTip("Forced MKV Track.", cbForcedTrack)
 
-        mbLanguage.BuildLangMenu(False)
+        mbLanguage.BuildLangMenu()
         ActiveControl = mbCodec
     End Sub
 
@@ -950,7 +950,11 @@ Public Class AudioForm
     Private Sub ChannelsModeToChannel(Channels As Integer)
         Select Case Channels
             Case 1, 2, 6 To 8
-                Dim channV = [Enum](Of ChannelsMode).Parse("_" & Channels)
+                'Dim channV = [Enum](Of ChannelsMode).Parse("_" & Channels) 'If Enum No Assign is working this is redundant
+                'TempProfile.Params.ChannelsMode = channV
+                'mbChannels.Value = channV
+                'Dim channV = CType(Channels, ChannelsMode)
+                Dim channV As ChannelsMode = DirectCast(Channels, ChannelsMode) 'ctype
                 TempProfile.Params.ChannelsMode = channV
                 mbChannels.Value = channV
         End Select
@@ -1008,7 +1012,7 @@ Public Class AudioForm
 
     Sub mbLanguage_ValueChanged() Handles mbLanguage.ValueChangedUser
         TempProfile.Language = mbLanguage.GetValue(Of Language)()
-        mbLanguage.Text = TempProfile.Language.Name
+        'mbLanguage.Text = TempProfile.Language.Name
         UpdateControls()
     End Sub
 

@@ -127,9 +127,6 @@
     <Reference Include="DirectN, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\DirectN.1.9.0\lib\net451\DirectN.dll</HintPath>
     </Reference>
-    <Reference Include="FSharp.Core, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\FSharp.Core.5.0.1\lib\netstandard2.0\FSharp.Core.dll</HintPath>
-    </Reference>
     <Reference Include="JM.LinqFaster, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\JM.LinqFaster.1.1.2\lib\net461\JM.LinqFaster.dll</HintPath>
     </Reference>
@@ -147,15 +144,6 @@
     </Reference>
     <Reference Include="LinqFasterSIMD, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\LinqFaster.SIMD.1.0.3\lib\netstandard2.0\LinqFasterSIMD.dll</HintPath>
-    </Reference>
-    <Reference Include="LinqOptimizer.Base, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\LinqOptimizer.CSharp.0.7.0\lib\net45\LinqOptimizer.Base.dll</HintPath>
-    </Reference>
-    <Reference Include="LinqOptimizer.Core, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\LinqOptimizer.CSharp.0.7.0\lib\net45\LinqOptimizer.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="LinqOptimizer.CSharp, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\LinqOptimizer.CSharp.0.7.0\lib\net45\LinqOptimizer.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualBasic">
       <Name>Microsoft.VisualBasic</Name>

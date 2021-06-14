@@ -183,17 +183,17 @@ Public Class PreprocessingControl
             AddItem(i)
         Next
 
-        bnAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
-        bnUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-        bnDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
-        bnEdit.Image = ImageHelp.GetSymbolImage(Symbol.Repair)
+        bnAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
+        bnUp.Image = ImageHelp.GetImageC(Symbol.Up)
+        bnDown.Image = ImageHelp.GetImageC(Symbol.Down)
+        bnEdit.Image = ImageHelp.GetImageC(Symbol.Repair)
 
         For Each bn In {bnAdd, bnRemove, bnUp, bnDown, bnEdit}
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
             Dim pad = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
+            pad.Left = FontHeight \ 10
             pad.Right = pad.Left
             bn.Padding = pad
         Next

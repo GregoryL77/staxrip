@@ -173,13 +173,13 @@ Public Class CropForm
         pnRightActive.SuspendLayout()
         pnBottomActive.SuspendLayout()
 
-        Dim fs = CInt(Font.Size)
+        Dim fs = If(s.UIScaleFactor = 1, 16, CInt(Font.Size))
         MinimumSize = New Size(fs * 90, fs * 70)
 
         CommandManager.AddCommandsFromObject(Me)
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
 
-        ContextMenuStrip = New ContextMenuStripEx
+        ContextMenuStrip = New ContextMenuStripEx(Me.components)
         ContextMenuStrip.SuspendLayout()
 
         CustomMenu = New CustomMenu(AddressOf GetDefaultMenuCrop,
@@ -189,7 +189,8 @@ Public Class CropForm
         CustomMenu.BuildMenu()
         ContextMenuStrip.ResumeLayout(False)
 
-        StatusStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+
+        If s.UIScaleFactor <> 1 Then StatusStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
 
         Dim offset = CInt(FontHeight * 0.6)
 

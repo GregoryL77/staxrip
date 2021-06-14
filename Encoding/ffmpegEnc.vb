@@ -52,7 +52,7 @@ Public Class ffmpegEnc
                          SaveProfile(enc)
                      End Sub
 
-            form.cms.Add("Save Profile...", a1)
+            form.cms.Items.Add(New StaxRip.UI.ActionMenuItem("Save Profile...", a1))
 
             Dim a2 = Sub()
                          Dim codecText = newParams.Codec.OptionText
@@ -67,16 +67,14 @@ Public Class ffmpegEnc
                             {"Intel H.265", "https://trac.ffmpeg.org/wiki/Hardware/QuickSync"},
                             {"AV1", "https://trac.ffmpeg.org/wiki/Encode/AV1"}}
 
-                         form.HTMLHelp = $"<h2>ffmpeg Online Help</h2>" +
-                                     "<p><a href=""{Package.ffmpeg.HelpURL}"">ffmpeg Online Help</a></p>"
+                         form.HTMLHelp = $"<h2>ffmpeg Online Help</h2>" & "<p><a href=""{Package.ffmpeg.HelpURL}"">ffmpeg Online Help</a></p>"
 
-                         If helpDic.ContainsKey(codecText) Then
-                             form.HTMLHelp += $"<h2>ffmpeg {codecText} Online Help</h2>" +
-                                         $"<p><a href=""{helpDic(codecText)}"">ffmpeg {codecText} Online Help</a></p>"
+                         Dim helpV As String = ""
+                         If helpDic.TryGetValue(codecText, helpV) Then
+                             form.HTMLHelp += $"<h2>ffmpeg {codecText} Online Help</h2>" & $"<p><a href=""{helpV}"">ffmpeg {codecText} Online Help</a></p>"
                          End If
 
-                         form.HTMLHelp += $"<h2>ffmpeg {codecText} Console Help</h2>" +
-                                     $"<pre>{HelpDocument.ConvertChars(consoleHelp) + BR}</pre>"
+                         form.HTMLHelp += $"<h2>ffmpeg {codecText} Console Help</h2>" & $"<pre>{HelpDocument.ConvertChars(consoleHelp) & BR}</pre>"
                      End Sub
 
             AddHandler form.BeforeHelp, a2
@@ -92,8 +90,6 @@ Public Class ffmpegEnc
     Overrides ReadOnly Property OutputExt() As String
         Get
             Select Case Params.Codec.OptionText
-                Case "Xvid", "MPEG-4", "UT Video", "FFV1"
-                    Return "avi"
                 Case "ProRes", "R210", "V210"
                     Return "mov"
                 Case "VP8", "VP9"
@@ -102,6 +98,8 @@ Public Class ffmpegEnc
                     Return "h264"
                 Case "x265"
                     Return "h265"
+                Case "Xvid", "MPEG-4", "UT Video", "FFV1"
+                    Return "avi"
                 Case Else
                     Return "mkv"
             End Select

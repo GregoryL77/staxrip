@@ -48,18 +48,16 @@ Public Class CommandLineForm
         AddHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
 
         cms.SuspendLayout()
-        cms.Add("Execute Command Line", Sub() params.Execute(), p.SourceFile.NotNullOrEmptyS).SetImage(Symbol.fa_terminal)
-
-        cms.Add("Copy Command Line", Sub()
-                                         Clipboard.SetText(params.GetCommandLine(True, True))
-                                         MsgInfo("Command Line was copied.")
-                                     End Sub).SetImage(Symbol.Copy)
-
-        cms.Add("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Line", params.GetCommandLine(True, True)))
-        cms.Add("Import Command Line...", Sub() If MsgQuestion("Import command line from clipboard?", Clipboard.GetText) = DialogResult.OK Then BasicVideoEncoder.ImportCommandLine(Clipboard.GetText, params)).SetImage(Symbol.Download)
-
-        cms.Add("Help about this dialog", AddressOf ShowHelp).SetImage(Symbol.Help)
-        cms.Add("Help about " + params.GetPackage.Name, Sub() params.GetPackage.ShowHelp()).SetImage(Symbol.Help)
+        cms.Items.AddRange(
+          {New ActionMenuItem("Execute Command Line", Sub() params.Execute(), ImageHelp.GetImageC(Symbol.fa_terminal)) With {.Enabled = p.SourceFile.NotNullOrEmptyS},
+          New ActionMenuItem("Copy Command Line", Sub()
+                                                      Clipboard.SetText(params.GetCommandLine(True, True))
+                                                      MsgInfo("Command Line was copied.")
+                                                  End Sub, ImageHelp.GetImageC(Symbol.Copy)),
+          New ActionMenuItem("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Line", params.GetCommandLine(True, True))),
+          New ActionMenuItem("Import Command Line...", Sub() If MsgQuestion("Import command line from clipboard?", Clipboard.GetText) = DialogResult.OK Then BasicVideoEncoder.ImportCommandLine(Clipboard.GetText, params), ImageHelp.GetImageC(Symbol.Download)),
+          New ActionMenuItem("Help about this dialog", AddressOf ShowHelp, ImageHelp.GetImageC(Symbol.Help)),
+          New ActionMenuItem("Help about " + params.GetPackage.Name, Sub() params.GetPackage.ShowHelp(), ImageHelp.GetImageC(Symbol.Help))})
         cms.ResumeLayout(False)
     End Sub
 
@@ -123,7 +121,7 @@ Public Class CommandLineForm
             Dim parent As FlowLayoutPanelEx = SimpleUI.GetFlowPage(param.Path)
             currentFlow = DirectCast(parent, SimpleUI.FlowPage)
 
-            If flowPanels.Add(parent) Then
+            If flowPanels.Add(parent) Then 'ToDO!!!: Or Better Use autoSuspend???
                 parent.SuspendLayout()
             End If
 
@@ -237,10 +235,16 @@ Public Class CommandLineForm
                 End If
 
                 Dim oPo As String() = oParam.Options
+                Dim amiAr(oPo.Length - 1) As ActionMenuItem  'Test This !!! Experimental !!!!!!!!!!!
                 menuBlBn.Menu.SuspendLayout()
-                For x2 = 0 To oPo.Length - 1 ' Main Slowdown, add ButtMenu & ActionMenu
-                    menuBlBn.Add(oPo(x2), x2)
-                Next
+                For x2 = 0 To oPo.Length - 1
+                    'menuBlBn.Add(oPo(x2), x2) ' Main Slowdown, add ButtMenu & ActionMenu
+                    Dim o As Object = x2
+                    Dim t = oPo(x2)
+                    ' menuBlBn.Items.Add(o) ' Needed???
+                    amiAr(x2) = New ActionMenuItem(t, Sub() menuBlBn.OnAction(t, o), o)
+                Next x2
+                menuBlBn.Menu.Items.AddRange(amiAr)
                 menuBlBn.Menu.ResumeLayout(False)
 
                 oParam.InitParam(menuBlBn)
@@ -496,7 +500,7 @@ Public Class CommandLineForm
     Sub rtbCommandLine_MouseUp(sender As Object, e As MouseEventArgs) Handles rtbCommandLine.MouseUp
         If e.Button = MouseButtons.Right Then
             cmsCommandLine.SuspendLayout()
-            cmsCommandLine.Items.ClearAndDisplose()
+            cmsCommandLine.Items.ClearAndDispose()
 
             Dim copyItem = cmsCommandLine.Add("Copy Selection", Sub() Clipboard.SetText(rtbCommandLine.SelectedText))
             copyItem.KeyDisplayString = "Ctrl+C"

@@ -575,18 +575,19 @@ Public Class GlobalClass
         dialogAction As Action,
         loadAction As Action(Of Profile))
 
-        Dim laySL As New List(Of ToolStripDropDown)  'Test This !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        Dim laySL As New List(Of ToolStripDropDown)
 
         For Each iProfile As Profile In profiles
 
             Dim a = iProfile.Name.SplitNoEmpty("|")
             Dim l = ic
             For i = 0 To a.Length - 1
-                Dim found = False
+                Dim found As Boolean = False
+                Dim mTxt As String = a(i) '& "     " 'Test This !!!
 
                 If i < a.Length - 1 Then
                     For Each iItem As ToolStripItem In l
-                        If String.Equals(iItem.Text, a(i) + "     ") Then
+                        If String.Equals(iItem.Text, mTxt) Then
                             found = True
                             l = DirectCast(iItem, ToolStripMenuItem).DropDownItems
                             Exit For
@@ -596,11 +597,10 @@ Public Class GlobalClass
 
                 If Not found Then
                     If i = a.Length - 1 Then
-                        Dim item As New ActionMenuItem(a(i) + "     ", Sub() loadAction(iProfile))
-                        l.Add(item)
+                        l.Add(New ActionMenuItem(mTxt, Sub() loadAction(iProfile)))
                         'l = item.DropDownItems 'Test This !!!
                     Else
-                        Dim item As New MenuItemEx(a(i) + "     ")
+                        Dim item As New MenuItemEx(mTxt)
 
                         Dim tsdd = item.DropDown
                         laySL.Add(tsdd)
@@ -617,7 +617,7 @@ Public Class GlobalClass
             tsdd.ResumeLayout(False)
         Next tsdd
 
-        If Not dialogAction Is Nothing Then
+        If dialogAction IsNot Nothing Then
             ic.Add(New ToolStripSeparator)
             ic.Add(New ActionMenuItem("Edit Profiles...", dialogAction, "Opens the profiles editor"))
         End If
@@ -1006,6 +1006,9 @@ Public Class GlobalClass
     Public Sub KillMeAll()
         Try
             g.ProcForm?.Invoke(Sub() g.ProcForm.Close())
+            ActionMenuItem.LayoutSuspendList = Nothing
+            MediaInfo.ClearCache()
+            ImageHelp.ClearCache()
             If g.MainForm IsNot Nothing Then
                 g.MainForm.ForceClose = True
                 g.MainForm.Close()
@@ -1082,6 +1085,7 @@ Public Class GlobalClass
     Sub SetRenderer(ms As ToolStrip) ' Windows 10 Assume Visual stryles ON
         'If VisualStyleInformation.IsEnabledByUser Then
         ms.Renderer = New ToolStripRendererEx(s.ToolStripRenderModeEx)
+        'ToolStripRendererEx.FontHeight = 16 'ms.font.height ' Test Experiment NoScaling??? !!!
         'Else
         ' ms.Renderer = New ToolStripSystemRenderer()
         'End If

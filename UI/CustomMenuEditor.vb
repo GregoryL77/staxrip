@@ -14,24 +14,6 @@ Namespace UI
 #Region " Designer "
         Protected Overloads Overrides Sub Dispose(disposing As Boolean)
             If disposing Then
-                '    If cmsSymbol IsNot Nothing Then
-                '        For Each itm1 As ActionMenuItem In cmsSymbol.Items
-                '            For Each itm2 As ActionMenuItem In itm1.DropDownItems
-                '                itm2.DropDownItems.ClearAndDisplose
-                '            Next itm2
-                '            itm1.DropDownItems.ClearAndDisplose
-                '        Next itm1
-                '        cmsSymbol.Items.ClearAndDisplose
-                '        cmsSymbol.Dispose()
-                '    End If
-                '    If cmsCommand IsNot Nothing Then
-                '        cmsCommand.Items.ClearAndDisplose
-                '        cmsCommand.Dispose()
-                '    End If
-                '    If ToolStrip IsNot Nothing Then
-                '        ToolStrip.Items.ClearAndDisplose
-                '        ToolStrip.Dispose()
-                '    End If
                 If Not (components Is Nothing) Then
                     components.Dispose()
                 End If
@@ -582,33 +564,38 @@ Namespace UI
         Private EnumAwe As Symbol()
         Private ESagImgsT As Task(Of Image())
         Private EAweImgsT As Task(Of Image())
-
         Property GenericMenu As CustomMenu
 
         Sub New(menu As CustomMenu)
             MyBase.New()
             Dim sic = SystemInformation.SmallIconSize
-            Dim imgNew = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Page).ResizeIconSize(sic))
-            Dim imgCopy = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Copy).ResizeIconSize(sic))
-            Dim imgCut = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Cut).ResizeIconSize(sic))
-            Dim imgPaste = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Paste).ResizeIconSize(sic))
-            Dim imgRem = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Remove).ResizeIconSize(sic))
-
+            Dim imgArT = Task.Run(Function() {ImageHelp.GetSymbolImageSmall(Symbol.Page).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Copy).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Cut).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Paste).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Remove).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Back).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Up).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Forward).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.Down).ResizeIconSize(sic),
+                                              ImageHelp.GetSymbolImageSmall(Symbol.More).ResizeIconSize(sic)})
             Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
             Dim esv = [Enum](Of Symbol).GetValues
-            Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
-            Array.Sort(eSag, symbComparer)
-
-            Dim imgLeft = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Back).ResizeIconSize(sic))
-            Dim ImgUp = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Up).ResizeIconSize(sic))
-            Dim imgRight = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Forward).ResizeIconSize(sic))
-            Dim imgDown = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.Down).ResizeIconSize(sic))
-            Dim imgMoreTTSDD = Task.Run(Function() ImageHelp.GetSymbolImageSmall(Symbol.More).ResizeIconSize(sic))
-
-            Dim eAwe As Symbol() = esv.WhereF(Function(s) s > 61400)
-            Array.Sort(eAwe, symbComparer)
+            ESagImgsT = Task.Run(Function()
+                                     Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
+                                     Array.Sort(eSag, symbComparer)
+                                     EnumSag = eSag
+                                     Dim retA(eSag.Length - 1) As Image
+                                     'Parallel.For(0, eSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(eSag(n)))
+                                     For n = 0 To eSag.Length - 1
+                                         retA(n) = ImageHelp.GetSymbolImage(eSag(n))
+                                     Next n
+                                     Return retA
+                                 End Function)
 
             EAweImgsT = Task.Run(Function()
+                                     Dim eAwe As Symbol() = esv.WhereF(Function(s) s > 61400)
+                                     Array.Sort(eAwe, symbComparer)
                                      EnumAwe = eAwe
                                      Dim retA(eAwe.Length - 1) As Image
                                      'Parallel.For(0, EnumAwe.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(EnumAwe(n)))
@@ -617,18 +604,12 @@ Namespace UI
                                      Next n
                                      Return retA
                                  End Function)
-
-            ESagImgsT = Task.Run(Function()
-                                     EnumSag = eSag
-                                     Dim retA(eSag.Length - 1) As Image
-                                     Parallel.For(0, eSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(eSag(n)))
-                                     'For n = 0 To EnumSag.Length - 1
-                                     'retA(n) = ImageHelp.GetSymbolImage(EnumSag(n))
-                                     'Next n
-                                     Return retA
-                                 End Function)
-
             InitializeComponent()
+
+
+            If Not imgArT.IsCompleted Then Console.Beep(2000, 300) 'debug
+
+
             ScaleClientSize(38, 38, FontHeight)
             GenericMenu = menu
             GridTypeDescriptor = New GridTypeDescriptor
@@ -640,7 +621,10 @@ Namespace UI
             CancelButton = Nothing
 
             cmsCommand.SuspendLayout()
-            Command.PopulateCommandMenu(cmsCommand.Items, GenericMenu.CommandManager.Commands.Values.ToList, AddressOf SetCommand)
+            Dim cmdsDV As Dictionary(Of String, Command).ValueCollection = GenericMenu.CommandManager.Commands.Values
+            Dim cmdsAr(cmdsDV.Count - 1) As Command
+            cmdsDV.CopyTo(cmdsAr, 0)
+            Command.PopulateCommandMenu(cmsCommand.Items, cmdsAr, AddressOf SetCommand)
             cmsCommand.ResumeLayout(False)
 
             TipProvider.SetTip("Parameters used when the command is executed. Please make a feature request if useful parameters are missing.", pg, lParameters)
@@ -648,38 +632,49 @@ Namespace UI
             TipProvider.SetTip("A key can be deleted by pressing it two times.", tbHotkey, laHotkey)
             TipProvider.SetTip("Command to be executed. Please make a feature request if useful commands are missing.", tbCommand, laCommand)
 
+            g.SetRenderer(cmsSymbol) 'Needed??? ToDo!!!
+            ToolStrip.SuspendLayout() 'Needed??? ToDo!!!
             g.SetRenderer(ToolStrip)
-            ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+            If s.UIScaleFactor <> 1 Then
+                ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+                ToolStripRendererEx.FontHeight = ToolStrip.Font.Height
+            End If
             ToolStrip.ImageScalingSize = sic
-            tsbNew.Image = imgNew.Result
-            tsbCopy.Image = imgCopy.Result
-            tsbCut.Image = imgCut.Result
-            tsbPaste.Image = imgPaste.Result
-            tsbRemove.Image = imgRem.Result
-            tsbMoveLeft.Image = imgLeft.Result
-            tsbMoveUp.Image = ImgUp.Result
-            tsbMoveRight.Image = imgRight.Result
-            tsbMoveDown.Image = imgDown.Result
-            ToolsToolStripDropDownButton.Image = imgMoreTTSDD.Result
 
-            g.SetRenderer(cmsSymbol)
+            Dim imgAr = imgArT.Result
+            tsbNew.Image = imgAr(0)
+            tsbCopy.Image = imgAr(1)
+            tsbCut.Image = imgAr(2)
+            tsbPaste.Image = imgAr(3)
+            tsbRemove.Image = imgAr(4)
+            tsbMoveLeft.Image = imgAr(5)
+            tsbMoveUp.Image = imgAr(6)
+            tsbMoveRight.Image = imgAr(7)
+            tsbMoveDown.Image = imgAr(8)
+            ToolsToolStripDropDownButton.Image = imgAr(9)
+            ToolStrip.ResumeLayout(False) 'Needed??? ToDo!!! Seems indeed needed!
+
             '   PopulateSymbolMenu()
         End Sub
 
         Protected Overrides Sub OnShown(e As EventArgs)
             MyBase.OnShown(e)
             Task.Run(Sub()
-                         Thread.Sleep(45) '30
-                         EAweImgsT.Wait()
+                         Thread.Sleep(45) '30-45
                          ESagImgsT.Wait()
+                         EAweImgsT.Wait()
                          If IsHandleCreated Then BeginInvoke(Sub() PopulateSymbolMenu())
                      End Sub)
         End Sub
 
         Sub PopulateSymbolMenu()
+
+            If Not IsHandleCreated Then Exit Sub
             Dim lastCh As Char
             Dim ImgSagA = ESagImgsT.Result
+            'Dim m2LLSag As New List(Of List(Of ActionMenuItem))(26)
             Dim m2LAlphSag As New List(Of ActionMenuItem)(26)
+            'Dim m3LSag As List(Of ActionMenuItem)
             Dim eSag = EnumSag
             Dim m3Sag(eSag.Length - 1) As (Char, ActionMenuItem)
 
@@ -696,7 +691,7 @@ Namespace UI
                 m3Sag(i) = (c1, New ActionMenuItem(sName, Sub() HandleSymbol(symb), ImgSagA(i)))
             Next i
 
-            Application.DoEvents()
+            'Application.DoEvents()
             lastCh = Char.MinValue
             Dim ImgAweA = EAweImgsT.Result
             Dim m2LAlphAwe As New List(Of ActionMenuItem)(26)
@@ -723,11 +718,11 @@ Namespace UI
             ddSag.SuspendLayout()
             Dim ddAwe As ToolStripDropDown = tsmiA.DropDown
             ddAwe.SuspendLayout()
-            cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
             tsmiS.DropDownItems.AddRange(m2LAlphSag.ToArray)
             tsmiA.DropDownItems.AddRange(m2LAlphAwe.ToArray)
             ActionMenuItem.AddRange2Menu(tsmiS.DropDownItems, m3Sag)
             ActionMenuItem.AddRange2Menu(tsmiA.DropDownItems, m3Awe)
+            cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
             ddSag.ResumeLayout(False)
             ddAwe.ResumeLayout(False)
             cmsSymbol.ResumeLayout(False)

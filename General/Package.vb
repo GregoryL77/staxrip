@@ -3,6 +3,7 @@ Imports System.Text
 Imports System.Text.RegularExpressions
 Imports Microsoft.Win32
 Imports JM.LinqFaster
+Imports System.Threading.Tasks
 
 Public Class Package
     Implements IComparable(Of Package)
@@ -35,7 +36,7 @@ Public Class Package
     Property VersionAllowOld As Boolean = True
     Property VersionDate As Date
     Property WebURL As String
-    Shared Property Items As New SortedDictionary(Of String, Package)(StringComparer.Ordinal)
+    Shared Property Items As New SortedDictionary(Of String, Package)(StringComparer.OrdinalIgnoreCase)
 
     Shared Property DGIndex As Package = Add(New Package With {
         .Name = "DGIndex",
@@ -1940,8 +1941,7 @@ Public Class Package
             If TypeOf Me Is PluginPackage Then
                 Dim plugin = DirectCast(Me, PluginPackage)
 
-                If Not plugin.AvsFilterNames.NothingOrEmpty AndAlso
-                    Not plugin.VSFilterNames.NothingOrEmpty Then
+                If Not plugin.AvsFilterNames.NothingOrEmpty AndAlso Not plugin.VSFilterNames.NothingOrEmpty Then
 
                     Return Name + " avs+vs"
                 ElseIf Not plugin.AvsFilterNames.NothingOrEmpty Then
@@ -2052,9 +2052,9 @@ Public Class Package
     End Sub
 
     Sub ShowHelp()
-        Dim dic As New SortedDictionary(Of String, String)
+        Dim dic As New SortedDictionary(Of String, String)(StringComparer.Ordinal)
 
-        If HelpFilename.NullOrEmptyS AndAlso Not HelpSwitch Is Nothing Then
+        If HelpFilename.NullOrEmptyS AndAlso HelpSwitch IsNot Nothing Then
             HelpFilename = Name & " Help.txt"
 
             If CreateHelpfile().NullOrEmptyS Then
@@ -2062,12 +2062,11 @@ Public Class Package
             End If
         End If
 
+        dic("AviSynth") = HelpUrlAviSynth
         If HelpFilename.NotNullOrEmptyS Then
             dic("Local") = Directory & HelpFilename
         End If
-
         dic("Online") = HelpURL
-        dic("AviSynth") = HelpUrlAviSynth
         dic("VapourSynth") = HelpUrlVapourSynth
         dic("Wiki") = "https://github.com/staxrip/staxrip/wiki/" + Name.Replace(" ", "-")
 

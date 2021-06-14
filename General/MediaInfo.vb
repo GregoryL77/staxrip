@@ -385,10 +385,12 @@ Public Class MediaInfo
 
     Shared Function GetMediaInfo(path As String, Optional Key As Long = KeyDefault) As MediaInfo
         If path.NullOrEmptyS Then Return Nothing
+        Dim ret As MediaInfo
         'Dim key = path & File.GetLastWriteTime(path).Ticks
         If Key <= 0 Then Key = ((path.GetHashCode + 2147483648L) << 16) + path.Length
-        If Cache.ContainsKey(Key) Then Return Cache.Item(Key)
-        Dim ret As New MediaInfo(path)
+        'If Cache.ContainsKey(Key) Then Return Cache.Item(Key)
+        If Cache.TryGetValue(Key, ret) Then Return ret
+        ret = New MediaInfo(path)
         'Dim cTS = Cache.AsThreadSafe
         'CacheTS.Item(Key) = ret
         Cache.Item(Key) = ret
@@ -396,10 +398,11 @@ Public Class MediaInfo
     End Function
 
     Shared Sub ClearCache()
-        'For Each i In Cache
-        '    i.Value?.Dispose()
+        'For Each i In Cache.Values
+        '    i?.Dispose()
         'Next
-        Parallel.ForEach(Cache.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
+        Dim cVal = Cache.Values
+        Parallel.ForEach(cVal, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
         Cache.Clear()
     End Sub
 
@@ -414,7 +417,7 @@ Public Class MediaInfo
                 MediaInfo_Delete(Handle)
             Catch 'ex As Exception 'debug
                 'If Not g.MainForm.ForceClose AndAlso Not g.MainForm.IsDisposed Then Microsoft.VisualBasic.MsgBox(Loaded & "-Loaded|MediaInfo Dispose Exception, (Ignore):" & BR & ex.ToString)
-                Console.Beep(500, 250)
+                Console.Beep(400, 250) 'debug
             End Try
         End If
     End Sub

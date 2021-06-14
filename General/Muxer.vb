@@ -517,7 +517,7 @@ Public Class BatchMuxer
             tb.Edit.SaveAction = Sub(value) OutputTypeValue = value
 
             Dim l = ui.AddLabel(page, "Batch Script:")
-            l.MarginTop = form.Font.Height
+            l.MarginTop = form.FontHeight
             l.Help = "Batch script which may contain macros."
 
             tb = ui.AddText(page)

@@ -527,7 +527,7 @@ Namespace CommandLine
                                         End Sub
             AddHandler TextEdit.Disposed, tedeh
 
-            If Not InitAction Is Nothing Then InitAction.Invoke(te)
+            If InitAction IsNot Nothing Then InitAction.Invoke(te)
         End Sub
 
         Sub TextChanged()

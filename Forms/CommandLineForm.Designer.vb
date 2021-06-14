@@ -33,7 +33,7 @@ Partial Class CommandLineForm
         Me.cms = New StaxRip.UI.ContextMenuStripEx(Me.components)
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
         Me.tlpRTB = New System.Windows.Forms.TableLayoutPanel()
-        Me.rtbCommandLine = New StaxRip.UI.CommandLineRichTextBox()
+        Me.rtbCommandLine = New StaxRip.UI.CommandLineRichTextBox(False)
         Me.cmsCommandLine = New StaxRip.UI.ContextMenuStripEx(Me.components)
         Me.tlpMain.SuspendLayout()
         Me.tlpRTB.SuspendLayout()

@@ -5,6 +5,7 @@ Imports System.Windows.Forms.VisualStyles
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Drawing.Drawing2D
+Imports JM.LinqFaster
 
 Namespace UI
     Public Class TreeViewEx
@@ -259,17 +260,15 @@ Namespace UI
             MyBase.OnItemClicked(e)
         End Sub
 
-        Protected Overrides ReadOnly Property CreateParams() As CreateParams
-            Get
-                Dim ret = MyBase.CreateParams
-
-                'If ShowControlBorder AndAlso Not VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
-                '    ret.ExStyle = ret.ExStyle Or &H200 'WS_EX_CLIENTEDGE
-                'End If
-
-                Return ret
-            End Get
-        End Property
+        'Protected Overrides ReadOnly Property CreateParams() As CreateParams 'Windows 10 Assume Visual stryles ON
+        '    Get
+        '        Dim ret = MyBase.CreateParams
+        '        'If ShowControlBorder AndAlso Not VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
+        '        '    ret.ExStyle = ret.ExStyle Or &H200 'WS_EX_CLIENTEDGE
+        '        'End If
+        '        Return ret
+        '    End Get
+        'End Property
     End Class
 
     Public Class LineControl
@@ -470,19 +469,10 @@ Namespace UI
             Dim cms As New ContextMenuStripEx()
 
             cms.SuspendLayout()
-            Dim cutItem = cms.Add("Cut")
-            cutItem.SetImage(Symbol.Cut)
-            cutItem.KeyDisplayString = "Ctrl+X"
-
-            Dim copyItem = cms.Add("Copy", Sub() Clipboard.SetText(SelectedText))
-            copyItem.SetImage(Symbol.Copy)
-            copyItem.KeyDisplayString = "Ctrl+C"
-
-            Dim pasteItem = cms.Add("Paste")
-            pasteItem.SetImage(Symbol.Paste)
-            pasteItem.KeyDisplayString = "Ctrl+V"
-
-            cms.Add("Copy Everything", Sub() Clipboard.SetText(Text))
+            Dim cutItem = New ActionMenuItem("Cut", ImageHelp.GetImageC(Symbol.Cut)) With {.KeyDisplayString = "Ctrl+X"}
+            Dim copyItem = New ActionMenuItem("Copy", Sub() Clipboard.SetText(SelectedText), ImageHelp.GetImageC(Symbol.Copy)) With {.KeyDisplayString = "Ctrl+C"}
+            Dim pasteItem = New ActionMenuItem("Paste", ImageHelp.GetImageC(Symbol.Paste)) With {.KeyDisplayString = "Ctrl+V"}
+            cms.Items.AddRange({cutItem, copyItem, pasteItem, New ActionMenuItem("Copy Everything", Sub() Clipboard.SetText(Text))})
             cms.ResumeLayout(False)
 
             AddHandler cutItem.Click, Sub()
@@ -688,7 +678,7 @@ Namespace UI
                 HelpVisible = True
 
                 Using g = CreateGraphics()
-                    Dim lines = CInt(Math.Ceiling(g.MeasureString(Description, Font, Width).Height / Font.Height))
+                    Dim lines = CInt(Math.Ceiling(g.MeasureString(Description, Font, Width).Height / FontHeight)) 'font.height Test This Experiment!!! NoScaling
 
                     Dim grid As New Reflector(Me, GetType(PropertyGrid))
                     Dim doc = grid.Invoke("doccomment")
@@ -794,8 +784,10 @@ Namespace UI
         Sub MenuOpening(sender As Object, e As CancelEventArgs)
             Menu.MinimumSize = New Size(Width, 0)
 
-            For Each mi As ActionMenuItem In Menu.Items
-                mi.Font = New Font("Segoe UI", 9 * s.UIScaleFactor, If(Not Value Is Nothing AndAlso Value.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular))
+            'For Each mi As ActionMenuItem In Menu.Items
+            For Each mi As ToolStripMenuItem In Menu.Items
+                ' mi.Font = New Font("Segoe UI", 9 * s.UIScaleFactor, If(Value IsNot Nothing AndAlso Value.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular))
+                mi.Font = New Font(Me.Font, If(Value IsNot Nothing AndAlso Value.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular)) ' Test this !!!
 
                 If (Menu.Width - mi.Width) > 2 Then
                     mi.AutoSize = False
@@ -816,12 +808,22 @@ Namespace UI
                     If TypeOf value Is System.Enum Then
 
                         Menu.SuspendLayout()
-                        For Each i In System.Enum.GetValues(value.GetType)
-                            Dim text = DispNameAttribute.GetValueForEnum(i)
-                            Dim temp = i
-                            ActionMenuItem.Add(Menu.Items, text, Sub(o As Object) OnAction(text, o), temp, Nothing).Tag = temp
+                        Dim inc As Integer
+                        Dim enAr As Array = System.Enum.GetValues(value.GetType)
+                        Dim amiAr(enAr.Length - 1) As ActionMenuItem
+                        For Each i In enAr
+                            Dim eObj = i
+                            Dim text = DispNameAttribute.GetValueForEnum(eObj)
+                            amiAr(inc) = New ActionMenuItem(text, Sub() OnAction(text, eObj), eObj) 'Test This for Enums
+                            inc += 1
                         Next i
+                        Menu.Items.AddRange(amiAr)
                         Menu.ResumeLayout(False) 'Test This !!!
+                        'For Each i In System.Enum.GetValues(value.GetType)
+                        '    Dim text = DispNameAttribute.GetValueForEnum(i)
+                        '    Dim temp = i
+                        '    ActionMenuItem.Add(Menu.Items, text, Sub(o As Object) OnAction(text, o), temp, Nothing).Tag = temp
+                        'Next i
 
                     End If
                 End If
@@ -842,9 +844,9 @@ Namespace UI
                             Next i2
                         End If
                     Next i
-                End If
 
-                If Text.NullOrEmptyS AndAlso Not value Is Nothing Then Text = value.ToString
+                    If Text.NullOrEmptyS Then Text = value.ToString
+                End If
 
                 ValueValue = value
             End Set
@@ -901,7 +903,7 @@ Namespace UI
             Return ret
         End Function
 
-        Sub AddRange(menuTup As (path As String, obj As Object)()) 'As ActionMenuItem() 'Test it Debug ???
+        Sub AddRange(menuTup As (path As String, obj As Object)()) 'As ActionMenuItem() 'Test it Debug, Still overhead Meh! ???
             Dim retA(menuTup.Length - 1) As ActionMenuItem
             For t = 0 To menuTup.Length - 1
                 Dim ob = menuTup(t).obj
@@ -915,29 +917,15 @@ Namespace UI
             Menu.ResumeLayout(False)
             ' Return ret
         End Sub
-        'Public Shared LayoutSuspendHS As HashSet(Of ContextMenuStripEx) 'ToDO Testing 'AddRange Replace, maybe other use ??
-        'Public Shared Sub LayoutResume()
-        '    If LayoutSuspendHS IsNot Nothing Then
-        '        For Each tsdd In LayoutSuspendHS
-        '            tsdd.ResumeLayout()
-        '        Next tsdd
-        '        LayoutSuspendHS = Nothing
-        '    End If
-        'End Sub
-        'Public Shared Sub LayoutResume(performLayout As Boolean)
-        '    If LayoutSuspendHS IsNot Nothing Then
-        '        For Each tsdd In LayoutSuspendHS
-        '            tsdd.ResumeLayout(performLayout)
-        '        Next tsdd
-        '        LayoutSuspendHS = Nothing
-        '    End If
-        'End Sub
-        'Public Shared Sub LayoutSuspendCreate(Optional capacity As Integer = 3) 'As List(Of ToolStripDropDown)
-        '    LayoutSuspendHS = If(capacity = 3, New HashSet(Of ContextMenuStripEx), New HashSet(Of ContextMenuStripEx)(capacity))
-        'End Sub
+
         Sub Clear()
             Items.Clear()
-            Menu.Items.ClearAndDisplose
+            Menu.Items.ClearAndDispose
+        End Sub
+
+        Sub OnAction(value As Object)
+            Me.Value = value
+            OnValueChanged(value)
         End Sub
 
         Sub OnAction(text As String, value As Object)
@@ -954,46 +942,55 @@ Namespace UI
             Return DirectCast(Value, Integer)
         End Function
 
-        Public Sub BuildLangMenu(Optional setButtonText As Boolean = False)
+        Public Sub BuildLangMenu()
             Dim lastCh As Char
-            Dim mLl As New List(Of ActionMenuItem)(18) '18
-            Dim mL2Alph As New List(Of ActionMenuItem)(26) '26
-            Dim mL3 As New List(Of (Char, ActionMenuItem))(292) '285
-            ' Dim ML2chs As New HashSet(Of Char)(29) '26 Or lastChar<> Version
+            Dim c1 As Char
+            Dim mL1 As New List(Of MenuItemEx)(18) '18
+            Dim mL2Alph As New List(Of MenuItemEx)(26) '26
+            Dim nML3 As List(Of ActionMenuItem)
+            Dim mL3LL As New List(Of List(Of ActionMenuItem))(26)
             Dim sb As New Text.StringBuilder(52) 'Maxis 50
+            Dim lngS As String
             Dim languages = Language.Languages '302
 
-            For Each lng In languages
-                Dim lngS = lng.ToString
-                Dim onAct As Action = If(setButtonText, Sub() OnAction(lngS, lng), Sub() OnAction("", lng))
+            For i = 0 To languages.Count - 1
+                Dim lng As Language = languages(i)
+                lngS = lng.ToString
                 sb.Clear()
+                sb.Append(lngS).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+
                 If lng.IsCommon Then
-                    sb.Append(lng.ToString).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
-                    mLl.Add(New ActionMenuItem(sb.ToString, onAct, lng))
+                    mL1.Add(New ActionMenuItem(sb.ToString, Sub() OnAction(lng), lng)) '"",
                 Else
-                    Dim lAmiCh = CChar(lngS.Substring(0, 1).ToUpperInvariant)
-
-                    If lAmiCh <> lastCh Then
-                        lastCh = lAmiCh
-                        mL2Alph.Add(New ActionMenuItem(lAmiCh))
+                    c1 = CChar(lngS.Substring(0, 1).ToUpperInvariant)
+                    If c1 <> lastCh Then
+                        lastCh = c1
+                        mL2Alph.Add(New MenuItemEx(c1))
+                        nML3 = New List(Of ActionMenuItem)(8)
+                        mL3LL.Add(nML3)
                     End If
-                    'If ML2chs.Add(lAmiCh) Then
-                    'mL2Alph.Add(New ActionMenuItem(lAmiCh))
-                    'End If
-                    sb.Append(lngS).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
-                    mL3.Add((lAmiCh, New ActionMenuItem(sb.ToString, onAct)))
+                    nML3.Add(New ActionMenuItem(sb.ToString, Sub() OnAction(lng))) '+ tag ??? 'Sub() OnAction(<lngS or SB.toString>, lng)
                 End If
-            Next lng
+            Next i
 
-            Dim miMore = New ActionMenuItem("More")
+            Dim nMI As MenuItemEx
+            For i = 0 To mL2Alph.Count - 1
+                nMI = mL2Alph(i)
+                nMI.DropDown.SuspendLayout()
+                nMI.DropDownItems.AddRange(mL3LL(i).ToArray)
+                nMI.DropDown.ResumeLayout(False)
+            Next i
+
+            Dim miMore = New MenuItemEx("More")
             Menu.SuspendLayout()
-            miMore.DropDown.SuspendLayout()
-            mLl.Add(miMore)
-            Menu.Items.AddRange(mLl.ToArray)
-            Dim mItm = miMore.DropDownItems
-            mItm.AddRange(mL2Alph.ToArray)
-            ActionMenuItem.AddRange2Menu(mItm, mL3.ToArray)
-            miMore.DropDown.ResumeLayout(False)
+            Dim mMDD As ToolStripDropDown = miMore.DropDown
+            mMDD.SuspendLayout()
+            Dim mMItms = miMore.DropDownItems
+            mMItms.AddRange(mL2Alph.ToArray)
+            'Menu.Items.Add(miMore)
+            mL1.Add(miMore)
+            Menu.Items.AddRange(mL1.ToArray)
+            mMDD.ResumeLayout(False)
             Menu.ResumeLayout(False)
         End Sub
 
@@ -1119,7 +1116,8 @@ Namespace UI
                         Dim expandetControl = TryCast(ctrl, SimpleUI.SimpleUIControl)
 
                         If Not expandetControl Is Nothing AndAlso expandetControl.Expand Then
-                            Dim diff = Aggregate i2 In Controls.OfType(Of Control)() Into Sum(If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
+                            'Dim diff = Aggregate i2 In Controls.OfType(Of Control)() Into Sum(If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
+                            Dim diff = Controls.OfType(Of Control).ToArray.SumF(Function(i2) If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
 
                             Dim hostWidth = Width - 1
 
@@ -1160,9 +1158,11 @@ Namespace UI
             Dim labelBlocks = From block In Controls.OfType(Of SimpleUI.LabelBlock)() Where block.Label.Offset = 0
 
             If labelBlocks.Any Then
-                Dim hMax = Aggregate i In labelBlocks Into Max(TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
+                Dim labBlAr = labelBlocks.ToArray
+                'Dim hMax = Aggregate i In labelBlocks Into Max(TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
+                Dim hMax = labBlAr.MaxF(Function(i) TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
 
-                For Each lb In labelBlocks
+                For Each lb In labBlAr 'labelBlocks
                     lb.Label.Offset = hMax / lb.Label.Font.Height
                 Next
             End If
@@ -1250,7 +1250,7 @@ Namespace UI
 
             If ShowMenuSymbol Then
                 e.Graphics.SmoothingMode = SmoothingMode.HighQuality
-                Dim fontH As Integer = Font.Height
+                Dim fontH As Integer = FontHeight 'font.height Test This Experiment!!! NoScaling
                 Dim h = CInt(fontH * 0.3)
                 Dim w = h * 2
 
@@ -1993,7 +1993,7 @@ Namespace UI
                 End If
 
                 ControlPaint.DrawBorder(gx, ClientRectangle, Color.CadetBlue, ButtonBorderStyle.Solid)
-                Dim fontH As Integer = Font.Height
+                Dim fontH As Integer = FontHeight 'Font.Height  Test This Experiment!!! NoScaling
                 Dim h = CInt(fontH * 0.2)
                 Dim w = h * 2
 

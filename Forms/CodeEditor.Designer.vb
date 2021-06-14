@@ -8,14 +8,6 @@ Partial Class CodeEditor
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub dispose(ByVal disposing As Boolean)
         Try
-            'RemoveHandler MainFlowLayoutPanel.Layout, AddressOf MainFlowLayoutPanelLayout
-            'If MenuImageDict IsNot Nothing Then
-            '    For Each img In MenuImageDict.Values
-            '        img.Dispose()
-            '    Next img
-            '    MenuImageDict = Nothing
-            'End If
-
             If disposing AndAlso components IsNot Nothing Then
                 components.Dispose()
             End If
@@ -84,5 +76,5 @@ Partial Class CodeEditor
     Friend WithEvents MainFlowLayoutPanel As System.Windows.Forms.FlowLayoutPanel
 End Class
 'Me.MinimumSize = New System.Drawing.Size(321, 127) 'Overrided
-'Me.Padding = New System.Windows.Forms.Padding(0, 0, 1, 3)
+'Me.Padding = New System.Windows.Forms.Padding(0, 0, 1, 3) 'Overrided
 

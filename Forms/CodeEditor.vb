@@ -14,12 +14,11 @@ Public Class CodeEditor
     Public RTBTxtMaxCWidth As Integer
     Public FilterTabSLock As New Object
     Public RTBFontHeight As Integer ' = 16
-    'Public MenuImageDict As Dictionary(Of Symbol, Image) 'Experiment ' Test this
     Property ActiveTable As FilterTable
     Property Engine As ScriptEngine
 
-    Public sssw As New Stopwatch 'debug !!!!!!!
-    Public ttt2 As String
+    ' Public sssw As New Stopwatch 'debug !!!!!!!
+    ' Public ttt2 As String
 
     Protected Overrides ReadOnly Property DefaultPadding As Padding
         Get
@@ -33,11 +32,11 @@ Public Class CodeEditor
     End Property
 
     Sub New(doc As VideoScript)
-        sssw.Restart()
+        ' sssw.Restart()
         InitializeComponent()
-        sssw.Stop()
-        ttt2 &= sssw.ElapsedTicks / SWFreq & "msInit| "
-        sssw.Restart()
+        'sssw.Stop()
+        'ttt2 &= sssw.ElapsedTicks / SWFreq & "msInit| "
+        'sssw.Restart()
 
         Me.SuspendLayout()
         Me.MainFlowLayoutPanel.SuspendLayout()
@@ -46,11 +45,11 @@ Public Class CodeEditor
         MaximumSize = New Size((ScreenResPrim.Width - 18), (ScreenResPrim.Height - 30))
         MainFlowLayoutPanel.MaximumSize = New Size((ScreenResPrim.Width - 38), (ScreenResPrim.Height - 32 - 68))
 
-        Dim rtbScrFont As Font = New Font("Consolas", 10.0F * s.UIScaleFactor)
+        Dim rtbScrFont As New Font("Consolas", 10.0F * s.UIScaleFactor)
         RTBFontHeight = rtbScrFont.Height
 
         Dim maxTW As Integer
-        Dim s100k As Size = New Size(100000, 100000)
+        Dim s100k As New Size(100000, 100000)
         Dim filters As List(Of VideoFilter) = doc.Filters
         Dim rtHA(filters.Count - 1) As Integer
         Dim mts As Size
@@ -75,7 +74,7 @@ Public Class CodeEditor
             totH += Math.Max(th, CInt(RTBFontHeight * 1.05))
         Next f
 
-        Dim fPSz As Size = New Size(RTBFontHeight * 7 + 6 + maxTW, totH + 4)  'MainFlowLayoutPanel.PreferredSize
+        Dim fPSz As New Size(RTBFontHeight * 7 + 6 + maxTW, totH + 4)  'MainFlowLayoutPanel.PreferredSize
         MainFlowLayoutPanel.Size = fPSz
         Dim fpH As Integer = fPSz.Height
         Me.ClientSize = New Size(fPSz.Width + 1, fpH + 28) 'New Size(fPSz.Width + 17, fpH + 67) 
@@ -83,49 +82,33 @@ Public Class CodeEditor
         bnCancel.Location = New Point(112, fpH + 2)
         bnOK.Location = New Point(112 + 83 + 16, fpH + 2)
 
-        sssw.Stop()
-        ttt2 &= sssw.ElapsedTicks / SWFreq & "msNew| "
-        sssw.Restart()
+        'sssw.Stop()
+        'ttt2 &= sssw.ElapsedTicks / SWFreq & "msNew| "
+        'sssw.Restart()
     End Sub
 
     Protected Overrides Sub OnLoad(args As EventArgs)
         MyBase.OnLoad(args)
         MainFlowLayoutPanel.ResumeLayout(False)
         ResumeLayout(False)
-        'MainFlowLayoutPanelLayout(Nothing, Nothing)
 
-        sssw.Stop()
-        ttt2 &= sssw.ElapsedTicks / SWFreq & "msLoad| "
-        sssw.Restart()
+        'sssw.Stop()
+        'ttt2 &= sssw.ElapsedTicks / SWFreq & "msLoad| "
+        'sssw.Restart()
     End Sub
-    Protected Overrides Sub OnShown(e As EventArgs) 'Debug
-        MyBase.OnShown(e)
+    'Protected Overrides Sub OnShown(e As EventArgs) 'Debug
+    '    MyBase.OnShown(e)
 
-        'Log.Write("PerfSize | Size | ClientSize", $"Me:{PreferredSize} {Size} {ClientSize}{BR} FP:{MainFlowLayoutPanel.PreferredSize} {MainFlowLayoutPanel.Size} {MainFlowLayoutPanel.ClientSize}{BR} FT:{MainFlowLayoutPanel.Controls(0).Size} {MainFlowLayoutPanel.Controls(0).ClientSize} {MainFlowLayoutPanel.Controls(0).PreferredSize}")
-        'AddHandler MainFlowLayoutPanel.Layout, AddressOf MainFlowLayoutPanelLayout
-        '  CreateMenuImageCache()
+    '    ' Log.Write("PerfSize | Size | ClientSize", $"Me:{PreferredSize} {Size} {ClientSize}{BR} FP:{MainFlowLayoutPanel.PreferredSize} {MainFlowLayoutPanel.Size} {MainFlowLayoutPanel.ClientSize}{BR} FT:{MainFlowLayoutPanel.Controls(0).Size} {MainFlowLayoutPanel.Controls(0).ClientSize} {MainFlowLayoutPanel.Controls(0).PreferredSize} IMgCacheCount:{ImageHelp.ImageCacheD.Count}")
 
-        sssw.Stop()
-        Text = ttt2 & sssw.ElapsedTicks / SWFreq & "msShow"
-    End Sub
+    '    sssw.Stop()
+    '    Text = ttt2 & sssw.ElapsedTicks / SWFreq & "msShow"
+    'End Sub
 
-    Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs) 'Debug
-        Me.Text = "Code Editor"
-        'ActionMenuItem.LayoutSuspendList = Nothing
-        MyBase.OnFormClosing(args)
-    End Sub
-
-    'Sub CreateMenuImageCache()
-    '    Task.Run(Sub()
-    '                 Thread.Sleep(45)
-    '                 If MenuImageDict Is Nothing AndAlso Me.IsHandleCreated Then
-    '                     MenuImageDict = New Dictionary(Of Symbol, Image)(17)
-    '                     For Each smb In {Symbol.Filter, Symbol.Remove, Symbol.Photo, Symbol.Play, Symbol.Code, Symbol.Info, Symbol.Lightbulb, Symbol.FavoriteStar,
-    '                                          Symbol.CalculatorPercentage, Symbol.Up, Symbol.Down, Symbol.Cut, Symbol.Copy, Symbol.Paste, Symbol.Help}
-    '                         MenuImageDict.Add(smb, ImageHelp.GetSymbolImage(smb))
-    '                     Next smb
-    '                 End If
-    '             End Sub)
+    'Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs) 'Debug
+    '    Me.Text = "Code Editor"
+    '    'ActionMenuItem.LayoutSuspendList = Nothing
+    '    MyBase.OnFormClosing(args)
     'End Sub
 
     ReadOnly Property MaxRTBTextHeight As Integer
@@ -167,7 +150,7 @@ Public Class CodeEditor
             maxTW = 0
             ReDim rtHA(filterTables.Length - 1)
             Dim mts As Size
-            Dim s100k As Size = New Size(100000, 100000)
+            Dim s100k As New Size(100000, 100000)
             Dim rtb As RichTextBoxEx
             For f = 0 To filterTables.Length - 1
                 rtb = filterTables(f).rtbScript
@@ -187,8 +170,8 @@ Public Class CodeEditor
         For f = 0 To filterTables.Length - 1
             fTb = filterTables(f)
             fTb.SuspendLayout()
-            Dim nRtbSz As Size = New Size(maxTW,
-                                          rtHA(f) + If(rtHA(f) < MaxRTBTextHeight, RTBFontHeight, 0))
+            Dim nRtbSz As New Size(maxTW,
+                                       rtHA(f) + If(rtHA(f) < MaxRTBTextHeight, RTBFontHeight, 0))
             'rtHA(f) + If(rtHA(f) < MaxRTBTextHeight * 1.05, CInt(RTBFontHeight * 1.1), 0))
             fTb.rtbScript.Size = nRtbSz
             Dim ftH As Integer = Math.Max(nRtbSz.Height, CInt(RTBFontHeight * 1.05))
@@ -218,7 +201,7 @@ Public Class CodeEditor
 
         If totH > ScreenResPrim.Height - 32 - 72 Then totH = ScreenResPrim.Height - 32 - 72 '70??This needs Work ToDO!!!
         'Dim fPSz As Size = New Size(RTBFontHeight * 7 + 6 + maxTW + sPadW, totH + 4) 'H+4() 'MainFlowLayoutPanel.PreferredSize 'No FlowP max Implementation
-        Dim fPSz As Size = New Size(Math.Min(ScreenResPrim.Width - 39, RTBFontHeight * 7 + 6 + maxTW + sPadW), Math.Min(ScreenResPrim.Height - 32 - 70, totH + 4)) '  -1W & 2H than ScrRes less than min!!!
+        Dim fPSz As New Size(Math.Min(ScreenResPrim.Width - 39, RTBFontHeight * 7 + 6 + maxTW + sPadW), Math.Min(ScreenResPrim.Height - 32 - 70, totH + 4)) '  -1W & 2H than ScrRes less than min!!!
         'New Size((ScreenResPrim.Width - 38), (ScreenResPrim.Height - 32 - 68))
         MainFlowLayoutPanel.Size = fPSz
         fpH = fPSz.Height
@@ -241,7 +224,7 @@ Public Class CodeEditor
     Function CreateFilterTable(filter As VideoFilter) As FilterTable
         'RTBTxtMaxCWidth = 0
         'RTBTxtCHeightA = {}
-        Dim ft As FilterTable = New FilterTable(filter, Me, New Font("Consolas", 10.0F * s.UIScaleFactor), New Size(300, 70)) 'TEst this !!! Seems Not Good!!!To Do!! Better Speparate Function to calculate RTB.SIZE
+        Dim ft As New FilterTable(filter, Me, New Font("Consolas", 10.0F * s.UIScaleFactor), New Size(300, 70)) 'TEst this !!! Seems Not Good!!!To Do!! Better Speparate Function to calculate RTB.SIZE
         Return ft
     End Function
 
@@ -304,8 +287,7 @@ Public Class CodeEditor
     End Function
 
     Function CreateTempScript() As VideoScript
-        Dim script As New VideoScript
-        script.Engine = Engine
+        Dim script As New VideoScript With {.Engine = Engine}
         script.Path = p.TempDir + p.TargetFile.Base + $"_temp." + script.FileType
         script.Filters = GetFilters()
 
@@ -345,7 +327,7 @@ Public Class CodeEditor
     Sub ShowInfo()
         Dim script = CreateTempScript()
 
-        If Not script Is Nothing Then
+        If script IsNot Nothing Then
             g.ShowScriptInfo(script)
         End If
     End Sub
@@ -447,9 +429,9 @@ Public Class CodeEditor
                                                                         Thread.Sleep(170) ' 150-210
                                                                         If Me.IsDisposed OrElse Not editorForm.IsHandleCreated Then Return
 
-                                                                        Dim sss = Stopwatch.StartNew
-                                                                        Dim ttt As String
-                                                                        sss.Restart()
+                                                                        'Dim sss = Stopwatch.StartNew
+                                                                        'Dim ttt As String
+                                                                        'sss.Restart()
 
                                                                         Dim pcfa = Parent.Controls.OfType(Of FilterTable)().ToArray
                                                                         If pcfa.Length <> editorForm.RTBTxtCHeightA.Length Then
@@ -468,7 +450,7 @@ Public Class CodeEditor
 
                                                                         Dim maxTW As Integer
                                                                         Dim tmts As Size
-                                                                        Dim s100k As Size = New Size(100000, 100000)
+                                                                        Dim s100k As New Size(100000, 100000)
                                                                         Dim mts As Size
 
                                                                         For i = 0 To pcfa.Length - 1
@@ -487,17 +469,17 @@ Public Class CodeEditor
                                                                         (LastTextSize.Height <> tmts.Height AndAlso tmts.Height > fh) Then
                                                                             LastTextSize = tmts
                                                                             editorForm.BeginInvoke(Sub()
-                                                                                                       sss.Restart()
+                                                                                                       'sss.Restart()
                                                                                                        'Task.Run(Sub() Console.Beep(900, 15)) 'debug
                                                                                                        editorForm.MainFlowLayoutPanelLayout()
                                                                                                        'Parent.PerformLayout()
-                                                                                                       sss.Stop()
-                                                                                                       editorForm.Text = ttt & CStr(sss.ElapsedTicks / SWFreq) & "msLayM"
+                                                                                                       'sss.Stop()
+                                                                                                       'editorForm.Text = ttt & CStr(sss.ElapsedTicks / SWFreq) & "msLayM"
                                                                                                    End Sub)
                                                                         End If
 
-                                                                        sss.Stop()
-                                                                        ttt &= Parent.Size.ToString & "FP" & CStr(sss.ElapsedTicks / SWFreq) & "ms|RtMax:" & tmts.ToString
+                                                                        'sss.Stop()
+                                                                        'ttt &= Parent.Size.ToString & "FP" & CStr(sss.ElapsedTicks / SWFreq) & "ms|RtMax:" & tmts.ToString
                                                                     End SyncLock
 
                                                                 End Sub)
@@ -514,7 +496,7 @@ Public Class CodeEditor
             AddHandler rtbScript.TextChanged, rtceh
             Dim deh As EventHandler = Sub()
                                           RTBEventSem = True
-                                          'Menu?.Items.ClearAndDisplose
+                                          'Menu?.Items.ClearAndDispose
                                           Menu?.Dispose()
                                           'Me.Events.Dispose() '???
                                           RemoveHandler Me.Disposed, deh
@@ -574,202 +556,177 @@ Public Class CodeEditor
                                            parameters.FunctionName + "(" + newParameters.Join(", ") + ")")
         End Sub
 
-        Public SsWw As New Stopwatch 'Debug!!!
+        'Public SsWw As New Stopwatch 'Debug!!!
 
         Sub HandleMouseUp(sender As Object, e As MouseEventArgs)
-            If e.Button <> MouseButtons.Right Then
-                Exit Sub
-            End If
+            If e.Button <> MouseButtons.Right Then Exit Sub
 
-            Dim TTTT As String 'Debug!!!
-            SsWw.Restart()
+            'Dim TTTT As String 'Debug!!!
+            'SsWw.Restart()
 
             Menu.SuspendLayout()
             ActionMenuItem.LayoutSuspendCreate(48)
 
-            Menu.Items.ClearAndDisplose
+            Menu.Items.ClearAndDispose
             Dim filterProfiles = If(p.Script.Engine = ScriptEngine.AviSynth, s.AviSynthProfiles, s.VapourSynthProfiles)
             Dim code = rtbScript.Text.FixBreak
 
-            For Each i In FilterParameters.Definitions
-                If code.Contains(i.FunctionName + "(") Then
-                    Dim match = Regex.Match(code, i.FunctionName + "\((.+)\)")
-
-                    If match.Success Then
-                        ActionMenuItem.Add(Menu.Items, i.Text, AddressOf SetParameters, i)
+            For Each fDef In FilterParameters.Definitions
+                Dim fFunName As String = fDef.FunctionName
+                If code.Contains(fFunName & "(") Then
+                    If Regex.Match(code, fFunName & "\((.+)\)").Success Then
+                        ActionMenuItem.Add(Menu.Items, fDef.Text, Sub() SetParameters(fDef))
                     End If
                 End If
-            Next
+            Next fDef
 
-            For Each i In filterProfiles
-                If String.Equals(i.Name, cbActive.Text) Then
-                    Dim cat = i
-                    Dim catMenuItem = Menu.Add2(i.Name & " ")
-
-                    For Each iFilter In cat.Filters
-                        Dim tip = iFilter.Script
-                        ActionMenuItem.Add(Menu.Items, If(cat.Filters.Count > 1, iFilter.Category + " | ", "") + iFilter.Path, AddressOf ReplaceClick, iFilter.GetCopy, tip)
-                    Next
+            Dim cbATxt As String = cbActive.Text
+            For Each cat In filterProfiles
+                If String.Equals(cat.Name, cbATxt) Then
+                    Menu.Items.Add(New MenuItemEx(cat.Name))
+                    Dim filtL As List(Of VideoFilter) = cat.Filters
+                    For Each iFilter In filtL
+                        ActionMenuItem.Add(Menu.Items, If(filtL.Count > 1, iFilter.Category & " | ", "") & iFilter.Path, Sub() ReplaceClick(iFilter.GetCopy), iFilter.Script)
+                    Next iFilter
                 End If
-            Next
+            Next cat
 
-            'Dim mImageD = Editor.MenuImageDict
-            Dim mImageD = Function(ss As Symbol) ImageHelp.GetImageCache(ss)
-            Dim filterMenuItem = Menu.Add2("Add, insert or replace a filter   ", mImageD(Symbol.Filter))
+            Dim filterMenuItem = New ActionMenuItem("Add, insert or replace a filter   ", ImageHelp.GetImageC(Symbol.Filter))
             filterMenuItem.DropDown.SuspendLayout()
-
-            ActionMenuItem.Add(filterMenuItem.DropDownItems, "Empty Filter", AddressOf FilterClick, New VideoFilter("Misc", "", ""), "Filter with empty values.")
+            Dim filterMDDI As ToolStripItemCollection = filterMenuItem.DropDownItems
+            filterMDDI.Add(New ActionMenuItem("Empty Filter", Sub() FilterClick(New VideoFilter("Misc", "", "")), "Filter with empty values."))
 
             For Each filterCategory In filterProfiles
+                Dim fCatN As String = filterCategory.Name & " | "
                 For Each filter In filterCategory.Filters
                     Dim tip = filter.Script
-                    ActionMenuItem.Add(filterMenuItem.DropDownItems, filterCategory.Name + " | " + filter.Path, AddressOf FilterClick, filter.GetCopy, tip)
-                Next
-            Next
+                    ActionMenuItem.Add(filterMDDI, fCatN & filter.Path, Sub() FilterClick(filter.GetCopy), tip)
+                Next filter
+            Next filterCategory
             filterMenuItem.DropDown.ResumeLayout(False)
 
-            Dim removeMenuItem = Menu.Add2("Remove", AddressOf RemoveClick, mImageD(Symbol.Remove))
-            removeMenuItem.KeyDisplayString = "Ctrl+Delete"
-
             Dim isPrSrcF As Boolean = p.SourceFile.NotNullOrEmptyS
-            Dim previewMenuItem = Menu.Add2("Preview Video...", AddressOf Editor.VideoPreview, mImageD(Symbol.Photo), "Previews the script with solved macros.")
-            previewMenuItem.Enabled = isPrSrcF
-            previewMenuItem.KeyDisplayString = "F5"
-
-            Dim mpvnetMenuItem = Menu.Add2("Play with mpv.net", AddressOf Editor.PlayScriptWithMPV, mImageD(Symbol.Play), "Plays the current script with mpv.net.")
-            mpvnetMenuItem.Enabled = isPrSrcF
-            mpvnetMenuItem.KeyDisplayString = "F9"
-
-            Dim mpcMenuItem = Menu.Add2("Play with mpc", AddressOf Editor.PlayScriptWithMPC, mImageD(Symbol.Play), "Plays the current script with MPC.")
-            mpcMenuItem.Enabled = isPrSrcF
-            mpcMenuItem.KeyDisplayString = "F10"
-
-            Menu.Add2("Preview Code...", AddressOf CodePreview, mImageD(Symbol.Code), "Previews the script with solved macros.")
-
-            Dim infoMenuItem = Menu.Add2("Info...", AddressOf Editor.ShowInfo, mImageD(Symbol.Info), "Previews script parameters such as framecount and colorspace.")
-            infoMenuItem.KeyDisplayString = "Ctrl+I"
-            infoMenuItem.Enabled = isPrSrcF
-
-            Menu.Add2("Advanced Info...", AddressOf Editor.ShowAdvancedInfo, mImageD(Symbol.Lightbulb)).Enabled = isPrSrcF
-
-            Dim joinMenuItem = Menu.Add2("Join Filters", AddressOf Editor.JoinFilters, "Joins all filters into one filter.")
-            joinMenuItem.Enabled = DirectCast(Parent, FlowLayoutPanel).Controls.Count > 1
-            joinMenuItem.ShortcutKeyDisplayString = "Ctrl+J   "
-
-            Dim profilesMenuItem = Menu.Add2("Profiles...", AddressOf g.MainForm.ShowFilterProfilesDialog, mImageD(Symbol.FavoriteStar), "Dialog to edit profiles.")
-            profilesMenuItem.KeyDisplayString = "Ctrl+P"
-
-            Dim macrosMenuItem = Menu.Add2("Macros...", AddressOf MacrosForm.ShowDialogForm, mImageD(Symbol.CalculatorPercentage), "Dialog to choose macros.")
-            macrosMenuItem.KeyDisplayString = "Ctrl+M"
-
-            Menu.Items.Add(New ToolStripSeparator)
-
-            Dim moveUpMenuItem = Menu.Add2("Move Up", AddressOf MoveUp, mImageD(Symbol.Up))
-            moveUpMenuItem.KeyDisplayString = "Ctrl+Up"
-
-            Dim moveDownMenuItem = Menu.Add2("Move Down", AddressOf MoveDown, mImageD(Symbol.Down))
-            moveDownMenuItem.KeyDisplayString = "Ctrl+Down"
-
-            Menu.Items.Add(New ToolStripSeparator)
-
-            Dim cutAction = Sub()
-                                Clipboard.SetText(rtbScript.SelectedText)
-                                rtbScript.SelectedText = ""
-                            End Sub
-
-            Dim copyAction = Sub() Clipboard.SetText(rtbScript.SelectedText)
-
-            Dim pasteAction = Sub()
-                                  rtbScript.SelectedText = Clipboard.GetText
-                                  rtbScript.ScrollToCaret()
-                              End Sub
-
             Dim isTSel As Boolean = rtbScript.SelectionLength > 0
-            Dim cutMenuItem = Menu.Add2("Cut", cutAction, mImageD(Symbol.Cut))
-            cutMenuItem.Enabled = isTSel AndAlso Not rtbScript.ReadOnly
-            cutMenuItem.KeyDisplayString = "Ctrl+X"
+            Dim helpMenuItem = New MenuItemEx("Help", ImageHelp.GetImageC(Symbol.Help))
+            helpMenuItem.DropDownItems.Add(New ToolStripMenuItem("t"))
 
-            Dim copyMenuItem = Menu.Add2("Copy", copyAction, mImageD(Symbol.Copy))
-            copyMenuItem.Enabled = isTSel
-            copyMenuItem.KeyDisplayString = "Ctrl+C"
+            Menu.Items.AddRange({filterMenuItem,
+                New ActionMenuItem("Remove", AddressOf RemoveClick, ImageHelp.GetImageC(Symbol.Remove)) With {.KeyDisplayString = "Ctrl+Delete"},
+                New ActionMenuItem("Preview Video...", AddressOf Editor.VideoPreview, ImageHelp.GetImageC(Symbol.Photo), "Previews the script with solved macros.") With {.Enabled = isPrSrcF, .KeyDisplayString = "F5"},
+                New ActionMenuItem("Play with mpv.net", AddressOf Editor.PlayScriptWithMPV, ImageHelp.GetImageC(Symbol.Play), "Plays the current script with mpv.net.") With {.Enabled = isPrSrcF, .KeyDisplayString = "F9"},
+                New ActionMenuItem("Play with mpc", AddressOf Editor.PlayScriptWithMPC, ImageHelp.GetImageC(Symbol.Play), "Plays the current script with MPC.") With {.Enabled = isPrSrcF, .KeyDisplayString = "F10"},
+                New ActionMenuItem("Preview Code...", AddressOf CodePreview, ImageHelp.GetImageC(Symbol.Code), "Previews the script with solved macros."),
+                New ActionMenuItem("Info...", AddressOf Editor.ShowInfo, ImageHelp.GetImageC(Symbol.Info), "Previews script parameters such as framecount and colorspace.") With {.Enabled = isPrSrcF, .KeyDisplayString = "Ctrl+I"},
+                New ActionMenuItem("Advanced Info...", AddressOf Editor.ShowAdvancedInfo, ImageHelp.GetImageC(Symbol.Lightbulb)) With {.Enabled = .Enabled = isPrSrcF},
+                New ActionMenuItem("Join Filters", AddressOf Editor.JoinFilters, ImageHelp.GetImageC(Symbol.Link), "Joins all filters into one filter.") With
+                                    {.Enabled = DirectCast(Parent, FlowLayoutPanel).Controls.Count > 1, .ShortcutKeyDisplayString = "Ctrl+J"},
+                New ActionMenuItem("Profiles...", AddressOf g.MainForm.ShowFilterProfilesDialog, ImageHelp.GetImageC(Symbol.FavoriteStar), "Dialog to edit profiles.") With {.KeyDisplayString = "Ctrl+P"},
+                New ActionMenuItem("Macros...", AddressOf MacrosForm.ShowDialogForm, ImageHelp.GetImageC(Symbol.CalculatorPercentage), "Dialog to choose macros.") With {.KeyDisplayString = "Ctrl+M"},
+                New ToolStripSeparator,
+                New ActionMenuItem("Move Up", AddressOf MoveUp, ImageHelp.GetImageC(Symbol.Up)) With {.KeyDisplayString = "Ctrl+Up"},
+                New ActionMenuItem("Move Down", AddressOf MoveDown, ImageHelp.GetImageC(Symbol.Down)) With {.KeyDisplayString = "Ctrl+Down"},
+                New ToolStripSeparator,
+                New ActionMenuItem("Cut", Sub()
+                                              Clipboard.SetText(rtbScript.SelectedText)
+                                              rtbScript.SelectedText = ""
+                                          End Sub, ImageHelp.GetImageC(Symbol.Cut)) With {.Enabled = isTSel AndAlso Not rtbScript.ReadOnly, .KeyDisplayString = "Ctrl+X"},
+                New ActionMenuItem("Copy", Sub() Clipboard.SetText(rtbScript.SelectedText), ImageHelp.GetImageC(Symbol.Copy)) With {.Enabled = isTSel, .KeyDisplayString = "Ctrl+C"},
+                New ActionMenuItem("Paste", Sub()
+                                                rtbScript.SelectedText = Clipboard.GetText
+                                                rtbScript.ScrollToCaret()
+                                            End Sub, ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.GetText IsNot "" AndAlso Not rtbScript.ReadOnly, .KeyDisplayString = "Ctrl+V"},
+                New ToolStripSeparator, helpMenuItem})
 
-            Dim pasteMenuItem = Menu.Add2("Paste", pasteAction, mImageD(Symbol.Paste)) ' Errors !! ToDO Check need
-            pasteMenuItem.Enabled = Clipboard.GetText IsNot "" AndAlso Not rtbScript.ReadOnly
-            pasteMenuItem.KeyDisplayString = "Ctrl+V"
+            'TTTT = ActionMenuItem.LayoutSuspendList?.Count & "LayLC| "
 
-            Menu.Items.Add(New ToolStripSeparator)
-            Dim helpMenuItem = Menu.Add2("Help ", mImageD(Symbol.Help))
-            Dim helpTempMenuItem = New ToolStripMenuItem("temp")
-            helpMenuItem.DropDownItems.Add(helpTempMenuItem)
-
-            TTTT = ActionMenuItem.LayoutSuspendList?.Count & "LayLC| "
             ActionMenuItem.LayoutResume(False)
             Menu.ResumeLayout()
 
-            Dim helpAction = Sub()
-                                 SsWw.Restart()
-                                 ActionMenuItem.LayoutSuspendCreate(32)
-                                 Menu.SuspendLayout()
-
-                                 For Each pluginPack In Package.Items.Values.OfType(Of PluginPackage)()
-                                     If Not pluginPack.AvsFilterNames Is Nothing Then
-                                         For Each avsFilterName In pluginPack.AvsFilterNames
-                                             If rtbScript.Text.Contains(avsFilterName) Then
-                                                 Menu.Add("Help | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
-                                             End If
-                                         Next
-                                     End If
-                                 Next
-
-                                 Dim inc As Integer
-                                 If p.Script.Engine = ScriptEngine.AviSynth Then
-                                     'Dim InstallDir = Registry.LocalMachine.GetString("SOFTWARE\AviSynth", Nothing)
-                                     Dim helpText = rtbScript.Text.Left("(")
-
-                                     If helpText.EndsWith("Resize", StringComparison.Ordinal) Then helpText = "Resize"
-                                     If helpText.StartsWith("ConvertTo", StringComparison.Ordinal) Then helpText = "Convert"
-
-                                     Menu.Add("Help | AviSynth Help", Sub() g.ShellExecute("http://avisynth.nl"), "http://avisynth.nl")
-                                     Menu.Add("Help | -")
-
-                                     For Each pluginPack In Package.Items.Values.OfType(Of PluginPackage)
-
-                                         If Not pluginPack.AvsFilterNames Is Nothing Then
-                                             Menu.Add("Help | " + pluginPack.Name.Substring(0, 1).ToUpperInvariant + " | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
-                                             inc += 1
-                                             If inc Mod 8 = 0 Then Application.DoEvents()
-                                         End If
-                                     Next
-                                 Else
-                                     Menu.Add("Help | VapourSynth Help", Sub() Package.VapourSynth.ShowHelp(), Package.VapourSynth.HelpFileOrURL)
-                                     Menu.Add("Help | -")
-                                     For Each pluginPack In Package.Items.Values.OfType(Of PluginPackage)
-                                         If Not pluginPack.VSFilterNames Is Nothing Then
-                                             Menu.Add("Help | " + pluginPack.Name.Substring(0, 1).ToUpperInvariant + " | " + pluginPack.Name, Sub() pluginPack.ShowHelp(), pluginPack.Description)
-                                             inc += 1
-                                             If inc Mod 8 = 0 Then Application.DoEvents()
-                                         End If
-                                     Next
-                                 End If
-                                 TTTT = ActionMenuItem.LayoutSuspendList?.Count & "LayLC| "
-                                 ActionMenuItem.LayoutResume(False)
-                                 Menu.ResumeLayout(False)
-                                 SsWw.Stop()
-                                 TTTT &= SsWw.ElapsedTicks / SWFreq & "msHelp"
-                                 Editor.Text = TTTT
-                             End Sub
-
             Dim hmoeh As EventHandler = Sub()
-                                            RemoveHandler helpMenuItem.DropDownOpened, hmoeh
-                                            helpTempMenuItem.Visible = False
-                                            helpAction()
+                                            RemoveHandler helpMenuItem.DropDownOpening, hmoeh
+                                            PopulateHelpMenu(helpMenuItem)
                                         End Sub
-            AddHandler helpMenuItem.DropDownOpened, hmoeh
+            AddHandler helpMenuItem.DropDownOpening, hmoeh
 
-            SsWw.Stop()
-            TTTT &= SsWw.ElapsedTicks / SWFreq & "msMain|ImgC:" & ImageHelp.ImageCacheD.Count
-            Editor.Text = TTTT
+            'SsWw.Stop()
+            'TTTT &= SsWw.ElapsedTicks / SWFreq & "msMain|ImgC:" & ImageHelp.ImageCacheD.Count
+            'Editor.Text = TTTT
             Menu.Show(rtbScript, e.Location)
+        End Sub
+
+        Private Sub PopulateHelpMenu(helpMenuItm As MenuItemEx)
+
+            ' SsWw.Restart()
+
+            Menu.SuspendLayout()
+            helpMenuItm.DropDown.SuspendLayout()
+            helpMenuItm.DropDownItems(0).Visible = False
+
+            Dim pPHS As New HashSet(Of Package)(7) 'TODO : Test this
+            Dim rtbTxt = rtbScript.Text
+            Dim helpMenuIList As New List(Of ToolStripItem)(32)
+            Dim fEngnDesc As String
+            Dim filtNamesA As String()
+            Dim avsEn As Boolean = p.Script.Engine = ScriptEngine.AviSynth
+            Dim plugPkgsIA = Package.Items.Values.OfType(Of PluginPackage).ToArray
+
+            For f = 1 To 2
+                fEngnDesc = If(avsEn, If(f = 1, " AVS", " VS"), If(f = 1, " VS", " AVS"))
+                For i = 0 To plugPkgsIA.Length - 1
+                    Dim pluginPack As PluginPackage = plugPkgsIA(i)
+                    filtNamesA = If(avsEn, If(f = 1, pluginPack.AvsFilterNames, pluginPack.VSFilterNames), If(f = 1, pluginPack.VSFilterNames, pluginPack.AvsFilterNames))
+                    If filtNamesA IsNot Nothing Then
+                        For n = 0 To filtNamesA.Length - 1
+                            If rtbTxt.Contains(filtNamesA(n)) Then
+                                If pPHS.Add(pluginPack) Then helpMenuIList.Add(New ActionMenuItem(pluginPack.Name & fEngnDesc, Sub() pluginPack.ShowHelp(), pluginPack.Description))
+                            End If
+                        Next n
+                    End If
+                Next i
+            Next f
+
+            If avsEn Then
+                helpMenuIList.Add(New ActionMenuItem("AviSynth Help", Sub() g.ShellExecute("http://avisynth.nl"), "http://avisynth.nl"))
+            Else
+                helpMenuIList.Add(New ActionMenuItem("VapourSynth Help", Sub() Package.VapourSynth.ShowHelp(), Package.VapourSynth.HelpFileOrURL))
+            End If
+
+            helpMenuIList.Add(New ToolStripSeparator)
+            Dim hc As Integer = helpMenuIList.Count
+            Dim mL2LL As New List(Of List(Of ActionMenuItem))(28)
+            Dim nML2 As List(Of ActionMenuItem)
+            Dim lastCH As Char
+            Dim c1 As Char
+
+            For i = 0 To plugPkgsIA.Length - 1
+                Dim pp = plugPkgsIA(i)
+                If If(avsEn, pp.AvsFilterNames IsNot Nothing, pp.VSFilterNames IsNot Nothing) Then
+                    c1 = CChar(pp.Name.Substring(0, 1).ToUpperInvariant)
+                    If c1 <> lastCH Then 'source is sorted, if not: HashSet
+                        lastCH = c1
+                        helpMenuIList.Add(New MenuItemEx(c1))
+                        nML2 = New List(Of ActionMenuItem)(4)
+                        mL2LL.Add(nML2)
+                    End If
+                    nML2.Add(New ActionMenuItem(pp.Name, Sub() pp.ShowHelp(), pp.Description))
+                End If
+            Next i
+
+            Dim nMI As ToolStripMenuItem
+            For i = 0 To mL2LL.Count - 1
+                nMI = DirectCast(helpMenuIList(i + hc), ToolStripMenuItem)
+                nMI.DropDown.SuspendLayout()
+                nMI.DropDownItems.AddRange(mL2LL(i).ToArray)
+                nMI.DropDown.ResumeLayout(False)
+            Next i
+
+            helpMenuItm.DropDownItems.AddRange(helpMenuIList.ToArray)
+            helpMenuItm.DropDown.ResumeLayout(False)
+            Menu.ResumeLayout(False)
+
+            'SsWw.Stop()
+            'Editor.Text &= $"|Help{SsWw.ElapsedTicks / SWFreq}msHS:{pPHS.Count}HMLC:{helpMenuIList.Count}L2LL:{mL2LL.Count}"
+
         End Sub
 
         Sub MoveUp()
@@ -797,9 +754,9 @@ Public Class CodeEditor
         End Sub
 
         Sub CodePreview()
-            Dim script As New VideoScript
-            script.Engine = Editor.Engine
-            script.Filters = Editor.GetFilters()
+            Dim script As New VideoScript With {
+                .Engine = Editor.Engine,
+                .Filters = Editor.GetFilters()}
             g.CodePreview(script.GetFullScript)
         End Sub
 
@@ -846,7 +803,7 @@ Public Class CodeEditor
                         rtbScript.Text = tup.Value.TrimEnd + BR
                         rtbScript.SelectionStart = rtbScript.Text.Length
                         Application.DoEvents()
-                        Menu.Items.ClearAndDisplose
+                        Menu.Items.ClearAndDispose
                     Case "Insert"
                         Dim tup = Macro.ExpandGUI(filter.Script)
 
@@ -876,7 +833,7 @@ Public Class CodeEditor
                         filterTable.rtbScript.SelectionStart = filterTable.rtbScript.Text.Length
                         filterTable.rtbScript.Focus()
                         Application.DoEvents()
-                        Menu.Items.ClearAndDisplose
+                        Menu.Items.ClearAndDispose
                     Case "Add"
                         Dim tup = Macro.ExpandGUI(filter.Script)
 
@@ -902,7 +859,7 @@ Public Class CodeEditor
                         filterTable.rtbScript.SelectionStart = filterTable.rtbScript.Text.Length
                         filterTable.rtbScript.Focus()
                         Application.DoEvents()
-                        Menu.Items.ClearAndDisplose
+                        Menu.Items.ClearAndDispose
                 End Select
             End Using
         End Sub
@@ -930,7 +887,7 @@ Public Class CodeEditor
             rtbScript.Text = tup.Value.TrimEnd + BR
             rtbScript.SelectionStart = rtbScript.Text.Length
             Application.DoEvents()
-            Menu.Items.ClearAndDisplose
+            Menu.Items.ClearAndDispose
         End Sub
     End Class
 End Class

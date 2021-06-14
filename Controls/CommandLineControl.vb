@@ -147,7 +147,7 @@ Public Class CommandLineControl
         components.Add(cms)
         cms.SuspendLayout()
         cms.Items.Add(New ToolStripSeparator)
-        cms.Items.Add(New ActionMenuItem("Edit Menu..." + g.MenuSpace, AddressOf EditPresets))
+        cms.Items.Add(New ActionMenuItem("Edit Menu...", AddressOf EditPresets)) ' Opt.: No MenuSpace Test This!!!  "Edit Menu..." & g.MenuSpace
         cms.ResumeLayout()
         cms.Show(bn, 0, bn.Height)
     End Sub

@@ -5,22 +5,17 @@ Imports System.Globalization
 Imports System.Threading.Tasks
 
 Public Class ImageHelp
-    'Private Shared ReadOnly AwesomePath As String = Folder.Apps & "Fonts\FontAwesome.ttf"
     Private Shared FontFilesExist As Boolean = File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") 'AndAlso File.Exists(Folder.Apps & "Fonts\Segoe-MDL2-Assets.ttf")
-    ' Private Shared ReadOnly FamilySagoe As New FontFamily("Segoe MDL2 Assets")
-    ' Private Shared FamilyAwesome As FontFamily
-    'Private Shared ReadOnly FontSagoe As New Font(FamilySagoe, 12)
     Private Shared CollFontPrv As New PrivateFontCollection
     Private Shared FontSagoe As New Font("Segoe MDL2 Assets", 12)
     Private Shared FontAwesome As Font
-    Public Shared ImageCacheD As New Dictionary(Of Symbol, Image)(37)
+    Public Shared ImageCacheD As New Dictionary(Of Symbol, Image)(59) 'prm:47-53-59  46 Max As for 202106
 
     Public Shared Sub CreateFonts()
         If FontSagoe Is Nothing Then FontSagoe = New Font("Segoe MDL2 Assets", 12)
         If FontFilesExist Then
             If CollFontPrv Is Nothing Then CollFontPrv = New PrivateFontCollection
             If CollFontPrv.Families.Length = 0 Then CollFontPrv.AddFontFile(Folder.Apps & "Fonts\FontAwesome.ttf")
-            'Using EndUsing FamilyAwesome = CollFontPrv.Families(0)
             If FontAwesome Is Nothing Then FontAwesome = New Font(CollFontPrv.Families(0), 12)
         End If
     End Sub
@@ -37,22 +32,15 @@ Public Class ImageHelp
             CollFontPrv.Dispose()
             CollFontPrv = Nothing
         End If
-        'FamilyAwesome?.Dispose()
-        'FamilySagoe?.Dispose()
     End Sub
-
-    Shared Async Function GetSymbolImageAsync(symbol As Symbol) As Task(Of Image)
-        Return Await Task.Run(Of Image)(Function() GetSymbolImage(symbol))
-    End Function
-
+    'Shared Async Function GetSymbolImageAsync(symbol As Symbol) As Task(Of Image)
+    '    Return Await Task.Run(Of Image)(Function() GetSymbolImage(symbol))
+    'End Function
     Shared Function GetSymbolImage(symbol As Symbol) As Image
-        'If family Is Nothing Then Return Nothing
-        'If symbol > 61400 AndAlso FamilyAwesome Is Nothing Then Return Nothing
         If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
-        'Using font As New Font(If(symbol > 61400, FamilyAwesome, FamilySagoe), 12)
         'dim fHeight = 16 font.Height 'New Bitmap(CInt(fHeight * 1.1), CInt(fHeight * 1.1))
 
-        Dim bitmap As Bitmap = New Bitmap(CInt(16.0 * 1.1), CInt(16.0 * 1.1))
+        Dim bitmap As New Bitmap(CInt(16.0 * 1.1), CInt(16.0 * 1.1))
         Using graphics = Drawing.Graphics.FromImage(bitmap)
             graphics.TextRenderingHint = TextRenderingHint.AntiAlias
             graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 16.0F * 0.07F)
@@ -65,28 +53,27 @@ Public Class ImageHelp
         If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
         'Using fontS As New Font("Segoe MDL2 Assets", 11) FH15
         Dim bitmap As Bitmap = New Bitmap(16, 16) '=SystemInformation.SmallIconSize
+
         Using graphics = Drawing.Graphics.FromImage(bitmap)
             graphics.TextRenderingHint = TextRenderingHint.AntiAlias
-            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 0)
+            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 0F)
         End Using
 
         Return bitmap
     End Function
 
-    Shared Function GetImageCache(symbol As Symbol) As Image
-        'If symbol = Symbol.None Then Return Nothing
-        If ImageCacheD.ContainsKey(symbol) Then Return ImageCacheD(symbol)
-        Dim img = GetSymbolImage(symbol)
+    Shared Function GetImageC(symbol As Symbol) As Image
+        Dim img As Image
+        If ImageCacheD.TryGetValue(symbol, img) Then Return img
+        img = GetSymbolImage(symbol)
         ImageCacheD.Item(symbol) = img
         Return img
     End Function
 
     Shared Sub ClearCache()
-        'For Each img In ImageCacheD.Values
-        '    img.Dispose()
-        'Next img
-        Parallel.ForEach(ImageCacheD.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(i) i.Dispose())
+        'Parallel.ForEach(ImageCacheD.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(i) i.Dispose()) ' Destroys existings menus! :(
         ImageCacheD.Clear()
+        ImageCacheD = New Dictionary(Of Symbol, Image)(59)
     End Sub
 End Class
 
@@ -173,11 +160,12 @@ Public Class Thumbnails
                         Dim sz = g.MeasureString(timestamp, ft)
                         Dim pt As Point
                         Dim pos = s.Storage.GetInt("Thumbnail Position", 1)
+                        Dim ftH As Integer = ft.Height
 
                         If pos = 0 OrElse pos = 2 Then
-                            pt.X = ft.Height \ 10
+                            pt.X = ftH \ 10
                         Else
-                            pt.X = CInt(bitmap.Width - sz.Width - ft.Height / 10)
+                            pt.X = CInt(bitmap.Width - sz.Width - ftH / 10)
                         End If
 
                         If pos = 2 OrElse pos = 3 Then
@@ -188,7 +176,7 @@ Public Class Thumbnails
 
                         gp.AddString(timestamp, ft.FontFamily, CInt(ft.Style), ft.Size, pt, New StringFormat())
 
-                        Using pen As New Pen(Color.Black, ft.Height \ 5)
+                        Using pen As New Pen(Color.Black, ftH \ 5)
                             g.DrawPath(pen, gp)
                         End Using
 
@@ -250,7 +238,8 @@ Public Class Thumbnails
         caption = caption.Replace(" ,", "")
 
         Dim captionSize = TextRenderer.MeasureText(caption, font)
-        Dim captionHeight = captionSize.Height + font.Height \ 3
+        Dim fHeight As Integer = font.Height
+        Dim captionHeight = captionSize.Height + fHeight \ 3
         Dim waterMark = s.Storage.GetBool("Logo", False)
         Dim imageWidth = width * columnCount + gap
         Dim imageHeight = height * rowCount + captionHeight
@@ -273,7 +262,7 @@ Public Class Thumbnails
                     format.LineAlignment = StringAlignment.Center
 
                     If waterMark = False Then
-                        g.DrawString("StaxRip", New Font(fontOptions, font.Height * 2, FontStyle.Bold, GraphicsUnit.Pixel), brush, rect, format)
+                        g.DrawString("StaxRip", New Font(fontOptions, fHeight * 2, FontStyle.Bold, GraphicsUnit.Pixel), brush, rect, format)
                     End If
                 End Using
 

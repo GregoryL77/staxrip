@@ -239,18 +239,18 @@ Public Class EventCommandsEditor
         lv.SelectFirst()
         lv.EndUpdate()
 
-        bnUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-        bnDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
-        bnAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
-        bnClone.Image = ImageHelp.GetSymbolImage(Symbol.TwoPage)
-        bnEdit.Image = ImageHelp.GetSymbolImage(Symbol.Repair)
+        bnUp.Image = ImageHelp.GetImageC(Symbol.Up)
+        bnDown.Image = ImageHelp.GetImageC(Symbol.Down)
+        bnAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
+        bnClone.Image = ImageHelp.GetImageC(Symbol.TwoPage)
+        bnEdit.Image = ImageHelp.GetImageC(Symbol.Repair)
 
         For Each bn In {bnAdd, bnRemove, bnClone, bnEdit, bnUp, bnDown}
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
             Dim pad = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
+            pad.Left = FontHeight \ 10
             pad.Right = pad.Left
             bn.Padding = pad
         Next

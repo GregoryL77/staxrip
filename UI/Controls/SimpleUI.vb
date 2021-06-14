@@ -583,7 +583,7 @@ Public Class SimpleUI
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             'dialog size
-            Dim fh As Integer = Font.Height
+            Dim fh As Integer = FontHeight  '=Font.Height 'Experimant - NoScaling!!! Test This!!!
             Height = CInt(fh * 1.3)
             Width = CInt(fh * 4.5)
             MyBase.OnLayout(levent)

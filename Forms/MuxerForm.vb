@@ -687,19 +687,20 @@ Public Class MuxerForm
         dgvTags.DataSource = muxer.Tags
         dgvTags.AllowUserToAddRows = True
         dgvTags.AllowUserToDeleteRows = True
-        dgvTags.Columns(0).Width = FontHeight * 10
-        dgvTags.Columns(1).Width = FontHeight * 20
+        Dim fh As Integer = FontHeight
+        dgvTags.Columns(0).Width = fh * 10
+        dgvTags.Columns(1).Width = fh * 20
         dgvTags.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
 
-        bnAudioAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnAudioRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
-        bnAudioPlay.Image = ImageHelp.GetSymbolImage(Symbol.Play)
-        bnAudioUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-        bnAudioDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
-        bnAudioEdit.Image = ImageHelp.GetSymbolImage(Symbol.Repair)
+        bnAudioAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnAudioRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
+        bnAudioPlay.Image = ImageHelp.GetImageC(Symbol.Play)
+        bnAudioUp.Image = ImageHelp.GetImageC(Symbol.Up)
+        bnAudioDown.Image = ImageHelp.GetImageC(Symbol.Down)
+        bnAudioEdit.Image = ImageHelp.GetImageC(Symbol.Repair)
 
-        bnAttachmentAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnAttachmentRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
+        bnAttachmentAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnAttachmentRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
 
         For Each bn In {bnAudioAdd, bnAudioRemove, bnAudioPlay, bnAudioUp,
                         bnAudioDown, bnAudioEdit, bnAttachmentAdd, bnAttachmentRemove}
@@ -707,7 +708,7 @@ Public Class MuxerForm
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
             Dim pad = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
+            pad.Left = fh \ 10
             pad.Right = pad.Left
             bn.Padding = pad
         Next
@@ -737,17 +738,17 @@ Public Class MuxerForm
         dgvSubtitles.MultiSelect = False
         dgvSubtitles.ClipboardCopyMode = DataGridViewClipboardCopyMode.Disable
 
-        bnSubtitleAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnSubtitleRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
-        bnSubtitlePlay.Image = ImageHelp.GetSymbolImage(Symbol.Play)
-        bnSubtitleUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-        bnSubtitleDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
+        bnSubtitleAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnSubtitleRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
+        bnSubtitlePlay.Image = ImageHelp.GetImageC(Symbol.Play)
+        bnSubtitleUp.Image = ImageHelp.GetImageC(Symbol.Up)
+        bnSubtitleDown.Image = ImageHelp.GetImageC(Symbol.Down)
 
         For Each bn In {bnSubtitleAdd, bnSubtitleRemove, bnSubtitlePlay, bnSubtitleUp, bnSubtitleDown}
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
             Dim pad = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
+            pad.Left = fh \ 10
             pad.Right = pad.Left
             bn.Padding = pad
         Next
@@ -911,7 +912,7 @@ Public Class MuxerForm
             compression.Property = NameOf(MkvMuxer.Compression)
 
             Application.DoEvents()
-            ml.Button.BuildLangMenu(True)
+            ml.Button.BuildLangMenu()
             'lastAction = Sub()
             '                 ml.Button.Menu.SuspendLayout()
             '                 For Each i In Language.Languages

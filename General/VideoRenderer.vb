@@ -132,9 +132,10 @@ Public Class VideoRenderer
         Dim backBrush = DeviceContext.CreateSolidColorBrush(Of ID2D1SolidColorBrush)(backColor)
         Dim metrics As DWRITE_TEXT_METRICS
         layout.GetMetrics(metrics)
-        Dim padding = Scale(Control.Font.Height) / 3
+        Dim cFH As Integer = Control.Font.Height
+        Dim padding = Scale(cFH) / 3
         Dim rect As D2D_RECT_F
-        rect.left = Scale(Control.Font.Height) / 2
+        rect.left = Scale(cFH) / 2
         rect.top = rect.left
         rect.right = rect.left + metrics.width + padding * 2
         rect.bottom = rect.top + metrics.height + padding * 2

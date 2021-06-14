@@ -18,7 +18,7 @@ Namespace UI
 
         Sub New()
             Font = New Font("Segoe UI", 9)
-            FontHeight = Font.Height
+            FontHeight = If(s.UIScaleFactor = 1, 16, Font.Height) ' Test This Experiment!!! NoScaling
         End Sub
 
         <DefaultValue(False)>
@@ -71,7 +71,8 @@ Namespace UI
 
             Dim workAr As Size  'Rectangle
             If DefaultWidthScale <> 0 Then
-                Dim fh As Integer = FontHeight 'Font.Height
+                'Dim fh As Integer = Font.Height
+                Dim fh As Integer = FontHeight
                 Dim defaultWidth = CInt(fh * DefaultWidthScale)
                 Dim defaultHeight = CInt(fh * DefaultHeightScale)
 
@@ -214,7 +215,7 @@ Namespace UI
         End Function
 
         Function CompareTo(other As ListBag(Of T)) As Integer Implements IComparable(Of ListBag(Of T)).CompareTo
-            Return String.CompareOrdinal(Text, other.Text)
+            Return String.Compare(Text, other.Text, StringComparison.OrdinalIgnoreCase)
         End Function
     End Class
 

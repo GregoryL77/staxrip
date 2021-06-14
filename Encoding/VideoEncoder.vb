@@ -184,6 +184,13 @@ Public MustInherit Class VideoEncoder
         Dim ret As New ToolStripEx
 
         ret.Renderer = New ToolStripRendererEx(ToolStripRenderModeEx.SystemDefault)
+        Dim fh As Integer = 16 'Segoe 9
+        If s.UIScaleFactor <> 1 Then  'Test this Experiment Noscaling, ret.Font.Height
+            ret.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+            fh = ret.Font.Height
+            ToolStripRendererEx.FontHeight = fh
+        End If
+
         ret.ShowItemToolTips = False
         ret.GripStyle = ToolStripGripStyle.Hidden
         ret.BackColor = SystemColors.Window
@@ -191,10 +198,10 @@ Public MustInherit Class VideoEncoder
         ret.BackColor = SystemColors.Window
         ret.LayoutStyle = ToolStripLayoutStyle.VerticalStackWithOverflow
         ret.ShowControlBorder = True
-        ret.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
 
-        Dim pad = ret.Font.Height \ 9
+        Dim pad = fh \ 9
 
+        ret.SuspendLayout()
         For Each pair In GetMenu()
             Dim bn As New ToolStripButton
             bn.Margin = New Padding(2, 2, 0, 0)
@@ -205,6 +212,7 @@ Public MustInherit Class VideoEncoder
             bn.TextAlign = ContentAlignment.MiddleLeft
             ret.Items.Add(bn)
         Next
+        ret.ResumeLayout(False)
 
         Return ret
     End Function

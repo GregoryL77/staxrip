@@ -395,8 +395,8 @@ Public Class CommandLineDemuxForm
 
     Sub HelpToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles HelpToolStripMenuItem.Click
         For Each pack In Package.Items.Values
-            If tbName.Text = pack.Name Then
-                    pack.ShowHelp()
+            If tbName.Text.Equals(pack.Name) Then
+                pack.ShowHelp()
 
                 Exit Sub
             End If

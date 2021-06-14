@@ -31,19 +31,21 @@ Public Class LogForm
         cms.Form = Me
 
         cms.SuspendLayout()
-        cms.Add("-")
-        cms.Add("Save As...", Sub()
-                                  Using dialog As New SaveFileDialog
-                                      dialog.FileName = p.Log.GetPath.FileName
+        cms.CreateAdd2List(5)
+        cms.AddSeparator2RangeList()
+        cms.Add2RangeList("Save As...", Sub()
+                                            Using dialog As New SaveFileDialog
+                                                dialog.FileName = p.Log.GetPath.FileName
 
-                                      If dialog.ShowDialog = DialogResult.OK Then
-                                          rtb.Text.FixBreak.WriteFileUTF8(dialog.FileName)
-                                      End If
-                                  End Using
-                              End Sub, Keys.Control Or Keys.S).SetImage(Symbol.Save)
-        cms.Add("Open in Text Editor", Sub() g.ShellExecute(g.GetTextEditorPath, p.Log.GetPath.Escape), Keys.Control Or Keys.T).SetImage(Symbol.Edit)
-        cms.Add("Show in File Explorer", Sub() g.SelectFileWithExplorer(p.Log.GetPath), Keys.Control Or Keys.E).SetImage(Symbol.FileExplorer)
-        cms.Add("Show History", Sub() g.ShellExecute(Folder.Settings + "Log Files"), Keys.Control Or Keys.H).SetImage(Symbol.ClockLegacy)
+                                                If dialog.ShowDialog = DialogResult.OK Then
+                                                    rtb.Text.FixBreak.WriteFileUTF8(dialog.FileName)
+                                                End If
+                                            End Using
+                                        End Sub, ImageHelp.GetImageC(Symbol.Save), Keys.Control Or Keys.S)
+        cms.Add2RangeList("Open in Text Editor", Sub() g.ShellExecute(g.GetTextEditorPath, p.Log.GetPath.Escape), ImageHelp.GetImageC(Symbol.Edit), Keys.Control Or Keys.T)
+        cms.Add2RangeList("Show in File Explorer", Sub() g.SelectFileWithExplorer(p.Log.GetPath), ImageHelp.GetImageC(Symbol.FileExplorer), Keys.Control Or Keys.E)
+        cms.Add2RangeList("Show History", Sub() g.ShellExecute(Folder.Settings + "Log Files"), ImageHelp.GetImageC(Symbol.ClockLegacy), Keys.Control Or Keys.H)
+        cms.AddRangeList2Menu()
         cms.ResumeLayout(False)
 
     End Sub

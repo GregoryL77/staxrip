@@ -88,7 +88,7 @@ Public Class aomenc
                                         SaveProfile(enc)
                                     End Sub
 
-            ActionMenuItem.Add(form.cms.Items, "Save Profile...", saveProfileAction).SetImage(Symbol.Save)
+            form.cms.Items.Add(New ActionMenuItem("Save Profile...", saveProfileAction, ImageHelp.GetImageC(Symbol.Save)))
 
             If form.ShowDialog() = DialogResult.OK Then
                 Params = newParams

@@ -21,7 +21,7 @@ Public Class VideoComparisonForm
         TabControl.AllowDrop = True
         TrackBar.NoMouseWheelEvent = True
 
-        Dim enabledFunc = Function() Not TabControl.SelectedTab Is Nothing
+        Dim enabledFunc = Function() TabControl.SelectedTab IsNot Nothing
         Menu = New ContextMenuStripEx()
         Menu.SuspendLayout()
         Menu.Form = Me
@@ -29,18 +29,29 @@ Public Class VideoComparisonForm
         bnMenu.ContextMenuStrip = Menu
         TabControl.ContextMenuStrip = Menu
 
-        Menu.Add("Add files to compare...", AddressOf Add, Keys.O, "Video files to compare, the file browser has multiselect enabled.")
-        Menu.Add("Close selected tab", AddressOf Remove, Keys.Delete, enabledFunc)
-        Menu.Add("Save PNGs at current position", AddressOf Save, Keys.S, enabledFunc, "Saves a PNG image for every file/tab at the current position in the directory of the source file.")
-        Menu.Add("Crop and Zoom...", AddressOf CropZoom, Keys.C)
-        Menu.Add("Go To Frame...", AddressOf GoToFrame, Keys.F, enabledFunc)
-        Menu.Add("Go To Time...", AddressOf GoToTime, Keys.T, enabledFunc)
-        Menu.Add("Select next tab", AddressOf NextTab, Keys.Space, enabledFunc)
-        Menu.Add("Navigate | 1 frame backward", Sub() TrackBar.Value -= 1, Keys.Left, enabledFunc)
-        Menu.Add("Navigate | 1 frame forward", Sub() TrackBar.Value += 1, Keys.Right, enabledFunc)
-        Menu.Add("Navigate | 100 frame backward", Sub() TrackBar.Value -= 100, Keys.Left Or Keys.Control, enabledFunc)
-        Menu.Add("Navigate | 100 frame forward", Sub() TrackBar.Value += 100, Keys.Right Or Keys.Control, enabledFunc)
-        Menu.Add("Help", AddressOf Me.Help, Keys.F1)
+        Menu.CreateAdd2List(10)  ' Test This!!
+        Menu.Add2RangeList("Add files to compare...", AddressOf Add, Keys.O, "Video files to compare, the file browser has multiselect enabled.")
+        Menu.Add2RangeList("Close selected tab", AddressOf Remove, Keys.Delete, enabledFunc)
+        Menu.Add2RangeList("Save PNGs at current position", AddressOf Save, Keys.S, enabledFunc, "Saves a PNG image for every file/tab at the current position in the directory of the source file.")
+        Menu.Add2RangeList("Crop and Zoom...", AddressOf CropZoom, Keys.C)
+        Menu.Add2RangeList("Go To Frame...", AddressOf GoToFrame, Keys.F, enabledFunc)
+        Menu.Add2RangeList("Go To Time...", AddressOf GoToTime, Keys.T, enabledFunc)
+        Menu.Add2RangeList("Select next tab", AddressOf NextTab, Keys.Space, enabledFunc)
+        Dim navMenu = New ActionMenuItem("Navigate") 'Test This
+        Menu.AddTStripMenuItem2List(navMenu)
+        Menu.Add2RangeList("Help", AddressOf Me.Help, Keys.F1)
+        Menu.AddRangeList2Menu()
+
+        navMenu.DropDown.SuspendLayout()
+        Dim navML = Menu.CreateAdd2List(4)
+        Menu.Add2RangeList("1 frame backward", Sub() TrackBar.Value -= 1, Keys.Left, enabledFunc)
+        Menu.Add2RangeList("1 frame forward", Sub() TrackBar.Value += 1, Keys.Right, enabledFunc)
+        Menu.Add2RangeList("100 frame backward", Sub() TrackBar.Value -= 100, Keys.Left Or Keys.Control, enabledFunc)
+        Menu.Add2RangeList("100 frame forward", Sub() TrackBar.Value += 100, Keys.Right Or Keys.Control, enabledFunc)
+        navMenu.DropDownItems.AddRange(navML.ToArray)
+        Menu.AddMenuList = Nothing
+
+        navMenu.DropDown.ResumeLayout(False)
         Menu.ResumeLayout(False)
     End Sub
 

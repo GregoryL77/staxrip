@@ -385,8 +385,11 @@ Public Class AppsForm
 
         SearchTextBox_Update()
 
-        ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
         g.SetRenderer(ToolStrip)
+        If s.UIScaleFactor <> 1 Then
+            ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+            ToolStripRendererEx.FontHeight = ToolStrip.Font.Height
+        End If
 
         miEditChangelog.Visible = g.IsDevelopmentPC
         miAutoUpdate.Visible = g.IsDevelopmentPC

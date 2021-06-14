@@ -17,6 +17,14 @@ Public Class GlobalCommands
 
     <Command("Shows the log file with the built-in log file viewer.")>
     Sub ShowLogFile()
+        If Not File.Exists(p.Log.GetPath()) Then
+            If Not Log.IsEmpty Then
+                If MsgQuestion("Unsaved Log content exists. Save to disk and show it ?") = DialogResult.OK Then
+                    Log.Save()
+                End If
+            End If
+        End If
+
         If File.Exists(p.Log.GetPath()) Then
             Using form As New LogForm()
                 form.ShowDialog()

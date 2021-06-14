@@ -330,22 +330,22 @@ Public Class ProfilesForm
 
         UpdateControls()
 
-        bnLeft.Image = ImageHelp.GetSymbolImage(Symbol.Back)
-        bnUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-        bnRight.Image = ImageHelp.GetSymbolImage(Symbol.Forward)
-        bnDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
+        bnLeft.Image = ImageHelp.GetImageC(Symbol.Back)
+        bnUp.Image = ImageHelp.GetImageC(Symbol.Up)
+        bnRight.Image = ImageHelp.GetImageC(Symbol.Forward)
+        bnDown.Image = ImageHelp.GetImageC(Symbol.Down)
 
-        bnAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
-        bnRename.Image = ImageHelp.GetSymbolImage(Symbol.Rename)
-        bnClone.Image = ImageHelp.GetSymbolImage(Symbol.TwoPage)
-        bnEdit.Image = ImageHelp.GetSymbolImage(Symbol.Repair)
+        bnAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
+        bnRename.Image = ImageHelp.GetImageC(Symbol.Rename)
+        bnClone.Image = ImageHelp.GetImageC(Symbol.TwoPage)
+        bnEdit.Image = ImageHelp.GetImageC(Symbol.Repair)
 
         For Each bn In {bnAdd, bnRemove, bnRename, bnClone, bnEdit}
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
             Dim pad = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
+            pad.Left = FontHeight \ 10
             pad.Right = pad.Left
             bn.Padding = pad
         Next

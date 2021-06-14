@@ -37,19 +37,19 @@ Public Class MacroEditorDialog
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.tlp.SetColumnSpan(Me.MacroEditorControl, 3)
-        Me.MacroEditorControl.Location = New System.Drawing.Point(15, 0)
-        Me.MacroEditorControl.Margin = New System.Windows.Forms.Padding(15, 0, 15, 0)
+        Me.MacroEditorControl.Location = New System.Drawing.Point(0, 0)
+        Me.MacroEditorControl.Margin = New System.Windows.Forms.Padding(0)
         Me.MacroEditorControl.Name = "MacroEditorControl"
-        Me.MacroEditorControl.Size = New System.Drawing.Size(845, 607)
+        Me.MacroEditorControl.Size = New System.Drawing.Size(292, 203)
         Me.MacroEditorControl.TabIndex = 0
         '
         'bnContext
         '
         Me.bnContext.Anchor = System.Windows.Forms.AnchorStyles.Left
-        Me.bnContext.Location = New System.Drawing.Point(15, 622)
-        Me.bnContext.Margin = New System.Windows.Forms.Padding(15)
+        Me.bnContext.Location = New System.Drawing.Point(5, 208)
+        Me.bnContext.Margin = New System.Windows.Forms.Padding(5)
         Me.bnContext.Name = "bnContext"
-        Me.bnContext.Size = New System.Drawing.Size(182, 70)
+        Me.bnContext.Size = New System.Drawing.Size(61, 23)
         Me.bnContext.TabIndex = 2
         Me.bnContext.UseVisualStyleBackColor = True
         Me.bnContext.Visible = False
@@ -58,18 +58,18 @@ Public Class MacroEditorDialog
         '
         Me.bnCancel.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.bnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.bnCancel.Location = New System.Drawing.Point(610, 622)
-        Me.bnCancel.Margin = New System.Windows.Forms.Padding(15)
-        Me.bnCancel.Size = New System.Drawing.Size(250, 70)
+        Me.bnCancel.Location = New System.Drawing.Point(204, 208)
+        Me.bnCancel.Margin = New System.Windows.Forms.Padding(5)
+        Me.bnCancel.Size = New System.Drawing.Size(83, 23)
         Me.bnCancel.Text = "Cancel"
         '
         'bnOK
         '
         Me.bnOK.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.bnOK.DialogResult = System.Windows.Forms.DialogResult.OK
-        Me.bnOK.Location = New System.Drawing.Point(345, 622)
+        Me.bnOK.Location = New System.Drawing.Point(116, 208)
         Me.bnOK.Margin = New System.Windows.Forms.Padding(0)
-        Me.bnOK.Size = New System.Drawing.Size(250, 70)
+        Me.bnOK.Size = New System.Drawing.Size(83, 23)
         Me.bnOK.Text = "OK"
         '
         'tlp
@@ -84,24 +84,25 @@ Public Class MacroEditorDialog
         Me.tlp.Controls.Add(Me.bnOK, 1, 1)
         Me.tlp.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlp.Location = New System.Drawing.Point(0, 0)
-        Me.tlp.Margin = New System.Windows.Forms.Padding(5)
+        Me.tlp.Margin = New System.Windows.Forms.Padding(0)
         Me.tlp.Name = "tlp"
         Me.tlp.RowCount = 2
         Me.tlp.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.tlp.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.tlp.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
-        Me.tlp.Size = New System.Drawing.Size(875, 707)
+        Me.tlp.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 7.0!))
+        Me.tlp.Size = New System.Drawing.Size(292, 236)
         Me.tlp.TabIndex = 3
         '
         'MacroEditorDialog
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(288.0!, 288.0!)
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.CancelButton = Me.bnCancel
-        Me.ClientSize = New System.Drawing.Size(875, 707)
+        Me.ClientSize = New System.Drawing.Size(292, 236)
         Me.Controls.Add(Me.tlp)
+        Me.DoubleBuffered = True
         Me.KeyPreview = True
-        Me.Margin = New System.Windows.Forms.Padding(11, 10, 11, 10)
+        Me.Margin = New System.Windows.Forms.Padding(0)
         Me.Name = "MacroEditorDialog"
         Me.Text = "Text"
         Me.tlp.ResumeLayout(False)
@@ -116,6 +117,7 @@ Public Class MacroEditorDialog
     Sub New()
         MyBase.New()
         InitializeComponent()
+
         SetMacroDefaults()
     End Sub
 
@@ -137,7 +139,7 @@ Public Class MacroEditorDialog
         Text = "Script Editor"
         HelpText = "Editor for scripts that may contain macros."
         MacroEditorControl.SetScriptDefaults()
-        ScaleClientSize(45, 30, FontHeight)
+        ScaleClientSize(59, 37, FontHeight)
     End Sub
 
     Sub UniversalEditor_HelpRequested(sender As Object, e As HelpEventArgs) Handles Me.HelpRequested
@@ -153,16 +155,16 @@ Public Class MacroEditorDialog
         MyBase.OnLoad(e)
 
         bnContext.AutoSize = True
-        Dim editorControl = MacroEditorControl
-        Dim textSize = TextRenderer.MeasureText(editorControl.rtbEdit.Text, editorControl.rtbEdit.Font)
+        'Dim editorControl = MacroEditorControl
+        'Dim textSize = TextRenderer.MeasureText(editorControl.rtbEdit.Text, editorControl.rtbEdit.Font)
         Dim workingArea = Screen.FromControl(Me).WorkingArea
 
-        If Width > workingArea.Width * 0.7 Then
-            Width = CInt(workingArea.Width * 0.7)
+        If Width > workingArea.Width * 0.8 Then
+            Width = CInt(workingArea.Width * 0.8)
         End If
 
-        If Height > workingArea.Height * 0.9 Then
-            Height = CInt(workingArea.Height * 0.9)
+        If Height > workingArea.Height * 0.8 Then
+            Height = CInt(workingArea.Height * 0.8)
         End If
     End Sub
 End Class

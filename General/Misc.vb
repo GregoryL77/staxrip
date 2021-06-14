@@ -493,7 +493,9 @@ Public Class Language
     <NonSerialized> Public IsCommon As Boolean
 
     Sub New()
-        Me.New(CultureInfo.InvariantCulture) '(127) Invariant
+        Me.IsCommon = IsCommon
+        CultureInfoValue = CultureInfo.InvariantCulture
+        LCIDValue = 127  '(127) Invariant
     End Sub
 
     Sub New(ci As CultureInfo, Optional isCommon As Boolean = False)
@@ -637,7 +639,7 @@ Public Class Language
         End Get
     End Property
 
-    Private Shared LanguagesValue As List(Of Language)
+    <NonSerialized()> Private Shared LanguagesValue As List(Of Language) 'Added NonSer??? Experiment! Test this!!!
 
     Shared ReadOnly Property Languages() As List(Of Language)
         Get
@@ -998,7 +1000,7 @@ Public Class Startup
         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
-        Console.Beep(320, 30)
+        Console.Beep(370, 20)
     End Sub
 End Class
 

@@ -128,7 +128,7 @@ Public Class x264Control
         Params = Encoder.Params
 
         cms = New ContextMenuStripEx(components)
-        cms.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+        If s.UIScaleFactor <> 1 Then cms.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
 
         lv.View = View.Details
         lv.HeaderStyle = ColumnHeaderStyle.None
@@ -164,7 +164,7 @@ Public Class x264Control
 
     Sub UpdateMenu()
         cms.SuspendLayout()
-        cms.Items.ClearAndDisplose
+        cms.Items.ClearAndDispose
         Dim offset = If(Params.Mode.Value = x264RateMode.Quality, 0, 1)
 
         If lv.SelectedItems.Count > 0 Then

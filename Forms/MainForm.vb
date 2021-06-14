@@ -1,4 +1,5 @@
 
+Imports System.Collections.Concurrent
 Imports System.ComponentModel
 Imports System.Drawing.Design
 Imports System.Globalization
@@ -23,11 +24,6 @@ Public Class MainForm
             components?.Dispose()
         End If
         MyBase.Dispose(disposing)
-        RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
-        GC.Collect(2, GCCollectionMode.Forced, True, True)
-        GC.WaitForPendingFinalizers()
-        Console.Beep(420, 30)
     End Sub
 
     Private components As System.ComponentModel.IContainer
@@ -1151,7 +1147,7 @@ Public Class MainForm
         llEditAudio1.AddClickAction(AddressOf AudioEdit1ToolStripMenuItemClick)
 
         MenuStrip.SuspendLayout()
-        MenuStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+        If s.UIScaleFactor <> 1 Then MenuStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
 
         CommandManager.AddCommandsFromObject(Me)
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
@@ -1408,7 +1404,7 @@ Public Class MainForm
 
                 mi.DropDown.SuspendLayout()
                 Dim tsddI As ToolStripItemCollection = mi.DropDownItems
-                tsddI.ClearAndDisplose()
+                tsddI.ClearAndDispose()
 
                 SyncLock s.RecentProjects
                     For Each recentProj In s.RecentProjects
@@ -1457,19 +1453,44 @@ Public Class MainForm
         For Each iMenuItem In CustomMainMenu.MenuItems
             If String.Equals(iMenuItem.CustomMenuItem.MethodName, "DynamicMenuItem") Then
                 If iMenuItem.CustomMenuItem.Parameters(0).Equals(DynamicMenuItemID.HelpApplications) Then
-                    iMenuItem.DropDown.SuspendLayout()
-                    ActionMenuItem.LayoutSuspendCreate(32)
-                    iMenuItem.DropDownItems.ClearAndDisplose
 
-                    For Each pack In Package.Items.Values
-                        ActionMenuItem.Add(iMenuItem.DropDownItems, pack.Name.Substring(0, 1).Upper + " | " + pack.Name, Sub() pack.ShowHelp())
-                    Next
-                    ActionMenuItem.LayoutResume(False)
+                    iMenuItem.DropDown.SuspendLayout()
+                    iMenuItem.DropDownItems.ClearAndDispose()
+                    Dim mL1AlphL As New List(Of MenuItemEx)(28)
+                    Dim mL2LL As New List(Of List(Of ActionMenuItem))(28) '~0.640ms
+                    Dim nML2 As List(Of ActionMenuItem)
+                    Dim lastCH As Char
+                    Dim c1 As Char
+                    Dim packAr(Package.Items.Count - 1) As Package
+                    Package.Items.Values.CopyTo(packAr, 0)
+
+                    For i = 0 To packAr.Length - 1
+                        Dim pack As Package = packAr(i)
+                        c1 = CChar(pack.Name.Substring(0, 1).ToUpperInvariant)
+                        If c1 <> lastCH Then 'source is sorted, if not HashSet
+                            lastCH = c1
+                            mL1AlphL.Add(New MenuItemEx(c1))
+                            nML2 = New List(Of ActionMenuItem)(4)
+                            mL2LL.Add(nML2)
+                        End If
+
+                        nML2.Add(New ActionMenuItem(pack.Name, Sub() pack.ShowHelp()))
+                    Next i
+
+                    Dim nMI As MenuItemEx
+                    For i = 0 To mL1AlphL.Count - 1
+                        nMI = mL1AlphL(i)
+                        nMI.DropDown.SuspendLayout()
+                        nMI.DropDownItems.AddRange(mL2LL(i).ToArray)
+                        nMI.DropDown.ResumeLayout(False)
+                    Next i
+
+                    iMenuItem.DropDownItems.AddRange(mL1AlphL.ToArray)
                     iMenuItem.DropDown.ResumeLayout(False)
+                    Exit For
                 End If
             End If
-        Next
-
+        Next iMenuItem
         Application.DoEvents()
     End Sub
 
@@ -1496,17 +1517,20 @@ Public Class MainForm
                 If menuItem.CustomMenuItem.Parameters(0).Equals(DynamicMenuItemID.Scripts) Then
                     menuItem.DropDown.SuspendLayout()
                     Dim tsddI As ToolStripItemCollection = menuItem.DropDownItems
-                    tsddI.ClearAndDisplose()
+                    tsddI.ClearAndDispose()
 
                     For Each path In files
                         Dim pFN As String = path.FileName
                         If Not events.ContainsString(pFN.Left(".")) AndAlso Not pFN.StartsWith("_", StringComparison.Ordinal) Then
-                            ActionMenuItem.Add(tsddI, pFN.Base, Sub() g.DefaultCommands.ExecuteScriptFile(path))
+                            tsddI.Add(New ActionMenuItem(pFN.Base, Sub() g.DefaultCommands.ExecuteScriptFile(path)))
+                            'ActionMenuItem.Add(tsddI, pFN.Base, Sub() g.DefaultCommands.ExecuteScriptFile(path))
                         End If
                     Next
 
-                    tsddI.Add(New ToolStripSeparator)
-                    ActionMenuItem.Add(tsddI, "Open Script Folder", Sub() g.ShellExecute(Folder.Scripts))
+                    tsddI.AddRange({New ToolStripSeparator, New ActionMenuItem("Open Script Folder", Sub()
+                                                                                                         g.ShellExecute(Folder.Scripts)
+                                                                                                         UpdateScriptsMenuAsync()
+                                                                                                     End Sub)})
                     menuItem.DropDown.ResumeLayout()
                 End If
             End If
@@ -1537,7 +1561,7 @@ Public Class MainForm
                 i.DropDown.SuspendLayout()
                 ActionMenuItem.LayoutSuspendCreate()
                 Dim tsddI As ToolStripItemCollection = i.DropDownItems
-                tsddI.ClearAndDisplose()
+                tsddI.ClearAndDispose()
 
                 For Each i2 In files
                     Dim base = i2.Base
@@ -1807,7 +1831,7 @@ Public Class MainForm
 
         'DGIndexNV Back
         If String.Equals(inputFile.Ext, "dgi") OrElse FileTypes.DGDecNVInput.ContainsString(inputFile.Ext) Then AddSourceFilters({"DGSource"}, filters)
-        If String.Equals(inputFile.Ext,"dgim") OrElse FileTypes.DGDecNVInput.ContainsString(inputFile.Ext) Then AddSourceFilters({"DGSourceIM"}, filters)
+        If String.Equals(inputFile.Ext, "dgim") OrElse FileTypes.DGDecNVInput.ContainsString(inputFile.Ext) Then AddSourceFilters({"DGSourceIM"}, filters)
 
         If inputFile.Ext.EqualsAny("mp4", "m4v", "mov") Then
             AddSourceFilters({"LSMASHVideoSource", "LibavSMASHSource"}, filters)
@@ -3687,7 +3711,8 @@ Public Class MainForm
 
         Dim ret2 As New BindingSource
 
-        ret2.DataSource = New StringPairList(preferences.WhereF(Function(a) filterNames.ContainsString(a.Value) AndAlso a.Name.NotNullOrEmptyS)).GetDeepClone
+        'ret2.DataSource = ObjectHelp.GetCopy(New StringPairList(preferences.Where(Function(a) filterNames.ContainsString(a.Value) AndAlso a.Name.NotNullOrEmptyS))) 'Is deepClone needed???
+        ret2.DataSource = New StringPairList(preferences.Where(Function(a) filterNames.ContainsString(a.Value) AndAlso a.Name.NotNullOrEmptyS)).GetDeepClone
 
         filterPage.DataSource = ret2
         Return ret2
@@ -3770,9 +3795,9 @@ Public Class MainForm
     Sub ShowAppsDialog()
         Using form As New AppsForm
             Dim found As Boolean
+            Dim lSD As String = ""
 
-            If s.StringDictionary.ContainsKey("RecentExternalApplicationControl") Then
-                Dim lSD As String = s.StringDictionary("RecentExternalApplicationControl")
+            If s.StringDictionary.TryGetValue("RecentExternalApplicationControl", lSD) Then
                 For Each pack In Package.Items.Values
                     If EqualsEx(pack.Name & pack.Version, lSD) Then
                         form.ShowPackage(pack)
@@ -3842,7 +3867,7 @@ Public Class MainForm
             If String.Equals(i.CustomMenuItem.MethodName, "DynamicMenuItem") AndAlso i.CustomMenuItem.Parameters(0).Equals(id) Then
 
                 i.DropDown.SuspendLayout()
-                i.DropDownItems.ClearAndDisplose
+                i.DropDownItems.ClearAndDispose
 
                 Select Case id
                     Case DynamicMenuItemID.EncoderProfiles
@@ -4418,7 +4443,7 @@ Public Class MainForm
 
             l = ui.AddLabel(pathPage, "Default Target Name:")
             l.Help = "Leave empty to use the source filename"
-            l.MarginTop = Font.Height
+            l.MarginTop = FontHeight
 
             tm = ui.AddTextMenu(pathPage)
             tm.Label.Visible = False
@@ -4431,7 +4456,7 @@ Public Class MainForm
 
             l = ui.AddLabel(pathPage, "Temp Files Folder:")
             l.Help = "Leave empty to use the source file folder."
-            l.MarginTop = Font.Height
+            l.MarginTop = FontHeight
 
             Dim tempDirFunc = Function()
                                   Dim tempDir = g.BrowseFolder(p.TempDir)
@@ -4476,7 +4501,7 @@ Public Class MainForm
 
             l = ui.AddLabel(filtersPage, "Code appended to trim functions:")
             l.Help = "Code appended to trim functions StaxRip generates using the cut feature."
-            l.MarginTop = Font.Height \ 2
+            l.MarginTop = FontHeight \ 2
 
             t = ui.AddText(filtersPage)
             t.Label.Visible = False
@@ -4488,7 +4513,7 @@ Public Class MainForm
 
             l = ui.AddLabel(filtersPage, "Code inserted at top of scripts:")
             l.Help = "Code inserted at the top of every script StaxRip generates."
-            l.MarginTop = Font.Height \ 2
+            l.MarginTop = FontHeight \ 2
 
             t = ui.AddText(filtersPage)
             t.Label.Visible = False
@@ -5702,8 +5727,8 @@ Public Class MainForm
     Sub UpdateAudioMenu()
         AudioMenu0.SuspendLayout()
         AudioMenu1.SuspendLayout()
-        AudioMenu0.Items.ClearAndDisplose
-        AudioMenu1.Items.ClearAndDisplose
+        AudioMenu0.Items.ClearAndDispose
+        AudioMenu1.Items.ClearAndDispose
         g.PopulateProfileMenu(AudioMenu0.Items, s.AudioProfiles, Sub() ShowAudioProfilesDialog(0), AddressOf g.LoadAudioProfile0)
         g.PopulateProfileMenu(AudioMenu1.Items, s.AudioProfiles, Sub() ShowAudioProfilesDialog(1), AddressOf g.LoadAudioProfile1)
         AudioMenu0.ResumeLayout()
@@ -5742,8 +5767,8 @@ Public Class MainForm
     End Sub
 
     Sub gbEncoder_LinkClick() Handles lgbEncoder.LinkClick
-        EncoderMenu.SuspendLayout
-        EncoderMenu.Items.ClearAndDisplose
+        EncoderMenu.SuspendLayout()
+        EncoderMenu.Items.ClearAndDispose
         g.PopulateProfileMenu(EncoderMenu.Items, s.VideoEncoderProfiles, AddressOf ShowEncoderProfilesDialog, AddressOf g.LoadVideoEncoder)
         EncoderMenu.ResumeLayout()
         EncoderMenu.Show(lgbEncoder, 0, 16)
@@ -5764,49 +5789,47 @@ Public Class MainForm
 
     Sub llContainer_Click() Handles llMuxer.Click
         ContainerMenu.SuspendLayout()
-        ContainerMenu.Items.ClearAndDisplose
+        ContainerMenu.Items.ClearAndDispose
         g.PopulateProfileMenu(ContainerMenu.Items, s.MuxerProfiles, AddressOf ShowMuxerProfilesDialog, AddressOf p.VideoEncoder.LoadMuxer)
         ContainerMenu.ResumeLayout()
         ContainerMenu.Show(llMuxer, 0, 16)
     End Sub
 
     Sub gbResize_LinkClick() Handles lgbResize.LinkClick
-        'lgbResize.Label.SuspendLayout()
         Dim cms = TextCustomMenu.GetMenu(s.TargetImageSizeMenu, lgbResize.Label, components, AddressOf TargetImageMenuClick)
         cms.SuspendLayout()
-        cms.Add("-")
-        cms.Add("Image Options...", Sub() ShowOptionsDialog("Image"))
-        cms.Add("Edit Menu...", Sub() s.TargetImageSizeMenu = TextCustomMenu.EditMenu(s.TargetImageSizeMenu, ApplicationSettings.GetDefaultTargetImageSizeMenu, Me))
+        cms.Items.AddRange({New ToolStripSeparator,
+                            New ActionMenuItem("Image Options...", Sub() ShowOptionsDialog("Image")),
+                            New ActionMenuItem("Edit Menu...", Sub() s.TargetImageSizeMenu = TextCustomMenu.EditMenu(s.TargetImageSizeMenu, ApplicationSettings.GetDefaultTargetImageSizeMenu, Me))})
         cms.ResumeLayout()
-        'lgbResize.Label.ResumeLayout(False)
         cms.Show(lgbResize, 0, lgbResize.Label.Height)
     End Sub
 
     Sub blSourceParText_Click(sender As Object, e As EventArgs) Handles blSourceParText.Click
         Dim menu = TextCustomMenu.GetMenu(s.ParMenu, blSourceParText, components, AddressOf SourceParMenuClick)
-        menu.Add("-")
-        menu.Items.Add(New ActionMenuItem("Edit Menu...", Sub() s.ParMenu = TextCustomMenu.EditMenu(s.ParMenu, ApplicationSettings.GetParMenu, Me)))
+        menu.Items.AddRange({New ToolStripSeparator,
+                             New ActionMenuItem("Edit Menu...", Sub() s.ParMenu = TextCustomMenu.EditMenu(s.ParMenu, ApplicationSettings.GetParMenu, Me))})
         menu.Show(blSourceParText, 0, blSourceParText.Height)
     End Sub
 
     Sub blSourceDarText_Click(sender As Object, e As EventArgs) Handles blSourceDarText.Click
         Dim menu = TextCustomMenu.GetMenu(s.DarMenu, blSourceDarText, components, AddressOf SourceDarMenuClick)
-        menu.Add("-")
-        menu.Items.Add(New ActionMenuItem("Edit Menu...", Sub() s.DarMenu = TextCustomMenu.EditMenu(s.DarMenu, ApplicationSettings.GetDarMenu, Me)))
+        menu.Items.AddRange({New ToolStripSeparator,
+                             New ActionMenuItem("Edit Menu...", Sub() s.DarMenu = TextCustomMenu.EditMenu(s.DarMenu, ApplicationSettings.GetDarMenu, Me))})
         menu.Show(blSourceDarText, 0, blSourceDarText.Height)
     End Sub
 
     Sub blTargetDarText_Click(sender As Object, e As EventArgs) Handles blTargetDarText.Click
         Dim menu = TextCustomMenu.GetMenu(s.DarMenu, blTargetDarText, components, AddressOf TargetDarMenuClick)
-        menu.Add("-")
-        menu.Items.Add(New ActionMenuItem("Edit Menu...", Sub() s.DarMenu = TextCustomMenu.EditMenu(s.DarMenu, ApplicationSettings.GetDarMenu, Me)))
+        menu.Items.AddRange({New ToolStripSeparator,
+                             New ActionMenuItem("Edit Menu...", Sub() s.DarMenu = TextCustomMenu.EditMenu(s.DarMenu, ApplicationSettings.GetDarMenu, Me))})
         menu.Show(blTargetDarText, 0, blTargetDarText.Height)
     End Sub
 
     Sub blTargetParText_Click(sender As Object, e As EventArgs) Handles blTargetParText.Click
         Dim menu = TextCustomMenu.GetMenu(s.ParMenu, blTargetParText, components, AddressOf TargetParMenuClick)
-        menu.Add("-")
-        menu.Items.Add(New ActionMenuItem("Edit Menu...", Sub() s.ParMenu = TextCustomMenu.EditMenu(s.ParMenu, ApplicationSettings.GetParMenu, Me)))
+        menu.Items.AddRange({New ToolStripSeparator,
+                             New ActionMenuItem("Edit Menu...", Sub() s.ParMenu = TextCustomMenu.EditMenu(s.ParMenu, ApplicationSettings.GetParMenu, Me))})
         menu.Show(blTargetParText, 0, blTargetParText.Height)
     End Sub
 
@@ -6030,10 +6053,9 @@ Public Class MainForm
         End If
     End Sub
 
-    Sub UpdateAudioFileMenu(
-        m As ContextMenuStripEx, a As Action, ap As AudioProfile, tb As TextBox)
-
-        m.Items.ClearAndDisplose
+    Sub UpdateAudioFileMenu(m As ContextMenuStripEx, a As Action, ap As AudioProfile, tb As TextBox)
+        m.SuspendLayout()
+        m.Items.ClearAndDispose
         Dim exist = File.Exists(ap.File)
 
         If ap.Streams.Count > 0 Then
@@ -6060,15 +6082,15 @@ Public Class MainForm
                 If ap.Streams.Count > 10 Then
                     m.Add("Streams | " + i.Name, menuAction)
                 Else
-                    m.Add(i.Name, menuAction)
+                    m.Add2(i.Name, menuAction)
                 End If
             Next
 
-            m.Items.Add("-")
+            m.Items.Add(New ToolStripSeparator)
         End If
 
         If p.SourceFile.Ext.Equals("avs") OrElse p.Script.GetScript.ToLowerInvariant.Contains("audiodub(") Then
-            m.Add(p.Script.Path.FileName, Sub() tb.Text = p.Script.Path)
+            m.Add2(p.Script.Path.FileName, Sub() tb.Text = p.Script.Path)
         End If
 
         If p.TempDir.NotNullOrEmptyS AndAlso Directory.Exists(p.TempDir) Then
@@ -6082,11 +6104,11 @@ Public Class MainForm
                     If audioFiles.Length > 10 Then
                         m.Add("Files | " + i.FileName, Sub() tb.Text = temp)
                     Else
-                        m.Add(i.FileName, Sub() tb.Text = temp)
+                        m.Add2(i.FileName, Sub() tb.Text = temp)
                     End If
                 Next
 
-                m.Items.Add("-")
+                m.Items.Add(New ToolStripSeparator)
             End If
         End If
 
@@ -6094,19 +6116,20 @@ Public Class MainForm
                                   s.Storage.SetInt("last selected muxer tab", 1)
                                   p.VideoEncoder.OpenMuxerConfigDialog()
                               End Sub
-
-        m.Add("Open File", a, "Change the audio source file.").SetImage(Symbol.OpenFile)
-        m.Add("Add more files...", moreFilesAction, exist)
-        m.Add("Play", Sub() g.PlayAudio(ap), exist, "Plays the audio source file with a media player.").SetImage(Symbol.Play)
-        m.Add("Media Info...", Sub() g.DefaultCommands.ShowMediaInfo(ap.File), exist, "Show MediaInfo for the audio source file.").SetImage(Symbol.Info)
-        m.Add("Explore", Sub() g.SelectFileWithExplorer(ap.File), exist, "Open the audio source file directory with File Explorer.").SetImage(Symbol.FileExplorer)
-        m.Add("Execute", Sub() ExecuteAudio(ap), exist, "Processes the audio profile.")
-        m.Add("-")
-        m.Add("Copy Path", Sub() Clipboard.SetText(ap.File), tb.Text.NotNullOrEmptyS)
-        m.Add("Copy Selection", Sub() Clipboard.SetText(tb.SelectedText), tb.Text.NotNullOrEmptyS).SetImage(Symbol.Copy)
-        m.Add("Paste", Sub() tb.Paste(), Clipboard.GetText.Trim IsNot "").SetImage(Symbol.Paste)
-        m.Add("-")
-        m.Add("Remove", Sub() tb.Text = "", tb.Text.NotNullOrEmptyS, "Remove audio file").SetImage(Symbol.Remove)
+        m.Items.AddRange({
+            New ActionMenuItem("Open File", a, ImageHelp.GetImageC(Symbol.OpenFile), "Change the audio source file."),
+            New ActionMenuItem("Add more files...", moreFilesAction) With {.Enabled = exist},
+            New ActionMenuItem("Play", Sub() g.PlayAudio(ap), ImageHelp.GetImageC(Symbol.Play), "Plays the audio source file with a media player.") With {.Enabled = exist},
+            New ActionMenuItem("Media Info...", Sub() g.DefaultCommands.ShowMediaInfo(ap.File), ImageHelp.GetImageC(Symbol.Info), "Show MediaInfo for the audio source file.") With {.Enabled = exist},
+            New ActionMenuItem("Explore", Sub() g.SelectFileWithExplorer(ap.File), ImageHelp.GetImageC(Symbol.FileExplorer), "Open the audio source file directory with File Explorer.") With {.Enabled = exist},
+            New ActionMenuItem("Execute", Sub() ExecuteAudio(ap), "Processes the audio profile.") With {.Enabled = exist},
+            New ToolStripSeparator,
+            New ActionMenuItem("Copy Path", Sub() Clipboard.SetText(ap.File)) With {.Enabled = tb.Text.NotNullOrEmptyS},
+            New ActionMenuItem("Copy Selection", Sub() Clipboard.SetText(tb.SelectedText), ImageHelp.GetImageC(Symbol.Copy)) With {.Enabled = tb.Text.NotNullOrEmptyS},
+            New ActionMenuItem("Paste", Sub() tb.Paste(), ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.GetText.Trim IsNot ""},
+            New ToolStripSeparator,
+            New ActionMenuItem("Remove", Sub() tb.Text = "", ImageHelp.GetImageC(Symbol.Remove), "Remove audio file") With {.Enabled = tb.Text.NotNullOrEmptyS}})
+        m.ResumeLayout()
     End Sub
 
     Sub ExecuteAudio(ap As AudioProfile)
@@ -6125,27 +6148,36 @@ Public Class MainForm
     End Sub
 
     Sub UpdateTargetFileMenu()
-        TargetFileMenu.Items.ClearAndDisplose
-        TargetFileMenu.Add("Browse File...", AddressOf tbTargetFile_DoubleClick, File.Exists(p.SourceFile), "Change the path of the target file.")
-        TargetFileMenu.Add("Play", Sub() g.Play(p.TargetFile), File.Exists(p.TargetFile), "Play the target file.").SetImage(Symbol.Play)
-        TargetFileMenu.Add("Media Info...", Sub() g.DefaultCommands.ShowMediaInfo(p.TargetFile), File.Exists(p.TargetFile), "Show MediaInfo for the target file.").SetImage(Symbol.Info)
-        TargetFileMenu.Add("Explore...", Sub() g.SelectFileWithExplorer(p.TargetFile), Directory.Exists(p.TargetFile.Dir), "Open the target file directory with File Explorer.").SetImage(Symbol.FileExplorer)
-        TargetFileMenu.Add("-")
-        TargetFileMenu.Add("Copy", Sub() tbTargetFile.Copy(), tbTargetFile.Text.NotNullOrEmptyS).SetImage(Symbol.Copy)
-        TargetFileMenu.Add("Paste", Sub() tbTargetFile.Paste(), Clipboard.GetText.Trim IsNot "" AndAlso File.Exists(p.SourceFile)).SetImage(Symbol.Paste)
+        TargetFileMenu.SuspendLayout()
+        TargetFileMenu.Items.ClearAndDispose
+
+        Dim sFE As Boolean = File.Exists(p.SourceFile)
+        Dim tFE As Boolean = File.Exists(p.TargetFile)
+        TargetFileMenu.Items.AddRange({
+            New ActionMenuItem("Browse File...", AddressOf tbTargetFile_DoubleClick, "Change the path of the target file.") With {.Enabled = sFE},
+            New ActionMenuItem("Play", Sub() g.Play(p.TargetFile), ImageHelp.GetImageC(Symbol.Play), "Play the target file.") With {.Enabled = tFE},
+            New ActionMenuItem("Media Info...", Sub() g.DefaultCommands.ShowMediaInfo(p.TargetFile), ImageHelp.GetImageC(Symbol.Info), "Show MediaInfo for the target file.") With {.Enabled = tFE},
+            New ActionMenuItem("Explore...", Sub() g.SelectFileWithExplorer(p.TargetFile), ImageHelp.GetImageC(Symbol.FileExplorer), "Open the target file directory with File Explorer.") With {.Enabled = Directory.Exists(p.TargetFile.Dir)},
+            New ToolStripSeparator,
+            New ActionMenuItem("Copy", Sub() tbTargetFile.Copy(), ImageHelp.GetImageC(Symbol.Copy)) With {.Enabled = tbTargetFile.Text.NotNullOrEmptyS},
+            New ActionMenuItem("Paste", Sub() tbTargetFile.Paste(), ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.GetText.Trim IsNot "" AndAlso sFE}})
+        TargetFileMenu.ResumeLayout()
     End Sub
 
     Sub UpdateSourceFileMenu()
-        SourceFileMenu.Items.ClearAndDisplose
-        Dim isIndex = FileTypes.VideoIndex.ContainsString(p.LastOriginalSourceFile.Ext)
+        SourceFileMenu.SuspendLayout()
+        SourceFileMenu.Items.ClearAndDispose()
 
-        SourceFileMenu.Add("Open...", AddressOf ShowOpenSourceDialog, "Open source files").SetImage(Symbol.OpenFile)
-        SourceFileMenu.Add("Play", Sub() g.Play(p.LastOriginalSourceFile), File.Exists(p.LastOriginalSourceFile) AndAlso Not isIndex, "Play the source file.").SetImage(Symbol.Play)
-        SourceFileMenu.Add("Media Info...", Sub() g.DefaultCommands.ShowMediaInfo(p.LastOriginalSourceFile), File.Exists(p.LastOriginalSourceFile) AndAlso Not isIndex, "Show MediaInfo for the source file.").SetImage(Symbol.Info)
-        SourceFileMenu.Add("Explore...", Sub() g.SelectFileWithExplorer(p.SourceFile), File.Exists(p.SourceFile), "Open the source file directory with File Explorer.").SetImage(Symbol.FileExplorer)
-        SourceFileMenu.Items.Add("-")
-        SourceFileMenu.Add("Copy", Sub() tbSourceFile.Copy(), tbSourceFile.Text.NotNullOrEmptyS, "Copies the selected text to the clipboard.").SetImage(Symbol.Copy)
-        SourceFileMenu.Add("Paste", Sub() tbSourceFile.Paste(), Clipboard.GetText.Trim IsNot "", "Copies the full source file path to the clipboard.").SetImage(Symbol.Paste)
+        Dim fExIsIdx = File.Exists(p.LastOriginalSourceFile) AndAlso Not FileTypes.VideoIndex.ContainsString(p.LastOriginalSourceFile.Ext)
+        SourceFileMenu.Items.AddRange({
+            New ActionMenuItem("Open...", AddressOf ShowOpenSourceDialog, ImageHelp.GetImageC(Symbol.OpenFile), "Open source files"),
+            New ActionMenuItem("Play", Sub() g.Play(p.LastOriginalSourceFile), ImageHelp.GetImageC(Symbol.Play), "Play the source file.") With {.Enabled = fExIsIdx},
+            New ActionMenuItem("Media Info...", Sub() g.DefaultCommands.ShowMediaInfo(p.LastOriginalSourceFile), ImageHelp.GetImageC(Symbol.Info), "Show MediaInfo for the source file.") With {.Enabled = fExIsIdx},
+            New ActionMenuItem("Explore...", Sub() g.SelectFileWithExplorer(p.SourceFile), ImageHelp.GetImageC(Symbol.FileExplorer), "Open the source file directory with File Explorer.") With {.Enabled = File.Exists(p.SourceFile)},
+            New ToolStripSeparator,
+            New ActionMenuItem("Copy", Sub() tbSourceFile.Copy(), ImageHelp.GetImageC(Symbol.Copy), "Copies the selected text to the clipboard.") With {.Enabled = tbSourceFile.Text.NotNullOrEmptyS},
+            New ActionMenuItem("Paste", Sub() tbSourceFile.Paste(), ImageHelp.GetImageC(Symbol.Paste), "Copies the full source file path to the clipboard.") With {.Enabled = Clipboard.GetText.Trim IsNot ""}})
+        SourceFileMenu.ResumeLayout()
     End Sub
 
     Protected Overrides Sub OnDragEnter(e As DragEventArgs)
@@ -6216,10 +6248,20 @@ Public Class MainForm
 
         If Not ForceClose Then g.SaveSettings()
 
-        ForceClose = True 'debug
+        'ForceClose = True 'debug MediaInfo Dispose error
         ActionMenuItem.LayoutSuspendList = Nothing
         MediaInfo.ClearCache()
+        Dim imcV = ImageHelp.ImageCacheD.Values
+        For Each img In imcV
+            img.Dispose() 'debug
+        Next
+        ImageHelp.ImageCacheD.Clear()
+        ImageHelp.ImageCacheD = Nothing
         g.RaiseAppEvent(ApplicationEvent.ApplicationExit)
+        RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
+        GC.Collect(2, GCCollectionMode.Forced, True, True)
+        GC.WaitForPendingFinalizers()
     End Sub
 
     Protected Overrides Sub OnDeactivate(e As EventArgs)

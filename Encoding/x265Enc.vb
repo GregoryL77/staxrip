@@ -128,7 +128,7 @@ Public Class x265Enc
         End If
 
         Dim newParams As New x265Params
-        Dim newStore = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim newStore = ParamsStore.GetDeepClone ' Test This!!!
         newParams.Init(newStore)
 
         Dim enc As New x265Enc
@@ -192,7 +192,7 @@ Public Class x265Enc
 
     Overrides Sub ShowConfigDialog()
         Dim newParams As New x265Params
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone 'Test this!
         newParams.Init(store)
         newParams.ApplyPresetDefaultValues()
         newParams.ApplyTuneDefaultValues()
@@ -205,16 +205,16 @@ Public Class x265Enc
                $"<h2>x265 Console Help</h2><pre>{HelpDocument.ConvertChars(Package.x265.CreateHelpfile())}</pre>"
 
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of x265Enc)(Me)
+                                        Dim enc = Me.GetDeepClone 'Test this!
                                         Dim params2 As New x265Params
-                                        Dim store2 = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim store2 = store.GetDeepClone
                                         params2.Init(store2)
                                         enc.Params = params2
                                         enc.ParamsStore = store2
                                         SaveProfile(enc)
                                     End Sub
 
-            ActionMenuItem.Add(form.cms.Items, "Save Profile...", saveProfileAction).SetImage(Symbol.Save)
+            form.cms.Items.Add(New ActionMenuItem("Save Profile...", saveProfileAction, ImageHelp.GetImageC(Symbol.Save)))
 
             If form.ShowDialog() = DialogResult.OK Then
                 AutoCompCheckValue = CInt(newParams.CompCheckAimedQuality.Value)

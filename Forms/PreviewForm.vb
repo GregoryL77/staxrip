@@ -252,7 +252,8 @@ Public Class PreviewForm
     Private CommandManager As New CommandManager
     Private TrackBarBorder As Integer = 1
     Private TrackBarGap As Integer = 1
-    Private TrackBarPosition As Integer = CInt(Control.DefaultFont.Height / 4) - 1
+    'Private TrackBarPosition As Integer = CInt(Control.DefaultFont.Height / 4) - 1 '=2.25
+    Private TrackBarPosition As Integer = CInt(FontHeight / 4) - 2
     Private VideoSize As Size
 
     Private Shared Instances As New List(Of PreviewForm)

@@ -478,7 +478,7 @@ Public Class FrameServerHelp
     End Function
 
     Shared Function VerifyAviSynthLinks() As Boolean
-        Dim packages = {Package.ffmpeg, Package.x264, Package.x265, Package.VCEEnc}
+        Dim packages = {Package.ffmpeg, Package.x264, Package.x265} ', Package.VCEEnc} 'mod. opt. - Disabled AMD VCCE Encoder AVS Support Portable
 
         Dim links = packages.SelectF(Function(pack) New SoftLink(pack.Directory + "AviSynth.dll", Package.AviSynth.Path))
 

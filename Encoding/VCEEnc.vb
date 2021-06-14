@@ -48,9 +48,9 @@ Public Class VCEEnc
                                     End Sub
 
             f.cms.SuspendLayout()
-            f.cms.Items.Add(New ActionMenuItem("Check Features", Sub() g.ShowCode("Check Features", ProcessHelp.GetConsoleOutput(Package.VCEEnc.Path, "--check-features"))))
-            f.cms.Items.Add(New ActionMenuItem("Check VCE Support", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.VCEEnc.Path, "--check-hw"))))
-            ActionMenuItem.Add(f.cms.Items, "Save Profile...", saveProfileAction, Symbol.Save)
+            f.cms.Items.AddRange({New ActionMenuItem("Check Features", Sub() g.ShowCode("Check Features", ProcessHelp.GetConsoleOutput(Package.VCEEnc.Path, "--check-features"))),
+                                  New ActionMenuItem("Check VCE Support", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.VCEEnc.Path, "--check-hw"))),
+                                  New ActionMenuItem("Save Profile...", saveProfileAction, ImageHelp.GetImageC(Symbol.Save))})
             f.cms.ResumeLayout(False)
 
             If f.ShowDialog() = DialogResult.OK Then

@@ -177,16 +177,16 @@ Public Class SourceFilesForm
         ScaleClientSize(36, 22, FontHeight)
         MinimumSize = New Size(Width \ 2, CInt(Height * 0.6))
 
-        bnUp.Image = ImageHelp.GetSymbolImage(Symbol.Up)
-        bnDown.Image = ImageHelp.GetSymbolImage(Symbol.Down)
-        bnAdd.Image = ImageHelp.GetSymbolImage(Symbol.Add)
-        bnRemove.Image = ImageHelp.GetSymbolImage(Symbol.Remove)
+        bnUp.Image = ImageHelp.GetImageC(Symbol.Up)
+        bnDown.Image = ImageHelp.GetImageC(Symbol.Down)
+        bnAdd.Image = ImageHelp.GetImageC(Symbol.Add)
+        bnRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
 
         For Each bn In {bnAdd, bnRemove, bnUp, bnDown}
             bn.TextImageRelation = TextImageRelation.Overlay
             bn.ImageAlign = ContentAlignment.MiddleLeft
             Dim pad = bn.Padding
-            pad.Left = Control.DefaultFont.Height \ 10
+            pad.Left = FontHeight \ 10
             pad.Right = pad.Left
             bn.Padding = pad
         Next

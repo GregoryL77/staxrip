@@ -426,12 +426,19 @@ Module StringExtensions
     <Extension()>
     Public Function NullOrEmptyS(instance As String) As Boolean
         Return instance Is Nothing OrElse instance Is ""
+        'Return String.IsNullOrEmpty(instance) ' Test this !!!
     End Function
 
     <Extension()>
     Public Function NotNullOrEmptyS(instance As String) As Boolean
         Return instance IsNot Nothing AndAlso instance IsNot ""
+        'Return Not String.IsNullOrEmpty(instance) ' Test this !!!
     End Function
+
+    '<Extension()>
+    'Public Function NullOrWhiteSpace(instance As String) As Boolean
+    '    Return String.IsNullOrWhiteSpace(instance) ' Test this !!!
+    'End Function
 
     <Extension()>
     Function FixDir(instance As String) As String
@@ -458,7 +465,7 @@ Module StringExtensions
     Function FixBreak(value As String) As String
         value = value.Replace(VB6.ChrW(13) & VB6.ChrW(10), VB6.ChrW(10))
         value = value.Replace(VB6.ChrW(13), VB6.ChrW(10))
-        Return value.Replace(VB6.ChrW(10), VB6.ChrW(13) + VB6.ChrW(10))
+        Return value.Replace(VB6.ChrW(10), VB6.ChrW(13) & VB6.ChrW(10))
     End Function
 
     <Extension()>
@@ -752,21 +759,16 @@ Module StringExtensions
 
     <Extension()>
     Function SplitNoEmptyAndWhiteSpace(value As String, ParamArray delimiters As Char()) As String()
-        If value Is Nothing Then
-            Return {}
-        End If
+        If value Is Nothing Then Return {}
 
         Dim a = value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
         Dim ret As New List(Of String)(a.Length)
 
         For i = 0 To a.Length - 1
-            ' If a(i) <> a(i).Trim Then Console.Beep(5000, 60) 'debug!!!
             a(i) = a(i).Trim
 
-            If a(i) IsNot "" Then 'ToDo: Test this for Is ""!!!
+            If a(i) IsNot "" Then
                 ret.Add(a(i))
-            Else
-                Console.Beep(2900, 150) 'debug!!!
             End If
         Next
 
@@ -1145,13 +1147,14 @@ End Module
 Module ControlExtension
     <Extension()>
     Sub ScaleClientSize(instance As Control, width As Single, height As Single, Optional fontHeightC As Integer = -1)
-        Dim fh = If(fontHeightC > 0, fontHeightC, instance.Font.Height)
-        instance.ClientSize = New Size(CInt(fh * width), CInt(fh * height))
+        If fontHeightC = -1 Then fontHeightC = instance.Font.Height
+        instance.ClientSize = New Size(CInt(fontHeightC * width), CInt(fontHeightC * height))
     End Sub
 
     <Extension()>
     Sub SetFontStyle(instance As Control, style As FontStyle)
-        instance.Font = New Font(instance.Font.FontFamily, instance.Font.Size, style)
+        'instance.Font = New Font(instance.Font.FontFamily, instance.Font.Size, style) 
+        instance.Font = New Font(instance.Font, style) ' Test this !!!
     End Sub
 
     <Extension()>
@@ -1188,11 +1191,11 @@ End Module
 
 Module UIExtensions
     <Extension()>
-    Sub ClearAndDisplose(instance As ToolStripItemCollection)
+    Sub ClearAndDispose(instance As ToolStripItemCollection)
         For i = instance.Count - 1 To 0 Step -1
-            If TypeOf instance(i) Is IDisposable Then
-                instance(i).Dispose()
-            End If
+            'If TypeOf instance(i) Is IDisposable Then  'dim instance(i) Experiment! Test it!
+            instance(i).Dispose()
+            'End If
         Next i
         instance.Clear()
     End Sub
@@ -1204,7 +1207,7 @@ Module UIExtensions
             Dim s = newSize
             Dim r As New Bitmap(s.Width, s.Height)
 
-            Using g = Graphics.FromImage(DirectCast(r, Image))
+            Using g = Graphics.FromImage(r)
                 g.SmoothingMode = SmoothingMode.AntiAlias
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality
@@ -1216,20 +1219,16 @@ Module UIExtensions
 
         Return img
     End Function
-
-    <Extension()>
-    Function ResizeImage(image As Image, ByVal height As Integer) As Image
-        Dim percentHeight = height / image.Height
-        Dim ret = New Bitmap(CInt(image.Width * percentHeight), CInt(height))
-
-        Using g = Graphics.FromImage(ret)
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic
-            g.DrawImage(image, 0, 0, ret.Width, ret.Height)
-        End Using
-
-        Return ret
-    End Function
-
+    '<Extension()>
+    'Function ResizeImage(image As Image, ByVal height As Integer) As Image
+    '    Dim percentHeight = height / image.Height
+    '    Dim ret = New Bitmap(CInt(image.Width * percentHeight), CInt(height))
+    '    Using g = Graphics.FromImage(ret)
+    '        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+    '        g.DrawImage(image, 0, 0, ret.Width, ret.Height)
+    '    End Using
+    '    Return ret
+    'End Function
     <Extension()>
     Sub SetSelectedPath(d As FolderBrowserDialog, path As String)
         If Not Directory.Exists(path) Then
@@ -1257,7 +1256,6 @@ Module UIExtensions
     '<Extension()> Sub SetFilter(dialog As FileDialog, values As IEnumerable(Of String))
     '    dialog.Filter = FileTypes.GetFilter(values)
     'End Sub
-
     <Extension()>
     Sub SendMessageCue(tb As TextBox, value As String, hideWhenFocused As Boolean)
         Dim wParam = If(hideWhenFocused, 0, 1)

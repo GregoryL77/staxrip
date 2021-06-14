@@ -250,7 +250,7 @@ Public Class CommandLineAudioEncoderForm
         Me.mbLanguage.Location = New System.Drawing.Point(392, 27)
         Me.mbLanguage.Margin = New System.Windows.Forms.Padding(2, 1, 2, 1)
         Me.mbLanguage.ShowMenuSymbol = True
-        Me.mbLanguage.Size = New System.Drawing.Size(140, 24)
+        Me.mbLanguage.Size = New System.Drawing.Size(160, 24)
         '
         'tbProfileName
         '
@@ -492,14 +492,14 @@ Public Class CommandLineAudioEncoderForm
         TipProvider.SetTip("Forced MKV Track.", cbForced)
 
         cms.SuspendLayout()
-        cms.Add("Copy Command Line", Sub() Clipboard.SetText(TempProfile.GetCode))
-        cms.Add("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Lines", TempProfile.GetCode))
-        cms.Add("Save Profile...", AddressOf SaveProfile, "Saves the current settings as profile").SetImage(Symbol.Save)
-        cms.Add("Help", AddressOf ShowHelp).SetImage(Symbol.Help)
+        cms.Items.AddRange({New ActionMenuItem("Copy Command Line", Sub() Clipboard.SetText(TempProfile.GetCode)),
+                            New ActionMenuItem("Show Command Line...", Sub() g.ShowCommandLinePreview("Command Lines", TempProfile.GetCode)),
+                            New ActionMenuItem("Save Profile...", AddressOf SaveProfile, ImageHelp.GetImageC(Symbol.Save), "Saves the current settings as profile"),
+                            New ActionMenuItem("Help", AddressOf ShowHelp, ImageHelp.GetImageC(Symbol.Help))})
         cms.ResumeLayout(False)
 
         mbLanguage.Value = TempProfile.Language
-        mbLanguage.BuildLangMenu(False)
+        mbLanguage.BuildLangMenu()
         ActiveControl = bnOK
     End Sub
 
@@ -564,7 +564,7 @@ Public Class CommandLineAudioEncoderForm
 
     Sub mbLanguage_ValueChangedUser(value As Object) Handles mbLanguage.ValueChangedUser
         TempProfile.Language = DirectCast(mbLanguage.Value, Language)
-        mbLanguage.Text = TempProfile.Language.Name
+        ' mbLanguage.Text = TempProfile.Language.Name
         EditControl.UpdatePreview()
     End Sub
 

@@ -35,37 +35,30 @@ Public Class NVEnc
 
     Overrides Sub ShowConfigDialog()
         Dim newParams As New EncoderParams
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone 'TEst this !!!
         newParams.Init(store)
 
         Using form As New CommandLineForm(newParams)
-            'form.tlpMain.SuspendLayout()
-            'form.tlpRTB.SuspendLayout()
-            'form.SuspendLayout()
-            form.cms.SuspendLayout()
             form.HTMLHelp = "<h2>NVEnc Help</h2>" + "<p>Right-clicking a option shows the local console help for the option.</p>" +
                             "<p>For Constant Quality Mode choose VBR mode, then check Constant Quality Mode and set desired VBR Quality (usually between 10-30).</p>" +
                            $"<h2>NVEnc Online Help</h2><p><a href=""{Package.NVEnc.HelpURL}"">NVEnc Online Help</a></p>" +
                            $"<h2>NVEnc Console Help</h2><pre>{HelpDocument.ConvertChars(Package.NVEnc.CreateHelpfile())}</pre>"
 
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of NVEnc)(Me)
+                                        Dim enc = Me.GetDeepClone 'Test this!
                                         Dim params2 As New EncoderParams
-                                        Dim store2 = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim store2 = store.GetDeepClone
                                         params2.Init(store2)
                                         enc.Params = params2
                                         enc.ParamsStore = store2
                                         SaveProfile(enc)
                                     End Sub
-
-            form.cms.Items.Add(New ActionMenuItem("Check Hardware", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-hw"))))
-            form.cms.Items.Add(New ActionMenuItem("Check Features", Sub() g.ShowCode("Check Features", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-features"))))
-            form.cms.Items.Add(New ActionMenuItem("Check Environment", Sub() g.ShowCode("Check Environment", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-environment"))))
-            ActionMenuItem.Add(form.cms.Items, "Save Profile...", saveProfileAction).SetImage(Symbol.Save)
+            form.cms.SuspendLayout()
+            form.cms.Items.AddRange({New ActionMenuItem("Check Hardware", Sub() MsgInfo(ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-hw"))),
+                                    New ActionMenuItem("Check Features", Sub() g.ShowCode("Check Features", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-features"))),
+                                    New ActionMenuItem("Check Environment", Sub() g.ShowCode("Check Environment", ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-environment"))),
+                                    New ActionMenuItem("Save Profile...", saveProfileAction, ImageHelp.GetImageC(Symbol.Save))})
             form.cms.ResumeLayout(False)
-            'form.tlpMain.ResumeLayout(False)
-            'form.tlpRTB.ResumeLayout(False)
-            'form.ResumeLayout(False)
             newParams.NVForm = form
 
             If form.ShowDialog() = DialogResult.OK Then

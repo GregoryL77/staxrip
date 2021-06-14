@@ -402,7 +402,10 @@ Public Class EventCommandEditor
 
         SetCommandParameters(CommandParameters)
         cmsCommands.SuspendLayout()
-        Command.PopulateCommandMenu(cmsCommands.Items, New List(Of Command)(g.MainForm.CustomMainMenu.CommandManager.Commands.Values), AddressOf MenuClick)
+        Dim cmdsD As Dictionary(Of String, Command) = g.MainForm.CustomMainMenu.CommandManager.Commands
+        Dim cmdsAr(cmdsD.Count - 1) As Command
+        cmdsD.Values.CopyTo(cmdsAr, 0)
+        Command.PopulateCommandMenu(cmsCommands.Items, cmdsAr, AddressOf MenuClick)
 
         For Each i As ToolStripMenuItem In cmsCommands.Items
             If String.Equals(i.Text, "Dynamic") Then

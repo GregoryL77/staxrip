@@ -33,8 +33,9 @@ Public Class ProcController
         CheckBox.Font = New Font("Consolas", 9 * s.UIScaleFactor)
         CheckBox.Text = " " + proc.Title + " "
         Dim sz = TextRenderer.MeasureText(CheckBox.Text, CheckBox.Font)
-        CheckBox.Width = sz.Width + CheckBox.Font.Height
-        CheckBox.Height = CInt(CheckBox.Font.Height * 1.5)
+        Dim cbFH As Integer = CheckBox.Font.Height
+        CheckBox.Width = sz.Width + cbFH
+        CheckBox.Height = CInt(cbFH * 1.5)
         AddHandler CheckBox.Click, AddressOf Click
 
         ProgressBar.Dock = DockStyle.Fill

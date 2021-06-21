@@ -6,7 +6,9 @@ Public Class DataForm
         InitializeComponent()
     End Sub
 
-    Sub DataForm_HelpRequested(sender As Object, args As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         HelpAction?.Invoke
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 End Class

@@ -1,4 +1,5 @@
 ﻿
+Imports System.Threading.Tasks
 Imports JM.LinqFaster
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
@@ -15,32 +16,30 @@ Public Class CommandLineForm
     Event BeforeHelp()
 
     Sub New(params As CommandLineParams)
+        Dim pItC As Integer = params.Items.Count
+        Dim _ckT = Task.Run(Sub()
+                                Items = New List(Of Item)(pItC)
+                                Dim singleList As New HashSet(Of String)(pItC, StringComparer.Ordinal)
+                                For Each param In params.Items
+                                    Dim gk As String = param.GetKey
+                                    If gk.NullOrEmptyS OrElse Not singleList.Add(gk) Then
+                                        Throw New Exception("key found twice: " + gk)
+                                    End If
+                                Next
+                            End Sub)
+
         InitializeComponent()
         Me.tlpMain.SuspendLayout()
         Me.tlpRTB.SuspendLayout()
         Me.SuspendLayout()
         'SimpleUI.ScaleClientSize(44, 34)
         SimpleUI.ScaleClientSize(46, 34, FontHeight)
+        Me.Params = params
+        Text = params.Title & " (" & pItC.ToInvariantString & " options)"
 
         rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
         rtbCommandLine.ContextMenuStrip?.Dispose()
         rtbCommandLine.ContextMenuStrip = cmsCommandLine
-        Dim pItC As Integer = params.Items.Count
-        Items = New List(Of Item)(pItC)
-        Dim singleList As New HashSet(Of String)(pItC, StringComparer.Ordinal)
-        For Each param In params.Items
-            If param.GetKey.NullOrEmptyS OrElse Not singleList.Add(param.GetKey) Then
-                Throw New Exception("key found twice: " + param.GetKey)
-            End If
-        Next
-
-        Me.Params = params
-        Text = params.Title + " (" & pItC & " options)"
-
-        InitUI()
-        SelectLastPage()
-        AddHandler params.ValueChanged, AddressOf ValueChanged
-        params.RaiseValueChanged(Nothing)
 
         cbGoTo.Sorted = False 'true 
         cbGoTo.SendMessageCue("Search")
@@ -59,17 +58,23 @@ Public Class CommandLineForm
           New ActionMenuItem("Help about this dialog", AddressOf ShowHelp, ImageHelp.GetImageC(Symbol.Help)),
           New ActionMenuItem("Help about " + params.GetPackage.Name, Sub() params.GetPackage.ShowHelp(), ImageHelp.GetImageC(Symbol.Help))})
         cms.ResumeLayout(False)
+
+        InitUI()
+        SelectLastPage()
+        AddHandler params.ValueChanged, AddressOf ValueChanged
+        params.RaiseValueChanged(Nothing)
     End Sub
 
     Protected Overrides Sub OnLoad(args As EventArgs)
-        Me.tlpMain.ResumeLayout(False)
-        Me.tlpRTB.ResumeLayout(False)
-        Me.ResumeLayout(False)
         MyBase.OnLoad(args)
         Threading.Tasks.Task.Run(Sub()
                                      Threading.Thread.Sleep(60)
                                      If IsHandleCreated Then BeginInvoke(Sub() UpdateSearchComboBox())
                                  End Sub)
+
+        Me.tlpMain.ResumeLayout(False)
+        Me.tlpRTB.ResumeLayout(False)
+        Me.ResumeLayout(False)
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
@@ -103,7 +108,7 @@ Public Class CommandLineForm
         rtbCommandLine.SetText(Params.GetCommandLine(False, False))
         rtbCommandLine.SelectionLength = 0
         If IsHandleCreated Then
-            Threading.Tasks.Task.Run(Sub() BeginInvoke(Sub() rtbCommandLine.UpdateHeight()))
+            Task.Run(Sub() BeginInvoke(Sub() rtbCommandLine.UpdateHeight()))
         Else
             rtbCommandLine.UpdateHeight()
         End If
@@ -112,7 +117,7 @@ Public Class CommandLineForm
     End Sub
 
     Sub InitUI()
-        Dim flowPanels As New HashSet(Of Control)(17)
+        'Dim flowPanels As New HashSet(Of Control)(17)
         Dim helpControl As Control
         Dim currentFlow As SimpleUI.FlowPage
 
@@ -121,9 +126,9 @@ Public Class CommandLineForm
             Dim parent As FlowLayoutPanelEx = SimpleUI.GetFlowPage(param.Path)
             currentFlow = DirectCast(parent, SimpleUI.FlowPage)
 
-            If flowPanels.Add(parent) Then 'ToDO!!!: Or Better Use autoSuspend???
-                parent.SuspendLayout()
-            End If
+            'If flowPanels.Add(parent) Then 'ToDO!!!:  AutoSuspend in SimpleUI Test it
+            '    parent.SuspendLayout()
+            'End If
 
             Dim help As String = Nothing
 
@@ -280,17 +285,13 @@ Public Class CommandLineForm
             End If
 
             If helpControl IsNot Nothing Then
-                Dim item As New Item
-                item.Control = helpControl
-                item.Page = currentFlow
-                item.Param = param
+                Dim item As New Item With {.Control = helpControl, .Page = currentFlow, .Param = param}
                 Items.Add(item)
             End If
         Next x
-
-        For Each panel In flowPanels
-            panel.ResumeLayout()
-        Next
+        'For Each panel In flowPanels
+        '    panel.ResumeLayout()
+        'Next
     End Sub
 
     Public Class Item
@@ -349,10 +350,11 @@ Public Class CommandLineForm
 
         Dim cbGText As String = cbGoTo.Text
         Dim find = cbGText.ToLowerInvariant
-        Dim findNoSpace = find.Replace(" ", "")
-        Dim matchedItems As New HashSet(Of Item)(37)
 
         If find.Length > 1 Then
+            Dim findNoSpace = find.Replace(" ", "")
+            Dim matchedItems As New HashSet(Of Item)(If(Items.Count > 50 AndAlso find.Length < 4, 47, 17))
+
             For Each item In Items
                 If item.Param.Visible Then
                     If String.Equals(item.Param.Switch, cbGText) OrElse String.Equals(item.Param.NoSwitch, cbGText) OrElse String.Equals(item.Param.HelpSwitch, cbGText) Then
@@ -439,16 +441,12 @@ Public Class CommandLineForm
                 End If
             Next item
 
-            Dim visibleItems(matchedItems.Count - 1) As Item 'matchedItems.Where(Function(arg) arg.Param.Visible).ToArray
-            matchedItems.CopyTo(visibleItems)
-
-            If visibleItems.Length > 0 Then
-                If SearchIndex >= visibleItems.Length Then
-                    SearchIndex = 0
-                End If
-
-                Dim control = visibleItems(SearchIndex).Control
-                SimpleUI.ShowPage(visibleItems(SearchIndex).Page)
+            If matchedItems.Count > 0 Then
+                If SearchIndex >= matchedItems.Count Then SearchIndex = 0
+                'Dim matchI As Item = matchedItems(SearchIndex) '=ElementAtOrDefault
+                Dim matchI As Item = matchedItems.ElementAt(SearchIndex)
+                Dim control = matchI.Control
+                SimpleUI.ShowPage(matchI.Page)
                 control.Font = New Font(control.Font.FontFamily, control.Font.Size, FontStyle.Bold)
                 HighlightedControl = control
                 Exit Sub
@@ -464,9 +462,9 @@ Public Class CommandLineForm
 
     Sub UpdateSearchComboBox()
         ComboBoxUpdated = True
-        'cbGoTo.BeginUpdate() 'No gain
         cbGoTo.Items.Clear()
-        Dim sItems As New HashSet(Of String)(Items.Count + 7, StringComparer.Ordinal)
+        Static hsCount As Integer
+        Dim sItems As New HashSet(Of String)(If(hsCount > 2, hsCount, Items.Count), StringComparer.Ordinal)
         For Each i In Items
             If i.Param.Visible Then
                 If Not i.Param.Switches Is Nothing Then
@@ -489,7 +487,8 @@ Public Class CommandLineForm
             End If
         Next i
 
-        Dim ia(sItems.Count - 1) As String
+        hsCount = sItems.Count
+        Dim ia(hsCount - 1) As String
         sItems.CopyTo(ia)
         Array.Sort(ia, StringComparer.Ordinal)
 
@@ -502,11 +501,9 @@ Public Class CommandLineForm
             cmsCommandLine.SuspendLayout()
             cmsCommandLine.Items.ClearAndDispose()
 
-            Dim copyItem = cmsCommandLine.Add("Copy Selection", Sub() Clipboard.SetText(rtbCommandLine.SelectedText))
-            copyItem.KeyDisplayString = "Ctrl+C"
-            copyItem.Visible = rtbCommandLine.SelectionLength > 0
-
-            cmsCommandLine.Add("Copy Command Line", Sub() Clipboard.SetText(Params.GetCommandLine(True, True)))
+            Dim cmsIL As New List(Of ActionMenuItem)(3) From {
+                New ActionMenuItem("Copy Selection", Sub() Clipboard.SetText(rtbCommandLine.SelectedText)) With {.KeyDisplayString = "Ctrl+C", .Visible = rtbCommandLine.SelectionLength > 0},
+                New ActionMenuItem("Copy Command Line", Sub() Clipboard.SetText(Params.GetCommandLine(True, True)))}
 
             Dim find = rtbCommandLine.SelectedText
 
@@ -515,7 +512,7 @@ Public Class CommandLineForm
                 Dim leftString = rtbCommandLine.Text.Substring(0, pos)
                 Dim left = leftString.LastIndexOf(" ", StringComparison.Ordinal) + 1
                 Dim right = rtbCommandLine.Text.Length
-                Dim rightString = rtbCommandLine.Text.Substring(pos)
+                Dim rightString = rtbCommandLine.Text.Remove(0, pos)
                 Dim index = rightString.IndexOf(" ", StringComparison.Ordinal)
 
                 If index > -1 Then
@@ -532,12 +529,13 @@ Public Class CommandLineForm
                     find = find.Left("=")
                 End If
 
-                cmsCommandLine.Add("Search " + find, Sub()
-                                                         cbGoTo.Text = find
-                                                         cbGoTo.Focus()
-                                                     End Sub)
+                cmsIL.Add(New ActionMenuItem("Search " + find, Sub()
+                                                                   cbGoTo.Text = find
+                                                                   cbGoTo.Focus()
+                                                               End Sub))
             End If
 
+            cmsCommandLine.Items.AddRange(cmsIL.ToArray)
             cmsCommandLine.ResumeLayout()
             cmsCommandLine.Show(rtbCommandLine, e.Location)
         End If

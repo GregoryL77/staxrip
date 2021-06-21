@@ -27,12 +27,12 @@ Public Class TaskDialog(Of T)
     Const TDM_CLICK_BUTTON As Integer = &H400 + 102
     Const TDM_SET_BUTTON_ELEVATION_REQUIRED_STATE As Integer = &H400 + 115
 
-    Sub New()
+    Sub New(Optional cWidth As UInteger = 0)
         Config = New TASKDIALOGCONFIG()
         Config.cbSize = CUInt(Marshal.SizeOf(Config))
         Config.cButtons = 0
         Config.cRadioButtons = 0
-        Config.cxWidth = 0
+        Config.cxWidth = cWidth  '320-224 'Width of dialog, 0-Auto(ideal)
         Config.dwCommonButtons = TaskDialogButtons.None
         Config.dwFlags = Flags.TDF_ALLOW_DIALOG_CANCELLATION
         Config.FooterIcon = New TASKDIALOGCONFIG_ICON_UNION(0)
@@ -143,8 +143,9 @@ Public Class TaskDialog(Of T)
 
     Property SelectedValue() As T
         Get
-            If IdValueDic.ContainsKey(SelectedID) Then
-                Return IdValueDic(SelectedID)
+            Dim ret As T
+            If IdValueDic.TryGetValue(SelectedID, ret) Then
+                Return ret
             End If
 
             Return SelectedValueValue
@@ -158,8 +159,9 @@ Public Class TaskDialog(Of T)
 
     Property SelectedText() As String
         Get
-            If IdTextDic.ContainsKey(SelectedID) Then
-                Return IdTextDic(SelectedID)
+            Dim ret As String
+            If IdTextDic.TryGetValue(SelectedID, ret) Then
+                Return ret
             End If
 
             Return SelectedTextValue
@@ -207,7 +209,7 @@ Public Class TaskDialog(Of T)
     End Property
 
     Function GetHandle() As IntPtr
-        Dim sb As New StringBuilder(500)
+        Dim sb As New StringBuilder(512)
         Dim handle = Native.GetForegroundWindow
         Native.GetWindowModuleFileName(handle, sb, CUInt(sb.Capacity))
 
@@ -245,8 +247,7 @@ Public Class TaskDialog(Of T)
         Config.dwFlags = Config.dwFlags Or Flags.TDF_USE_COMMAND_LINKS
     End Sub
 
-    Sub AddCommand(text As String, description As String, value As T,
-                   Optional setShield As Boolean = False)
+    Sub AddCommand(text As String, description As String, value As T, Optional setShield As Boolean = False)
 
         Dim id = 1000 + IdValueDic.Count + 1
         IdValueDic(id) = value
@@ -414,7 +415,7 @@ Public Class TaskDialog
         Public pszFooter As String
         Public pfCallback As PFTASKDIALOGCALLBACK
         Public lpCallbackData As IntPtr
-        Public cxWidth As UInteger
+        Public cxWidth As UInteger 'Width of dialog, 0-Auto
     End Class
 
     Public Enum Flags

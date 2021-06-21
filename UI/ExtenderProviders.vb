@@ -17,8 +17,9 @@ Namespace UI
 
         <DefaultValue("")>
         Function GetPattern(c As Control) As String
-            If Patterns.ContainsKey(c) Then
-                Return Patterns(c)
+            Dim ret As String
+            If Patterns.TryGetValue(c, ret) Then
+                Return ret
             End If
 
             Return ""

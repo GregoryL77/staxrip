@@ -250,7 +250,7 @@ Public Class CommandLineAudioEncoderForm
         Me.mbLanguage.Location = New System.Drawing.Point(392, 27)
         Me.mbLanguage.Margin = New System.Windows.Forms.Padding(2, 1, 2, 1)
         Me.mbLanguage.ShowMenuSymbol = True
-        Me.mbLanguage.Size = New System.Drawing.Size(160, 24)
+        Me.mbLanguage.Size = New System.Drawing.Size(191, 24)
         '
         'tbProfileName
         '

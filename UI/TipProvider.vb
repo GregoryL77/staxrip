@@ -17,7 +17,7 @@ Namespace UI
         Property TipsFunc As Func(Of StringPairList)
 
         Sub New(Optional component As IContainer = Nothing)
-            If Not component Is Nothing Then
+            If component IsNot Nothing Then
                 component.Add(Me)
             End If
             ToolTip.AutomaticDelay = 1000
@@ -39,8 +39,9 @@ Namespace UI
         <DefaultValue("")>
         <Editor(GetType(StringEditor), GetType(UITypeEditor))>
         Function GetTipText(ctrl As Control) As String
-            If TipTexts.ContainsKey(ctrl) Then
-                Return TipTexts(ctrl)
+            Dim ret As String
+            If TipTexts.TryGetValue(ctrl, ret) Then
+                Return ret
             End If
 
             Return ""
@@ -83,20 +84,24 @@ Namespace UI
         Sub Init(tipText As String, control As Control)
             If Not DesignMode Then
                 AddHandler control.MouseDown, AddressOf TipMouseDown
-                tipText = tipText.TrimEnd("."c)
+                ' tipText = tipText.TrimEnd("."c)
 
-                If tipText.Length > 80 Then
+                If tipText.Length > 240 Then '80 ToDO Test This !!!
                     If HasContextMenu(control) Then
                         tipText = Nothing
                     Else
-                        tipText = "Right-click for help"
+                        tipText = tipText.Substring(0, 240) & "..." '"Right-click for help" was  80
                     End If
-                ElseIf Not AudioConverterForm.AudioConverterMode AndAlso HelpDocument.MustConvert(tipText) Then 'AudionConverter Opt.
+                ElseIf Not AudioConverterForm.AudioConverterMode AndAlso tipText.Length <= 80 AndAlso HelpDocument.MustConvert(tipText) Then 'AudionConverter Opt.
                     tipText = HelpDocument.ConvertMarkup(tipText, True)
                 End If
 
                 If tipText.NotNullOrEmptyS Then
-                    AddHandler control.HandleCreated, Sub() ToolTip.SetToolTip(control, tipText)
+                    Dim ehc As EventHandler = Sub()
+                                                  ToolTip.SetToolTip(control, tipText)
+                                                  RemoveHandler control.HandleCreated, ehc 'ToDO TEst This Experiment !!!! Needed?
+                                              End Sub
+                    AddHandler control.HandleCreated, ehc
                 End If
             End If
         End Sub
@@ -116,14 +121,16 @@ Namespace UI
 
         Function GetTip(ctrl As Control) As StringPair
             Dim ret As New StringPair
+            Dim val As String
 
-            If TipTitles.ContainsKey(ctrl) Then
-                ret.Name = FormatName(TipTitles(ctrl))
+            If TipTitles.TryGetValue(ctrl, val) Then
+                ret.Name = FormatName(val)
             End If
 
-            If TipTexts.ContainsKey(ctrl) Then
-                ret.Value = TipTexts(ctrl)
+            If TipTexts.TryGetValue(ctrl, val) Then
+                ret.Value = val
             End If
+
             Return ret
         End Function
 
@@ -132,13 +139,11 @@ Namespace UI
             If TypeOf ctrl Is RichTextBox Then Return True
             If TypeOf ctrl Is NumericUpDown Then Return True
 
-            If TypeOf ctrl Is ComboBox AndAlso
-                DirectCast(ctrl, ComboBox).DropDownStyle = ComboBoxStyle.DropDown Then
-
+            If TypeOf ctrl Is ComboBox AndAlso DirectCast(ctrl, ComboBox).DropDownStyle = ComboBoxStyle.DropDown Then
                 Return True
             End If
 
-            If Not ctrl.ContextMenuStrip Is Nothing Then
+            If ctrl.ContextMenuStrip IsNot Nothing Then
                 Return True
             End If
         End Function
@@ -165,23 +170,17 @@ Namespace UI
 
             For Each ctrl In TipTexts.Keys
                 If Not ctrl.IsDisposed AndAlso ctrl.Visible Then
-                    Dim pair As New StringPair
-                    pair.Value = TipTexts(ctrl)
-
-                    If TipTitles.ContainsKey(ctrl) Then
-                        pair.Name = FormatName(TipTitles(ctrl))
-                    Else
-                        pair.Name = FormatName(ctrl.Text)
-                    End If
+                    Dim valD As String
+                    Dim pair As New StringPair With {.Value = TipTexts(ctrl), .Name = If(TipTitles.TryGetValue(ctrl, valD), FormatName(valD), FormatName(ctrl.Text))}
 
                     If temp.Add(pair.Name) Then
                         pair.Name = FormatName(pair.Name)
                         ret.Add(pair)
                     End If
                 End If
-            Next
+            Next ctrl
 
-            If Not TipsFunc Is Nothing Then
+            If TipsFunc IsNot Nothing Then
                 ret.AddRange(TipsFunc.Invoke)
             End If
 

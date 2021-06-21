@@ -82,7 +82,7 @@ Public MustInherit Class Demuxer
     End Function
 
     Shared Function GetDefaults() As List(Of Demuxer)
-        Dim ret As New List(Of Demuxer)
+        Dim ret As New List(Of Demuxer)(10)
 
         ret.Add(New ffmpegDemuxer)
 

@@ -193,7 +193,7 @@ Namespace UI
                 If i.Value.Equals(value) Then selectItem = i
             Next
 
-            If Not selectItem Is Nothing Then cb.SelectedItem = selectItem
+            If selectItem IsNot Nothing Then cb.SelectedItem = selectItem
         End Sub
 
         Shared Function GetValue(cb As ComboBox) As T
@@ -221,8 +221,8 @@ Namespace UI
 
     <Serializable()>
     Public Class WindowPositions
-        Public Positions As New Dictionary(Of String, Point)(7, StringComparer.Ordinal)
-        Private WindowStates As New Dictionary(Of String, FormWindowState)(7, StringComparer.Ordinal)
+        Public Positions As New Dictionary(Of String, Point)(37, StringComparer.Ordinal)
+        Private WindowStates As New Dictionary(Of String, FormWindowState)(37, StringComparer.Ordinal)
 
         Sub Save(form As Form)
             SavePosition(form)
@@ -247,13 +247,12 @@ Namespace UI
         Sub RestorePosition(form As Form, screenSz As Size)
             Dim text = GetText(form)
 
-            If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso Not TypeOf form Is UI.InputBoxForm Then
+            If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso TypeOf form IsNot UI.InputBoxForm Then
                 For Each i In s.WindowPositionsRemembered
                     If text.StartsWith(i, StringComparison.Ordinal) OrElse String.Equals(i, "all") Then
 
-                        If Positions.ContainsKey(GetKey(form)) Then
-                            Dim pos = Positions(GetKey(form))
-
+                        Dim pos As Point
+                        If Positions.TryGetValue(GetKey(form), pos) Then
                             If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > screenSz.Width OrElse pos.Y + form.Height > screenSz.Height Then
                                 CenterScreen(form, screenSz)
                             Else

@@ -31,7 +31,7 @@ Public Class LogForm
         cms.Form = Me
 
         cms.SuspendLayout()
-        cms.CreateAdd2List(5)
+        ContextMenuStripEx.CreateAdd2RangeList(5)
         cms.AddSeparator2RangeList()
         cms.Add2RangeList("Save As...", Sub()
                                             Using dialog As New SaveFileDialog
@@ -45,7 +45,7 @@ Public Class LogForm
         cms.Add2RangeList("Open in Text Editor", Sub() g.ShellExecute(g.GetTextEditorPath, p.Log.GetPath.Escape), ImageHelp.GetImageC(Symbol.Edit), Keys.Control Or Keys.T)
         cms.Add2RangeList("Show in File Explorer", Sub() g.SelectFileWithExplorer(p.Log.GetPath), ImageHelp.GetImageC(Symbol.FileExplorer), Keys.Control Or Keys.E)
         cms.Add2RangeList("Show History", Sub() g.ShellExecute(Folder.Settings + "Log Files"), ImageHelp.GetImageC(Symbol.ClockLegacy), Keys.Control Or Keys.H)
-        cms.AddRangeList2Menu()
+        ContextMenuStripEx.AddRangeList2Menu(cms.Items)
         cms.ResumeLayout(False)
 
     End Sub

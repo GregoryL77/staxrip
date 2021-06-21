@@ -545,7 +545,7 @@ Public Class Audio
         End If
     End Function
 
-    Shared Sub ConvertDirectShowSource(ap As AudioProfile, Optional useFlac As Boolean = False)
+    Shared Sub ConvertDirectShowSource(ap As AudioProfile, Optional useFlac As Boolean = False) 'WavPack better
         If ap.File.Ext = ap.ConvertExt Then
             Exit Sub
         End If

@@ -230,9 +230,7 @@ Public Class Macro
         Return ret
     End Function
 
-    Shared Function ExpandGUI(
-        value As String,
-        Optional throwIfCancel As Boolean = False) As (Value As String, Caption As String, Cancel As Boolean)
+    Shared Function ExpandGUI(value As String, Optional throwIfCancel As Boolean = False) As (Value As String, Caption As String, Cancel As Boolean)
 
         Dim ret As (Value As String, Caption As String, Cancel As Boolean) = (value, "", False)
 

@@ -93,8 +93,7 @@ Public Class FolderHelp
         End If
     End Sub
 
-    Shared Sub Delete(
-        filepath As String, Optional recycleOption As RecycleOption = RecycleOption.DeletePermanently)
+    Shared Sub Delete(filepath As String, Optional recycleOption As RecycleOption = RecycleOption.DeletePermanently)
 
         If Directory.Exists(filepath) Then
             Try
@@ -182,9 +181,7 @@ Public Class FileHelp
 End Class
 
 Public Class ProcessHelp
-    Shared Function GetConsoleOutput(
-        file As String, arguments As String,
-        Optional stderr As Boolean = False) As String
+    Shared Function GetConsoleOutput(file As String, arguments As String, Optional stderr As Boolean = False) As String
 
         Dim ret = ""
 

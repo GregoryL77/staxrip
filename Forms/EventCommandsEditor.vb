@@ -266,10 +266,11 @@ Public Class EventCommandsEditor
         End Using
     End Sub
 
-    Sub EventCommandsEditor_HelpRequested() Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         g.ShowPage("commands")
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
-
     Sub bnClone_Click() Handles bnClone.Click
         lv.AddItem(ObjectHelp.GetCopy(lv.SelectedItem)).Selected = True
     End Sub

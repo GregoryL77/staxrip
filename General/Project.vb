@@ -149,12 +149,11 @@ Public Class Project
 
         If Check(Audio0, "Audio Track 1", 36) Then
             Audio0 = New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 256}
-            'Audio0.Language = New Language(CultureInfo.CurrentCulture.TwoLetterISOLanguageName, True)
             Audio0.Language = currCult
         End If
 
         If Check(Audio1, "Audio Track 2", 36) Then
-            Audio1 = New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 256}
+            Audio1 = New GUIAudioProfile(AudioCodec.AAC, 1) With {.Bitrate = 256}
             Audio1.Language = New Language(9, True) ' "en"
         End If
 
@@ -216,8 +215,7 @@ Public Class Project
         End Set
     End Property
 
-    Sub NotifyPropertyChanged(
-        <CallerMemberName()> Optional ByVal propertyName As String = Nothing)
+    Sub NotifyPropertyChanged(<CallerMemberName()> Optional ByVal propertyName As String = Nothing)
 
         RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
     End Sub

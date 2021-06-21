@@ -243,7 +243,7 @@ Public MustInherit Class Muxer
     End Function
 
     Shared Function GetDefaults() As List(Of Muxer)
-        Dim ret As New List(Of Muxer)
+        Dim ret As New List(Of Muxer)(22)
 
         'ret.AddRange({New MkvMuxer(), New MP4Muxer(), New WebMMuxer()}) - Org, Test - No Edit MKV WorkAround
         ret.AddRange({New MkvMuxer("MKV (mkvmerge)"), New MP4Muxer(), New WebMMuxer()})

@@ -180,15 +180,12 @@ Public Class CropForm
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
 
         ContextMenuStrip = New ContextMenuStripEx(Me.components)
-        ContextMenuStrip.SuspendLayout()
 
         CustomMenu = New CustomMenu(AddressOf GetDefaultMenuCrop,
             s.CustomMenuCrop, CommandManager, ContextMenuStrip)
 
         CustomMenu.AddKeyDownHandler(Me)
         CustomMenu.BuildMenu()
-        ContextMenuStrip.ResumeLayout(False)
-
 
         If s.UIScaleFactor <> 1 Then StatusStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
 
@@ -238,9 +235,7 @@ Public Class CropForm
         Dim zoom = 0.0
         Dim workingArea = Screen.FromControl(Me).WorkingArea
 
-        While p.SourceWidth * zoom < 0.9 * workingArea.Width AndAlso
-            p.SourceHeight * zoom < 0.9 * workingArea.Height
-
+        While p.SourceWidth * zoom < 0.9 * workingArea.Width AndAlso p.SourceHeight * zoom < 0.9 * workingArea.Height
             zoom += 0.01
         End While
 

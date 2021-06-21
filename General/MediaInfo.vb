@@ -388,7 +388,6 @@ Public Class MediaInfo
         Dim ret As MediaInfo
         'Dim key = path & File.GetLastWriteTime(path).Ticks
         If Key <= 0 Then Key = ((path.GetHashCode + 2147483648L) << 16) + path.Length
-        'If Cache.ContainsKey(Key) Then Return Cache.Item(Key)
         If Cache.TryGetValue(Key, ret) Then Return ret
         ret = New MediaInfo(path)
         'Dim cTS = Cache.AsThreadSafe
@@ -397,13 +396,14 @@ Public Class MediaInfo
         Return ret
     End Function
 
-    Shared Sub ClearCache()
+    Shared Sub ClearCache(Optional newCapacity As Integer = 199)
         'For Each i In Cache.Values
         '    i?.Dispose()
         'Next
         Dim cVal = Cache.Values
         Parallel.ForEach(cVal, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
         Cache.Clear()
+        Cache = New Dictionary(Of Long, MediaInfo)(newCapacity)
     End Sub
 
 #Region "IDisposable"

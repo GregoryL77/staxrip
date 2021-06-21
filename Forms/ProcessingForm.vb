@@ -220,21 +220,21 @@ Public Class ProcessingForm
 
         CMS = New ContextMenuStripEx(components)
         CMS.SuspendLayout()
-        CMS.Add("Suspend", AddressOf ProcController.Suspend, "Suspends the current process, might not work with all tools.")
-        CMS.Add("Resume", AddressOf ProcController.ResumeProcs, "Resumes a suspended process.")
-        CMS.Add("-")
-        CMS.Add("Abort", AddressOf Abort, "Aborts all job processing of this StaxRip instance.").KeyDisplayString = "ESC"
-        CMS.Add("Skip", AddressOf Skip, "Aborts the current job and continues with the next job.")
-        StopAfterCurrentJobMenuItem = CMS.Add("Stop After Current", AddressOf StopAfterCurrentJob, "Stops all job processing after the current job.")
-        CMS.Add("-")
-        CMS.Add("Jobs", AddressOf JobsForm.ShowForm, "Shows the Jobs dialog.").KeyDisplayString = "F6"
-        CMS.Add("Log", AddressOf g.DefaultCommands.ShowLogFile, "Shows the log file.").KeyDisplayString = "F7"
-        CMS.Add("-")
-        CMS.Add("Help", AddressOf ShowHelp).KeyDisplayString = "F1"
-        CMS.ResumeLayout(False)
-
-
+        StopAfterCurrentJobMenuItem = New ActionMenuItem("Stop After Current", AddressOf StopAfterCurrentJob, "Stops all job processing after the current job.")
+        CMS.Items.AddRange({
+                New ActionMenuItem("Suspend", AddressOf ProcController.Suspend, "Suspends the current process, might not work with all tools."),
+                New ActionMenuItem("Resume", AddressOf ProcController.ResumeProcs, "Resumes a suspended process."),
+                New ToolStripSeparator,
+                New ActionMenuItem("Abort", AddressOf Abort, "Aborts all job processing of this StaxRip instance.") With {.KeyDisplayString = "ESC"},
+                New ActionMenuItem("Skip", AddressOf Skip, "Aborts the current job and continues with the next job."),
+                StopAfterCurrentJobMenuItem,
+                New ToolStripSeparator,
+                New ActionMenuItem("Jobs", AddressOf JobsForm.ShowForm, "Shows the Jobs dialog.") With {.KeyDisplayString = "F6"},
+                New ActionMenuItem("Log", AddressOf g.DefaultCommands.ShowLogFile, "Shows the log file.") With {.KeyDisplayString = "F7"},
+                New ToolStripSeparator,
+                New ActionMenuItem("Help", AddressOf ShowHelp) With {.KeyDisplayString = "F1"}})
         bnMenu.ContextMenuStrip = CMS
+        CMS.ResumeLayout(False)
     End Sub
 
     Protected Overrides Sub WndProc(ByRef m As Message)
@@ -348,8 +348,10 @@ Public Class ProcessingForm
         End Select
     End Sub
 
-    Sub ProcessingForm_HelpRequested(sender As Object, e As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         ShowHelp()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Sub ShowHelp()

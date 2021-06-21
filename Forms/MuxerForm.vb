@@ -670,8 +670,16 @@ Public Class MuxerForm
         CommandLineControl.tb.Text = muxer.AdditionalSwitches
         tcMain.SelectedIndex = s.Storage.GetInt("last selected muxer tab")
 
-        lbAttachments.Items.AddRange(muxer.Attachments.SelectF(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
+        lbAttachments.Items.AddRange(muxer.Attachments.ToArray.SelectF(Function(val) New AttachmentContainer With {.Filepath = val}))
         lbAttachments.RemoveButton = bnAttachmentRemove
+
+        dgvTags.DataSource = muxer.Tags
+        dgvTags.AllowUserToAddRows = True
+        dgvTags.AllowUserToDeleteRows = True
+        Dim fh As Integer = FontHeight
+        dgvTags.Columns(0).Width = fh * 10
+        dgvTags.Columns(1).Width = fh * 20
+        dgvTags.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
 
         'AudioBindingSource.DataSource = ObjectHelp.GetCopy(p.AudioTracks)
 
@@ -684,13 +692,9 @@ Public Class MuxerForm
         dgvAudio.AutoGenerateColumns = False
         dgvAudio.DataSource = AudioFBL
 
-        dgvTags.DataSource = muxer.Tags
-        dgvTags.AllowUserToAddRows = True
-        dgvTags.AllowUserToDeleteRows = True
-        Dim fh As Integer = FontHeight
-        dgvTags.Columns(0).Width = fh * 10
-        dgvTags.Columns(1).Width = fh * 20
-        dgvTags.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
+        dgvAudio.Columns.AddRange({New DataGridViewTextBoxColumn With {.DataPropertyName = "Name", .HeaderText = "Profile", .ReadOnly = True},
+                                   New DataGridViewTextBoxColumn With {.DataPropertyName = "DisplayName", .HeaderText = "Track", .ReadOnly = True}})
+        If dgvAudio.Rows.Count > 0 Then dgvAudio.Rows(0).Selected = True
 
         bnAudioAdd.Image = ImageHelp.GetImageC(Symbol.Add)
         bnAudioRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
@@ -713,31 +717,6 @@ Public Class MuxerForm
             bn.Padding = pad
         Next
 
-        Dim profileName = dgvAudio.AddTextBoxColumn()
-        profileName.DataPropertyName = "Name"
-        profileName.HeaderText = "Profile"
-        profileName.ReadOnly = True
-
-        Dim pathColumn = dgvAudio.AddTextBoxColumn()
-        pathColumn.DataPropertyName = "DisplayName"
-        pathColumn.HeaderText = "Track"
-        pathColumn.ReadOnly = True
-
-        If dgvAudio.Rows.Count > 0 Then
-            dgvAudio.Rows(0).Selected = True
-        End If
-
-        dgvSubtitles.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
-        dgvSubtitles.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None
-        dgvSubtitles.AutoGenerateColumns = False
-        dgvSubtitles.ShowCellToolTips = False
-        dgvSubtitles.AllowUserToResizeRows = False
-        dgvSubtitles.AllowUserToResizeColumns = True
-        dgvSubtitles.RowHeadersVisible = False
-        dgvSubtitles.SelectionMode = DataGridViewSelectionMode.FullRowSelect
-        dgvSubtitles.MultiSelect = False
-        dgvSubtitles.ClipboardCopyMode = DataGridViewClipboardCopyMode.Disable
-
         bnSubtitleAdd.Image = ImageHelp.GetImageC(Symbol.Add)
         bnSubtitleRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
         bnSubtitlePlay.Image = ImageHelp.GetImageC(Symbol.Play)
@@ -753,56 +732,28 @@ Public Class MuxerForm
             bn.Padding = pad
         Next
 
-        Dim enabledColumn As New DataGridViewCheckBoxColumn
-        enabledColumn.HeaderText = "Enabled"
-        enabledColumn.DataPropertyName = "Enabled"
-        dgvSubtitles.Columns.Add(enabledColumn)
+        dgvSubtitles.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None
+        dgvSubtitles.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None
+        dgvSubtitles.AutoGenerateColumns = False
+        dgvSubtitles.ShowCellToolTips = False
+        dgvSubtitles.AllowUserToResizeRows = False
+        dgvSubtitles.AllowUserToResizeColumns = True
+        dgvSubtitles.RowHeadersVisible = False
+        dgvSubtitles.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+        dgvSubtitles.MultiSelect = False
+        dgvSubtitles.ClipboardCopyMode = DataGridViewClipboardCopyMode.Disable
 
-        Dim languageColumn As New DataGridViewComboBoxColumn
-        languageColumn.HeaderText = "Language"
+        Dim languageColumn As New DataGridViewComboBoxColumn With {.HeaderText = "Language", .DataPropertyName = "Language"}
         languageColumn.Items.AddRange(Language.Languages.ToArray)
-        languageColumn.DataPropertyName = "Language"
-        dgvSubtitles.Columns.Add(languageColumn)
-
-        Dim nameColumn As New DataGridViewTextBoxColumn
-        nameColumn.HeaderText = "Name"
-        nameColumn.DataPropertyName = "Title"
-        dgvSubtitles.Columns.Add(nameColumn)
-
-        Dim defaultColumn As New DataGridViewCheckBoxColumn
-        defaultColumn.HeaderText = "Default"
-        defaultColumn.DataPropertyName = "Default"
-        dgvSubtitles.Columns.Add(defaultColumn)
-
-        Dim forcedColumn As New DataGridViewCheckBoxColumn
-        forcedColumn.HeaderText = "Forced"
-        forcedColumn.DataPropertyName = "Forced"
-        dgvSubtitles.Columns.Add(forcedColumn)
-
-        Dim idColumn As New DataGridViewTextBoxColumn
-        idColumn.ReadOnly = True
-        idColumn.HeaderText = "ID"
-        idColumn.DataPropertyName = "ID"
-        dgvSubtitles.Columns.Add(idColumn)
-
-        Dim typeNameColumn As New DataGridViewTextBoxColumn
-        typeNameColumn.ReadOnly = True
-        typeNameColumn.HeaderText = "Type"
-        typeNameColumn.DataPropertyName = "TypeName"
-        dgvSubtitles.Columns.Add(typeNameColumn)
-
-        Dim sizeColumn As New DataGridViewTextBoxColumn
-        sizeColumn.ReadOnly = True
-        sizeColumn.HeaderText = "Size"
-        sizeColumn.DataPropertyName = "Size"
-        dgvSubtitles.Columns.Add(sizeColumn)
-
-        Dim filenameColumn As New DataGridViewTextBoxColumn
-        filenameColumn.ReadOnly = True
-        filenameColumn.HeaderText = "Filename"
-        filenameColumn.DataPropertyName = "Filename"
-        dgvSubtitles.Columns.Add(filenameColumn)
-
+        dgvSubtitles.Columns.AddRange({New DataGridViewCheckBoxColumn With {.HeaderText = "Enabled", .DataPropertyName = "Enabled"},
+                                      languageColumn,
+                                      New DataGridViewTextBoxColumn With {.HeaderText = "Name", .DataPropertyName = "Title"},
+                                      New DataGridViewCheckBoxColumn With {.HeaderText = "Default", .DataPropertyName = "Default"},
+                                      New DataGridViewCheckBoxColumn With {.HeaderText = "Forced", .DataPropertyName = "Forced"},
+                                      New DataGridViewTextBoxColumn With {.ReadOnly = True, .HeaderText = "ID", .DataPropertyName = "ID"},
+                                      New DataGridViewTextBoxColumn With {.ReadOnly = True, .HeaderText = "Type", .DataPropertyName = "TypeName"},
+                                      New DataGridViewTextBoxColumn With {.ReadOnly = True, .HeaderText = "Size", .DataPropertyName = "Size"},
+                                      New DataGridViewTextBoxColumn With {.ReadOnly = True, .HeaderText = "Filename", .DataPropertyName = "Filename"}})
         'SubtitleBindingSource.AllowNew = False
         'SubtitleBindingSource.DataSource = SubtitleItems
         dgvSubtitles.DataSource = SubFBL
@@ -838,8 +789,6 @@ Public Class MuxerForm
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
 
-        'Dim lastAction As Action
-
         Dim UI = SimpleUI
         UI.Store = Muxer
         UI.BackColor = Color.Transparent
@@ -850,13 +799,13 @@ Public Class MuxerForm
         UI.SuspendLayout()
         page.SuspendLayout()
 
-        Dim tb = UI.AddTextButton()
+        Dim tb = UI.AddTextButton(page)
         tb.Text = "Cover"
         tb.Expandet = True
         tb.Property = NameOf(Muxer.CoverFile)
         tb.BrowseFile("jpg, png, bmp, webp|*.jpg;*.png;*.bmp;*.webp")
 
-        Dim mb = UI.AddTextMenu()
+        Dim mb = UI.AddTextMenu(page)
         mb.Text = "Chapters"
         mb.Expandet = True
         mb.Help = "Chapter file to be muxed."
@@ -868,7 +817,7 @@ Public Class MuxerForm
         If TypeOf Muxer Is MkvMuxer Then
             CommandLineControl.Presets = s.CmdlPresetsMKV
 
-            mb = UI.AddTextMenu()
+            mb = UI.AddTextMenu(page)
             mb.Text = "Tags"
             mb.Expandet = True
             mb.Help = "Tag file to be muxed."
@@ -876,69 +825,56 @@ Public Class MuxerForm
             mb.AddMenu("Browse File...", Function() g.BrowseFile("xml|*.xml"))
             mb.AddMenu("Edit File...", Sub() g.ShellExecute(g.GetAppPathForExtension("xml", "txt"), Muxer.TagFile.Escape))
 
-            tb = UI.AddTextButton()
+            tb = UI.AddTextButton(page)
             tb.Text = "Timestamps"
             tb.Help = "txt or mkv file"
             tb.Expandet = True
             tb.Property = NameOf(Muxer.TimestampsFile)
             tb.BrowseFile("txt, mkv|*.txt;*.mkv")
 
-            tb = UI.AddTextButton()
+            tb = UI.AddTextButton(page)
             tb.Text = "Title"
             tb.Expandet = True
             tb.Property = NameOf(MkvMuxer.Title)
             tb.Button.Text = "%"
             tb.Button.ClickAction = Sub() MacrosForm.ShowDialogForm()
 
-            Dim t = UI.AddText()
+            Dim t = UI.AddText(page)
             t.Text = "Video Track Name"
             t.Help = "Optional name of the video stream that may contain macros."
             t.Expandet = True
             t.Property = NameOf(Muxer.VideoTrackName)
 
-            Dim tm = UI.AddTextMenu()
+            Dim tm = UI.AddTextMenu(page)
             tm.Text = "Display Aspect Ratio"
             tm.Help = "Display Aspect Ratio to be applied by mkvmerge. By default and best practice the aspect ratio should be signalled to the encoder and not to the muxer, use this setting at your own risk."
             tm.Property = NameOf(MkvMuxer.DAR)
             tm.AddMenu(s.DarMenu)
 
-            Dim ml = UI.AddMenu(Of Language)()
+            Dim ml = UI.AddMenu(Of Language)(page)
             ml.Text = "Video Track Language"
             ml.Help = "Optional language of the video stream."
             ml.Property = NameOf(MkvMuxer.VideoTrackLanguage)
 
-            Dim compression = UI.AddMenu(Of CompressionMode)()
+            Dim compression = UI.AddMenu(Of CompressionMode)(page)
             compression.Text = "Subtitle Compression"
             compression.Property = NameOf(MkvMuxer.Compression)
 
             Application.DoEvents()
             ml.Button.BuildLangMenu()
-            'lastAction = Sub()
-            '                 ml.Button.Menu.SuspendLayout()
-            '                 For Each i In Language.Languages
-            '                     If i.IsCommon Then
-            '                         ml.Button.Add(i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
-            '                     Else
-            '                         ml.Button.Add("More | " + i.ToString.Substring(0, 1).ToUpperInvariant + " | " + i.ToString + " (" + i.TwoLetterCode + ", " + i.ThreeLetterCode + ")", i)
-            '                     End If
-
-            '                     Application.DoEvents()
-            '                 Next i
-            '                 ml.Button.Menu.ResumeLayout(False)
-            '             End Sub
 
         ElseIf TypeOf Muxer Is MP4Muxer Then
             tpAttachments.Enabled = False
 
             CommandLineControl.Presets = s.CmdlPresetsMP4
 
-            Dim txt = UI.AddText()
+            Dim txt = UI.AddText(page)
             txt.Text = "Video Track Name"
             txt.Help = "Optional name of the video stream that may contain macros."
             txt.Expandet = True
             txt.Property = NameOf(Muxer.VideoTrackName)
 
-            Dim textMenu = UI.AddTextMenu()
+            Dim textMenu = UI.AddTextMenu(page)
             textMenu.Text = "Pixel Aspect Ratio:"
             textMenu.Help = "Display Aspect Ratio to be applied by MP4Box. By default and best practice the aspect ratio should be signalled to the encoder and not to the muxer, use this setting at your own risk."
             textMenu.Property = NameOf(MP4Muxer.PAR)
@@ -948,7 +884,6 @@ Public Class MuxerForm
         UI.Host.ResumeLayout()
         UI.ResumeLayout()
         page.ResumeLayout()
-        'lastAction?.Invoke
         UpdateControls()
     End Sub
 
@@ -969,6 +904,17 @@ Public Class MuxerForm
             Muxer.Attachments.Clear()
             Muxer.Attachments.AddRange(lbAttachments.Items.OfType(Of AttachmentContainer).Select(Function(val) val.Filepath))
         End If
+    End Sub
+
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        Dim form As New HelpForm()
+        form.Doc.WriteStart(Text)
+        form.Doc.WriteParagraph(Strings.Muxer)
+        form.Doc.WriteTips(TipProvider.GetTips, SimpleUI.ActivePage.TipProvider.GetTips)
+        form.Doc.WriteTable("Macros", Macro.GetTips(False, True, False))
+        form.Show()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Sub SetValues()
@@ -997,7 +943,7 @@ Public Class MuxerForm
         attachmentItems.AddRange(paths)
         attachmentItems.Sort()
         lbAttachments.Items.Clear()
-        lbAttachments.Items.AddRange(attachmentItems.SelectF(Function(val) New AttachmentContainer With {.Filepath = val}).ToArray)
+        lbAttachments.Items.AddRange(attachmentItems.ToArray.SelectF(Function(val) New AttachmentContainer With {.Filepath = val}))
         UpdateControls()
     End Sub
 
@@ -1275,15 +1221,6 @@ Public Class MuxerForm
                 End If
             Next
         End If
-    End Sub
-
-    Sub MuxerForm_HelpRequested(sender As Object, ea As HelpEventArgs) Handles Me.HelpRequested
-        Dim form As New HelpForm()
-        form.Doc.WriteStart(Text)
-        form.Doc.WriteParagraph(Strings.Muxer)
-        form.Doc.WriteTips(TipProvider.GetTips, SimpleUI.ActivePage.TipProvider.GetTips)
-        form.Doc.WriteTable("Macros", Macro.GetTips(False, True, False))
-        form.Show()
     End Sub
 
     Sub dgvSubtitles_MouseUp(sender As Object, e As MouseEventArgs) Handles dgvSubtitles.MouseUp

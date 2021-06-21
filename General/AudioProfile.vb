@@ -434,7 +434,7 @@ Public MustInherit Class AudioProfile
     End Function
 
     Shared Function GetDefaults() As List(Of AudioProfile)
-        Dim ret As New List(Of AudioProfile)
+        Dim ret As New List(Of AudioProfile)(12)
 
         ret.Add(New GUIAudioProfile(AudioCodec.AAC, 54))
         ret.Add(New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 256})

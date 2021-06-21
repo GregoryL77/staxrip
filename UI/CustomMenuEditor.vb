@@ -1,10 +1,10 @@
 
-Imports System.Management
+Imports System.ComponentModel
 Imports System.Reflection
+Imports System.Runtime
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports JM.LinqFaster
-Imports JM.LinqFaster.Parallel
 Imports KGySoft.CoreLibraries
 
 Namespace UI
@@ -36,7 +36,6 @@ Namespace UI
         Friend WithEvents cmsCommand As ContextMenuStripEx
         Friend WithEvents laCommand As System.Windows.Forms.Label
         Friend WithEvents bnCancel As StaxRip.UI.ButtonEx
-        Friend WithEvents ImageList1 As System.Windows.Forms.ImageList
         Friend WithEvents tlpMain As System.Windows.Forms.TableLayoutPanel
         Friend WithEvents tlpCommand As System.Windows.Forms.TableLayoutPanel
         Friend WithEvents flpBottom As System.Windows.Forms.FlowLayoutPanel
@@ -60,8 +59,8 @@ Namespace UI
         Friend WithEvents ToolStripSeparator1 As ToolStripSeparator
         Friend WithEvents tsbRemove As ToolStripButton
         Friend WithEvents ToolsToolStripDropDownButton As ToolStripDropDownButton
-        Friend WithEvents NewFromDefaultsToolStripMenuItem As MenuItemEx
-        Friend WithEvents ResetToolStripMenuItem As MenuItemEx
+        Friend WithEvents NewFromDefaultsToolStripMenuItem As ToolStripMenuItemEx
+        Friend WithEvents ResetToolStripMenuItem As ToolStripMenuItemEx
         Friend WithEvents bnOK As StaxRip.UI.ButtonEx
         <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
             Me.components = New System.ComponentModel.Container()
@@ -79,7 +78,6 @@ Namespace UI
             Me.laCommand = New System.Windows.Forms.Label()
             Me.bnCancel = New StaxRip.UI.ButtonEx()
             Me.bnOK = New StaxRip.UI.ButtonEx()
-            Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
             Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
             Me.flpBottom = New System.Windows.Forms.FlowLayoutPanel()
             Me.tlpCommand = New System.Windows.Forms.TableLayoutPanel()
@@ -97,8 +95,8 @@ Namespace UI
             Me.ToolStripSeparator1 = New System.Windows.Forms.ToolStripSeparator()
             Me.tsbRemove = New System.Windows.Forms.ToolStripButton()
             Me.ToolsToolStripDropDownButton = New System.Windows.Forms.ToolStripDropDownButton()
-            Me.NewFromDefaultsToolStripMenuItem = New StaxRip.UI.MenuItemEx()
-            Me.ResetToolStripMenuItem = New StaxRip.UI.MenuItemEx()
+            Me.NewFromDefaultsToolStripMenuItem = New StaxRip.UI.ToolStripMenuItemEx()
+            Me.ResetToolStripMenuItem = New StaxRip.UI.ToolStripMenuItemEx()
             Me.laIcon = New System.Windows.Forms.Label()
             Me.tlpSymbol = New System.Windows.Forms.TableLayoutPanel()
             Me.laSymbol = New System.Windows.Forms.Label()
@@ -253,12 +251,6 @@ Namespace UI
             Me.bnOK.Margin = New System.Windows.Forms.Padding(0)
             Me.bnOK.Size = New System.Drawing.Size(83, 23)
             Me.bnOK.Text = "OK"
-            '
-            'ImageList1
-            '
-            Me.ImageList1.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit
-            Me.ImageList1.ImageSize = New System.Drawing.Size(16, 16)
-            Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
             '
             'tlpMain
             '
@@ -560,10 +552,10 @@ Namespace UI
         Private Block As Boolean
         Private GridTypeDescriptor As GridTypeDescriptor
         Private ClipboardNode As TreeNode
-        Private EnumSag As Symbol()
-        Private EnumAwe As Symbol()
-        Private ESagImgsT As Task(Of Image())
-        Private EAweImgsT As Task(Of Image())
+        'Private EnumSag As Symbol()
+        'Private EnumAwe As Symbol()
+        'Private ESagImgsT As Task(Of Image())
+        'Private EAweImgsT As Task(Of Image())
         Property GenericMenu As CustomMenu
 
         Sub New(menu As CustomMenu)
@@ -579,52 +571,49 @@ Namespace UI
                                               ImageHelp.GetSymbolImageSmall(Symbol.Forward).ResizeIconSize(sic),
                                               ImageHelp.GetSymbolImageSmall(Symbol.Down).ResizeIconSize(sic),
                                               ImageHelp.GetSymbolImageSmall(Symbol.More).ResizeIconSize(sic)})
+
             Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
             Dim esv = [Enum](Of Symbol).GetValues
-            ESagImgsT = Task.Run(Function()
-                                     Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
-                                     Array.Sort(eSag, symbComparer)
-                                     EnumSag = eSag
-                                     Dim retA(eSag.Length - 1) As Image
-                                     'Parallel.For(0, eSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(eSag(n)))
-                                     For n = 0 To eSag.Length - 1
-                                         retA(n) = ImageHelp.GetSymbolImage(eSag(n))
-                                     Next n
-                                     Return retA
-                                 End Function)
 
-            EAweImgsT = Task.Run(Function()
-                                     Dim eAwe As Symbol() = esv.WhereF(Function(s) s > 61400)
-                                     Array.Sort(eAwe, symbComparer)
-                                     EnumAwe = eAwe
-                                     Dim retA(eAwe.Length - 1) As Image
-                                     'Parallel.For(0, EnumAwe.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(EnumAwe(n)))
-                                     For n = 0 To eAwe.Length - 1
-                                         retA(n) = ImageHelp.GetSymbolImage(eAwe(n))
-                                     Next n
-                                     Return retA
-                                 End Function)
+            Dim EnumSag As Symbol()
+            Dim EnumAwe As Symbol()
+
+            Dim ESagImgsT = Task.Run(Function()
+                                         Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
+                                         Array.Sort(eSag, symbComparer)
+                                         EnumSag = eSag
+                                         Dim retA(eSag.Length - 1) As Image
+                                         'Parallel.For(0, eSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(eSag(n)))
+                                         For n = 0 To eSag.Length - 1
+                                             retA(n) = ImageHelp.GetSymbolImage(eSag(n))
+                                         Next n
+                                         Return retA
+                                     End Function)
+
+            Dim EAweImgsT = Task.Run(Function()
+                                         Dim eAwe As Symbol() = esv.WhereF(Function(s) s > 61400)
+                                         Array.Sort(eAwe, symbComparer)
+                                         EnumAwe = eAwe
+                                         Dim retA(eAwe.Length - 1) As Image
+                                         'Parallel.For(0, EnumAwe.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(EnumAwe(n)))
+                                         For n = 0 To eAwe.Length - 1
+                                             retA(n) = ImageHelp.GetSymbolImage(eAwe(n))
+                                         Next n
+                                         Return retA
+                                     End Function)
             InitializeComponent()
-
-
-            If Not imgArT.IsCompleted Then Console.Beep(2000, 300) 'debug
-
-
             ScaleClientSize(38, 38, FontHeight)
-            GenericMenu = menu
+            CancelButton = Nothing
             GridTypeDescriptor = New GridTypeDescriptor
             tv.BeginUpdate()
             PopulateTreeView(menu.MenuItem.GetClone, Nothing)
             tv.ExpandAll()
             tv.SelectedNode = tv.Nodes(0)
             tv.EndUpdate()
-            CancelButton = Nothing
 
+            GenericMenu = menu
             cmsCommand.SuspendLayout()
-            Dim cmdsDV As Dictionary(Of String, Command).ValueCollection = GenericMenu.CommandManager.Commands.Values
-            Dim cmdsAr(cmdsDV.Count - 1) As Command
-            cmdsDV.CopyTo(cmdsAr, 0)
-            Command.PopulateCommandMenu(cmsCommand.Items, cmdsAr, AddressOf SetCommand)
+            Command.PopulateCommandMenu(cmsCommand.Items, GenericMenu.CommandManager.Commands.Values, AddressOf SetCommand)
             cmsCommand.ResumeLayout(False)
 
             TipProvider.SetTip("Parameters used when the command is executed. Please make a feature request if useful parameters are missing.", pg, lParameters)
@@ -632,8 +621,8 @@ Namespace UI
             TipProvider.SetTip("A key can be deleted by pressing it two times.", tbHotkey, laHotkey)
             TipProvider.SetTip("Command to be executed. Please make a feature request if useful commands are missing.", tbCommand, laCommand)
 
-            g.SetRenderer(cmsSymbol) 'Needed??? ToDo!!!
-            ToolStrip.SuspendLayout() 'Needed??? ToDo!!!
+            'g.SetRenderer(cmsSymbol) 'Needed???  Not RemoveIt!
+            ToolStrip.SuspendLayout()
             g.SetRenderer(ToolStrip)
             If s.UIScaleFactor <> 1 Then
                 ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
@@ -654,89 +643,112 @@ Namespace UI
             ToolsToolStripDropDownButton.Image = imgAr(9)
             ToolStrip.ResumeLayout(False) 'Needed??? ToDo!!! Seems indeed needed!
 
-            '   PopulateSymbolMenu()
-        End Sub
+            Dim unused = Task.Run(
+                Sub()
+                    For n = 1 To 3
+                        Thread.Sleep(90) '30-60(onshown),60-105(new)
+                        ESagImgsT.Wait()
+                        EAweImgsT.Wait()
+                        If IsDisposed Then
+                            [Enum](Of Symbol).ClearCaches()
+                            Exit Sub
+                        End If
+                        If IsHandleCreated Then
+                            BeginInvoke(Sub()
+                                            Dim ImgEnumA As Image() = ESagImgsT.Result
+                                            'Dim m1LAlphSag As New List(Of ToolStripMenuItemEx)(26) 'List dynamic size version(no <inc> needed)
+                                            Dim m1LAlphSag(24) As ToolStripMenuItemEx
+                                            'Dim m2LLSag As New List(Of List(Of ActionMenuItem))(26)
+                                            Dim m2LLSag(24) As List(Of ActionMenuItem)
+                                            Dim enumS As Symbol() = EnumSag
 
-        Protected Overrides Sub OnShown(e As EventArgs)
-            MyBase.OnShown(e)
-            Task.Run(Sub()
-                         Thread.Sleep(45) '30-45
-                         ESagImgsT.Wait()
-                         EAweImgsT.Wait()
-                         If IsHandleCreated Then BeginInvoke(Sub() PopulateSymbolMenu())
-                     End Sub)
-        End Sub
+                                            For i = 0 To enumS.Length - 1
+                                                Dim inc As Integer
+                                                Dim nM2LSag As List(Of ActionMenuItem)
+                                                Dim symb = enumS(i)
+                                                Dim sName As String = [Enum](Of Symbol).GetName(symb)
+                                                Dim lastCh As Char
+                                                Dim c1 As Char = CChar(sName.Substring(0, 1).ToUpperInvariant)
+                                                If c1 <> lastCh Then
+                                                    lastCh = c1
+                                                    m1LAlphSag(inc) = New ToolStripMenuItemEx(c1)
+                                                    nM2LSag = New List(Of ActionMenuItem)(32)
+                                                    m2LLSag(inc) = nM2LSag
+                                                    inc += 1
+                                                End If
+                                                nM2LSag.Add(New ActionMenuItem(sName, Sub() HandleSymbol(symb), ImgEnumA(i)))
+                                            Next i
 
-        Sub PopulateSymbolMenu()
+                                            'Application.DoEvents()
+                                            ImgEnumA = EAweImgsT.Result
+                                            'Dim m1LAlphAwe As New List(Of ToolStripMenuItemEx)(26)
+                                            Dim m1LAlphAwe(25) As ToolStripMenuItemEx
+                                            'Dim m2LLAwe As New List(Of List(Of ActionMenuItem))(26)
+                                            Dim m2LLAwe(25) As List(Of ActionMenuItem)
+                                            enumS = EnumAwe
 
-            If Not IsHandleCreated Then Exit Sub
-            Dim lastCh As Char
-            Dim ImgSagA = ESagImgsT.Result
-            'Dim m2LLSag As New List(Of List(Of ActionMenuItem))(26)
-            Dim m2LAlphSag As New List(Of ActionMenuItem)(26)
-            'Dim m3LSag As List(Of ActionMenuItem)
-            Dim eSag = EnumSag
-            Dim m3Sag(eSag.Length - 1) As (Char, ActionMenuItem)
+                                            For i = 0 To enumS.Length - 1
+                                                Dim inc As Integer
+                                                Dim nMm2LAwe As List(Of ActionMenuItem)
+                                                Dim symb = enumS(i)
+                                                Dim sName As String = [Enum](Of Symbol).GetName(symb)
+                                                Dim lastCh As Char
+                                                Dim c1 As Char = CChar(sName.Substring(3, 1).ToUpperInvariant)
+                                                If c1 <> lastCh Then
+                                                    lastCh = c1
+                                                    m1LAlphAwe(inc) = New ToolStripMenuItemEx(c1)
+                                                    nMm2LAwe = New List(Of ActionMenuItem)(24)
+                                                    m2LLAwe(inc) = nMm2LAwe
+                                                    inc += 1
+                                                End If
+                                                nMm2LAwe.Add(New ActionMenuItem(sName.Remove(0, 3).ToTitleCase.Replace("_", " "), Sub() HandleSymbol(symb), ImgEnumA(i)))
+                                            Next i
 
-            For i = 0 To eSag.Length - 1
-                Dim symb = eSag(i)
-                Dim sName = [Enum](Of Symbol).GetName(symb)
-                Dim c1 = CChar(sName.Substring(0, 1).ToUpperInvariant)
+                                            If IsHandleCreated Then
+                                                cmsSymbol.SuspendLayout()
+                                                Dim tsmiS = New ToolStripMenuItemEx("Segoe MDL2 Assets")
+                                                Dim tsmiA = New ToolStripMenuItemEx("FontAwesome")
+                                                tsmiS.DropDown.SuspendLayout()
+                                                tsmiA.DropDown.SuspendLayout()
+                                                cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
+                                                tsmiS.DropDownItems.AddRange(m1LAlphSag)
+                                                tsmiA.DropDownItems.AddRange(m1LAlphAwe)
 
-                If c1 <> lastCh Then
-                    lastCh = c1
-                    m2LAlphSag.Add(New ActionMenuItem(c1))
-                End If
+                                                For i = 0 To m1LAlphSag.Length - 1
+                                                    Dim nMISag As ToolStripMenuItemEx = m1LAlphSag(i)
+                                                    nMISag.DropDown.SuspendLayout()
+                                                    nMISag.DropDownItems.AddRange(m2LLSag(i).ToArray)
+                                                    nMISag.DropDown.ResumeLayout(False)
+                                                Next i
 
-                m3Sag(i) = (c1, New ActionMenuItem(sName, Sub() HandleSymbol(symb), ImgSagA(i)))
-            Next i
+                                                For i = 0 To m1LAlphAwe.Length - 1
+                                                    Dim nMIAwe As ToolStripMenuItemEx = m1LAlphAwe(i)
+                                                    nMIAwe.DropDown.SuspendLayout()
+                                                    nMIAwe.DropDownItems.AddRange(m2LLAwe(i).ToArray)
+                                                    nMIAwe.DropDown.ResumeLayout(False)
+                                                Next i
 
-            'Application.DoEvents()
-            lastCh = Char.MinValue
-            Dim ImgAweA = EAweImgsT.Result
-            Dim m2LAlphAwe As New List(Of ActionMenuItem)(26)
-            Dim eAwe = EnumAwe
-            Dim m3Awe(eAwe.Length - 1) As (Char, ActionMenuItem)
+                                                tsmiS.DropDown.ResumeLayout(False)
+                                                tsmiA.DropDown.ResumeLayout(False)
+                                                cmsSymbol.ResumeLayout(False)
+                                            End If
 
-            For i = 0 To eAwe.Length - 1
-                Dim symb = eAwe(i)
-                Dim sName = [Enum](Of Symbol).GetName(symb)
-                Dim c1 = CChar(sName.Substring(3, 1).ToUpperInvariant)
-
-                If c1 <> lastCh Then
-                    lastCh = c1
-                    m2LAlphAwe.Add(New ActionMenuItem(c1))
-                End If
-
-                m3Awe(i) = (c1, New ActionMenuItem(sName.Substring(3).ToTitleCase.Replace("_", " "), Sub() HandleSymbol(symb), ImgAweA(i)))
-            Next i
-
-            cmsSymbol.SuspendLayout()
-            Dim tsmiS = New ActionMenuItem("Segoe MDL2 Assets")
-            Dim tsmiA = New ActionMenuItem("FontAwesome")
-            Dim ddSag As ToolStripDropDown = tsmiS.DropDown
-            ddSag.SuspendLayout()
-            Dim ddAwe As ToolStripDropDown = tsmiA.DropDown
-            ddAwe.SuspendLayout()
-            tsmiS.DropDownItems.AddRange(m2LAlphSag.ToArray)
-            tsmiA.DropDownItems.AddRange(m2LAlphAwe.ToArray)
-            ActionMenuItem.AddRange2Menu(tsmiS.DropDownItems, m3Sag)
-            ActionMenuItem.AddRange2Menu(tsmiA.DropDownItems, m3Awe)
-            cmsSymbol.Items.AddRange({New ActionMenuItem("No Icon", Sub() HandleSymbol(Symbol.None)), tsmiS, tsmiA})
-            ddSag.ResumeLayout(False)
-            ddAwe.ResumeLayout(False)
-            cmsSymbol.ResumeLayout(False)
-
-            Erase EnumSag, EnumAwe
-            EAweImgsT.Dispose()
-            ESagImgsT.Dispose()
-            EAweImgsT = Nothing
-            ESagImgsT = Nothing
-            [Enum](Of Symbol).ClearCaches()
+                                            Erase EnumSag, EnumAwe, esv
+                                            EAweImgsT.Dispose()
+                                            ESagImgsT.Dispose()
+                                            EAweImgsT = Nothing
+                                            ESagImgsT = Nothing
+                                            [Enum](Of Symbol).ClearCaches()
+                                            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+                                        End Sub)
+                            Exit Sub
+                        End If
+                    Next n
+                End Sub)
         End Sub
 
         Sub HandleSymbol(symbol As Symbol)
-            If Not Block AndAlso Not tv.SelectedNode Is Nothing Then
+            If Not Block AndAlso tv.SelectedNode IsNot Nothing Then
                 Dim item = DirectCast(tv.SelectedNode.Tag, CustomMenuItem)
                 item.Symbol = symbol
                 UpdateControls()
@@ -771,12 +783,10 @@ Namespace UI
                 Dim nodes As New ArrayList
                 AddNodes(node, nodes)
 
-                If Not destNode Is node AndAlso Not destNode Is Nothing AndAlso
-                    Not nodes.Contains(destNode) Then
+                If destNode IsNot node AndAlso destNode IsNot Nothing AndAlso Not nodes.Contains(destNode) Then
 
                     If Control.ModifierKeys = Keys.Control Then
-                        If Not destNode.Nodes.Contains(node) AndAlso
-                            Not destNode.Text = "-" Then
+                        If Not destNode.Nodes.Contains(node) AndAlso Not String.Equals(destNode.Text, "-") Then
 
                             node.Remove()
                             destNode.Nodes.Add(node)
@@ -784,7 +794,7 @@ Namespace UI
                             tv.SelectedNode = node
                         End If
                     Else
-                        If Not destNode.Parent Is Nothing Then
+                        If destNode.Parent IsNot Nothing Then
                             If destNode.Bounds.Top < node.Bounds.Top Then
                                 node.Remove()
 
@@ -827,7 +837,7 @@ Namespace UI
                 Dim found As Boolean
 
                 For Each i As Command In GenericMenu.CommandManager.Commands.Values
-                    If i.MethodInfo.Name = item.MethodName Then
+                    If String.Equals(i.MethodInfo.Name, item.MethodName) Then
                         If tbCommand.Text = i.MethodInfo.Name Then
                             tbCommand_TextChanged()
                         Else
@@ -884,19 +894,20 @@ Namespace UI
         Sub PopulateGrid(item As CustomMenuItem)
             GridTypeDescriptor.Items.Clear()
 
-            If GenericMenu.CommandManager.HasCommand(item.MethodName) Then
-                Dim c = GenericMenu.CommandManager.GetCommand(item.MethodName)
+            Dim c = GenericMenu.CommandManager.GetCommand(item.MethodName)
+            'If GenericMenu.CommandManager.HasCommand(item.MethodName) Then
+            If c IsNot Nothing Then
 
-                If Not c.MethodInfo Is Nothing Then
+                If c.MethodInfo IsNot Nothing Then
                     Dim params = c.MethodInfo.GetParameters
 
                     For i = 0 To params.Length - 1
-                        Dim gp As New GridProperty
-                        gp.Name = DispNameAttribute.GetValue(params(i).GetCustomAttributes(False))
+                        Dim gp As New GridProperty With {
+                            .Name = DispNameAttribute.GetValue(params(i).GetCustomAttributes(False)),
+                            .Value = c.FixParameters(item.Parameters)(i),
+                            .Description = DescriptionAttributeHelp.GetDescription(params(i).GetCustomAttributes(False)),
+                            .TypeEditor = EditorAttributeHelp.GetEditor(params(i).GetCustomAttributes(False))}
                         If gp.Name Is Nothing Then gp.Name = params(i).Name.ToTitleCase
-                        gp.Value = c.FixParameters(item.Parameters)(i)
-                        gp.Description = DescriptionAttributeHelp.GetDescription(params(i).GetCustomAttributes(False))
-                        gp.TypeEditor = EditorAttributeHelp.GetEditor(params(i).GetCustomAttributes(False))
 
                         GridTypeDescriptor.Add(gp)
                     Next
@@ -925,8 +936,7 @@ Namespace UI
         End Sub
 
         Sub PopulateTreeView(item As CustomMenuItem, node As TreeNode)
-            Dim newNode As New TreeNode(item.Text)
-            newNode.Tag = item
+            Dim newNode As New TreeNode(item.Text) With {.Tag = item}
 
             If node Is Nothing Then
                 tv.Nodes.Add(newNode)
@@ -934,9 +944,10 @@ Namespace UI
                 node.Nodes.Add(newNode)
             End If
 
-            For Each i As CustomMenuItem In item.SubItems
-                PopulateTreeView(i, newNode)
-            Next
+            Dim subItems As List(Of CustomMenuItem) = item.SubItems
+            For n = 0 To subItems.Count - 1
+                PopulateTreeView(subItems(n), newNode)
+            Next n
         End Sub
 
         Function GetState() As CustomMenuItem
@@ -960,7 +971,8 @@ Namespace UI
         End Function
 
         Sub NewFromDefaultsToolStripMenuItem_Click() Handles NewFromDefaultsToolStripMenuItem.Click
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
+                tv.BeginUpdate()
                 Dim f = GetTemplateForm(GenericMenu.DefaultMenu.Invoke)
 
                 If f.ShowDialog = DialogResult.OK Then
@@ -969,13 +981,12 @@ Namespace UI
                     tv.SelectedNode.ExpandAll()
                     tv.SelectedNode = n
                 End If
+                tv.EndUpdate()
             End If
         End Sub
 
         Sub RemoveSelectedItem()
-            If Not tv.SelectedNode Is Nothing AndAlso
-                Not tv.SelectedNode.Parent Is Nothing Then
-
+            If tv.SelectedNode IsNot Nothing AndAlso tv.SelectedNode.Parent IsNot Nothing Then
                 tv.SelectedNode.Remove()
             End If
         End Sub
@@ -985,7 +996,7 @@ Namespace UI
         End Sub
 
         Sub tbHotkey_KeyDown(sender As Object, e As KeyEventArgs) Handles tbHotkey.KeyDown
-            If Not Block AndAlso Not tv.SelectedNode Is Nothing AndAlso
+            If Not Block AndAlso tv.SelectedNode IsNot Nothing AndAlso
                 Not e.KeyCode = Keys.ControlKey AndAlso
                 Not e.KeyCode = Keys.Menu AndAlso
                 Not e.KeyCode = Keys.ShiftKey Then
@@ -1003,7 +1014,7 @@ Namespace UI
                         If TypeOf i.Tag Is CustomMenuItem Then
                             Dim current = DirectCast(i.Tag, CustomMenuItem)
 
-                            If current.KeyData = item.KeyData AndAlso Not item Is current Then
+                            If current.KeyData = item.KeyData AndAlso item IsNot current Then
                                 current.KeyData = Keys.None
                                 MsgInfo(KeysHelp.GetKeyString(item.KeyData) + " detached from " + current.Text.TrimEnd("."c) + " And assigned To " + item.Text.TrimEnd("."c) + " instead.")
                             End If
@@ -1024,23 +1035,25 @@ Namespace UI
         End Sub
 
         Sub tsbCut_Click() Handles tsbCut.Click
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
                 tsbCopy.PerformClick()
                 RemoveSelectedItem()
             End If
         End Sub
 
         Sub tsbCopy_Click() Handles tsbCopy.Click
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
                 ClipboardNode = DirectCast(ObjectHelp.GetCopy(tv.SelectedNode), TreeNode)
                 UpdateControls()
             End If
         End Sub
 
         Sub tsbPaste_Click() Handles tsbPaste.Click
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
+                tv.BeginUpdate()
                 tv.SelectedNode.Nodes.Add(CType(ObjectHelp.GetCopy(ClipboardNode), TreeNode))
                 tv.SelectedNode.ExpandAll()
+                tv.EndUpdate()
             End If
         End Sub
 
@@ -1053,58 +1066,53 @@ Namespace UI
                 tv.BeginUpdate()
                 tv.Nodes.Clear()
                 PopulateTreeView(GenericMenu.DefaultMenu.Invoke, Nothing)
-                tv.EndUpdate()
                 tv.ExpandAll()
                 tv.SelectedNode = tv.Nodes(0)
+                tv.EndUpdate()
             End If
         End Sub
 
         Sub tsbMoveLeft_Click() Handles tsbMoveLeft.Click
             Dim n = tv.SelectedNode
 
-            If Not n Is Nothing AndAlso n.Parent.Parent Is Nothing Then
-                Exit Sub
-            End If
+            If n IsNot Nothing AndAlso n.Parent.Parent Is Nothing Then Exit Sub
 
             Block = True
+            tv.BeginUpdate()
             tv.MoveSelectionLeft()
+            tv.EndUpdate()
             Block = False
         End Sub
 
         Sub tsbMoveRight_Click() Handles tsbMoveRight.Click
             Block = True
+            tv.BeginUpdate()
             tv.MoveSelectionRight()
+            tv.EndUpdate()
             Block = False
         End Sub
 
         Sub tsbMoveUp_Click() Handles tsbMoveUp.Click
             Dim n = tv.SelectedNode
 
-            If Not n Is Nothing AndAlso
-                Not n.Parent Is Nothing AndAlso
-                n.Parent.Parent Is Nothing AndAlso
-                n.Index = 0 Then
-
-                Exit Sub
-            End If
+            If n IsNot Nothing AndAlso n.Parent IsNot Nothing AndAlso n.Parent.Parent Is Nothing AndAlso n.Index = 0 Then Exit Sub
 
             Block = True
+            tv.BeginUpdate()
             tv.MoveSelectionUp()
+            tv.EndUpdate()
             Block = False
         End Sub
 
         Sub tsbMoveDown_Click() Handles tsbMoveDown.Click
             Dim n = tv.SelectedNode
 
-            If Not n Is Nothing AndAlso
-                n.Parent.Parent Is Nothing AndAlso
-                n.NextNode Is Nothing Then
-
-                Exit Sub
-            End If
+            If n IsNot Nothing AndAlso n.Parent.Parent Is Nothing AndAlso n.NextNode Is Nothing Then Exit Sub
 
             Block = True
+            tv.BeginUpdate()
             tv.MoveSelectionDown()
+            tv.EndUpdate()
             Block = False
         End Sub
 
@@ -1113,14 +1121,14 @@ Namespace UI
         End Sub
 
         Sub tbCommand_TextChanged() Handles tbCommand.TextChanged
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
                 Dim item = DirectCast(tv.SelectedNode.Tag, CustomMenuItem)
 
                 If Not Block Then
                     Dim selectedCommand As Command = Nothing
 
                     For Each i As Command In GenericMenu.CommandManager.Commands.Values
-                        If i.MethodInfo.Name = tbCommand.Text Then
+                        If String.Equals(i.MethodInfo.Name, tbCommand.Text) Then
                             selectedCommand = i
                         End If
                     Next
@@ -1134,25 +1142,24 @@ Namespace UI
                     End If
                 End If
 
-                Dim mi As MethodInfo = Nothing
+                'If GenericMenu.CommandManager.HasCommand(item.MethodName) Then
+                Dim mi As MethodInfo = GenericMenu.CommandManager.GetCommand(item.MethodName)?.MethodInfo
 
-                If GenericMenu.CommandManager.HasCommand(item.MethodName) Then
-                    mi = GenericMenu.CommandManager.GetCommand(item.MethodName).MethodInfo
-                End If
-
-                pg.Visible = Not mi Is Nothing AndAlso mi.GetParameters.Length > 0
+                pg.Visible = mi IsNot Nothing AndAlso mi.GetParameters.Length > 0
                 lParameters.Visible = pg.Visible
                 PopulateGrid(item)
             End If
         End Sub
 
         Sub tsbNew_Click(sender As Object, e As EventArgs) Handles tsbNew.Click
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
+                tv.BeginUpdate()
                 Dim newNode As New TreeNode
                 newNode.Text = "???"
                 newNode.Tag = New CustomMenuItem("???")
                 tv.SelectedNode.Nodes.Add(newNode)
                 tv.SelectedNode = newNode
+                tv.EndUpdate()
             End If
         End Sub
 

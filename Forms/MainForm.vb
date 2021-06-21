@@ -1105,7 +1105,7 @@ Public Class MainForm
         End If
 
         ImageHelp.CreateFonts()
-        MenuItemEx.UseTooltips = s.EnableTooltips
+        ToolStripMenuItemEx.UseTooltips = s.EnableTooltips
         Icon = g.Icon
         InitializeComponent()
         ScaleClientSize(43, 27.5, FontHeight)
@@ -1146,42 +1146,38 @@ Public Class MainForm
         llEditAudio0.AddClickAction(AddressOf AudioEdit0ToolStripMenuItemClick)
         llEditAudio1.AddClickAction(AddressOf AudioEdit1ToolStripMenuItemClick)
 
-        MenuStrip.SuspendLayout()
-        If s.UIScaleFactor <> 1 Then MenuStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
-
         CommandManager.AddCommandsFromObject(Me)
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
 
+        If s.UIScaleFactor <> 1 Then MenuStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
         CustomMainMenu = New CustomMenu(AddressOf GetDefaultMainMenu,
                 s.CustomMenuMainForm, CommandManager, MenuStrip)
 
         OpenProject(g.StartupTemplatePath)
         CustomMainMenu.AddKeyDownHandler(Me)
         CustomMainMenu.BuildMenu()
+        g.SetRenderer(MenuStrip)
         UpdateAudioMenu()
-        MenuStrip.ResumeLayout(False)
 
-        SizeContextMenuStrip.SuspendLayout()
         CustomSizeMenu = New CustomMenu(AddressOf GetDefaultMenuSize,
                 s.CustomMenuSize, CommandManager, SizeContextMenuStrip)
 
         CustomSizeMenu.AddKeyDownHandler(Me)
         CustomSizeMenu.BuildMenu()
-        SizeContextMenuStrip.ResumeLayout(False)
 
         bnNext.AutoSize = True
         bnNext.AutoSizeMode = AutoSizeMode.GrowAndShrink
         bnNext.MinimumSize = New Size(CInt(FontHeight * 3.5), CInt(FontHeight * 1.5))
 
         NextContextMenuStrip.SuspendLayout()
-        NextContextMenuStrip.Add("Add to top and open Jobs", Sub() AddJob(True, 0))
-        NextContextMenuStrip.Add("Add to bottom and open Jobs", Sub() AddJob(True, -1))
-        NextContextMenuStrip.Add("-")
-        NextContextMenuStrip.Add("Add to top w/o opening Jobs", Sub() AddJob(False, 0))
-        NextContextMenuStrip.Add("Add to bottom w/o opening Jobs", Sub() AddJob(False, -1))
+        NextContextMenuStrip.Items.AddRange({
+        New ActionMenuItem("Add to top and open Jobs", Sub() AddJob(True, 0)),
+        New ActionMenuItem("Add to bottom and open Jobs", Sub() AddJob(True, -1)),
+        New ToolStripSeparator,
+        New ActionMenuItem("Add to top w/o opening Jobs", Sub() AddJob(False, 0)),
+        New ActionMenuItem("Add to bottom w/o opening Jobs", Sub() AddJob(False, -1))})
         NextContextMenuStrip.ResumeLayout(False)
 
-        g.SetRenderer(MenuStrip)
         SetMenuStyle()
     End Sub
 
@@ -1453,23 +1449,21 @@ Public Class MainForm
         For Each iMenuItem In CustomMainMenu.MenuItems
             If String.Equals(iMenuItem.CustomMenuItem.MethodName, "DynamicMenuItem") Then
                 If iMenuItem.CustomMenuItem.Parameters(0).Equals(DynamicMenuItemID.HelpApplications) Then
-
                     iMenuItem.DropDown.SuspendLayout()
                     iMenuItem.DropDownItems.ClearAndDispose()
-                    Dim mL1AlphL As New List(Of MenuItemEx)(28)
+                    Dim mL1AlphL As New List(Of ToolStripMenuItemEx)(28)
                     Dim mL2LL As New List(Of List(Of ActionMenuItem))(28) '~0.640ms
-                    Dim nML2 As List(Of ActionMenuItem)
-                    Dim lastCH As Char
-                    Dim c1 As Char
                     Dim packAr(Package.Items.Count - 1) As Package
                     Package.Items.Values.CopyTo(packAr, 0)
 
                     For i = 0 To packAr.Length - 1
+                        Dim nML2 As List(Of ActionMenuItem)
+                        Dim lastCH As Char
                         Dim pack As Package = packAr(i)
-                        c1 = CChar(pack.Name.Substring(0, 1).ToUpperInvariant)
+                        Dim c1 As Char = CChar(pack.Name.Substring(0, 1).ToUpperInvariant)
                         If c1 <> lastCH Then 'source is sorted, if not HashSet
                             lastCH = c1
-                            mL1AlphL.Add(New MenuItemEx(c1))
+                            mL1AlphL.Add(New ToolStripMenuItemEx(c1))
                             nML2 = New List(Of ActionMenuItem)(4)
                             mL2LL.Add(nML2)
                         End If
@@ -1477,15 +1471,15 @@ Public Class MainForm
                         nML2.Add(New ActionMenuItem(pack.Name, Sub() pack.ShowHelp()))
                     Next i
 
-                    Dim nMI As MenuItemEx
+                    iMenuItem.DropDownItems.AddRange(mL1AlphL.ToArray)
+
                     For i = 0 To mL1AlphL.Count - 1
-                        nMI = mL1AlphL(i)
+                        Dim nMI As ToolStripMenuItemEx = mL1AlphL(i)
                         nMI.DropDown.SuspendLayout()
                         nMI.DropDownItems.AddRange(mL2LL(i).ToArray)
                         nMI.DropDown.ResumeLayout(False)
                     Next i
 
-                    iMenuItem.DropDownItems.AddRange(mL1AlphL.ToArray)
                     iMenuItem.DropDown.ResumeLayout(False)
                     Exit For
                 End If
@@ -2011,8 +2005,7 @@ Public Class MainForm
 
                         Dim filter = p.Script.GetFilter("Source")
                         filter.Path = "Image"
-                        filter.Script = "ImageSource(""" + images(0).Dir + p.SourceFile.Base.Substring(0,
-                            p.SourceFile.Base.Length - digitCount) + "%0" & digitCount & "d." + p.SourceFile.Ext +
+                        filter.Script = "ImageSource(""" & images(0).Dir & p.SourceFile.Base.Substring(0, p.SourceFile.Base.Length - digitCount) & "%0" & digitCount & "d." & p.SourceFile.Ext &
                             """, " & images(0).Base.Substring(p.SourceFile.Base.Length - digitCount).ToInt &
                             ", " & images(images.Count - 1).Base.Substring(p.SourceFile.Base.Length - digitCount).ToInt & ", 25)"
                     End If
@@ -3795,11 +3788,11 @@ Public Class MainForm
     Sub ShowAppsDialog()
         Using form As New AppsForm
             Dim found As Boolean
-            Dim lSD As String = ""
+            Dim valD As String
 
-            If s.StringDictionary.TryGetValue("RecentExternalApplicationControl", lSD) Then
+            If s.StringDictionary.TryGetValue("RecentExternalApplicationControl", valD) Then
                 For Each pack In Package.Items.Values
-                    If EqualsEx(pack.Name & pack.Version, lSD) Then
+                    If EqualsEx(pack.Name & pack.Version, valD) Then
                         form.ShowPackage(pack)
                         found = True
                         Exit For
@@ -3863,7 +3856,7 @@ Public Class MainForm
     End Sub
 
     Sub PopulateProfileMenu(id As DynamicMenuItemID)
-        For Each i In CustomMainMenu.MenuItems.OfType(Of MenuItemEx)()
+        For Each i In CustomMainMenu.MenuItems.OfType(Of ToolStripMenuItemEx)()
             If String.Equals(i.CustomMenuItem.MethodName, "DynamicMenuItem") AndAlso i.CustomMenuItem.Parameters(0).Equals(id) Then
 
                 i.DropDown.SuspendLayout()
@@ -4679,19 +4672,19 @@ Public Class MainForm
                         If Not filter Is Nothing Then
                             If filter.Script.NullOrEmptyS Then
                                 If line.StartsWith(VB6.vbTab, StringComparison.Ordinal) Then
-                                    filter.Script += line.Substring(1)
+                                    filter.Script += line.Remove(0, 1)
                                 End If
 
                                 If line.StartsWith("    ", StringComparison.Ordinal) Then
-                                    filter.Script += line.Substring(4)
+                                    filter.Script += line.Remove(0, 4)
                                 End If
                             Else
                                 If line.StartsWith(VB6.vbTab, StringComparison.Ordinal) Then
-                                    filter.Script += BR + line.Substring(1)
+                                    filter.Script += BR + line.Remove(0, 1)
                                 End If
 
                                 If line.StartsWith("    ", StringComparison.Ordinal) Then
-                                    filter.Script += BR + line.Substring(4)
+                                    filter.Script += BR + line.Remove(0, 4)
                                 End If
                             End If
                         End If
@@ -5182,7 +5175,7 @@ Public Class MainForm
     End Sub
 
     Sub UpdateSizeMenu()
-        For Each i As MenuItemEx In CustomSizeMenu.MenuItems
+        For Each i As ToolStripMenuItemEx In CustomSizeMenu.MenuItems
             If String.Equals(i.CustomMenuItem.MethodName, "SetPercent") Then
                 i.Enabled = p.Compressibility > 0
             End If
@@ -6249,13 +6242,10 @@ Public Class MainForm
         If Not ForceClose Then g.SaveSettings()
 
         'ForceClose = True 'debug MediaInfo Dispose error
-        ActionMenuItem.LayoutSuspendList = Nothing
+        ActionMenuItem.ClearAdd2RangeList() 'Debug
+        ContextMenuStripEx.ClearAdd2RangeList()
         MediaInfo.ClearCache()
-        Dim imcV = ImageHelp.ImageCacheD.Values
-        For Each img In imcV
-            img.Dispose() 'debug
-        Next
-        ImageHelp.ImageCacheD.Clear()
+        ImageHelp.ImageCacheD?.Clear()
         ImageHelp.ImageCacheD = Nothing
         g.RaiseAppEvent(ApplicationEvent.ApplicationExit)
         RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException

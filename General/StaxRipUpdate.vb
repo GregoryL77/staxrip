@@ -17,10 +17,7 @@ Public Class StaxRipUpdate
         End If
     End Sub
 
-    Shared Async Sub CheckForUpdate(
-        Optional force As Boolean = False,
-        Optional includeBeta As Boolean = False,
-        Optional x64 As Boolean = True)
+    Shared Async Sub CheckForUpdate(Optional force As Boolean = False, Optional includeBeta As Boolean = False, Optional x64 As Boolean = True)
 
         Try
             If Not s.CheckForUpdates AndAlso Not force Then

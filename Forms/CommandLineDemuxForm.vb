@@ -406,10 +406,13 @@ Public Class CommandLineDemuxForm
                 Package.Items.Values.Where(Function(package) Not TypeOf package Is PluginPackage).Select(Function(package) package.Name).ToArray.Sort.Join(", "))
     End Sub
 
-    Sub DemuxForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         Dim form As New HelpForm()
         form.Doc.WriteStart(Text)
         form.Doc.WriteTips(TipProvider.GetTips)
         form.Show()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
+
 End Class

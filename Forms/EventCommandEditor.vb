@@ -401,12 +401,9 @@ Public Class EventCommandEditor
         End If
 
         SetCommandParameters(CommandParameters)
-        cmsCommands.SuspendLayout()
-        Dim cmdsD As Dictionary(Of String, Command) = g.MainForm.CustomMainMenu.CommandManager.Commands
-        Dim cmdsAr(cmdsD.Count - 1) As Command
-        cmdsD.Values.CopyTo(cmdsAr, 0)
-        Command.PopulateCommandMenu(cmsCommands.Items, cmdsAr, AddressOf MenuClick)
 
+        cmsCommands.SuspendLayout()
+        Command.PopulateCommandMenu(cmsCommands.Items, g.MainForm.CustomMainMenu.CommandManager.Commands.Values, AddressOf MenuClick)
         For Each i As ToolStripMenuItem In cmsCommands.Items
             If String.Equals(i.Text, "Dynamic") Then
                 i.Visible = False
@@ -433,15 +430,14 @@ Public Class EventCommandEditor
             Exit Sub
         End If
 
-        Dim cm = g.MainForm.CustomMainMenu.CommandManager
-
-        If Not cm.HasCommand(cp.MethodName) Then
+        Dim c = g.MainForm.CustomMainMenu.CommandManager.GetCommand(cp.MethodName)
+        'If Not g.MainForm.CustomMainMenu.CommandManager.HasCommand(cp.MethodName) Then
+        If c Is Nothing Then
             pgParameters.Visible = False
             lParameters.Visible = False
             Exit Sub
         End If
 
-        Dim c = g.MainForm.CustomMainMenu.CommandManager.GetCommand(cp.MethodName)
         tbCommand.Text = cp.MethodName
 
         If cp.Parameters Is Nothing OrElse cp.Parameters.Count = 0 Then
@@ -484,7 +480,8 @@ Public Class EventCommandEditor
         SetSplitter()
     End Sub
 
-    Sub EventCommandEditor_FormClosed() Handles Me.FormClosed
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        MyBase.OnFormClosed(e)
         If DialogResult = DialogResult.OK Then
             EventCommandValue.Name = tbName.Text
             EventCommandValue.Event = ListBag(Of ApplicationEvent).GetValue(cbEvent)
@@ -494,8 +491,10 @@ Public Class EventCommandEditor
         End If
     End Sub
 
-    Sub EventCommandEditor_HelpRequested() Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         g.ShowPage("commands")
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Sub pgParameters_PropertyValueChanged(s As Object, e As PropertyValueChangedEventArgs) Handles pgParameters.PropertyValueChanged
@@ -506,11 +505,13 @@ Public Class EventCommandEditor
         Next
     End Sub
 
-    Sub EventCommandEditor_Shown() Handles Me.Shown
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
         SetSplitter()
     End Sub
 
-    Sub EventCommandEditor_SizeChanged() Handles Me.SizeChanged
+    Protected Overrides Sub OnSizeChanged(e As EventArgs)
+        MyBase.OnSizeChanged(e)
         SetSplitter()
     End Sub
 

@@ -75,8 +75,9 @@ Namespace UI
                 ret += "Shift+"
             End If
 
-            If KeysTexts.ContainsKey(key) Then
-                ret += KeysTexts(key)
+            Dim valD As String
+            If KeysTexts.TryGetValue(key, valD) Then
+                ret += valD
             Else
                 Dim value = Native.MapVirtualKey(CInt(key), 2) 'MAPVK_VK_TO_CHAR
 

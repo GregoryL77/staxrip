@@ -353,7 +353,7 @@ Public MustInherit Class VideoEncoder
     End Function
 
     Shared Function GetDefaults() As List(Of VideoEncoder)
-        Dim ret As New List(Of VideoEncoder)(16)
+        Dim ret As New List(Of VideoEncoder)(32)
 
         ret.Add(New x264Enc)
         ret.Add(New x265Enc)

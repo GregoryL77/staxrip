@@ -9,7 +9,7 @@ Public Class ImageHelp
     Private Shared CollFontPrv As New PrivateFontCollection
     Private Shared FontSagoe As New Font("Segoe MDL2 Assets", 12)
     Private Shared FontAwesome As Font
-    Public Shared ImageCacheD As New Dictionary(Of Symbol, Image)(59) 'prm:47-53-59  46 Max As for 202106
+    Public Shared ImageCacheD As New Dictionary(Of Integer, Image)(59) 'prm:47-53-59  46 Max As for 202106
 
     Public Shared Sub CreateFonts()
         If FontSagoe Is Nothing Then FontSagoe = New Font("Segoe MDL2 Assets", 12)
@@ -73,7 +73,7 @@ Public Class ImageHelp
     Shared Sub ClearCache()
         'Parallel.ForEach(ImageCacheD.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(i) i.Dispose()) ' Destroys existings menus! :(
         ImageCacheD.Clear()
-        ImageCacheD = New Dictionary(Of Symbol, Image)(59)
+        ImageCacheD = New Dictionary(Of Integer, Image)(59)
     End Sub
 End Class
 

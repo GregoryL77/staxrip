@@ -377,10 +377,7 @@ Public Class Calc
         Return CInt(value / modValue) * modValue
     End Function
 
-    Shared Function GetMod(
-        w As Integer,
-        h As Integer,
-        Optional skip16 As Boolean = True) As String
+    Shared Function GetMod(w As Integer, h As Integer, Optional skip16 As Boolean = True) As String
 
         Dim wmod, hmod As Integer
 
@@ -644,27 +641,26 @@ Public Class Language
     Shared ReadOnly Property Languages() As List(Of Language)
         Get
             If LanguagesValue Is Nothing Then
-                Dim l As New List(Of Language)(308) 'Is now(2021) 296 (Full 303)
 
-                l.Add(New Language(1, True))  '1 "ar"
-                l.Add(New Language(30724, True)) '30724 "zh"
-                l.Add(New Language(9, True))  '9 "en"
-                l.Add(New Language(12, True)) '12 "fr"
-                l.Add(New Language(7, True))  '7 "de"
-                l.Add(New Language(57, True)) '57 "hi"
-                l.Add(New Language(16, True)) '16 "it"
-                l.Add(New Language(17, True)) '17 "ja"
-                l.Add(New Language(18, True)) '18 "ko"
-                l.Add(New Language(21, True)) '21 "pl"
-                l.Add(New Language(22, True)) '22 "pt"
-                l.Add(New Language(25, True)) '25 "ru"
-                l.Add(New Language(10, True)) '10 "es"
+                Dim l As New List(Of Language)(308) From {
+                    New Language(1, True),  '1 "ar"
+                    New Language(30724, True), '30724 "zh"
+                    New Language(9, True),  '9 "en"
+                    New Language(12, True), '12 "fr"
+                    New Language(7, True),  '7 "de"
+                    New Language(57, True), '57 "hi"
+                    New Language(16, True), '16 "it"
+                    New Language(17, True), '17 "ja"
+                    New Language(18, True), '18 "ko"
+                    New Language(21, True), '21 "pl"
+                    New Language(22, True), '22 "pt"
+                    New Language(25, True), '25 "ru"
+                    New Language(10, True), '10 "es"
+                    New Language(CultureInfo.InvariantCulture, True)} '127
+                'Is now(2021) 296 (Full 303)
                 'l.Add(New Language(69, True)) '69 "bn"
                 'l.Add(New Language(62, True)) '62 "ms"
                 'l.Add(New Language(70, True)) '70 "pa"
-
-                l.Add(New Language(CultureInfo.InvariantCulture, True)) '127
-
                 'Dim current = l.Find(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
                 Dim curNLCID As Integer = CultureInfo.CurrentCulture.NeutralCulture.LCID
                 Dim current = l.Find(Function(a) a.LCIDValue = curNLCID)
@@ -712,9 +708,11 @@ Public Class Language
     End Function
 
     Overrides Function Equals(o As Object) As Boolean
-        If TypeOf o Is Language Then
-            Return CultureInfo.Equals(DirectCast(o, Language).CultureInfo)
-        End If
+        'If TypeOf o Is Language Then
+        'Return CultureInfo.Equals(DirectCast(o, Language).CultureInfo)
+        Dim l As Language = TryCast(o, Language)
+        If l IsNot Nothing Then Return CultureInfo.Equals(l.CultureInfo)
+        Return False
     End Function
 End Class
 
@@ -862,7 +860,7 @@ End Class
 <Serializable()>
 Public Class ObjectStorage
     Private StringDictionary As New Dictionary(Of String, String)(7, StringComparer.Ordinal)
-    Private IntDictionary As New Dictionary(Of String, Integer)(7, StringComparer.Ordinal)
+    Private IntDictionary As New Dictionary(Of String, Integer)(17, StringComparer.Ordinal)
     Private DoubleDictionary As New Dictionary(Of String, Double)(7, StringComparer.Ordinal)
     Private BoolDictionaryValue As Dictionary(Of String, Boolean)
 
@@ -881,8 +879,9 @@ Public Class ObjectStorage
     End Function
 
     Function GetBool(key As String, defaultValue As Boolean) As Boolean
-        If BoolDictionary.ContainsKey(key) Then
-            Return BoolDictionary(key)
+        Dim ret As Boolean
+        If BoolDictionary.TryGetValue(key, ret) Then
+            Return ret
         End If
 
         Return defaultValue
@@ -897,8 +896,9 @@ Public Class ObjectStorage
     End Function
 
     Function GetInt(key As String, defaultValue As Integer) As Integer
-        If IntDictionary.ContainsKey(key) Then
-            Return IntDictionary(key)
+        Dim ret As Integer
+        If IntDictionary.TryGetValue(key, ret) Then
+            Return ret
         End If
 
         Return defaultValue
@@ -909,12 +909,13 @@ Public Class ObjectStorage
     End Sub
 
     Function GetDouble(key As String) As Double
-        Return GetDouble(key, 0.0)
+        Return GetDouble(key, 0R)
     End Function
 
     Function GetDouble(key As String, defaultValue As Double) As Double
-        If DoubleDictionary.ContainsKey(key) Then
-            Return DoubleDictionary(key)
+        Dim ret As Double
+        If DoubleDictionary.TryGetValue(key, ret) Then
+            Return ret
         End If
 
         Return defaultValue
@@ -925,8 +926,8 @@ Public Class ObjectStorage
     End Sub
 
     Function GetString(key As String, Optional defaultValue As String = Nothing) As String
-        If StringDictionary.ContainsKey(key) Then
-            Return StringDictionary(key)
+        If StringDictionary.TryGetValue(key, key) Then
+            Return key
         End If
 
         Return defaultValue
@@ -934,9 +935,7 @@ Public Class ObjectStorage
 
     Sub SetString(key As String, value As String)
         If value Is Nothing Then
-            If StringDictionary.ContainsKey(key) Then
-                StringDictionary.Remove(key)
-            End If
+            StringDictionary.Remove(key) 'Test This - TODO Should not Throw Excp
         Else
             StringDictionary(key) = value
         End If

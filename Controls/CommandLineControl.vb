@@ -146,19 +146,22 @@ Public Class CommandLineControl
         Dim cms = TextCustomMenu.GetMenu(Presets, bn, components, AddressOf MenuItenClick)
         components.Add(cms)
         cms.SuspendLayout()
-        cms.Items.Add(New ToolStripSeparator)
-        cms.Items.Add(New ActionMenuItem("Edit Menu...", AddressOf EditPresets)) ' Opt.: No MenuSpace Test This!!!  "Edit Menu..." & g.MenuSpace
+        cms.Items.AddRange({New ToolStripSeparator,
+                            New ActionMenuItem("Edit Menu...", AddressOf EditPresets)}) ' Opt.: No MenuSpace Test This!!!  "Edit Menu..." & g.MenuSpace
         cms.ResumeLayout()
         cms.Show(bn, 0, bn.Height)
     End Sub
 
-    Sub CommandLineControl_Layout(sender As Object, e As LayoutEventArgs) Handles Me.Layout
+    Protected Overrides Sub OnLayout(e As LayoutEventArgs)
+        MyBase.OnLayout(e)
         tb.Height = Height
     End Sub
 
-    Sub CommandLineControl_Load(sender As Object, e As EventArgs) Handles Me.Load
+    Protected Overrides Sub OnLoad(e As EventArgs)
+        MyBase.OnLoad(e)
         If Not DesignHelp.IsDesignMode Then
             Font = New Font("Consolas", 10 * s.UIScaleFactor)
         End If
     End Sub
+
 End Class

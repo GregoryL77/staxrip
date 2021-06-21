@@ -9,18 +9,18 @@ Public Class ToolStripRendererEx
 
     Shared Property ColorChecked As Color
     Shared Property ColorBorder As Color
-    Shared Property ColorTop As Color
+    'Shared Property ColorTop As Color
     Shared Property ColorBottom As Color
     Shared Property ColorBackground As Color
 
-    Shared Property ColorToolStrip1 As Color
+    'Shared Property ColorToolStrip1 As Color
     Shared Property ColorToolStrip2 As Color
-    Shared Property ColorToolStrip3 As Color
-    Shared Property ColorToolStrip4 As Color
+    'Shared Property ColorToolStrip3 As Color
+    'Shared Property ColorToolStrip4 As Color
 
     Private TextOffset As Integer
 
-    Shared Property FontHeight As Integer = 16 'Test This Experiment
+    Shared Property FontHeight As Integer = 16 'ToDo Test This Experiment
 
     Sub New(mode As ToolStripRenderModeEx)
         ' parameter?? FontHeight  ' Test Experiment NoScaling??? !!!
@@ -44,14 +44,14 @@ Public Class ToolStripRendererEx
         Else
             ColorChecked = Color.FromArgb(&HFF91C9F7)
             ColorBorder = Color.FromArgb(&HFF83ABDC)
-            ColorTop = Color.FromArgb(&HFFE7F0FB)
+            'ColorTop = Color.FromArgb(&HFFE7F0FB)
             ColorBottom = Color.FromArgb(&HFF91C9F7)
             ColorBackground = SystemColors.Control
 
-            ColorToolStrip1 = Color.FromArgb(&HFFFDFEFF)
+            'ColorToolStrip1 = Color.FromArgb(&HFFFDFEFF)
             ColorToolStrip2 = Color.FromArgb(&HFFF0F0F0)
-            ColorToolStrip3 = Color.FromArgb(&HFFDCE6F4)
-            ColorToolStrip4 = Color.FromArgb(&HFFDDE9F7)
+            'ColorToolStrip3 = Color.FromArgb(&HFFDCE6F4)
+            'ColorToolStrip4 = Color.FromArgb(&HFFDDE9F7)
         End If
     End Sub
 
@@ -60,12 +60,12 @@ Public Class ToolStripRendererEx
         ColorChecked = HSLColor.Convert(c).ToColorSetLuminosity(180)
         ColorBottom = HSLColor.Convert(c).ToColorSetLuminosity(200)
         ColorBackground = HSLColor.Convert(c).ToColorSetLuminosity(230)
-        ColorTop = HSLColor.Convert(c).ToColorSetLuminosity(240)
+        'ColorTop = HSLColor.Convert(c).ToColorSetLuminosity(240)
 
-        ColorToolStrip1 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 1)))
+        'ColorToolStrip1 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 1)))
         ColorToolStrip2 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 0.7)))
-        ColorToolStrip3 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 0.1)))
-        ColorToolStrip4 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 0.4)))
+        'ColorToolStrip3 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 0.1)))
+        'ColorToolStrip4 = ControlPaint.LightLight(ControlPaint.LightLight(ControlPaint.Light(ColorBorder, 0.4)))
     End Sub
 
     Protected Overrides Sub OnRenderToolStripBorder(e As ToolStripRenderEventArgs)

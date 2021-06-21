@@ -152,7 +152,7 @@ Namespace CommandLine
 
                     Dim c = GetControl()
 
-                    If Not c Is Nothing Then
+                    If c IsNot Nothing Then
                         If TypeOf c.Parent Is SimpleUI.EmptyBlock Then
                             c = c.Parent
                         End If
@@ -191,8 +191,9 @@ Namespace CommandLine
             Me.Store = store
             Me.Params = params
 
-            If Not store.Bool.ContainsKey(GetKey) Then
-                store.Bool(GetKey) = ValueValue
+            Dim gk As String = GetKey()
+            If Not store.Bool.ContainsKey(gk) Then
+                store.Bool(gk) = ValueValue
             End If
         End Sub
 
@@ -250,11 +251,11 @@ Namespace CommandLine
             Set(value As Boolean)
                 ValueValue = value
 
-                If Not Store Is Nothing Then
+                If Store IsNot Nothing Then
                     Store.Bool(GetKey) = value
                 End If
 
-                If Not CheckBox Is Nothing Then
+                If CheckBox IsNot Nothing Then
                     CheckBox.Checked = value
                 End If
             End Set
@@ -317,8 +318,9 @@ Namespace CommandLine
             Me.Store = store
             Me.Params = params
 
-            If Not store.Double.ContainsKey(GetKey) Then
-                store.Double(GetKey) = ValueValue
+            Dim gk As String = GetKey()
+            If Not store.Double.ContainsKey(gk) Then
+                store.Double(gk) = ValueValue
             End If
         End Sub
 
@@ -340,8 +342,8 @@ Namespace CommandLine
             End Get
             Set(value As Double)
                 ValueValue = value
-                If Not Store Is Nothing Then Store.Double(GetKey) = value
-                If Not NumEdit Is Nothing Then NumEdit.Value = value
+                If Store IsNot Nothing Then Store.Double(GetKey) = value
+                If NumEdit IsNot Nothing Then NumEdit.Value = value
             End Set
         End Property
 
@@ -404,8 +406,9 @@ Namespace CommandLine
             Me.Store = store
             Me.Params = params
 
-            If Not store.Int.ContainsKey(GetKey) Then
-                store.Int(GetKey) = ValueValue
+            Dim gk As String = GetKey()
+            If Not store.Int.ContainsKey(gk) Then
+                store.Int(gk) = ValueValue
             End If
         End Sub
 
@@ -440,11 +443,11 @@ Namespace CommandLine
             End Get
             Set(value As Integer)
                 ValueValue = value
-                If Not Store Is Nothing Then
+                If Store IsNot Nothing Then
                     Store.Int(GetKey) = value
                 End If
 
-                If Not MenuButton Is Nothing Then
+                If MenuButton IsNot Nothing Then
                     MenuButton.Value = ValueValue
                 End If
             End Set
@@ -509,8 +512,9 @@ Namespace CommandLine
             Me.Store = store
             Me.Params = params
 
-            If Not store.String.ContainsKey(GetKey) Then
-                store.String(GetKey) = ValueValue
+            Dim gk As String = GetKey()
+            If Not store.String.ContainsKey(gk) Then
+                store.String(gk) = ValueValue
             End If
         End Sub
 
@@ -582,11 +586,11 @@ Namespace CommandLine
             Set(value As String)
                 ValueValue = value
 
-                If Not Store Is Nothing Then
+                If Store IsNot Nothing Then
                     Store.String(GetKey) = value
                 End If
 
-                If Not TextEdit Is Nothing Then
+                If TextEdit IsNot Nothing Then
                     TextEdit.Text = value
                 End If
             End Set

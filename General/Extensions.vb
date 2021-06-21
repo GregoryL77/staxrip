@@ -425,14 +425,12 @@ Module StringExtensions
 
     <Extension()>
     Public Function NullOrEmptyS(instance As String) As Boolean
-        Return instance Is Nothing OrElse instance Is ""
-        'Return String.IsNullOrEmpty(instance) ' Test this !!!
+        Return instance Is Nothing OrElse instance.Length = 0
     End Function
 
     <Extension()>
     Public Function NotNullOrEmptyS(instance As String) As Boolean
-        Return instance IsNot Nothing AndAlso instance IsNot ""
-        'Return Not String.IsNullOrEmpty(instance) ' Test this !!!
+        Return instance IsNot Nothing AndAlso instance.Length > 0
     End Function
 
     '<Extension()>
@@ -486,9 +484,9 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function ToIntM(value As String) As Integer '-&H7FFFFFFEI) 'opt -2147483646I
+    Function ToIntM(value As String) As Integer '-&H7FFFFFFEI) 'opt -2147483646I 
         Dim ret As Integer
-        Return If(Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, ret), ret, -2147483646I)
+        Return If(Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, ret), ret, -2147483646I) 'int.min -2
     End Function
 
     <Extension()>
@@ -1147,7 +1145,7 @@ End Module
 Module ControlExtension
     <Extension()>
     Sub ScaleClientSize(instance As Control, width As Single, height As Single, Optional fontHeightC As Integer = -1)
-        If fontHeightC = -1 Then fontHeightC = instance.Font.Height
+        If fontHeightC < 0 Then fontHeightC = instance.Font.Height
         instance.ClientSize = New Size(CInt(fontHeightC * width), CInt(fontHeightC * height))
     End Sub
 

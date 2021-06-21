@@ -151,12 +151,12 @@ Namespace UI
     End Class
 
     Public Class CustomMenu
-        Private Items As New List(Of CustomMenuItem)
+        Private Items As New List(Of CustomMenuItem)(16)
 
         Property Menu As Menu
         Property MenuStrip As MenuStrip
         Property ToolStrip As ToolStrip
-        Property MenuItems As New List(Of MenuItemEx)
+        Property MenuItems As New List(Of ToolStripMenuItemEx)
         Property DefaultMenu As Func(Of CustomMenuItem)
         Property MenuItem As CustomMenuItem
         Property CommandManager As CommandManager
@@ -181,7 +181,7 @@ Namespace UI
         Function GetKeys() As StringPairList
             Dim ret As New StringPairList
 
-            For Each i As MenuItemEx In MenuItems
+            For Each i As ToolStripMenuItemEx In MenuItems
                 If i.ShortcutKeyDisplayString.NotNullOrEmptyS Then
                     Dim sp As New StringPair
 
@@ -202,7 +202,7 @@ Namespace UI
         Function GetTips() As StringPairList
             Dim ret As New StringPairList
 
-            For Each i As MenuItemEx In MenuItems
+            For Each i As ToolStripMenuItemEx In MenuItems
                 Dim help = i.GetHelp
 
                 If Not help Is Nothing Then
@@ -218,13 +218,11 @@ Namespace UI
             Using form As New CustomMenuEditor(Me)
                 If form.ShowDialog = DialogResult.OK Then
                     MenuItem = form.GetState
-                    ToolStrip.SuspendLayout()
                     BuildMenu()
-                    ToolStrip.ResumeLayout()
                 End If
             End Using
-            'GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'debug
-            'GC.Collect(2, GCCollectionMode.Forced, True, True)
+            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'debug
+            GC.Collect(2, GCCollectionMode.Forced, True, True)
             'GC.WaitForPendingFinalizers()
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
             Return MenuItem
@@ -240,8 +238,8 @@ Namespace UI
         End Sub
 
         Sub MenuClick(sender As Object, e As EventArgs)
-            If TypeOf sender Is MenuItemEx Then
-                OnCommand(DirectCast(sender, MenuItemEx).CustomMenuItem)
+            If TypeOf sender Is ToolStripMenuItemEx Then
+                OnCommand(DirectCast(sender, ToolStripMenuItemEx).CustomMenuItem)
             End If
         End Sub
 
@@ -281,6 +279,21 @@ Namespace UI
         End Sub
 
         Sub BuildMenu(menu As Object, item As CustomMenuItem)
+            If item.SubItems.Count <= 0 Then Exit Sub
+            Dim tsiL As New List(Of ToolStripItem)(item.SubItems.Count)
+            Dim toolsST As Integer
+            Dim tsmi As ToolStripMenuItem
+            Dim tStrip As ToolStrip
+            If TypeOf menu Is ToolStripMenuItem Then
+                tsmi = DirectCast(menu, ToolStripMenuItem)
+                tsmi.DropDown.SuspendLayout() 'ToDO Test This!!! Experiment!!
+                toolsST = 1
+            ElseIf TypeOf menu Is ToolStrip Then
+                tStrip = DirectCast(menu, ToolStrip)
+                tStrip.SuspendLayout()
+                toolsST = 2
+            End If
+
             For Each cmi As CustomMenuItem In item.SubItems
                 cmi.CustomMenu = Me
                 Dim tsi As ToolStripItem
@@ -288,7 +301,7 @@ Namespace UI
                 If String.Equals(cmi.Text, "-") Then
                     tsi = New ToolStripSeparator
                 Else
-                    Dim mi = If(cmi.Symbol > 0, New MenuItemEx(ImageHelp.GetImageC(cmi.Symbol)), New MenuItemEx()) 'Image in contructor instead of Async Await
+                    Dim mi = If(cmi.Symbol > 0, New ToolStripMenuItemEx(ImageHelp.GetImageC(cmi.Symbol)), New ToolStripMenuItemEx()) 'Image in contructor instead of Async Await
                     MenuItems.Add(mi)
                     tsi = mi
                     mi.CustomMenuItem = cmi
@@ -315,15 +328,18 @@ Namespace UI
 
                 Items.Add(cmi)
                 tsi.Text = cmi.Text
-
-                If TypeOf menu Is ToolStripMenuItem Then
-                    DirectCast(menu, ToolStripMenuItem).DropDownItems.Add(tsi)
-                ElseIf TypeOf menu Is ToolStrip Then
-                    DirectCast(menu, ToolStrip).Items.Add(tsi)
-                End If
-
+                tsiL.Add(tsi)
                 BuildMenu(tsi, cmi)
             Next cmi
+
+            Select Case toolsST
+                Case 1
+                    tsmi.DropDownItems.AddRange(tsiL.ToArray)
+                    tsmi.DropDown.ResumeLayout(False) 'ToDO Test This!!! Experiment!!
+                Case 2
+                    tStrip.Items.AddRange(tsiL.ToArray)
+                    tStrip.ResumeLayout()
+            End Select
         End Sub
     End Class
 
@@ -338,7 +354,7 @@ Namespace UI
         End Sub
     End Class
 
-    Public Class MenuItemEx
+    Public Class ToolStripMenuItemEx
         Inherits ToolStripMenuItem
 
         Shared Property UseTooltips As Boolean
@@ -360,13 +376,11 @@ Namespace UI
         End Sub
 
         Overrides Function GetPreferredSize(constrainingSize As Size) As Size
-            Dim ret = MyBase.GetPreferredSize(constrainingSize)
-
-            ret.Height = If(s.UIScaleFactor = 1.0F, CInt(16 * 1.4), Font.Height) 'Font.Height * 'Debug Experimental - NoScaling!!!!
-            Return ret
-            'Return New Size(MyBase.GetPreferredSize(constrainingSize).Width, If(s.UIScaleFactor = 1.0F, CInt(16 * 1.4), Font.Height))
+            'Dim ret = MyBase.GetPreferredSize(constrainingSize)
+            'ret.Height = CInt(If(s.UIScaleFactor = 1.0F, 16, Font.Height) * 1.4) 'Font.Height * 'Debug Experimental - NoScaling!!!!
+            'Return ret
+            Return New Size(MyBase.GetPreferredSize(constrainingSize).Width, CInt(If(s.UIScaleFactor = 1.0F, 16, Font.Height) * 1.4))
         End Function
-
         'Sub SetImage(symbol As Symbol)
         '    SetImageAsync(symbol, Me)
         'End Sub
@@ -387,7 +401,6 @@ Namespace UI
         '    Catch
         '    End Try
         'End Sub
-
         Protected Overrides Sub Dispose(disposing As Boolean)
             MyBase.Dispose(disposing)
             CustomMenuItem = Nothing
@@ -395,27 +408,18 @@ Namespace UI
         End Sub
 
         Function GetHelp() As StringPair
-            If Not CustomMenuItem Is Nothing AndAlso Not CustomMenuItem.CustomMenu Is Nothing AndAlso
-                CustomMenuItem.CustomMenu.CommandManager.HasCommand(CustomMenuItem.MethodName) Then
+            'If CustomMenuItem IsNot Nothing AndAlso CustomMenuItem.CustomMenu IsNot Nothing AndAlso CustomMenuItem.CustomMenu.CommandManager.HasCommand(CustomMenuItem.MethodName) Then
+            Dim command = CustomMenuItem?.CustomMenu?.CommandManager.GetCommand(CustomMenuItem.MethodName)
 
-                Dim command = CustomMenuItem.CustomMenu.CommandManager.GetCommand(CustomMenuItem.MethodName)
+            If command?.Attribute.Description.NotNullOrEmptyS Then
 
-                If command.Attribute.Description.NotNullOrEmptyS Then
-                    Dim ret As New StringPair
+                Dim ret As New StringPair With {.Name = If(Text.EndsWith("...", StringComparison.Ordinal), Text.TrimEnd("."c), Text), .Value = command.Attribute.Description}
+                Dim paramHelp = command.GetParameterHelp(CustomMenuItem.Parameters)
+                If paramHelp.NotNullOrEmptyS Then ret.Value += " (" + paramHelp + ")"
 
-                    If Text.EndsWith("...", StringComparison.Ordinal) Then
-                        ret.Name = Text.TrimEnd("."c)
-                    Else
-                        ret.Name = Text
-                    End If
-
-                    ret.Value = command.Attribute.Description
-                    Dim paramHelp = command.GetParameterHelp(CustomMenuItem.Parameters)
-                    If paramHelp.NotNullOrEmptyS Then ret.Value += " (" + paramHelp + ")"
-
-                    Return ret
-                End If
+                Return ret
             End If
+            'End If
         End Function
 
         Private CustomMenuItemValue As CustomMenuItem
@@ -429,19 +433,14 @@ Namespace UI
             Set(Value As CustomMenuItem)
                 CustomMenuItemValue = Value
 
-                If Value IsNot Nothing AndAlso Value.CustomMenu IsNot Nothing AndAlso
-                    Value.CustomMenu.CommandManager.HasCommand(CustomMenuItem.MethodName) Then
-
-                    Dim c = CustomMenuItem.CustomMenu.CommandManager.GetCommand(CustomMenuItem.MethodName)
-
-                    If Not String.Equals(c.MethodInfo.Name, "DynamicMenuItem") Then
-                        If String.Equals(c.MethodInfo.Name, "ExecuteCommandLine") Then
-                            Help = CustomMenuItem.Parameters(0).ToString.Trim(""""c)
-                        Else
-                            Help = c.Attribute.Description
-                        End If
-                    End If
+                'If Value IsNot Nothing AndAlso Value.CustomMenu IsNot Nothing AndAlso Value.CustomMenu.CommandManager.HasCommand(Value.MethodName) Then
+                Dim c = Value?.CustomMenu?.CommandManager.GetCommand(Value.MethodName)
+                If c IsNot Nothing AndAlso Not String.Equals(c.MethodInfo.Name, "DynamicMenuItem") Then
+                    Help = If(String.Equals(c.MethodInfo.Name, "ExecuteCommandLine"),
+                            Value.Parameters(0).ToString.Trim(""""c),
+                            c.Attribute.Description)
                 End If
+                'End If
             End Set
         End Property
 
@@ -460,10 +459,10 @@ Namespace UI
             Set(Value As String)
                 HelpValue = Value
                 If UseTooltips AndAlso HelpValue.NotNullOrEmptyS Then 'Test this Mod. Was: UseToolsTips Check after assigment to value
-                    If HelpValue.Length < 200 Then 'org:80 Mod.
+                    If HelpValue.Length < 240 Then 'org:80 Mod.
                         ToolTipText = HelpValue '.TrimEnd("."c)
                     Else
-                        ToolTipText = HelpValue.Substring(0, 200) '& "..." '.TrimEnd("."c)
+                        ToolTipText = HelpValue.Substring(0, 240) & "..." '.TrimEnd("."c)
                         'ToolTipText = "Right-click for help"
                     End If
                 End If
@@ -499,7 +498,7 @@ Namespace UI
     End Class
 
     Public Class ActionMenuItem
-        Inherits MenuItemEx
+        Inherits ToolStripMenuItemEx
 
         Private Action As Action
 
@@ -667,7 +666,7 @@ Namespace UI
                             Return item
                         End If
                     Else
-                        Dim item As New MenuItemEx(textMS)
+                        Dim item As New ToolStripMenuItemEx(textMS)
 
                         If LayoutSuspendList IsNot Nothing Then  'ToDo: Testing!!! or use par laySuspL
                             Dim dd As ToolStripDropDown = item.DropDown
@@ -681,7 +680,6 @@ Namespace UI
                 End If
             Next x
         End Function
-
         'Shared Sub Add2AlphRange(toolStripItmCol As ToolStripItemCollection)
         '    Dim mL1AlphL As New List(Of ActionMenuItem)(32)
         '    Dim mL2LL As New List(Of List(Of ActionMenuItem))(32) '~0.640ms
@@ -722,31 +720,7 @@ Namespace UI
 
         '    toolStripItmCol.AddRange(mL1AlphL.ToArray)
         'End Sub
-
-        Shared Sub AddRange2Menu(mItems As ToolStripItemCollection, menuTup As (Char, ActionMenuItem)())
-            For Each mi As ActionMenuItem In mItems
-                Dim mdd As ToolStripDropDown = mi.DropDown
-                mdd.SuspendLayout()
-                Dim mCh = mi.Text(0)
-                mi.DropDownItems.AddRange(menuTup.WhereSelectF(Of ActionMenuItem)(Function(mc) mc.Item1 = mCh, Function(ms) ms.Item2))
-                mdd.ResumeLayout(False)
-            Next mi
-        End Sub
-
-        Shared Sub AddRange2Menu(mItems As ToolStripItemCollection, menuTup As (String, ActionMenuItem)())
-            For Each mi As ActionMenuItem In mItems
-                Dim mString = mi.Text
-                Dim tsi As ActionMenuItem() = menuTup.WhereSelectF(Of ActionMenuItem)(Function(mc) String.Equals(mc.Item1, mString), Function(ms) ms.Item2)
-                If tsi.Length > 0 Then
-                    Dim mdd As ToolStripDropDown = mi.DropDown
-                    mdd.SuspendLayout()
-                    mi.DropDownItems.AddRange(tsi)
-                    mdd.ResumeLayout(False)
-                End If
-            Next mi
-        End Sub
-
-        Public Shared LayoutSuspendList As List(Of ToolStripDropDown) 'ToDO Testing
+        Private Shared LayoutSuspendList As List(Of ToolStripDropDown) 'ToDO Testing
         Public Shared Sub LayoutResume()
             If LayoutSuspendList IsNot Nothing Then
                 For Each tsdd In LayoutSuspendList
@@ -763,11 +737,13 @@ Namespace UI
                 LayoutSuspendList = Nothing
             End If
         End Sub
-        Public Shared Sub LayoutSuspendCreate(Optional capacity As Integer = 0)
-
-            If LayoutSuspendList IsNot Nothing Then Console.Beep(4100, 500) 'Debug
-
+        Public Shared Function LayoutSuspendCreate(Optional capacity As Integer = 0) As List(Of ToolStripDropDown)
+            'If LayoutSuspendList IsNot Nothing Then Console.Beep(4100, 500) 'Debug
             LayoutSuspendList = If(capacity = 0, New List(Of ToolStripDropDown), New List(Of ToolStripDropDown)(capacity))
+            Return LayoutSuspendList
+        End Function
+        Shared Sub ClearAdd2RangeList()
+            LayoutSuspendList = Nothing
         End Sub
 
     End Class
@@ -828,8 +804,6 @@ Namespace UI
 
         Private FormValue As Form
 
-        Public AddMenuList As List(Of ToolStripItem)
-
         Sub New()
         End Sub
 
@@ -841,7 +815,7 @@ Namespace UI
             MyBase.OnHandleCreated(e)
 
             g.SetRenderer(Me)
-            If s.UIScaleFactor <> 1.0F Then 'Experimantal - NoScaling without this!!!
+            If s.UIScaleFactor <> 1.0F Then 'Experimental - NoScaling without this!!!
                 Font = New Font("Segoe UI", 9 * s.UIScaleFactor) 'Seems like Segoe 9 is default
                 ToolStripRendererEx.FontHeight = Font.Height
             End If
@@ -868,16 +842,8 @@ Namespace UI
             End Set
         End Property
 
-        Function Add(path As String) As ActionMenuItem
-            Return Add(path, Nothing)
-        End Function
-
         Function Add(path As String, action As Action) As ActionMenuItem
             Return Add(path, action, True)
-        End Function
-
-        Function Add(path As String, action As Action, help As String) As ActionMenuItem
-            Return Add(path, action, True, help)
         End Function
 
         Function Add(path As String, action As Action, enabled As Boolean) As ActionMenuItem
@@ -888,13 +854,7 @@ Namespace UI
             Return Add(path, action, Keys.None, enabled, Nothing, help)
         End Function
 
-        Function Add(
-            path As String,
-            action As Action,
-            key As Keys,
-            enabled As Boolean,
-            enabledFunc As Func(Of Boolean),
-            Optional help As String = Nothing) As ActionMenuItem
+        Function Add(path As String, action As Action, key As Keys, enabled As Boolean, enabledFunc As Func(Of Boolean), Optional help As String = Nothing) As ActionMenuItem
 
             Dim ret = ActionMenuItem.Add(Items, path, action)
 
@@ -914,36 +874,28 @@ Namespace UI
             Return ret
         End Function
 
-        Function Add2(path As String) As ActionMenuItem
-            Dim ret = New ActionMenuItem(path)
-            Items.Add(ret)
-            Return ret
-        End Function
-
         Function Add2(path As String, action As Action) As ActionMenuItem
             Dim ret = New ActionMenuItem(path, action)
             Items.Add(ret)
             Return ret
         End Function
-        Function Add2(path As String, image As Image) As ActionMenuItem
-            Dim ret = New ActionMenuItem(path, image)
-            Items.Add(ret)
-            Return ret
-        End Function
-        Function Add2(path As String, action As Action, image As Image, Optional help As String = Nothing) As ActionMenuItem
-            Dim ret = If(help Is Nothing, New ActionMenuItem(path, action, image), New ActionMenuItem(path, action, image, help))
-            Items.Add(ret)
-            Return ret
-        End Function
 
-        Function CreateAdd2List(Optional capacity As Integer = 0) As List(Of ToolStripItem)
+        Private Shared AddMenuList As List(Of ToolStripItem)
+
+        Shared Function CreateAdd2RangeList(Optional capacity As Integer = 0) As List(Of ToolStripItem)
             AddMenuList = If(capacity = 0, New List(Of ToolStripItem), New List(Of ToolStripItem)(capacity))
             Return AddMenuList
         End Function
-        Sub AddRangeList2Menu()
-            Items.AddRange(AddMenuList.ToArray)
+        Shared Sub ClearAdd2RangeList()
             AddMenuList = Nothing
         End Sub
+        Shared Sub AddRangeList2Menu(itemsCol As ToolStripItemCollection)
+            If AddMenuList IsNot Nothing Then
+                itemsCol.AddRange(AddMenuList.ToArray)
+                AddMenuList = Nothing
+            End If
+        End Sub
+
         Sub AddSeparator2RangeList()
             AddMenuList.Add(New ToolStripSeparator)
         End Sub

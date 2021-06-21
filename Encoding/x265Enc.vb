@@ -178,13 +178,7 @@ Public Class x265Enc
         Log.Save()
     End Sub
 
-    Overloads Function GetArgs(
-        pass As Integer,
-        startFrame As Integer,
-        endFrame As Integer,
-        chunkName As String,
-        script As VideoScript,
-        Optional includePaths As Boolean = True) As String
+    Overloads Function GetArgs(pass As Integer, startFrame As Integer, endFrame As Integer, chunkName As String, script As VideoScript, Optional includePaths As Boolean = True) As String
 
         Return Params.GetArgs(pass, startFrame, endFrame, chunkName, script,
                               OutputPath.DirAndBase & OutputExtFull, includePaths, True)

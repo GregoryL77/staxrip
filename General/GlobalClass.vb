@@ -600,7 +600,7 @@ Public Class GlobalClass
                         l.Add(New ActionMenuItem(mTxt, Sub() loadAction(iProfile)))
                         'l = item.DropDownItems 'Test This !!!
                     Else
-                        Dim item As New MenuItemEx(mTxt)
+                        Dim item As New ToolStripMenuItemEx(mTxt)
 
                         Dim tsdd = item.DropDown
                         laySL.Add(tsdd)
@@ -1006,9 +1006,11 @@ Public Class GlobalClass
     Public Sub KillMeAll()
         Try
             g.ProcForm?.Invoke(Sub() g.ProcForm.Close())
-            ActionMenuItem.LayoutSuspendList = Nothing
+            ActionMenuItem.ClearAdd2RangeList()
+            ContextMenuStripEx.ClearAdd2RangeList()
             MediaInfo.ClearCache()
-            ImageHelp.ClearCache()
+            ImageHelp.ImageCacheD.Clear()
+            ImageHelp.ImageCacheD = Nothing
             If g.MainForm IsNot Nothing Then
                 g.MainForm.ForceClose = True
                 g.MainForm.Close()
@@ -1025,14 +1027,10 @@ Public Class GlobalClass
         End Try
     End Sub
 
-    Sub ShowException(
-        ex As Exception,
-        Optional mainInstruction As String = Nothing,
-        Optional content As String = Nothing,
-        Optional timeout As Integer = 0)
+    Sub ShowException(ex As Exception, Optional mainInstruction As String = Nothing, Optional content As String = Nothing, Optional timeout As Integer = 0)
 
         Try
-            Using td As New TaskDialog(Of String)
+            Using td As New TaskDialog(Of String)(352)
                 If mainInstruction.NullOrEmptyS Then
                     If TypeOf ex Is ErrorAbortException Then
                         td.MainInstruction = DirectCast(ex, ErrorAbortException).Title + $" ({Application.ProductVersion})"
@@ -1180,7 +1178,7 @@ Public Class GlobalClass
             Exit Sub
         End If
 
-        If Not e Is Nothing Then
+        If e IsNot Nothing Then
             If Log.IsEmpty Then Log.WriteEnvironment()
             Log.WriteHeader("Exception")
             Log.WriteLine(e.ToString)
@@ -1188,23 +1186,18 @@ Public Class GlobalClass
 
         Log.Save(p)
 
-        Dim logfileOpened = False
+        'Dim logfileOpened = False
         Dim fp = Log.GetPath
 
-        If MsgQuestion("An error occured", "Do you want to open the log file?",
-                       TaskDialogButtons.YesNo) = DialogResult.Yes Then
-
+        If  MsgQuestion("An error occured", "Do you want to open the log file?", TaskDialogButtons.YesNo) = DialogResult.Yes Then
             g.ShellExecute(g.GetTextEditorPath(), fp.Escape)
-            logfileOpened = True
+            'logfileOpened = True
         End If
 
-        'If MsgQuestion("Bug Report", "Do you want to report an issue or bug?",
-        '               TaskDialogButtons.YesNo) = DialogResult.Yes Then
-
+        'If MsgQuestion("Bug Report", "Do you want to report an issue or bug?", TaskDialogButtons.YesNo) = DialogResult.Yes Then
         '    If Not logfileOpened Then
         '        g.ShellExecute(g.GetTextEditorPath(), fp.Escape)
         '    End If
-
         '    g.SelectFileWithExplorer(fp)
         '    'g.ShellExecute("https://github.com/staxrip/staxrip/issues")
         'End If

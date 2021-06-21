@@ -395,14 +395,9 @@ Public Class SafeSerialization
         Public Name As String
     End Class
 
-    Shared Function Check(iface As ISafeSerialization,
-                          obj As Object,
-                          key As String,
-                          version As Integer) As Boolean
+    Shared Function Check(iface As ISafeSerialization, obj As Object, key As String, version As Integer) As Boolean
 
-        If obj Is Nothing OrElse
-            Not iface.Versions.ContainsKey(key) OrElse
-            iface.Versions(key) <> version Then
+        If obj Is Nothing OrElse Not iface.Versions.ContainsKey(key) OrElse iface.Versions(key) <> version Then
 
             iface.Versions(key) = version
             iface.WasUpdated = True
@@ -968,89 +963,54 @@ Public Class Command
         Return String.CompareOrdinal(MethodInfo.Name, other.MethodInfo.Name)
     End Function
 
-    Shared Sub PopulateCommandMenu(items As ToolStripItemCollection, commands() As Command, clickSub As Action(Of Command))
-        Array.Sort(commands)
-
-        Dim sssss = Stopwatch.StartNew 'Debug
-        WarmUpCpu()
-        sssss.Restart()
-
-        'Dim catS As String() = {"Show", "Save", "Set", "Start", "Execute", "Add"} ' , "Run"} No "Run" Command exists???
-        Dim catS As String() = {"Add", "Execute", "Save", "Set", "Show", "Start", "Run"} 'No "Run" Command exists???
-        Dim maxS = catS.Length - 1
-        Dim l2Tsi As List(Of ActionMenuItem)
+    Shared Sub PopulateCommandMenu(items As ToolStripItemCollection, commandsV As Dictionary(Of String, Command).ValueCollection, clickSub As Action(Of Command))
+        Dim catSA As String() = {"Add", "Execute", "MediaInfo", "Save", "Set", "Show", "Start"} 'Sorted Order!!! No "Run" Command exists???
+        Dim maxS = catSA.Length - 1
         Dim l2AL(maxS) As List(Of ActionMenuItem)
         Dim l1IdxA(maxS) As Integer
-        Dim l1Tsi As New List(Of MenuItemEx)(32)
+        Dim l1Tsi As New List(Of ToolStripMenuItemEx)(32)
         Dim l1HS As New HashSet(Of String)(7, StringComparer.Ordinal)
         Dim hsIdx As Integer
-        Dim sIdx As Integer
-        Dim SStr As String
-        Dim path As String
-        'Dim cccc As Integer 'debug 
+        Dim cmdsAr(commandsV.Count - 1) As Command
+        commandsV.CopyTo(cmdsAr, 0)
+        Array.Sort(cmdsAr)
 
-        For c = 0 To commands.Length - 1
-            Dim cmd = commands(c)
-            path = cmd.MethodInfo.Name
-            If sIdx > maxS Then sIdx = maxS
-            SStr = catS(sIdx)
-            If path.StartsWith(SStr, StringComparison.Ordinal) Then
-                If l1HS.Add(SStr) Then
-                    hsIdx = l1HS.Count - 1
-                    l1IdxA(hsIdx) = l1Tsi.Count
-                    l1Tsi.Add(New MenuItemEx(SStr))
-                    l2Tsi = New List(Of ActionMenuItem)(If(hsIdx = 4, 36, 8))
-                    l2AL(hsIdx) = l2Tsi
+        For c = 0 To cmdsAr.Length - 1
+            Dim found As Integer
+            Dim cmd = cmdsAr(c)
+            Dim path As String = cmd.MethodInfo.Name
+            For i = 0 To 1 'must be >= 1
+                Dim SStr As String = catSA(hsIdx + i)
+                If path.StartsWith(SStr, StringComparison.Ordinal) Then
+                    Dim l2Tsi As List(Of ActionMenuItem)
+                    If l1HS.Add(SStr) Then
+                        hsIdx = l1HS.Count - 1
+                        l1IdxA(hsIdx) = l1Tsi.Count
+                        l1Tsi.Add(New ToolStripMenuItemEx(SStr))
+                        l2Tsi = New List(Of ActionMenuItem)(If(hsIdx = 5, 38, 8)) 'or idx=4(Show) if no MediaInfo
+                        l2AL(hsIdx) = l2Tsi
+                    End If
+                    l2Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
+                    found = 1
+                    Exit For
+                Else
+                    found = 0
+                    If hsIdx + i >= maxS Then Exit For
                 End If
-                l2Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
-                sIdx = hsIdx
-                'cccc += 1
-                'Exit For
-            Else
-                sIdx = hsIdx + 1
-            End If
-            If sIdx = hsIdx + 1 Then
+            Next i
+
+            If found = 0 Then
                 l1Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
-                'cccc += 1
             End If
         Next c
 
-        'Dim fcc = cccc = commands.Length
-
-        'Dim found As Boolean
-        'For c = 0 To commands.Length - 1
-        '    Dim cmd = commands(c)
-        '    path = cmd.MethodInfo.Name
-        '    found = False
-        '    For i = 0 To 5 'Shorter Alternative???
-        '        SStr = catS(i)
-        '        If path.StartsWith(SStr, StringComparison.Ordinal) Then
-        '            If l1Hs.Add(SStr) Then
-        '                hsIdx = l1Hs.Count - 1
-        '                l1IdxA(hsIdx) = l1Tsi.Count
-        '                l1Tsi.Add(New ActionMenuItem(SStr))
-        '                l2Tsi = New List(Of ActionMenuItem)(8)
-        '                l2AL(hsIdx) = l2Tsi
-        '            End If
-        '            l2Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
-        '            found = True
-        '            Exit For
-        '        End If
-        '    Next i
-        '    If Not found Then l1Tsi.Add(New ActionMenuItem(path, Sub() clickSub(cmd), cmd.Attribute.Description))
-        'Next c
-
-        Dim nMI As MenuItemEx
+        items.AddRange(l1Tsi.ToArray)
         For i = 0 To hsIdx
-            nMI = l1Tsi(l1IdxA(i))
+            Dim nMI As ToolStripMenuItemEx = l1Tsi(l1IdxA(i))
             nMI.DropDown.SuspendLayout()
             nMI.DropDownItems.AddRange(l2AL(i).ToArray) 'if not nothing l2al
             nMI.DropDown.ResumeLayout(False)
         Next i
-        items.AddRange(l1Tsi.ToArray)
-
-        sssss.Stop()
-        Log.Write("CMD Menu Build Time ms", CStr(sssss.ElapsedTicks / SWFreq))
     End Sub
 
     Function GetParameterHelp(parameters As List(Of Object)) As String
@@ -1085,26 +1045,19 @@ End Class
 
 Public Class CommandManager
     Property Commands As New Dictionary(Of String, Command)(89, StringComparer.Ordinal)
-
-    Function HasCommand(name As String) As Boolean
-        If name.NullOrEmptyS Then
-            Return False
-        End If
-
-        If Commands.ContainsKey(name) Then
-            Return True
-        End If
-
-        For Each i In Commands.Keys
-            If i.IsEqualIgnoreCase(name) Then
-                Return True
-            End If
-        Next
-    End Function
-
+    'Function HasCommand(name As String) As Boolean
+    '    If name.NullOrEmptyS Then Return False
+    '    If Commands.ContainsKey(name) Then Return True
+    '    For Each i In Commands.Keys
+    '        If i.IsEqualIgnoreCase(name) Then Return True
+    '    Next
+    'End Function
     Function GetCommand(name As String) As Command
-        If HasCommand(name) AndAlso Commands.ContainsKey(name) Then
-            Return Commands(name)
+        If name.NotNullOrEmptyS Then
+            Dim ret As Command
+            If Commands.TryGetValue(name, ret) Then
+                Return ret
+            End If
         End If
 
         For Each i In Commands.Keys
@@ -1112,6 +1065,7 @@ Public Class CommandManager
                 Return Commands(i)
             End If
         Next
+        Return Nothing
     End Function
 
     Sub AddCommandsFromObject(obj As Object)
@@ -1143,14 +1097,17 @@ Public Class CommandManager
     End Sub
 
     Sub Process(name As String, params As List(Of Object))
-        If HasCommand(name) Then
-            Process(GetCommand(name), params)
+        Dim cmd As Command = GetCommand(name)
+        'If HasCommand(name) Then
+        If cmd IsNot Nothing Then
+            Process(cmd, params)
         End If
     End Sub
 
     Sub Process(name As String, ParamArray params As Object())
-        If HasCommand(name) Then
-            Process(GetCommand(name), params.ToList)
+        Dim cmd As Command = GetCommand(name)
+        If cmd IsNot Nothing Then
+            Process(cmd, params.ToList)
         End If
     End Sub
 
@@ -1218,17 +1175,17 @@ Public Module MainModule
     Public Const BR3 As String = VB6.vbCrLf + VB6.vbCrLf + VB6.vbCrLf
     Public Log As LogBuilder
 
-    Sub MsgInfo(text As Object, Optional content As Object = Nothing)
+    Sub MsgInfo(text As Object, Optional content As Object = Nothing, Optional dWidth As UInteger = 0)
         Dim text1 = text?.ToString
         Dim content1 = content?.ToString
-        Msg(text1, content1, MsgIcon.Info, TaskDialogButtons.Ok)
+        Msg(text1, content1, MsgIcon.Info, TaskDialogButtons.Ok, dWidth:=dWidth)
     End Sub
 
-    Sub MsgError(text As String, Optional content As String = Nothing)
-        MsgError(text, content, IntPtr.Zero)
+    Sub MsgError(text As String, Optional content As String = Nothing, Optional dWidth As UInteger = 0)
+        MsgError(text, content, IntPtr.Zero, dWidth)
     End Sub
 
-    Sub MsgError(text As String, content As String, handle As IntPtr)
+    Sub MsgError(text As String, content As String, handle As IntPtr, Optional dWidth As UInteger = 0)
         If text.NullOrEmptyS Then
             text = content
         End If
@@ -1237,9 +1194,9 @@ Public Module MainModule
             Exit Sub
         End If
 
-        Using td As New TaskDialog(Of String)
+        Using td As New TaskDialog(Of String)(dWidth)
             If content.NullOrEmptyS Then
-                If text.Length < 80 Then
+                If text.Length < 400 Then
                     td.MainInstruction = text
                 Else
                     td.Content = text
@@ -1262,51 +1219,44 @@ Public Module MainModule
 
     Private ShownMessages As String
 
-    Sub MsgWarn(text As String, Optional content As String = Nothing, Optional onlyOnce As Boolean = False)
+    Sub MsgWarn(text As String, Optional content As String = Nothing, Optional onlyOnce As Boolean = False, Optional dWidth As UInteger = 0)
         If onlyOnce AndAlso ShownMessages?.Contains(text + content) Then
             Exit Sub
         End If
 
-        Msg(text, content, MsgIcon.Warning, TaskDialogButtons.Ok)
+        Msg(text, content, MsgIcon.Warning, TaskDialogButtons.Ok, dWidth:=dWidth)
 
         If onlyOnce Then
             ShownMessages += text + content
         End If
     End Sub
 
-    Function MsgOK(text As String) As Boolean
-        Return Msg(text, Nothing, MsgIcon.Question, TaskDialogButtons.OkCancel) = DialogResult.OK
+    Function MsgOK(text As String, Optional dWidth As UInteger = 0) As Boolean
+        Return Msg(text, Nothing, MsgIcon.Question, TaskDialogButtons.OkCancel, dWidth:=dWidth) = DialogResult.OK
     End Function
 
-    Function MsgQuestion(
-        text As String,
-        Optional buttons As TaskDialogButtons = TaskDialogButtons.OkCancel) As DialogResult
+    Function MsgQuestion(text As String, Optional buttons As TaskDialogButtons = TaskDialogButtons.OkCancel, Optional dWidth As UInteger = 0) As DialogResult
 
-        Return Msg(text, Nothing, MsgIcon.Question, buttons)
+        Return Msg(text, Nothing, MsgIcon.Question, buttons, dWidth:=dWidth)
     End Function
 
-    Function MsgQuestion(heading As String,
-                         content As String,
-                         Optional buttons As TaskDialogButtons = TaskDialogButtons.OkCancel) As DialogResult
-        Return Msg(heading, content, MsgIcon.Question, buttons)
+    Function MsgQuestion(heading As String, content As String, Optional buttons As TaskDialogButtons = TaskDialogButtons.OkCancel, Optional dWidth As UInteger = 0) As DialogResult
+        Return Msg(heading, content, MsgIcon.Question, buttons, dWidth:=dWidth)
     End Function
 
-    Function Msg(mainInstruction As String,
-                 content As String,
-                 icon As MsgIcon,
-                 buttons As TaskDialogButtons,
-                 Optional defaultButton As DialogResult = DialogResult.None) As DialogResult
+    Function Msg(mainInstruction As String, content As String, icon As MsgIcon, buttons As TaskDialogButtons,
+                 Optional defaultButton As DialogResult = DialogResult.None, Optional dWidth As UInteger = 0) As DialogResult
 
         If mainInstruction Is Nothing Then
             mainInstruction = ""
         End If
 
-        Using td As New TaskDialog(Of DialogResult)
+        Using td As New TaskDialog(Of DialogResult)(dWidth)
             td.AllowCancel = False
             td.DefaultButton = defaultButton
 
             If content Is Nothing Then
-                If mainInstruction.Length < 80 Then
+                If mainInstruction.Length < 400 Then '80, more(400) is also OK, only needs BR width is limited
                     td.MainInstruction = mainInstruction
                 Else
                     td.Content = mainInstruction

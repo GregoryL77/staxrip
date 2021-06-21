@@ -271,13 +271,11 @@ Public Class PreviewForm
         CommandManager.AddCommandsFromObject(Me)
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
 
-        cmsMain.SuspendLayout()
         GenericMenu = New CustomMenu(AddressOf GetDefaultMenu,
             s.CustomMenuPreview, CommandManager, cmsMain)
 
         GenericMenu.AddKeyDownHandler(Me)
         GenericMenu.BuildMenu()
-        cmsMain.ResumeLayout(False)
 
         Instances.Add(Me)
 
@@ -1187,8 +1185,10 @@ Public Class PreviewForm
             Close()
         End If
     End Sub
-
-    Sub PreviewForm_MouseClick(sender As Object, e As MouseEventArgs) Handles Me.MouseClick
+    'Sub PreviewForm_MouseClick(sender As Object, e As MouseEventArgs) Handles_Me.MouseClick
+    'End Sub
+    Protected Overrides Sub OnMouseClick(e As MouseEventArgs)
+        MyBase.OnMouseClick(e)
         If Width - e.Location.X < 10 AndAlso e.Location.Y < 10 Then
             Close()
         End If

@@ -181,18 +181,20 @@ Namespace UI
             Close()
         End Sub
 
-        Sub InputBoxForm_Load(sender As Object, e As EventArgs) Handles Me.Load
+        Protected Overrides Sub OnLoad(args As EventArgs)
+            MyBase.OnLoad(args)
             If flp.Left < laPrompt.Left Then
                 Width += laPrompt.Left - flp.Left
             End If
 
             Width += 128 ' Version sizable crude fix
             Height += 64
-
         End Sub
 
-        Sub InputBoxForm_Shown() Handles Me.Shown
+        Protected Overrides Sub OnShown(e As EventArgs)
+            MyBase.OnShown(e)
             Native.SetForegroundWindow(Handle)
         End Sub
+
     End Class
 End Namespace

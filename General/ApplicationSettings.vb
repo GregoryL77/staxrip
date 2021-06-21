@@ -96,14 +96,14 @@ Public Class ApplicationSettings
 
     Sub Init() Implements ISafeSerialization.Init
         If Versions Is Nothing Then
-            Versions = New Dictionary(Of String, Integer)(37, StringComparer.Ordinal)
+            Versions = New Dictionary(Of String, Integer)(29, StringComparer.Ordinal)
         End If
 
         If Check(ToolStripRenderModeEx, "Clear cache+Menu style", 1) Then
             ImageHelp.ClearCache() ' Added some cleanup
             MediaInfo.ClearCache()
-            ActionMenuItem.LayoutSuspendList?.Clear()
-            ActionMenuItem.LayoutSuspendList = Nothing
+            ActionMenuItem.ClearAdd2RangeList()
+            ContextMenuStripEx.ClearAdd2RangeList()
             ToolStripRenderModeEx = ToolStripRenderModeEx.SystemDefault
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
             GC.Collect(2, GCCollectionMode.Forced, True, True)
@@ -218,7 +218,7 @@ Public Class ApplicationSettings
         End If
 
         If Check(MuxerProfiles, "Container Profiles", 40) Then
-            MuxerProfiles = New List(Of Muxer)
+            MuxerProfiles = New List(Of Muxer)(22)
             MuxerProfiles.AddRange(Muxer.GetDefaults())
         End If
 

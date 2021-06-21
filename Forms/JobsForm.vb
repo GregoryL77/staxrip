@@ -194,6 +194,7 @@ Friend Class JobsForm
 
         KeyPreview = True
 
+        lv.BeginUpdate()
         lv.UpButton = bnUp
         lv.DownButton = bnDown
         lv.RemoveButton = bnRemove
@@ -205,9 +206,9 @@ Friend Class JobsForm
         lv.ItemCheckProperty = NameOf(Job.Active)
         lv.AddItems(JobManager.GetJobs())
         lv.SelectFirst()
+        lv.EndUpdate()
 
-        Dim cms As New ContextMenuStripEx()
-        cms.Form = Me
+        Dim cms As New ContextMenuStripEx With {.Form = Me}
         bnMenu.ContextMenuStrip = cms
         lv.ContextMenuStrip = cms
         Dim lreh As ListViewEx.ItemRemovedEventHandler = Sub(item)
@@ -224,11 +225,10 @@ Friend Class JobsForm
                                       RemoveHandler lv.ItemRemoved, lreh
                                   End Sub
         AddHandler Disposed, deh
-
         AddHandler lv.ItemRemoved, lreh
 
         cms.SuspendLayout()
-        cms.CreateAdd2List(18)
+        ContextMenuStripEx.CreateAdd2RangeList(18)
         cms.Add2RangeList("Select All", Sub() SelectAll(), Keys.Control Or Keys.A, Function() lv.Items.Count > lv.SelectedItems.Count)
         cms.Add2RangeList("Select None", Sub() SelectNone(), Keys.Shift Or Keys.A, Function() lv.SelectedItems.Count > 0)
         cms.AddSeparator2RangeList()
@@ -247,7 +247,7 @@ Friend Class JobsForm
         cms.Add2RangeList("Sort Alphabetically", Sub() lv.SortItems(), ImageHelp.GetImageC(Symbol.Sort), Keys.Control Or Keys.S, Function() lv.Items.Count > 1)
         cms.Add2RangeList("Remove Selection", Sub() bnRemove.PerformClick(), ImageHelp.GetImageC(Symbol.Remove), Keys.Control Or Keys.Delete, Function() lv.SelectedItems.Count > 0)
         cms.Add2RangeList("Load Selection", Sub() bnLoad.PerformClick(), Keys.Control Or Keys.L, Function() lv.SelectedItems.Count = 1)
-        cms.AddRangeList2Menu()
+        ContextMenuStripEx.AddRangeList2Menu(cms.Items)
         cms.ResumeLayout(False)
 
     End Sub
@@ -329,10 +329,12 @@ Friend Class JobsForm
         Invoke(Sub()
                    If Not Disposing AndAlso Not IsDisposed Then
                        IsLoading = True
+                       lv.BeginUpdate()
                        lv.Items.Clear()
                        lv.AddItems(JobManager.GetJobs())
                        lv.SelectFirst()
                        UpdateControls()
+                       lv.EndUpdate()
                        IsLoading = False
                    End If
                End Sub)
@@ -414,10 +416,11 @@ Friend Class JobsForm
         UpdateControls()
     End Sub
 
-    Sub JobsForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         MsgInfo(Tip)
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
-
     Sub ShowForm()
         Using form As New JobsForm()
             form.ShowDialog()

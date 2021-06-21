@@ -33,20 +33,20 @@ Public Class AppsForm
     Friend WithEvents tsbDownload As ToolStripButton
     Friend WithEvents tsbVersion As ToolStripButton
     Friend WithEvents ddbTools As ToolStripDropDownButton
-    Friend WithEvents miEditPath As MenuItemEx
-    Friend WithEvents miClearPaths As MenuItemEx
-    Friend WithEvents miFindPath As MenuItemEx
-    Friend WithEvents miShowGrid As MenuItemEx
-    Friend WithEvents miStatus As MenuItemEx
+    Friend WithEvents miEditPath As ToolStripMenuItemEx
+    Friend WithEvents miClearPaths As ToolStripMenuItemEx
+    Friend WithEvents miFindPath As ToolStripMenuItemEx
+    Friend WithEvents miShowGrid As ToolStripMenuItemEx
+    Friend WithEvents miStatus As ToolStripMenuItemEx
     Friend WithEvents ToolStripMenuItem1 As ToolStripSeparator
-    Friend WithEvents miAutoUpdate As MenuItemEx
-    Friend WithEvents miEditVersion As MenuItemEx
-    Friend WithEvents miEditChangelog As MenuItemEx
-    Friend WithEvents miDownload As MenuItemEx
-    Friend WithEvents miWebsite As MenuItemEx
-    Friend WithEvents miExplore As MenuItemEx
-    Friend WithEvents miLaunch As MenuItemEx
-    Friend WithEvents miHelp As MenuItemEx
+    Friend WithEvents miAutoUpdate As ToolStripMenuItemEx
+    Friend WithEvents miEditVersion As ToolStripMenuItemEx
+    Friend WithEvents miEditChangelog As ToolStripMenuItemEx
+    Friend WithEvents miDownload As ToolStripMenuItemEx
+    Friend WithEvents miWebsite As ToolStripMenuItemEx
+    Friend WithEvents miExplore As ToolStripMenuItemEx
+    Friend WithEvents miLaunch As ToolStripMenuItemEx
+    Friend WithEvents miHelp As ToolStripMenuItemEx
     Friend WithEvents tsbExplore As System.Windows.Forms.ToolStripButton
     <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AppsForm))
@@ -58,20 +58,20 @@ Public Class AppsForm
         Me.tsbDownload = New System.Windows.Forms.ToolStripButton()
         Me.tsbVersion = New System.Windows.Forms.ToolStripButton()
         Me.ddbTools = New System.Windows.Forms.ToolStripDropDownButton()
-        Me.miEditPath = New StaxRip.UI.MenuItemEx()
-        Me.miClearPaths = New StaxRip.UI.MenuItemEx()
-        Me.miFindPath = New StaxRip.UI.MenuItemEx()
+        Me.miEditPath = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miClearPaths = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miFindPath = New StaxRip.UI.ToolStripMenuItemEx()
         Me.ToolStripMenuItem1 = New System.Windows.Forms.ToolStripSeparator()
-        Me.miEditVersion = New StaxRip.UI.MenuItemEx()
-        Me.miEditChangelog = New StaxRip.UI.MenuItemEx()
-        Me.miShowGrid = New StaxRip.UI.MenuItemEx()
-        Me.miStatus = New StaxRip.UI.MenuItemEx()
-        Me.miAutoUpdate = New StaxRip.UI.MenuItemEx()
-        Me.miDownload = New StaxRip.UI.MenuItemEx()
-        Me.miWebsite = New StaxRip.UI.MenuItemEx()
-        Me.miExplore = New StaxRip.UI.MenuItemEx()
-        Me.miLaunch = New StaxRip.UI.MenuItemEx()
-        Me.miHelp = New StaxRip.UI.MenuItemEx()
+        Me.miEditVersion = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miEditChangelog = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miShowGrid = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miStatus = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miAutoUpdate = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miDownload = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miWebsite = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miExplore = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miLaunch = New StaxRip.UI.ToolStripMenuItemEx()
+        Me.miHelp = New StaxRip.UI.ToolStripMenuItemEx()
         Me.tsbHelp = New System.Windows.Forms.ToolStripButton()
         Me.flp = New System.Windows.Forms.FlowLayoutPanel()
         Me.SearchTextBox = New StaxRip.SearchTextBox()

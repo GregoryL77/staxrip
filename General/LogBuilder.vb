@@ -43,7 +43,7 @@ Public Class LogBuilder
                 If content.EndsWith(BR, StringComparison.Ordinal) Then
                     Append(content)
                 Else
-                    Append(content + BR)
+                    Append(content & BR)
                 End If
             End If
         End SyncLock
@@ -54,7 +54,7 @@ Public Class LogBuilder
             If value.EndsWith(BR, StringComparison.Ordinal) Then
                 Append(value)
             Else
-                Append(value + BR)
+                Append(value & BR)
             End If
         End If
     End Sub

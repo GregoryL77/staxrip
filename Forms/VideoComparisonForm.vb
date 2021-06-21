@@ -29,7 +29,7 @@ Public Class VideoComparisonForm
         bnMenu.ContextMenuStrip = Menu
         TabControl.ContextMenuStrip = Menu
 
-        Menu.CreateAdd2List(10)  ' Test This!!
+        ContextMenuStripEx.CreateAdd2RangeList(10)  ' Test This!!
         Menu.Add2RangeList("Add files to compare...", AddressOf Add, Keys.O, "Video files to compare, the file browser has multiselect enabled.")
         Menu.Add2RangeList("Close selected tab", AddressOf Remove, Keys.Delete, enabledFunc)
         Menu.Add2RangeList("Save PNGs at current position", AddressOf Save, Keys.S, enabledFunc, "Saves a PNG image for every file/tab at the current position in the directory of the source file.")
@@ -40,16 +40,15 @@ Public Class VideoComparisonForm
         Dim navMenu = New ActionMenuItem("Navigate") 'Test This
         Menu.AddTStripMenuItem2List(navMenu)
         Menu.Add2RangeList("Help", AddressOf Me.Help, Keys.F1)
-        Menu.AddRangeList2Menu()
+        ContextMenuStripEx.AddRangeList2Menu(Menu.Items)
 
         navMenu.DropDown.SuspendLayout()
-        Dim navML = Menu.CreateAdd2List(4)
+        ContextMenuStripEx.CreateAdd2RangeList(4)
         Menu.Add2RangeList("1 frame backward", Sub() TrackBar.Value -= 1, Keys.Left, enabledFunc)
         Menu.Add2RangeList("1 frame forward", Sub() TrackBar.Value += 1, Keys.Right, enabledFunc)
         Menu.Add2RangeList("100 frame backward", Sub() TrackBar.Value -= 100, Keys.Left Or Keys.Control, enabledFunc)
         Menu.Add2RangeList("100 frame forward", Sub() TrackBar.Value += 100, Keys.Right Or Keys.Control, enabledFunc)
-        navMenu.DropDownItems.AddRange(navML.ToArray)
-        Menu.AddMenuList = Nothing
+        ContextMenuStripEx.AddRangeList2Menu(navMenu.DropDownItems)
 
         navMenu.DropDown.ResumeLayout(False)
         Menu.ResumeLayout(False)
@@ -105,8 +104,7 @@ Public Class VideoComparisonForm
     End Sub
 
     Sub Add(sourePath As String)
-        Dim tab = New VideoTab()
-        tab.Form = Me
+        Dim tab As New VideoTab With {.Form = Me}
         tab.VideoPanel.ContextMenuStrip = TabControl.ContextMenuStrip
 
         If tab.Open(sourePath) Then
@@ -272,9 +270,7 @@ Public Class VideoComparisonForm
             Text = sourePath.Base
             SourceFile = sourePath
 
-            Dim script As New VideoScript
-            script.Engine = ScriptEngine.AviSynth
-            script.Path = Folder.Temp + Guid.NewGuid.ToString + ".avs"
+            Dim script As New VideoScript With {.Engine = ScriptEngine.AviSynth, .Path = Folder.Temp + Guid.NewGuid.ToString + ".avs"}
             Dim deh1 As EventHandler = Sub()
                                            RemoveHandler Me.Disposed, deh1
                                            FileHelp.Delete(script.Path)
@@ -360,7 +356,7 @@ Public Class VideoComparisonForm
                 Pos = Form.TrackBar.Value
                 Draw()
 
-                If Not FrameInfo Is Nothing Then
+                If FrameInfo IsNot Nothing Then
                     Form.laInfo.Text = FrameInfo(Form.TrackBar.Value)
                 Else
                     Dim frameRate = If(Calc.IsValidFrameRate(Server.FrameRate), Server.FrameRate, 25)
@@ -420,15 +416,19 @@ Public Class VideoComparisonForm
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)
-            If Not Server Is Nothing Then
+            If Server IsNot Nothing Then
                 Server.Dispose()
             End If
 
             MyBase.Dispose(disposing)
         End Sub
 
-        Sub VideoTab_Resize(sender As Object, e As EventArgs) Handles Me.Resize
+        Protected Overrides Sub OnResize(eventargs As EventArgs)
+            MyBase.OnResize(eventargs)
             DoLayout()
         End Sub
+        'Sub VideoTab_Resize(sender As Object, e As EventArgs) Handles_Me.Resize
+        '    DoLayout()
+        'End Sub
     End Class
 End Class

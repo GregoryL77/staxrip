@@ -171,9 +171,7 @@ Public Class VideoScript
     <NonSerialized()> Public LastCode As String
     <NonSerialized()> Public LastPath As String
 
-    Sub Synchronize(Optional convertToRGB As Boolean = False,
-                    Optional comparePath As Boolean = True,
-                    Optional flipVertical As Boolean = False)
+    Sub Synchronize(Optional convertToRGB As Boolean = False, Optional comparePath As Boolean = True, Optional flipVertical As Boolean = False)
 
         If Path.NullOrEmptyS Then
             Exit Sub
@@ -551,7 +549,7 @@ clipname.set_output()
     End Function
 
     Shared Function GetDefaults() As List(Of TargetVideoScript)
-        Dim ret As New List(Of TargetVideoScript)
+        Dim ret As New List(Of TargetVideoScript)(2)
 
         Dim script = New TargetVideoScript("AviSynth")
         script.Engine = ScriptEngine.AviSynth
@@ -663,10 +661,7 @@ Public Class VideoFilter
         Me.New("???", "???", code, True)
     End Sub
 
-    Sub New(category As String,
-            name As String,
-            script As String,
-            Optional active As Boolean = True)
+    Sub New(category As String, name As String, script As String, Optional active As Boolean = True)
 
         Me.Path = name
         Me.Script = script

@@ -17,12 +17,14 @@ Public Class GlobalCommands
 
     <Command("Shows the log file with the built-in log file viewer.")>
     Sub ShowLogFile()
-        If Not File.Exists(p.Log.GetPath()) Then
+        If File.Exists(p.Log.GetPath()) Then
             If Not Log.IsEmpty Then
-                If MsgQuestion("Unsaved Log content exists. Save to disk and show it ?") = DialogResult.OK Then
+                If MsgQuestion("Unsaved Log content exists and Log File exists. Overwrite and show it ?") = DialogResult.OK Then
                     Log.Save()
                 End If
             End If
+        ElseIf Not Log.IsEmpty Then
+            Log.Save()
         End If
 
         If File.Exists(p.Log.GetPath()) Then
@@ -312,9 +314,12 @@ Public Class GlobalCommands
         Optional content As String = Nothing,
         <DispName("Icon")>
         <DefaultValue(GetType(MsgIcon), "Info")>
-        Optional icon As MsgIcon = MsgIcon.Info)
+        Optional icon As MsgIcon = MsgIcon.Info,
+        <DispName("Width (0-Auto)")>
+        <DefaultValue(0UI)>
+        Optional dWidth As UInteger = 0)
 
-        Msg(Macro.Expand(mainInstruction), Macro.Expand(content), icon, TaskDialogButtons.Ok)
+        Msg(Macro.Expand(mainInstruction), Macro.Expand(content), icon, TaskDialogButtons.Ok, dWidth:=dWidth)
     End Sub
 
     <Command("Shows a Open File dialog to show media info.")>
@@ -508,14 +513,14 @@ Public Class GlobalCommands
                     paletteGen.Text = "Statistics Mode:"
                     'paletteGen.Add2("Full", "full")
                     'paletteGen.Add2("Difference", "diff")
-                    paletteGen.Button.AddRange({("Full", "full"), ("Difference", "diff")})
+                    paletteGen.Button.AddRange2({("Full", "full"), ("Difference", "diff")})
                     paletteGen.Button.Value = s.Storage.GetString("PaletteGen", "diff")
                     paletteGen.Button.SaveAction = Sub(value) s.Storage.SetString("PaletteGen", value)
 
                     paletteUse.Text = "Diff Mode:"
                     'paletteUse.Add2("Rectangle", "rectangle")
                     'paletteUse.Add2("None", "none")
-                    paletteUse.Button.AddRange({("Rectangle", "rectangle"), ("None", "none")})
+                    paletteUse.Button.AddRange2({("Rectangle", "rectangle"), ("None", "none")})
                     paletteUse.Button.Value = s.Storage.GetString("PaletteUse", "rectangle")
                     paletteUse.Button.SaveAction = Sub(value) s.Storage.SetString("PaletteUse", value)
 
@@ -526,7 +531,7 @@ Public Class GlobalCommands
                     'compression.Add2("Sierra 2", "dither=sierra2")
                     'compression.Add2("Sierra 2_4a", "dither=sierra2_4a")
                     'compression.Add2("None", "dither=none")
-                    compression.Button.AddRange({("Bayer Scale", "dither=bayer:bayer_scale=5"), ("Heckbert", "dither=heckbert"), ("Floyd Steinberg", "dither=floyd_steinberg"),
+                    compression.Button.AddRange2({("Bayer Scale", "dither=bayer:bayer_scale=5"), ("Heckbert", "dither=heckbert"), ("Floyd Steinberg", "dither=floyd_steinberg"),
                                                 ("Sierra 2", "dither=sierra2"), ("Sierra 2_4a", "dither=sierra2_4a"), ("None", "dither=none")})
                     compression.Button.Value = s.Storage.GetString("GifDither", "dither=floyd_steinberg")
                     compression.Button.SaveAction = Sub(value) s.Storage.SetString("GifDither", value)
@@ -986,7 +991,7 @@ Public Class GlobalCommands
     End Sub
 
     <Command("This command is obsolete since 2020.")>
-    Sub MediainfoMKV()
+    Sub MediaInfoMKV()
         ShowMkvInfo()
     End Sub
 

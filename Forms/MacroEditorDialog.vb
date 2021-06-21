@@ -142,13 +142,15 @@ Public Class MacroEditorDialog
         ScaleClientSize(59, 37, FontHeight)
     End Sub
 
-    Sub UniversalEditor_HelpRequested(sender As Object, e As HelpEventArgs) Handles Me.HelpRequested
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
         Dim form As New HelpForm()
         form.Doc.WriteStart(Text)
         form.Doc.WriteParagraph(HelpText)
         form.Doc.WriteTips(MacroEditorControl.TipProvider.GetTips)
         form.Doc.WriteTable("Macros", Macro.GetTips(False, True, False))
         form.Show()
+        hevent.Handled = True
+        MyBase.OnHelpRequested(hevent)
     End Sub
 
     Protected Overrides Sub OnLoad(e As EventArgs)

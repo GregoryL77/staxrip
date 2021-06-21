@@ -12,7 +12,8 @@ Public Class TextHelpForm
         ScaleClientSize(45, 30, FontHeight)
     End Sub
 
-    Sub TextHelpForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
         rtb.Find(Find)
         rtb.ScrollToCaret()
     End Sub

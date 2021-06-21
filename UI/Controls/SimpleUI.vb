@@ -8,12 +8,12 @@ Public Class SimpleUI
 
     Public WithEvents Tree As New TreeViewEx
 
-    Public Host As New Panel
+    Property Host As New Panel
 
     Public Event SaveValues()
     Public Event ValueChanged()
 
-    Public Pages As New List(Of IPage)(8)
+    Public Pages As New List(Of IPage)(16)
 
     Public ActivePage As IPage
     Public Store As Object
@@ -21,6 +21,12 @@ Public Class SimpleUI
     Property FormSizeScaleFactor As SizeF
 
     Sub New()
+
+        Tree.BeginUpdate()
+        Host.SuspendLayout() 'Test This !!! TODO :
+        SuspendLayout()
+        'Parent.SuspendLayout() No Parent Here ??? no good idea?
+
         InitControls()
         SetStyle(ControlStyles.SupportsTransparentBackColor, True)
     End Sub
@@ -34,7 +40,6 @@ Public Class SimpleUI
         Tree.ShowPlusMinus = False
         Tree.AutoCollaps = True
         Tree.ExpandMode = TreeNodeExpandMode.InclusiveChilds
-
         Controls.Add(Tree)
         Controls.Add(Host)
     End Sub
@@ -57,25 +62,27 @@ Public Class SimpleUI
                                      End Sub
 
             AddHandler fF.Load, eh
+
+            Host.ResumeLayout(False) 'Test This !!! TODO :
+            ResumeLayout()
+            Tree.EndUpdate()
+            'Parent.ResumeLayout(False) 'No way ???
+
         End If
     End Sub
 
     Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-        Tree.Top = 0
-        Tree.Left = 0
-        Tree.Width = 0
-        Tree.Height = Height
+        Tree.Location = Point.Empty
         Dim fh As Integer = FontHeight
 
         If Tree.Nodes.Count > 1 Then
-            'Tree.Width = (Aggregate i In Tree.GetNodes Into Max(i.Bounds.Right)) + fh
-            Tree.Width = Tree.GetNodes.MaxF(Function(i) i.Bounds.Right) + fh
+            Tree.Size = New Size(Tree.GetNodes.MaxF(Function(i) i.Bounds.Right) + fh, Height)
+        Else
+            Tree.Size = New Size(0, Height)
         End If
 
-        Host.Top = 0
-        Host.Left = Tree.Right + CInt(fh / 3)
-        Host.Height = Height
-        Host.Width = Width - Tree.Width - CInt(fh / 3)
+        Host.Location = New Point(Tree.Right + CInt(fh / 3), 0)
+        Host.Size = New Size(Width - Tree.Width - CInt(fh / 3), Height)
 
         MyBase.OnLayout(levent)
     End Sub
@@ -151,7 +158,7 @@ Public Class SimpleUI
     End Sub
 
     Sub SaveLast(id As String)
-        If Not ActivePage Is Nothing Then
+        If ActivePage IsNot Nothing Then
             s.Storage.SetString(id, ActivePage.Path)
         End If
     End Sub
@@ -174,15 +181,16 @@ Public Class SimpleUI
         If q IsNot Nothing Then
             Return DirectCast(q, FlowPage)
         Else
-            Return CreateFlowPage(path)
+            Return CreateFlowPage(path, True)
         End If
     End Function
 
-    Public SaveValEventHList As List(Of SaveValuesEventHandler) 'Debug Test
-    Sub SaveValEventsHCreate(Optional capacity As Integer = 0)
+    Private SaveValEventHList As List(Of SaveValuesEventHandler) 'Debug Test
+    Public Function SaveValEventsHLCreate(Optional capacity As Integer = 0) As List(Of SaveValuesEventHandler)
         SaveValEventHList = If(capacity = 0, New List(Of SaveValuesEventHandler), New List(Of SaveValuesEventHandler)(capacity))
-    End Sub
-    Public Sub SaveValEventsHRemove()
+        Return SaveValEventHList
+    End Function
+    Public Sub SaveValEventsHLRemove()
         If SaveValEventHList IsNot Nothing Then
             For h = 0 To SaveValEventHList.Count - 1
                 RemoveHandler SaveValues, SaveValEventHList(h)
@@ -222,17 +230,13 @@ Public Class SimpleUI
         Return AddLabel(Nothing, text)
     End Function
 
-    Function AddLabel(parent As FlowLayoutPanelEx,
-                      text As String,
-                      Optional widthInFontHeights As Integer = 0) As SimpleUILabel
+    Function AddLabel(parent As FlowLayoutPanelEx, text As String, Optional widthInFontHeights As Integer = 0) As SimpleUILabel
 
         If parent Is Nothing Then
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New SimpleUILabel
-        ret.Offset = widthInFontHeights
-        ret.Text = text
+        Dim ret As New SimpleUILabel With {.Offset = widthInFontHeights, .Text = text}
         parent.Controls.Add(ret)
 
         Return ret
@@ -243,9 +247,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New NumBlock(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New NumBlock(Me) With {.AutoSize = True, .UseParenWidth = True}
 
         Dim sveh As SaveValuesEventHandler = AddressOf ret.NumEdit.Save
         If SaveValEventHList IsNot Nothing Then SaveValEventHList.Add(sveh)
@@ -260,9 +262,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New TextBlock(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New TextBlock(Me) With {.AutoSize = True, .UseParenWidth = True}
         AddHandler SaveValues, AddressOf ret.Edit.Save
         parent.Controls.Add(ret)
         Return ret
@@ -273,9 +273,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New TextMenuBlock(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New TextMenuBlock(Me) With {.AutoSize = True, .UseParenWidth = True}
         AddHandler SaveValues, AddressOf ret.Edit.Save
         parent.Controls.Add(ret)
         Return ret
@@ -286,9 +284,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New ColorPickerBlock(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New ColorPickerBlock(Me) With {.AutoSize = True, .UseParenWidth = True}
         AddHandler SaveValues, AddressOf ret.Save
         parent.Controls.Add(ret)
         Return ret
@@ -299,9 +295,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New ButtonBlock(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New ButtonBlock(Me) With {.AutoSize = True, .UseParenWidth = True}
         parent.Controls.Add(ret)
         Return ret
     End Function
@@ -311,9 +305,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New TextButtonBlock(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New TextButtonBlock(Me) With {.AutoSize = True, .UseParenWidth = True}
         AddHandler SaveValues, AddressOf ret.Edit.Save
         parent.Controls.Add(ret)
         Return ret
@@ -324,9 +316,7 @@ Public Class SimpleUI
             parent = GetActiveFlowPage()
         End If
 
-        Dim ret As New MenuBlock(Of T)(Me)
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New MenuBlock(Of T)(Me) With {.AutoSize = True, .UseParenWidth = True}
 
         Dim sveh As SaveValuesEventHandler = AddressOf ret.Button.Save
         If SaveValEventHList IsNot Nothing Then SaveValEventHList.Add(sveh)
@@ -337,31 +327,24 @@ Public Class SimpleUI
     End Function
 
     Function AddEmptyBlock(parent As FlowLayoutPanelEx) As EmptyBlock
-        Dim ret As New EmptyBlock
-        ret.AutoSize = True
-        ret.UseParenWidth = True
+        Dim ret As New EmptyBlock With {.AutoSize = True, .UseParenWidth = True}
         parent.Controls.Add(ret)
         Return ret
     End Function
 
     Sub AddLine(parent As FlowLayoutPanelEx, Optional text As String = "")
-        Dim line As New SimpleUILineControl
-        line.Text = text
-        line.Expand = True
+        Dim line As New SimpleUILineControl With {.Text = text, .Expand = True}
         parent.Controls.Add(line)
     End Sub
 
-    Function CreateFlowPage(Optional path As String = "-",
-                            Optional autoSuspend As Boolean = False) As FlowPage
-        Dim ret = New FlowPage
-        ret.AutoSuspend = autoSuspend
+    Function CreateFlowPage(Optional path As String = "-", Optional autoSuspend As Boolean = False) As FlowPage
 
+        Dim ret = New FlowPage With {.AutoSuspend = autoSuspend, .Path = path}
         If autoSuspend Then
             ret.SuspendLayout()
         End If
 
         Pages.Add(ret)
-        ret.Path = path
         ret.Dock = DockStyle.Fill
         ret.Node = Tree.AddNode(path)
         Host.Controls.Add(ret)
@@ -379,13 +362,9 @@ Public Class SimpleUI
     End Function
 
     Function CreateDataPage(path As String) As DataPage
-        Dim ret = New DataPage
-        ret.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells
-        ret.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
-        ret.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        Dim ret = New DataPage With {.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells, .AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
+                                     .ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize, .Path = path, .Dock = DockStyle.Fill}
         Pages.Add(ret)
-        ret.Path = path
-        ret.Dock = DockStyle.Fill
         ret.Node = Tree.AddNode(path)
         Host.Controls.Add(ret)
         ActivePage = ret
@@ -438,11 +417,11 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnCreateControl()
-            If AutoSuspend Then
-                ResumeLayout()
-            End If
-
             MyBase.OnCreateControl()
+
+            If AutoSuspend Then
+                ResumeLayout(False) ' no false ???
+            End If
         End Sub
 
     End Class
@@ -584,8 +563,7 @@ Public Class SimpleUI
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             'dialog size
             Dim fh As Integer = FontHeight  '=Font.Height 'Experimant - NoScaling!!! Test This!!!
-            Height = CInt(fh * 1.3)
-            Width = CInt(fh * 4.5)
+            Size = New Size(CInt(fh * 4.5), CInt(fh * 1.3))
             MyBase.OnLayout(levent)
         End Sub
 
@@ -679,10 +657,10 @@ Public Class SimpleUI
                 Height = fh * MultilineHeightFactor
             Else
                 If Not Expand Then
-                    Width = fh * WidthFactor
+                    Size = New Size(fh * WidthFactor, CInt(fh * 1.45))
+                Else
+                    Height = CInt(fh * 1.45)
                 End If
-
-                Height = CInt(fh * 1.45)
             End If
 
             MyBase.OnLayout(levent)
@@ -1246,10 +1224,9 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            If Not Button Is Nothing Then
+            If Button IsNot Nothing Then
                 Dim fh As Integer = FontHeight
-                Button.Height = CInt(fh * 1.5)
-                Button.Width = fh * 10
+                Button.Size = New Size(fh * 10, CInt(fh * 1.5))
             End If
 
             MyBase.OnLayout(levent)

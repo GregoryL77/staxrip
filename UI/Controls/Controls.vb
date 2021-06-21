@@ -162,7 +162,7 @@ Namespace UI
             Dim pathElements = path.SplitNoEmptyAndWhiteSpace({"|"c})
             Dim currentNodeList = Nodes
             Dim currentPath = ""
-            Dim ret As TreeNode = Nothing
+            Dim ret As TreeNode
 
             For Each iNodeName In pathElements
                 If currentPath.NotNullOrEmptyS Then
@@ -182,8 +182,7 @@ Namespace UI
                 Next iNode
 
                 If Not found Then
-                    ret = New TreeNode
-                    ret.Text = " " + iNodeName
+                    ret = New TreeNode With {.Text = " " + iNodeName}
                     currentNodeList.Add(ret)
                     currentNodeList = ret.Nodes
                 End If
@@ -785,9 +784,8 @@ Namespace UI
             Menu.MinimumSize = New Size(Width, 0)
 
             'For Each mi As ActionMenuItem In Menu.Items
-            For Each mi As ToolStripMenuItem In Menu.Items
-                ' mi.Font = New Font("Segoe UI", 9 * s.UIScaleFactor, If(Value IsNot Nothing AndAlso Value.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular))
-                mi.Font = New Font(Me.Font, If(Value IsNot Nothing AndAlso Value.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular)) ' Test this !!!
+            For Each mi As ToolStripMenuItem In Menu.Items ' Test this !!!
+                mi.Font = New Font(Me.Font, If(mi.Tag IsNot Nothing AndAlso Value?.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular))
 
                 If (Menu.Width - mi.Width) > 2 Then
                     mi.AutoSize = False
@@ -805,8 +803,8 @@ Namespace UI
             End Get
             Set(value As Object)
                 If Menu.Items.Count = 0 Then
-                    If TypeOf value Is System.Enum Then
 
+                    If TypeOf value Is System.Enum Then
                         Menu.SuspendLayout()
                         Dim inc As Integer
                         Dim enAr As Array = System.Enum.GetValues(value.GetType)
@@ -819,12 +817,6 @@ Namespace UI
                         Next i
                         Menu.Items.AddRange(amiAr)
                         Menu.ResumeLayout(False) 'Test This !!!
-                        'For Each i In System.Enum.GetValues(value.GetType)
-                        '    Dim text = DispNameAttribute.GetValueForEnum(i)
-                        '    Dim temp = i
-                        '    ActionMenuItem.Add(Menu.Items, text, Sub(o As Object) OnAction(text, o), temp, Nothing).Tag = temp
-                        'Next i
-
                     End If
                 End If
 
@@ -903,7 +895,7 @@ Namespace UI
             Return ret
         End Function
 
-        Sub AddRange(menuTup As (path As String, obj As Object)()) 'As ActionMenuItem() 'Test it Debug, Still overhead Meh! ???
+        Sub AddRange2(menuTup As (path As String, obj As Object)()) 'As ActionMenuItem() 'Test it Debug, Still overhead Meh! ???
             Dim retA(menuTup.Length - 1) As ActionMenuItem
             For t = 0 To menuTup.Length - 1
                 Dim ob = menuTup(t).obj
@@ -923,11 +915,6 @@ Namespace UI
             Menu.Items.ClearAndDispose
         End Sub
 
-        Sub OnAction(value As Object)
-            Me.Value = value
-            OnValueChanged(value)
-        End Sub
-
         Sub OnAction(text As String, value As Object)
             Me.Text = text
             Me.Value = value
@@ -943,54 +930,50 @@ Namespace UI
         End Function
 
         Public Sub BuildLangMenu()
-            Dim lastCh As Char
-            Dim c1 As Char
-            Dim mL1 As New List(Of MenuItemEx)(18) '18
-            Dim mL2Alph As New List(Of MenuItemEx)(26) '26
-            Dim nML3 As List(Of ActionMenuItem)
+            Dim mL1 As New List(Of ToolStripMenuItemEx)(18) '18
+            Dim mL2Alph As New List(Of ToolStripMenuItemEx)(26) '26
             Dim mL3LL As New List(Of List(Of ActionMenuItem))(26)
             Dim sb As New Text.StringBuilder(52) 'Maxis 50
-            Dim lngS As String
             Dim languages = Language.Languages '302
 
             For i = 0 To languages.Count - 1
                 Dim lng As Language = languages(i)
-                lngS = lng.ToString
-                sb.Clear()
+                sb.Length = 0
+                Dim lngS As String = lng.ToString
                 sb.Append(lngS).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+                Dim sbS As String = sb.ToString
 
                 If lng.IsCommon Then
-                    mL1.Add(New ActionMenuItem(sb.ToString, Sub() OnAction(lng), lng)) '"",
+                    mL1.Add(New ActionMenuItem(sbS, Sub() OnAction(sbS, lng), lng)) 'Tag for Bold Highlight Selection
                 Else
-                    c1 = CChar(lngS.Substring(0, 1).ToUpperInvariant)
+                    Dim nML3 As List(Of ActionMenuItem)
+                    Dim lastCh As Char
+                    Dim c1 As Char = CChar(lngS.Substring(0, 1).ToUpperInvariant)
                     If c1 <> lastCh Then
                         lastCh = c1
-                        mL2Alph.Add(New MenuItemEx(c1))
+                        mL2Alph.Add(New ToolStripMenuItemEx(c1))
                         nML3 = New List(Of ActionMenuItem)(8)
                         mL3LL.Add(nML3)
                     End If
-                    nML3.Add(New ActionMenuItem(sb.ToString, Sub() OnAction(lng))) '+ tag ??? 'Sub() OnAction(<lngS or SB.toString>, lng)
+                    nML3.Add(New ActionMenuItem(sbS, Sub() OnAction(sbS, lng)))
                 End If
             Next i
 
-            Dim nMI As MenuItemEx
+            Dim miMore = New ToolStripMenuItemEx("More")
+            mL1.Add(miMore)
+            miMore.DropDown.SuspendLayout()
+            Menu.SuspendLayout()
+            Menu.Items.AddRange(mL1.ToArray)
+            miMore.DropDownItems.AddRange(mL2Alph.ToArray)
+
             For i = 0 To mL2Alph.Count - 1
-                nMI = mL2Alph(i)
+                Dim nMI As ToolStripMenuItemEx = mL2Alph(i)
                 nMI.DropDown.SuspendLayout()
                 nMI.DropDownItems.AddRange(mL3LL(i).ToArray)
                 nMI.DropDown.ResumeLayout(False)
             Next i
 
-            Dim miMore = New MenuItemEx("More")
-            Menu.SuspendLayout()
-            Dim mMDD As ToolStripDropDown = miMore.DropDown
-            mMDD.SuspendLayout()
-            Dim mMItms = miMore.DropDownItems
-            mMItms.AddRange(mL2Alph.ToArray)
-            'Menu.Items.Add(miMore)
-            mL1.Add(miMore)
-            Menu.Items.AddRange(mL1.ToArray)
-            mMDD.ResumeLayout(False)
+            miMore.DropDown.ResumeLayout(False)
             Menu.ResumeLayout(False)
         End Sub
 
@@ -1076,7 +1059,8 @@ Namespace UI
             Return New String(chars)
         End Function
 
-        Sub CommandLineRichTextBox_HandleCreated(sender As Object, e As EventArgs) Handles Me.HandleCreated
+        Protected Overrides Sub OnHandleCreated(e As EventArgs)
+            MyBase.OnHandleCreated(e)
             If Not DesignMode Then
                 Font = New Font("Consolas", 10 * s.UIScaleFactor)
             End If
@@ -1084,10 +1068,26 @@ Namespace UI
 
         Sub UpdateHeight()
             Using graphics = CreateGraphics()
-                Dim stringSize = graphics.MeasureString(Text, Font, Size.Width)
-                Size = New Size(Size.Width, CInt(stringSize.Height) + 1)
+                'Dim stringSize = graphics.MeasureString(Text, Font, Size.Width)
+                'Size = New Size(Size.Width, CInt(stringSize.Height) + 1)
+
+                Dim measHeight = CInt(graphics.MeasureString(Text, Font, Width).Height)
+                'measHeight = TextRenderer.MeasureText(Text, Font, New Size(Width, 100000)).Height
+                Height = measHeight + 1
             End Using
         End Sub
+
+        'Async Sub UpdateHeightAsync()
+        '    Dim txt = Text
+        '    Dim fnt As Font = Font
+        '    Dim heightMT = Await Task.Run(Function() TextRenderer.MeasureText(txt, fnt, New Size(Width, 100000)).Height + 1) 'is Font threadSafe??? or add var
+        '    'Using graphics = CreateGraphics()
+        '    'Return CInt(graphics.MeasureString(Text, Font, Width).Height)
+        '    'End Using
+        '    'End Function)
+        '    Height = heightMT
+        'End Sub
+
     End Class
 
     <ProvideProperty("Expand", GetType(Control))>
@@ -1107,15 +1107,15 @@ Namespace UI
             MyBase.OnLayout(levent)
 
             If Not WrapContents AndAlso FlowDirection = FlowDirection.LeftToRight Then
-                Dim nextPos As Integer
 
                 For Each ctrl As Control In Controls
+                    Dim nextPos As Integer
                     If ctrl.Visible Then
                         nextPos += ctrl.Margin.Left + ctrl.Width + ctrl.Margin.Right
 
                         Dim expandetControl = TryCast(ctrl, SimpleUI.SimpleUIControl)
 
-                        If Not expandetControl Is Nothing AndAlso expandetControl.Expand Then
+                        If expandetControl IsNot Nothing AndAlso expandetControl.Expand Then
                             'Dim diff = Aggregate i2 In Controls.OfType(Of Control)() Into Sum(If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
                             Dim diff = Controls.OfType(Of Control).ToArray.SumF(Function(i2) If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
 
@@ -1459,8 +1459,8 @@ Namespace UI
         End Enum
 
         Class SymbolDrawer
-            Property Point1 As New Point
-            Property Point2 As New Point
+            Property Point1 As Point 'was new Point
+            Property Point2 As Point 'was new Point
             Property Pen As Pen
             Property Graphics As Graphics
 
@@ -2115,8 +2115,14 @@ Namespace UI
     Public Class DataGridViewEx
         Inherits DataGridView
 
-        'DoubleBuffered DGV -  keyboard responivness
-        Protected Overrides Property DoubleBuffered As Boolean = True
+        Protected Overrides Property DoubleBuffered As Boolean 'DoubleBuffered DGV -  keyboard responsivness
+            Get
+                Return True
+            End Get
+            Set(value As Boolean)
+                MyBase.DoubleBuffered = value
+            End Set
+        End Property
 
         Function AddTextBoxColumn() As DataGridViewTextBoxColumn
             Dim ret As New DataGridViewTextBoxColumn
@@ -2130,15 +2136,12 @@ Namespace UI
             Return ret
         End Function
 
-        Public Sub EventsDispose()
-            Events.Dispose()
-        End Sub
     End Class
 
     Public Class TabControlEx
         Inherits TabControl
 
-        Private DragStartPosition As Point = Point.Empty
+        Private DragStartPosition As Point '= Point.Empty
         Private TabType As Type
 
         Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
@@ -2154,7 +2157,7 @@ Namespace UI
 
             Dim page = HoverTab()
 
-            If Not page Is Nothing AndAlso Not rect.Contains(e.X, e.Y) Then
+            If page IsNot Nothing AndAlso Not rect.Contains(e.X, e.Y) Then
                 TabType = page.GetType
                 DoDragDrop(page, DragDropEffects.All)
             End If

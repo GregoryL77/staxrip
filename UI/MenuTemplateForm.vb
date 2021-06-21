@@ -100,8 +100,10 @@ Namespace UI
 
         Sub New(item As CustomMenuItem)
             InitializeComponent()
+            tv.BeginUpdate()
             PopulateTreeView(item, Nothing)
             tv.ExpandAll()
+            tv.EndUpdate()
         End Sub
 
         Sub PopulateTreeView(item As CustomMenuItem, node As TreeNode)
@@ -120,17 +122,19 @@ Namespace UI
         End Sub
 
         Sub tv_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles tv.AfterSelect
-            If Not tv.SelectedNode Is Nothing Then
+            If tv.SelectedNode IsNot Nothing Then
                 TreeNode = tv.SelectedNode
-                bnOK.Enabled = Not TreeNode.Parent Is Nothing
+                bnOK.Enabled = TreeNode.Parent IsNot Nothing
             End If
         End Sub
 
-        Sub MenuTemplateForm_HelpRequested(sender As Object, hlpevent As HelpEventArgs) Handles Me.HelpRequested
+        Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
             Dim form As New HelpForm()
             form.Doc.WriteStart(Text)
             form.Doc.WriteParagraph("The new item will be a clone of the selected item.")
             form.Show()
+            hevent.Handled = True
+            MyBase.OnHelpRequested(hevent)
         End Sub
     End Class
 End Namespace

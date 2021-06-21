@@ -69,7 +69,7 @@ Public Class ffmpegEnc
 
                          form.HTMLHelp = $"<h2>ffmpeg Online Help</h2>" & "<p><a href=""{Package.ffmpeg.HelpURL}"">ffmpeg Online Help</a></p>"
 
-                         Dim helpV As String = ""
+                         Dim helpV As String
                          If helpDic.TryGetValue(codecText, helpV) Then
                              form.HTMLHelp += $"<h2>ffmpeg {codecText} Online Help</h2>" & $"<p><a href=""{helpV}"">ffmpeg {codecText} Online Help</a></p>"
                          End If

@@ -114,7 +114,7 @@ Public MustInherit Class AudioProfile
             If AudioConverterForm.AudioConverterMode Then
                 If DisplayNameValue IsNot Nothing Then Return DisplayNameValue
             End If
-            If FileValue Is "" Then Return ""
+            If FileValue.Length = 0 Then Return ""
 
             Dim ret As String
             If Stream Is Nothing Then
@@ -1116,7 +1116,7 @@ Public Class GUIAudioProfile
         Dim id As String
         Dim sb As New StringBuilder(128)
 
-        If File.Ext.EqualsAny("ts", "m2ts", "mkv") AndAlso Not Stream Is Nothing Then
+        If File.Ext.EqualsAny("ts", "m2ts", "mkv") AndAlso Stream IsNot Nothing Then
             id = (Stream.StreamOrder + 1) & ": "
         End If
 

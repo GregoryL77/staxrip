@@ -1033,16 +1033,16 @@ Public Class GlobalClass
             Using td As New TaskDialog(Of String)(352)
                 If mainInstruction.NullOrEmptyS Then
                     If TypeOf ex Is ErrorAbortException Then
-                        td.MainInstruction = DirectCast(ex, ErrorAbortException).Title + $" ({Application.ProductVersion})"
+                        td.MainInstruction = DirectCast(ex, ErrorAbortException).Title & $" ({Application.ProductVersion})"
                     Else
-                        td.MainInstruction = ex.GetType.Name + $" ({Application.ProductVersion})"
+                        td.MainInstruction = ex.GetType.Name & $" ({Application.ProductVersion})"
                     End If
                 Else
                     td.MainInstruction = mainInstruction
                 End If
 
                 td.Timeout = timeout
-                td.Content = (ex.Message + BR2 + content).Trim
+                td.Content = (ex.Message & BR2 & content).Trim
                 td.MainIcon = TaskDialogIcon.Error
                 td.ExpandedInformation = ex.ToString
                 td.Footer = Strings.TaskDialogFooter
@@ -1057,7 +1057,7 @@ Public Class GlobalClass
                 title = ex.GetType.Name
             End If
 
-            VB6.MsgBox(title + BR2 + ex.Message + BR2 + ex.ToString, VB6.MsgBoxStyle.Critical)
+            VB6.MsgBox(title & BR2 & ex.Message & BR2 & ex.ToString, VB6.MsgBoxStyle.Critical)
         End Try
     End Sub
 

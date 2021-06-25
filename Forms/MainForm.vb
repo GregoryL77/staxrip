@@ -6119,7 +6119,7 @@ Public Class MainForm
             New ToolStripSeparator,
             New ActionMenuItem("Copy Path", Sub() Clipboard.SetText(ap.File)) With {.Enabled = tb.Text.NotNullOrEmptyS},
             New ActionMenuItem("Copy Selection", Sub() Clipboard.SetText(tb.SelectedText), ImageHelp.GetImageC(Symbol.Copy)) With {.Enabled = tb.Text.NotNullOrEmptyS},
-            New ActionMenuItem("Paste", Sub() tb.Paste(), ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.GetText.Trim IsNot ""},
+            New ActionMenuItem("Paste", Sub() tb.Paste(), ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.ContainsText},
             New ToolStripSeparator,
             New ActionMenuItem("Remove", Sub() tb.Text = "", ImageHelp.GetImageC(Symbol.Remove), "Remove audio file") With {.Enabled = tb.Text.NotNullOrEmptyS}})
         m.ResumeLayout()
@@ -6153,7 +6153,7 @@ Public Class MainForm
             New ActionMenuItem("Explore...", Sub() g.SelectFileWithExplorer(p.TargetFile), ImageHelp.GetImageC(Symbol.FileExplorer), "Open the target file directory with File Explorer.") With {.Enabled = Directory.Exists(p.TargetFile.Dir)},
             New ToolStripSeparator,
             New ActionMenuItem("Copy", Sub() tbTargetFile.Copy(), ImageHelp.GetImageC(Symbol.Copy)) With {.Enabled = tbTargetFile.Text.NotNullOrEmptyS},
-            New ActionMenuItem("Paste", Sub() tbTargetFile.Paste(), ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.GetText.Trim IsNot "" AndAlso sFE}})
+            New ActionMenuItem("Paste", Sub() tbTargetFile.Paste(), ImageHelp.GetImageC(Symbol.Paste)) With {.Enabled = Clipboard.ContainsText AndAlso sFE}})
         TargetFileMenu.ResumeLayout()
     End Sub
 
@@ -6169,7 +6169,7 @@ Public Class MainForm
             New ActionMenuItem("Explore...", Sub() g.SelectFileWithExplorer(p.SourceFile), ImageHelp.GetImageC(Symbol.FileExplorer), "Open the source file directory with File Explorer.") With {.Enabled = File.Exists(p.SourceFile)},
             New ToolStripSeparator,
             New ActionMenuItem("Copy", Sub() tbSourceFile.Copy(), ImageHelp.GetImageC(Symbol.Copy), "Copies the selected text to the clipboard.") With {.Enabled = tbSourceFile.Text.NotNullOrEmptyS},
-            New ActionMenuItem("Paste", Sub() tbSourceFile.Paste(), ImageHelp.GetImageC(Symbol.Paste), "Copies the full source file path to the clipboard.") With {.Enabled = Clipboard.GetText.Trim IsNot ""}})
+            New ActionMenuItem("Paste", Sub() tbSourceFile.Paste(), ImageHelp.GetImageC(Symbol.Paste), "Copies the full source file path to the clipboard.") With {.Enabled = Clipboard.ContainsText}})
         SourceFileMenu.ResumeLayout()
     End Sub
 

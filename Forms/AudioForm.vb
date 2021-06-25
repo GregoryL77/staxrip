@@ -9,7 +9,7 @@ Public Class AudioForm
 #Region " Designer "
 
     Protected Overloads Overrides Sub Dispose(disposing As Boolean)
-        IsHandleC = False
+        IsHandleCr = False
         If disposing Then
             If Not (components Is Nothing) Then
                 components.Dispose()
@@ -41,7 +41,6 @@ Public Class AudioForm
     Friend WithEvents bnCancel As StaxRip.UI.ButtonEx
     Friend WithEvents mbEncoder As StaxRip.UI.MenuButton
     Friend WithEvents Label2 As System.Windows.Forms.Label
-    Friend WithEvents FlowLayoutPanel1 As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents SimpleUI As StaxRip.SimpleUI
     Friend WithEvents Label3 As System.Windows.Forms.Label
     Friend WithEvents numGain As StaxRip.UI.NumEdit
@@ -105,7 +104,6 @@ Public Class AudioForm
         Me.TipProvider = New StaxRip.UI.TipProvider(Me.components)
         Me.bnOK = New StaxRip.UI.ButtonEx()
         Me.bnCancel = New StaxRip.UI.ButtonEx()
-        Me.FlowLayoutPanel1 = New System.Windows.Forms.FlowLayoutPanel()
         Me.tlpMain = New System.Windows.Forms.TableLayoutPanel()
         Me.flpButtons = New System.Windows.Forms.FlowLayoutPanel()
         Me.bnMenu = New StaxRip.UI.ButtonEx()
@@ -563,17 +561,6 @@ Public Class AudioForm
         Me.bnCancel.Size = New System.Drawing.Size(94, 26)
         Me.bnCancel.Text = "Cancel"
         '
-        'FlowLayoutPanel1
-        '
-        Me.FlowLayoutPanel1.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.FlowLayoutPanel1.AutoSize = True
-        Me.FlowLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        Me.FlowLayoutPanel1.Location = New System.Drawing.Point(10, 510)
-        Me.FlowLayoutPanel1.Margin = New System.Windows.Forms.Padding(2)
-        Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
-        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(0, 0)
-        Me.FlowLayoutPanel1.TabIndex = 4
-        '
         'tlpMain
         '
         Me.tlpMain.AutoSize = True
@@ -658,7 +645,6 @@ Public Class AudioForm
         Me.CancelButton = Me.bnCancel
         Me.ClientSize = New System.Drawing.Size(752, 489)
         Me.Controls.Add(Me.tlpMain)
-        Me.Controls.Add(Me.FlowLayoutPanel1)
         Me.KeyPreview = True
         Me.Name = "AudioForm"
         Me.Text = "Audio Settings"
@@ -679,22 +665,17 @@ Public Class AudioForm
 #End Region
 
     Private Profile, TempProfile As GUIAudioProfile
-    Private IsHandleC As Boolean
+    Private IsHandleCr As Boolean
+    Private Updating As Boolean
+    Private SLock As New Object
 
     Sub New()
         MyBase.New()
         Task.Run(Sub() If Language.Languages IsNot Nothing Then ) 'Populate Lang first???
         InitializeComponent()
         'rtbCommandLine.ReadOnly = True'InDesigner
-        mbSamplingRate.AddRange2({("Original", 0), ("11025 Hz", 11025), ("22050 Hz", 22050), ("44100 Hz", 44100), ("48000 Hz", 48000), ("88200 Hz", 88200), ("96000 Hz", 96000)})
-        'numBitrate.Minimum = 1 'InDesigner
-        'numBitrate.Maximum = 25000
-        'numGain.DecimalPlaces = 1
-        'numGain.Increment = 0.5
-        cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
-        cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
-        'If components Is Nothing then components = New System.ComponentModel.Container '????
         'rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None'InDesigner
+        rtbCommandLine.InitMenu()
 
         Dim cms As New ContextMenuStripEx(components)
         cms.SuspendLayout()
@@ -713,6 +694,16 @@ Public Class AudioForm
                             New ActionMenuItem("Opus Help", Sub() Package.OpusEnc.ShowHelp())})
         cms.ResumeLayout(False)
 
+        mbSamplingRate.AddRange2({("Original", 0), ("11025 Hz", 11025), ("22050 Hz", 22050), ("44100 Hz", 44100), ("48000 Hz", 48000), ("88200 Hz", 88200), ("96000 Hz", 96000)})
+        mbLanguage.BuildLangMenu()
+        cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
+        cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
+        'numBitrate.Minimum = 1 'InDesigner
+        'numBitrate.Maximum = 25000
+        'numGain.DecimalPlaces = 1
+        'numGain.Increment = 0.5
+        ActiveControl = mbCodec
+
         TipProvider.SetTip("Defines which decoder to use and forces decoding even if not necessary.", laDecoder, mbDecoder)
         TipProvider.SetTip("Profile name that is auto generated when undefined.", laProfileName)
         TipProvider.SetTip("Language used by the muxer. Saved in projects/templates but not in profiles.", mbLanguage, lLanguage)
@@ -721,36 +712,67 @@ Public Class AudioForm
         TipProvider.SetTip("Custom command line arguments.", tbCustom, laCustom)
         TipProvider.SetTip("Default MKV Track.", cbDefaultTrack)
         TipProvider.SetTip("Forced MKV Track.", cbForcedTrack)
-
-        mbLanguage.BuildLangMenu()
-        ActiveControl = mbCodec
     End Sub
 
     Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
         Me.Text = "Audio Settings" 'Debug
-        IsHandleC = False
+        IsHandleCr = False
         MyBase.OnFormClosing(args)
     End Sub
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         SimpleUI.SaveValEventsHLRemove()
-        RtbCmdFont = Nothing
+
+        'RtbCmdFont = Nothing
+
         If DialogResult = DialogResult.OK Then
             SetValues(Profile)
         End If
     End Sub
     Protected Overrides Sub OnLoad(args As EventArgs)
         MyBase.OnLoad(args)
-        IsHandleC = True
-        RtbCmdFont = rtbCommandLine.Font
+        IsHandleCr = True
+
+        'RtbCmdFont = rtbCommandLine.Font
+
         'rtbCommandLine.Height=18
         UpdateControls() ' Needed???
         'mbLanguage.Menu.Invalidate(True) 
         'Invalidate(True)
     End Sub
-    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
-        hevent.Handled = True
-        ShowHelp()
-        MyBase.OnHelpRequested(hevent)
+
+    Sub LoadProfile(gap As GUIAudioProfile)
+        gap.DefaultnameValue = Nothing
+        Profile = gap
+        TempProfile = gap.GetDeepClone
+
+        If TempProfile.Name <> TempProfile.DefaultName Then
+            tbProfileName.Text = TempProfile.Name
+        End If
+
+        tbProfileName.SendMessageCue(TempProfile.Name, False)
+
+        tbCustom.Text = TempProfile.Params.CustomSwitches
+        tbStreamName.Text = TempProfile.StreamName
+
+        cbDefaultTrack.Checked = TempProfile.Default
+        cbForcedTrack.Checked = TempProfile.Forced
+        cbNormalize.Checked = TempProfile.Params.Normalize
+
+        mbCodec.Value = TempProfile.Params.Codec
+        mbChannels.Value = TempProfile.Params.ChannelsMode
+        mbLanguage.Value = TempProfile.Language
+        mbSamplingRate.Value = TempProfile.Params.SamplingRate
+        mbEncoder.Value = TempProfile.Params.Encoder
+        mbDecoder.Value = TempProfile.Decoder
+
+        SetQuality(TempProfile.Params.Quality)
+
+        numBitrate.Value = TempProfile.Bitrate
+        numDelay.Value = TempProfile.Delay
+        numGain.Value = TempProfile.Gain
+
+        LoadAdvanced()
+        'UpdateControlsA()  TempProfile.GetCommandLine(False) 'set encoder
     End Sub
 
     Sub SetValues(gap As GUIAudioProfile)
@@ -770,84 +792,53 @@ Public Class AudioForm
         gap.Depth = TempProfile.Depth
     End Sub
 
-    Sub UpdateBitrate()
-        nudQuality_ValueChanged(numQuality)
-    End Sub
-
-    Sub nudQuality_ValueChanged(numEdit As NumEdit) Handles numQuality.ValueChanged
-        If Not TempProfile Is Nothing Then
-            TempProfile.Params.Quality = CSng(numQuality.Value)
-            numBitrate.Value = TempProfile.GetBitrate
-            UpdateControls()
-        End If
-    End Sub
-
-    Sub nudBitrate_ValueChanged(numEdit As NumEdit) Handles numBitrate.ValueChanged
-        If Not TempProfile Is Nothing Then
-            TempProfile.Bitrate = CSng(numBitrate.Value)
-            UpdateControls()
-        End If
-    End Sub
-
-    Sub nudDelay_ValueChanged(numEdit As NumEdit) Handles numDelay.ValueChanged
-        TempProfile.Delay = CInt(numDelay.Value)
-        UpdateControls()
-    End Sub
-
-    Sub numGain_ValueChanged(numEdit As NumEdit) Handles numGain.ValueChanged
-        TempProfile.Gain = Math.Round(numGain.Value, 1)
-        UpdateControls()
-    End Sub
-
-    Sub SimpleUIValueChanged()
-        SimpleUI.Save()
-        UpdateControls()
-    End Sub
-
-    Private RtbCmdFont As Font
-    Private Updating As Boolean
-    Private SLock As New Object
+    Private TT222 As String = "" 'debug
 
     Sub UpdateControls()
-        If Updating OrElse Not IsHandleC Then Exit Sub
+        If Updating OrElse Not IsHandleCr Then Exit Sub
+        Static RtbCmdFont As Font = rtbCommandLine.Font
         Dim allowSTask = Task.Run(Sub() 'Run only last Event, ignore earlier
                                       If Updating Then Exit Sub
                                       SyncLock SLock
+                                          If Updating OrElse Not IsHandleCr Then Exit Sub
                                           Updating = True
                                           Thread.Sleep(10)
-                                          Updating = False
                                       End SyncLock
-                                      If IsHandleC Then BeginInvoke(Sub() UpdateControlsA())
+                                      Updating = False
+
+                                      Dim rtbTxt As String
+                                      Dim rtbSHeightT As Task(Of Integer) = Task.Run(Function()
+                                                                                         Dim SSW222 As New Stopwatch
+                                                                                         SSW222.Restart()
+
+                                                                                         rtbTxt = TempProfile.GetCommandLine(False)
+
+                                                                                         SSW222.Stop()
+                                                                                         TT222 = CStr(SSW222.ElapsedTicks / SWFreq) & "msCT/"
+                                                                                         SSW222.Restart()
+
+                                                                                         If Not RtbCmdFont.Equals(rtbCommandLine.Font) Then Console.Beep(700, 200)
+                                                                                         Dim ret As Integer = TextRenderer.MeasureText(rtbTxt, RtbCmdFont, New Size(rtbCommandLine.Width, 100000), TextFormatFlags.WordBreak).Height + 1
+
+                                                                                         SSW222.Stop()
+                                                                                         TT222 &= CStr(SSW222.ElapsedTicks / SWFreq) & "msMT| "
+
+                                                                                         Return ret
+                                                                                     End Function)
+
+                                      If IsHandleCr Then BeginInvoke(Sub() UpdateControlsA(rtbTxt, rtbSHeightT))
                                   End Sub)
         Dim aTCont = allowSTask.ContinueWith(Sub() If allowSTask.Exception IsNot Nothing Then Throw New AggregateException(allowSTask.Exception)) 'Debug
     End Sub
 
-    Sub UpdateControlsA()
-        If Not IsHandleC Then Exit Sub
+    Sub UpdateControlsA(ByRef rtbTxt As String, rtbSHeightT As Task(Of Integer))
+        If Not IsHandleCr Then Exit Sub
 
-        Dim TT222 As String
         Dim TT111 As String
         Dim SSW111 As New Stopwatch
         SSW111.Restart()
 
-        Dim rtbTxt As String
-        Dim rtbSHeightT As Task(Of Integer) = Task.Run(Function()
-                                                           Dim SSW222 As New Stopwatch
-                                                           SSW222.Restart()
 
-                                                           rtbTxt = TempProfile.GetCommandLine(False)
-
-                                                           SSW222.Stop()
-                                                           TT222 = CStr(SSW222.ElapsedTicks / SWFreq) & "msCT/"
-                                                           SSW222.Restart()
-
-                                                           Dim ret As Integer = TextRenderer.MeasureText(rtbTxt, RtbCmdFont, New Size(rtbCommandLine.Width, 100000), TextFormatFlags.WordBreak).Height + 1
-
-                                                           SSW222.Stop()
-                                                           TT222 &= CStr(SSW222.ElapsedTicks / SWFreq) & "msMT| "
-
-                                                           Return ret
-                                                       End Function)
         SSW111.Stop()
         TT111 = $"{SSW111.ElapsedTicks / SWFreq}msBI| "
         SSW111.Restart()
@@ -894,8 +885,9 @@ Public Class AudioForm
         TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msRTxtL:{rtbTxt.Length},{rtbSHeightT.Status}| "
         SSW111.Restart()
 
+
         rtbCommandLine.SetText(rtbTxt)
-        rtbCommandLine.UpdateHeight()
+        'rtbCommandLine.UpdateHeightAsync()
 
         'Dim sh As Integer = (rtbTxt.Length \ 88 + 1) * 16 + 2
         'Dim rh = rtbCommandLine.Height + 1
@@ -908,10 +900,15 @@ Public Class AudioForm
 
         Dim rtbSHeightRes = rtbSHeightT.Result
         SSW111.Stop()
-        TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msMH/myH:{rtbSHeightRes}/{my_sh}"
-        Text = TT222 & TT111
+        TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msMH/myH:{rtbSHeightRes}/{my_sh}| "
+        SSW111.Restart()
 
         rtbCommandLine.Height = rtbSHeightRes
+
+        SSW111.Stop()
+        TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msFinH"
+        Text = TT222 & TT111
+
 
         'Text = t.Length.ToInvariantString & "stringl|h:" & rtbCommandLine.Height & "|CalH:" & sh
     End Sub
@@ -1017,9 +1014,6 @@ Public Class AudioForm
         Select Case Channels
             Case 1, 2, 6 To 8
                 'Dim channV = [Enum](Of ChannelsMode).Parse("_" & Channels) 'If Enum No Assign is working this is redundant
-                'TempProfile.Params.ChannelsMode = channV
-                'mbChannels.Value = channV
-                'Dim channV = CType(Channels, ChannelsMode)
                 Dim channV As ChannelsMode = DirectCast(Channels, ChannelsMode) 'ctype
                 TempProfile.Params.ChannelsMode = channV
                 mbChannels.Value = channV
@@ -1070,6 +1064,40 @@ Public Class AudioForm
         numQuality.Value = value
     End Sub
 
+    Sub SimpleUIValueChanged()
+        SimpleUI.Save()
+        UpdateControls()
+    End Sub
+
+    Sub UpdateBitrate()
+        nudQuality_ValueChanged(numQuality)
+    End Sub
+
+    Sub nudQuality_ValueChanged(numEdit As NumEdit) Handles numQuality.ValueChanged
+        If Not TempProfile Is Nothing Then
+            TempProfile.Params.Quality = CSng(numQuality.Value)
+            numBitrate.Value = TempProfile.GetBitrate
+            UpdateControls()
+        End If
+    End Sub
+
+    Sub nudBitrate_ValueChanged(numEdit As NumEdit) Handles numBitrate.ValueChanged
+        If Not TempProfile Is Nothing Then
+            TempProfile.Bitrate = CSng(numBitrate.Value)
+            UpdateControls()
+        End If
+    End Sub
+
+    Sub nudDelay_ValueChanged(numEdit As NumEdit) Handles numDelay.ValueChanged
+        TempProfile.Delay = CInt(numDelay.Value)
+        UpdateControls()
+    End Sub
+
+    Sub numGain_ValueChanged(numEdit As NumEdit) Handles numGain.ValueChanged
+        TempProfile.Gain = Math.Round(numGain.Value, 1)
+        UpdateControls()
+    End Sub
+
     Sub mbSamplingRate_ValueChanged() Handles mbSamplingRate.ValueChangedUser
         TempProfile.Params.SamplingRate = mbSamplingRate.GetValue(Of Integer)()
         UpdateBitrate()
@@ -1086,59 +1114,60 @@ Public Class AudioForm
         TempProfile.Name = tbProfileName.Text
         UpdateControls()
     End Sub
+    Sub nudBitrate_KeyUp(sender As Object, e As KeyEventArgs) Handles numBitrate.KeyUp
+        Try
+            Dim v = CInt(numBitrate.Text)
 
-    Sub SaveProfile()
-        TempProfile.DefaultnameValue = Nothing
-        Dim gap = TempProfile.GetDeepClone
-        Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
-
-        If name.NotNullOrEmptyS Then
-            gap.Name = name
-            s.AudioProfiles.Add(gap)
-            MsgInfo("The profile was saved.")
-        End If
+            If v Mod 16 = 0 Then
+                numBitrate.Value = v
+            End If
+        Catch
+        End Try
     End Sub
 
-    Sub LoadProfile(gap As GUIAudioProfile)
-        gap.DefaultnameValue = Nothing
-        Profile = gap
-        TempProfile = gap.GetDeepClone
-        LoadProfile()
+    Sub nudQuality_KeyUp(sender As Object, e As KeyEventArgs) Handles numQuality.KeyUp
+        Try
+            Dim v = CInt(numQuality.Text)
+            numQuality.Value = v
+        Catch
+        End Try
     End Sub
 
-    Sub LoadProfile()
-        If TempProfile.Name <> TempProfile.DefaultName Then
-            tbProfileName.Text = TempProfile.Name
-        End If
-
-        tbProfileName.SendMessageCue(TempProfile.Name, False)
-
-        tbCustom.Text = TempProfile.Params.CustomSwitches
-        tbStreamName.Text = TempProfile.StreamName
-
-        cbDefaultTrack.Checked = TempProfile.Default
-        cbForcedTrack.Checked = TempProfile.Forced
-        cbNormalize.Checked = TempProfile.Params.Normalize
-
-        mbCodec.Value = TempProfile.Params.Codec
-        mbChannels.Value = TempProfile.Params.ChannelsMode
-        mbLanguage.Value = TempProfile.Language
-        mbSamplingRate.Value = TempProfile.Params.SamplingRate
-        mbEncoder.Value = TempProfile.Params.Encoder
-        mbDecoder.Value = TempProfile.Decoder
-
-        SetQuality(TempProfile.Params.Quality)
-
-        numBitrate.Value = TempProfile.Bitrate
-        numDelay.Value = TempProfile.Delay
-        numGain.Value = TempProfile.Gain
-
-        LoadAdvanced()
-        'UpdateControlsA()  TempProfile.GetCommandLine(False) 'set encoder
+    Sub tbStreamName_TextChanged(sender As Object, e As EventArgs) Handles tbStreamName.TextChanged
+        TempProfile.StreamName = tbStreamName.Text
     End Sub
 
-    Sub SetBitrate(v As Integer)
-        numBitrate.Value = v
+    Sub tbCustom_TextChanged(sender As Object, e As EventArgs) Handles tbCustom.TextChanged
+        TempProfile.Params.CustomSwitches = tbCustom.Text
+        UpdateControls()
+    End Sub
+
+    Sub cbDefaultTrack_CheckedChanged(sender As Object, e As EventArgs) Handles cbDefaultTrack.CheckedChanged
+        TempProfile.Default = cbDefaultTrack.Checked
+    End Sub
+
+    Sub cbForcedTrack_CheckedChanged(sender As Object, e As EventArgs) Handles cbForcedTrack.CheckedChanged
+        TempProfile.Forced = cbForcedTrack.Checked
+    End Sub
+    Sub cbNormalize_CheckedChanged(sender As Object, e As EventArgs) Handles cbNormalize.CheckedChanged
+        TempProfile.Params.Normalize = cbNormalize.Checked
+        UpdateControls()
+    End Sub
+
+    Sub mbEncoder_ValueChangedUser(value As Object) Handles mbEncoder.ValueChangedUser
+        TempProfile.Params.Encoder = mbEncoder.GetValue(Of GuiAudioEncoder)()
+        mbCodec_ValueChangedUser()
+    End Sub
+
+    Sub mbChannels_ValueChanged(value As Object) Handles mbChannels.ValueChangedUser
+        TempProfile.Params.ChannelsMode = mbChannels.GetValue(Of ChannelsMode)()
+        UpdateBitrate()
+        UpdateControls()
+    End Sub
+
+    Sub mbConvertMode_ValueChangedUser(value As Object) Handles mbDecoder.ValueChangedUser
+        TempProfile.Decoder = mbDecoder.GetValue(Of AudioDecoderMode)()
+        UpdateControls()
     End Sub
 
     Private NumFFLFEMixLevel As SimpleUI.NumBlock
@@ -1150,6 +1179,7 @@ Public Class AudioForm
     Private MbCompressionLevelH As NumEdit.ValueChangedEventHandler
     Private MbWavPackMode As SimpleUI.MenuBlock(Of Integer)
     Private MbWavPackModeH As MenuButton.ValueChangedUserEventHandler
+
     Sub LoadAdvanced()
         RemoveHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
 
@@ -1179,26 +1209,24 @@ Public Class AudioForm
         End If
 
         Dim ui = SimpleUI
-
         ui.SaveValEventsHLRemove()
-
         ui.Store = TempProfile.Params
-        ui.Host.Controls.Clear()
 
-        If ui.ActivePage IsNot Nothing Then
-            DirectCast(ui.ActivePage, Control).Dispose()
-        End If
-
-        ui.Pages.Clear()
-
-        Dim page = ui.CreateFlowPage(autoSuspend:=True)
-
-        'page.SuspendLayout()
+        ui.Tree.BeginUpdate()
         ui.Host.SuspendLayout()
         ui.SuspendLayout()
         tlpAdvanced.SuspendLayout()
         tlpMain.SuspendLayout()
+
+        ui.Host.Controls.Clear()
+        If ui.ActivePage IsNot Nothing Then
+            DirectCast(ui.ActivePage, Control).Dispose()
+        End If
+        ui.Pages.Clear()
+
         ui.SaveValEventsHLCreate(8)
+        Dim page = ui.CreateFlowPage(autoSuspend:=True)
+        'page.SuspendLayout()
 
         If TempProfile.Params.Encoder <> GuiAudioEncoder.eac3to Then
             NumFFLFEMixLevel = ui.AddNum(page)
@@ -1224,7 +1252,7 @@ Public Class AudioForm
             mDepth.Button.SaveAction = Sub(val)
                                            If TempProfile.IntegerCodec() Then TempProfile.Depth = val
                                            UpdateBitrate()
-                                           UpdateControls()
+                                           'UpdateControls()
                                        End Sub
         End If
 
@@ -1252,7 +1280,7 @@ Public Class AudioForm
                     cb.Checked = TempProfile.ExtractDTSCore
                     cb.SaveAction = Sub(value)
                                         TempProfile.ExtractDTSCore = value
-                                        UpdateControls()
+                                        'UpdateControls()
                                     End Sub
                 End If
             Case GuiAudioEncoder.ffmpeg
@@ -1377,7 +1405,7 @@ Public Class AudioForm
                             cb.Checked = TempProfile.ExtractDTSCore
                             cb.SaveAction = Sub(value)
                                                 TempProfile.ExtractDTSCore = value
-                                                UpdateControls()
+                                                'UpdateControls()
                                             End Sub
                         End If
                 End Select
@@ -1513,7 +1541,7 @@ Public Class AudioForm
                                     TempProfile.Params.qaacRateMode = 1
                                     'TempProfile.Params.RateMode = AudioRateMode.CBR
                                     Dim c21 As Double = If(TempProfile.Channels > 0, TempProfile.Channels * 64 / 2, 160)
-                                    SetBitrate(CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
+                                    numBitrate.Value = (CInt(If(TempProfile.Channels > 2, TempProfile.Channels * 64 / 2 - 32, c21)))
                                 End If
                             End Sub
                 AddHandler CbQaacHE.CheckedChanged, CbQaacHEH
@@ -1583,7 +1611,7 @@ Public Class AudioForm
                 MbWavPackModeH = Sub()
                                      If MbWavPackMode.Button.Value = 1 Then
                                          TempProfile.Params.WavPackMode = 1
-                                         SetBitrate(CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
+                                         numBitrate.Value = (CInt(If(TempProfile.Channels = 2, TempProfile.Channels * 384 / 2, TempProfile.Channels * 320 / 2)))
                                          cbCreateCorrectionWVC.Enabled = True
                                      Else
                                          'cbCreateCorrectionWVC.Checked = False
@@ -1654,96 +1682,18 @@ Public Class AudioForm
         End Select
         AddHandler SimpleUI.ValueChanged, AddressOf SimpleUIValueChanged
         'page.ResumeLayout(False)
-        ui.Host.ResumeLayout(False)
+        ui.Host.ResumeLayout()
         ui.ResumeLayout(False)
         tlpAdvanced.ResumeLayout(False)
         tlpMain.ResumeLayout(False)
+        ui.Tree.EndUpdate()
+
         'Runtime.GCSettings.LargeObjectHeapCompactionMode = Runtime.GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
         'GC.Collect(2, GCCollectionMode.Forced, True, True)
         'GC.WaitForPendingFinalizers()
         'Runtime.GCSettings.LargeObjectHeapCompactionMode = Runtime.GCLargeObjectHeapCompactionMode.CompactOnce
         'GC.Collect(2, GCCollectionMode.Forced, True, True)
         'GC.WaitForPendingFinalizers()
-    End Sub
-
-    Sub nudBitrate_KeyUp(sender As Object, e As KeyEventArgs) Handles numBitrate.KeyUp
-        Try
-            Dim v = CInt(numBitrate.Text)
-
-            If v Mod 16 = 0 Then
-                numBitrate.Value = v
-            End If
-        Catch
-        End Try
-    End Sub
-
-    Sub nudQuality_KeyUp(sender As Object, e As KeyEventArgs) Handles numQuality.KeyUp
-        Try
-            Dim v = CInt(numQuality.Text)
-            numQuality.Value = v
-        Catch
-        End Try
-    End Sub
-
-    Sub Execute()
-        If TempProfile.File.NotNullOrEmptyS Then
-            If Not TempProfile.IsInputSupported AndAlso Not TempProfile.DecodingMode = AudioDecodingMode.Pipe Then
-                MsgWarn("The input format isn't supported by the current encoder," + BR + "convert to WAV or WV first or enable piping in the options.")
-            Else
-                Dim pr As New Process
-                pr.StartInfo.FileName = "cmd.exe"
-                pr.StartInfo.Arguments = "/S /K """ + TempProfile.GetCommandLine(True) + """"
-                pr.StartInfo.UseShellExecute = False
-                Proc.SetEnvironmentVariables(pr)
-                pr.Start()
-            End If
-        Else
-            MsgWarn("Source file is missing!")
-        End If
-    End Sub
-
-    Sub tbStreamName_TextChanged(sender As Object, e As EventArgs) Handles tbStreamName.TextChanged
-        TempProfile.StreamName = tbStreamName.Text
-    End Sub
-
-    Sub tbCustom_TextChanged(sender As Object, e As EventArgs) Handles tbCustom.TextChanged
-        TempProfile.Params.CustomSwitches = tbCustom.Text
-        UpdateControls()
-    End Sub
-
-    Sub cbDefaultTrack_CheckedChanged(sender As Object, e As EventArgs) Handles cbDefaultTrack.CheckedChanged
-        TempProfile.Default = cbDefaultTrack.Checked
-    End Sub
-
-    Sub cbForcedTrack_CheckedChanged(sender As Object, e As EventArgs) Handles cbForcedTrack.CheckedChanged
-        TempProfile.Forced = cbForcedTrack.Checked
-    End Sub
-    Sub cbNormalize_CheckedChanged(sender As Object, e As EventArgs) Handles cbNormalize.CheckedChanged
-        TempProfile.Params.Normalize = cbNormalize.Checked
-        UpdateControls()
-    End Sub
-
-    Sub mbEncoder_ValueChangedUser(value As Object) Handles mbEncoder.ValueChangedUser
-        TempProfile.Params.Encoder = mbEncoder.GetValue(Of GuiAudioEncoder)()
-        mbCodec_ValueChangedUser()
-    End Sub
-
-    Sub ShowHelp()
-        Dim form As New HelpForm()
-        form.Doc.WriteStart(Text)
-        form.Doc.WriteTips(TipProvider.GetTips, SimpleUI.ActivePage.TipProvider.GetTips)
-        form.Show()
-    End Sub
-
-    Sub mbChannels_ValueChanged(value As Object) Handles mbChannels.ValueChangedUser
-        TempProfile.Params.ChannelsMode = mbChannels.GetValue(Of ChannelsMode)()
-        UpdateBitrate()
-        UpdateControls()
-    End Sub
-
-    Sub mbConvertMode_ValueChangedUser(value As Object) Handles mbDecoder.ValueChangedUser
-        TempProfile.Decoder = mbDecoder.GetValue(Of AudioDecoderMode)()
-        UpdateControls()
     End Sub
 
     Sub bnAdvanced_Click(sender As Object, e As EventArgs) Handles bnAdvanced.Click
@@ -1879,5 +1829,46 @@ Public Class AudioForm
             UpdateControls()
             ui.SaveLast("last adv audio page")
         End Using
+    End Sub
+
+    Sub SaveProfile()
+        TempProfile.DefaultnameValue = Nothing
+        Dim gap = TempProfile.GetDeepClone
+        Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
+
+        If name.NotNullOrEmptyS Then
+            gap.Name = name
+            s.AudioProfiles.Add(gap)
+            MsgInfo("The profile was saved.")
+        End If
+    End Sub
+
+    Sub Execute()
+        If TempProfile.File.NotNullOrEmptyS Then
+            If Not TempProfile.IsInputSupported AndAlso Not TempProfile.DecodingMode = AudioDecodingMode.Pipe Then
+                MsgWarn("The input format isn't supported by the current encoder," + BR + "convert to WAV or WV first or enable piping in the options.")
+            Else
+                Dim pr As New Process
+                pr.StartInfo.FileName = "cmd.exe"
+                pr.StartInfo.Arguments = "/S /K """ + TempProfile.GetCommandLine(True) + """"
+                pr.StartInfo.UseShellExecute = False
+                Proc.SetEnvironmentVariables(pr)
+                pr.Start()
+            End If
+        Else
+            MsgWarn("Source file is missing!")
+        End If
+    End Sub
+
+    Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)
+        hevent.Handled = True
+        ShowHelp()
+        MyBase.OnHelpRequested(hevent)
+    End Sub
+    Sub ShowHelp()
+        Dim form As New HelpForm()
+        form.Doc.WriteStart(Text)
+        form.Doc.WriteTips(TipProvider.GetTips, SimpleUI.ActivePage.TipProvider.GetTips)
+        form.Show()
     End Sub
 End Class

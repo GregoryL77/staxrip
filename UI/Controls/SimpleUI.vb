@@ -7,7 +7,6 @@ Public Class SimpleUI
     Inherits Control
 
     Public WithEvents Tree As New TreeViewEx
-
     Property Host As New Panel
 
     Public Event SaveValues()
@@ -25,7 +24,7 @@ Public Class SimpleUI
         Tree.BeginUpdate()
         Host.SuspendLayout() 'Test This !!! TODO :
         SuspendLayout()
-        'Parent.SuspendLayout() No Parent Here ??? no good idea?
+        'Parent?.SuspendLayout() No Parent Here ??? no good idea? in simplesettform is suspend
 
         InitControls()
         SetStyle(ControlStyles.SupportsTransparentBackColor, True)
@@ -64,7 +63,7 @@ Public Class SimpleUI
             AddHandler fF.Load, eh
 
             Host.ResumeLayout(False) 'Test This !!! TODO :
-            ResumeLayout()
+            ResumeLayout(False)
             Tree.EndUpdate()
             'Parent.ResumeLayout(False) 'No way ???
 
@@ -72,6 +71,10 @@ Public Class SimpleUI
     End Sub
 
     Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
+        Tree.BeginUpdate() 'ToDo Test this, Seems double Susp + in New contructor!!!
+        Host.SuspendLayout()
+        SuspendLayout()
+
         Tree.Location = Point.Empty
         Dim fh As Integer = FontHeight
 
@@ -85,6 +88,9 @@ Public Class SimpleUI
         Host.Size = New Size(Width - Tree.Width - CInt(fh / 3), Height)
 
         MyBase.OnLayout(levent)
+        Tree.EndUpdate()
+        Host.ResumeLayout(False) 'ToDo Test this!!!
+        ResumeLayout(False)
     End Sub
 
     Sub Save()
@@ -98,7 +104,6 @@ Public Class SimpleUI
     Sub Tree_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles Tree.AfterSelect
         Dim node = e.Node
 
-        Tree.BeginUpdate() 'Test this
         For Each i In Pages
             If i.Node IsNot node Then
                 DirectCast(i, Control).Visible = False
@@ -128,7 +133,6 @@ Public Class SimpleUI
                 Tree.SelectedNode = node.Nodes(0)
             End If
         End If
-        Tree.EndUpdate()
     End Sub
 
     Sub ShowPage(pagePath As String)

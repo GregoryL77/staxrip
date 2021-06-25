@@ -181,7 +181,7 @@ Public Class AudioConverterForm
         Me.laAC.CausesValidation = False
         Me.tlpMain.SetColumnSpan(Me.laAC, 3)
         Me.laAC.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.laAC.Font = New System.Drawing.Font("Segoe UI", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.laAC.Font = New System.Drawing.Font("Segoe UI", 11.25!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0)
         Me.laAC.Location = New System.Drawing.Point(48, 365)
         Me.laAC.Margin = New System.Windows.Forms.Padding(0, 2, 0, 2)
         Me.laAC.Name = "laAC"
@@ -198,7 +198,7 @@ Public Class AudioConverterForm
         Me.BnSort.Dock = System.Windows.Forms.DockStyle.Fill
         Me.BnSort.FlatAppearance.BorderSize = 0
         Me.BnSort.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.BnSort.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(75, Byte), Integer), CType(CType(255, Byte), Integer))
+        Me.BnSort.ForeColor = System.Drawing.Color.FromArgb(0, 75, 255)
         Me.BnSort.Location = New System.Drawing.Point(4, 364)
         Me.BnSort.Margin = New System.Windows.Forms.Padding(4, 1, 4, 0)
         Me.BnSort.Name = "BnSort"
@@ -213,7 +213,7 @@ Public Class AudioConverterForm
         Me.BnFindNext.CausesValidation = False
         Me.BnFindNext.Dock = System.Windows.Forms.DockStyle.Fill
         Me.BnFindNext.Enabled = False
-        Me.BnFindNext.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(120, Byte), Integer), CType(CType(215, Byte), Integer))
+        Me.BnFindNext.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(0, 120, 215)
         Me.BnFindNext.FlatAppearance.BorderSize = 0
         Me.BnFindNext.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         Me.BnFindNext.Location = New System.Drawing.Point(560, 364)
@@ -945,7 +945,7 @@ Again: 'Debug StopWatch Use
         End If
     End Sub
     Private Sub TBFind_TextChanged(sender As Object, e As EventArgs)
-        If TBFindIdx > -2 AndAlso AudioCL.Count > 0 AndAlso TBFind.Text IsNot "" Then
+        If TBFindIdx > -2 AndAlso AudioCL.Count > 0 AndAlso TBFind.TextLength > 0 Then
             TBFindIdx = -1
             FindTextFile(TBFind.Text, False)
         Else
@@ -962,7 +962,7 @@ Again: 'Debug StopWatch Use
             TBFind.ForeColor = Color.Black
             TBFind.Clear()
             TBFindIdx = -1
-        ElseIf TBFind.Text IsNot "" Then
+        ElseIf TBFind.TextLength > 0 Then
             BeginInvoke(Sub() TBFind.SelectAll())
             BnFindNext.Enabled = True
             AcceptButton = BnFindNext
@@ -970,7 +970,7 @@ Again: 'Debug StopWatch Use
     End Sub
 
     Private Sub TBFind_Leave(sender As Object, e As EventArgs) Handles TBFind.Leave
-        If TBFind.Text Is "" Then
+        If TBFind.TextLength = 0 Then
             TBFindIdx = -2
             TBFind.ForeColor = Color.Gray
             TBFind.Text = " search... "
@@ -986,7 +986,7 @@ Again: 'Debug StopWatch Use
     End Sub
 
     Private Sub BnFindNext_Click(sender As Object, e As EventArgs) Handles BnFindNext.Click
-        If TBFindIdx >= 0 AndAlso TBFind.Text IsNot "" Then
+        If TBFindIdx >= 0 AndAlso TBFind.TextLength > 0 Then
             TBFindIdx += 1
             FindTextFile(TBFind.Text, My.Computer.Keyboard.ShiftKeyDown OrElse MouseButtons = MouseButtons.Right)
         End If

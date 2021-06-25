@@ -34,7 +34,7 @@ Partial Class CodeEditor
         Me.MainFlowLayoutPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown
         Me.MainFlowLayoutPanel.Location = New System.Drawing.Point(0, 0)
         Me.MainFlowLayoutPanel.Margin = New System.Windows.Forms.Padding(0, 0, 0, 25)
-        Me.MainFlowLayoutPanel.MinimumSize = New System.Drawing.Size(304, 60)
+        Me.MainFlowLayoutPanel.MinimumSize = New System.Drawing.Size(312, 60)
         Me.MainFlowLayoutPanel.Name = "MainFlowLayoutPanel"
         Me.MainFlowLayoutPanel.Padding = New System.Windows.Forms.Padding(4, 2, 2, 2)
         Me.MainFlowLayoutPanel.Size = New System.Drawing.Size(304, 60)
@@ -75,6 +75,6 @@ Partial Class CodeEditor
     Friend WithEvents bnOK As StaxRip.UI.ButtonEx
     Friend WithEvents MainFlowLayoutPanel As System.Windows.Forms.FlowLayoutPanel
 End Class
-'Me.MinimumSize = New System.Drawing.Size(321, 127) 'Overrided
+'Me.MinimumSize = New System.Drawing.Size(329, 127) 'Overrided
 'Me.Padding = New System.Windows.Forms.Padding(0, 0, 1, 3) 'Overrided
 

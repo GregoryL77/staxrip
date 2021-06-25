@@ -205,7 +205,7 @@ Namespace UI
             For Each i As ToolStripMenuItemEx In MenuItems
                 Dim help = i.GetHelp
 
-                If Not help Is Nothing Then
+                If help IsNot Nothing Then
                     ret.Add(help)
                 End If
             Next
@@ -743,7 +743,10 @@ Namespace UI
             Return LayoutSuspendList
         End Function
         Shared Sub ClearAdd2RangeList()
-            LayoutSuspendList = Nothing
+            If LayoutSuspendList IsNot Nothing Then
+                LayoutSuspendList.Clear()
+                LayoutSuspendList = Nothing
+            End If
         End Sub
 
     End Class
@@ -770,12 +773,7 @@ Namespace UI
             Return value
         End Function
 
-        Shared Function GetMenu(
-            definition As String,
-            owner As Control,
-            components As IContainer,
-            action As Action(Of String)) As ContextMenuStripEx
-
+        Shared Function GetMenu(definition As String, owner As Control, components As IContainer, action As Action(Of String)) As ContextMenuStripEx
             If owner.ContextMenuStrip Is Nothing Then
                 owner.ContextMenuStrip = New ContextMenuStripEx(components)
             End If
@@ -786,7 +784,7 @@ Namespace UI
 
             For Each i In definition.SplitKeepEmpty(BR)
                 Dim ir As String = i.Right("=")
-                If ir IsNot "" Then
+                If ir.Length > 0 Then
                     ActionMenuItem.Add(ret.Items, i.Left("=").Trim, action, ir.Trim, Nothing)
                 ElseIf i.EndsWith("-", StringComparison.Ordinal) Then
                     ActionMenuItem.Add(ret.Items, i)

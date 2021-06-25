@@ -456,7 +456,7 @@ Module StringExtensions
                 End Select
             End If
         Next i
-        Return SeparatorD ' If(instance isnot "", SeparatorD, "")
+        Return SeparatorD ' If(instance.Length > 0, SeparatorD, "")
     End Function
 
     <Extension()>
@@ -763,10 +763,11 @@ Module StringExtensions
         Dim ret As New List(Of String)(a.Length)
 
         For i = 0 To a.Length - 1
-            a(i) = a(i).Trim
+            Dim ss As String = a(i)
+            ss = ss.Trim
 
-            If a(i) IsNot "" Then
-                ret.Add(a(i))
+            If ss.Length > 0 Then
+                ret.Add(ss)
             End If
         Next
 
@@ -1135,7 +1136,7 @@ Module RegistryKeyExtensions
     <Extension()>
     Sub DeleteValue(root As RegistryKey, path As String, name As String)
         Using key = root.OpenSubKey(path, True)
-            If Not key Is Nothing Then
+            If key IsNot Nothing Then
                 key.DeleteValue(name, False)
             End If
         End Using
@@ -1145,7 +1146,7 @@ End Module
 Module ControlExtension
     <Extension()>
     Sub ScaleClientSize(instance As Control, width As Single, height As Single, Optional fontHeightC As Integer = -1)
-        If fontHeightC < 0 Then fontHeightC = instance.Font.Height
+        If fontHeightC <= 0 Then fontHeightC = If(s.UIScaleFactor = 1, 16, instance.Font.Height)
         instance.ClientSize = New Size(CInt(fontHeightC * width), CInt(fontHeightC * height))
     End Sub
 

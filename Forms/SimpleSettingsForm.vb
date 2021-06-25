@@ -48,7 +48,6 @@ Public Class SimpleSettingsForm
         Me.SimpleUI.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.SimpleUI.FormSizeScaleFactor = New System.Drawing.SizeF(0!, 0!)
         Me.SimpleUI.Location = New System.Drawing.Point(5, 5)
         Me.SimpleUI.Margin = New System.Windows.Forms.Padding(5, 5, 5, 0)
         Me.SimpleUI.Name = "SimpleUI"

@@ -232,9 +232,10 @@ Public Class MacroEditorControl
         MyBase.New()
         InitializeComponent()
         rtbEdit.EnableAutoDragDrop = True
-        rtbEdit.Font = New Font("Consolas", 10 * s.UIScaleFactor)
-        rtbPreview.Font = rtbEdit.Font
-        rtbDefaults.Font = rtbEdit.Font
+        Dim fc As New Font("Consolas", 10 * s.UIScaleFactor)
+        rtbEdit.Font = fc
+        rtbPreview.Font = fc
+        rtbDefaults.Font = fc
         Dim col = ControlPaint.Dark(ToolStripRendererEx.ColorBorder, 0)
         llHelp.LinkColor = col
         llMacros.LinkColor = col

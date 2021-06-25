@@ -660,12 +660,11 @@ Namespace UI
                                             Dim m1LAlphSag(24) As ToolStripMenuItemEx
                                             'Dim m2LLSag As New List(Of List(Of ActionMenuItem))(26)
                                             Dim m2LLSag(24) As List(Of ActionMenuItem)
-                                            Dim enumS As Symbol() = EnumSag
 
-                                            For i = 0 To enumS.Length - 1
+                                            For i = 0 To EnumSag.Length - 1
                                                 Dim inc As Integer
                                                 Dim nM2LSag As List(Of ActionMenuItem)
-                                                Dim symb = enumS(i)
+                                                Dim symb = EnumSag(i)
                                                 Dim sName As String = [Enum](Of Symbol).GetName(symb)
                                                 Dim lastCh As Char
                                                 Dim c1 As Char = CChar(sName.Substring(0, 1).ToUpperInvariant)
@@ -685,12 +684,11 @@ Namespace UI
                                             Dim m1LAlphAwe(25) As ToolStripMenuItemEx
                                             'Dim m2LLAwe As New List(Of List(Of ActionMenuItem))(26)
                                             Dim m2LLAwe(25) As List(Of ActionMenuItem)
-                                            enumS = EnumAwe
 
-                                            For i = 0 To enumS.Length - 1
+                                            For i = 0 To EnumAwe.Length - 1
                                                 Dim inc As Integer
                                                 Dim nMm2LAwe As List(Of ActionMenuItem)
-                                                Dim symb = enumS(i)
+                                                Dim symb = EnumAwe(i)
                                                 Dim sName As String = [Enum](Of Symbol).GetName(symb)
                                                 Dim lastCh As Char
                                                 Dim c1 As Char = CChar(sName.Substring(3, 1).ToUpperInvariant)
@@ -733,13 +731,17 @@ Namespace UI
                                                 cmsSymbol.ResumeLayout(False)
                                             End If
 
-                                            Erase EnumSag, EnumAwe, esv
+                                            Erase EnumSag, EnumAwe, esv, ImgEnumA
                                             EAweImgsT.Dispose()
                                             ESagImgsT.Dispose()
                                             EAweImgsT = Nothing
                                             ESagImgsT = Nothing
-                                            [Enum](Of Symbol).ClearCaches()
-                                            GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+                                            Task.Run(Sub()
+                                                         [Enum](Of Symbol).ClearCaches()
+                                                         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+                                                         GC.Collect(2, GCCollectionMode.Forced, True, True)
+                                                         GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce
+                                                     End Sub)
                                         End Sub)
                             Exit Sub
                         End If

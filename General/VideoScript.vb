@@ -585,8 +585,10 @@ clipname.set_output()
                     Filters = GetDefaults(0).Filters
                 End If
 
+                UI.ActionMenuItem.ClearAdd2RangeList()
                 Return DialogResult.OK
             End If
+            UI.ActionMenuItem.ClearAdd2RangeList()
         End Using
 
         Return DialogResult.Cancel
@@ -673,7 +675,7 @@ Public Class VideoFilter
         Get
             If Path.Contains("|") Then
                 'im prl = Path.RightLast("|") 'rare use
-                'If prl IsNot "" Then
+                'If prl.Length > 0 Then
                 'Return prl.Trim
                 Return Path.RightLast("|").Trim
             End If

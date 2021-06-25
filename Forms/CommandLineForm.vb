@@ -1,4 +1,5 @@
 ﻿
+Imports System.ComponentModel
 Imports System.Threading.Tasks
 Imports JM.LinqFaster
 Imports StaxRip.CommandLine
@@ -17,29 +18,28 @@ Public Class CommandLineForm
 
     Sub New(params As CommandLineParams)
         Dim pItC As Integer = params.Items.Count
-        Dim _ckT = Task.Run(Sub()
-                                Items = New List(Of Item)(pItC)
-                                Dim singleList As New HashSet(Of String)(pItC, StringComparer.Ordinal)
-                                For Each param In params.Items
-                                    Dim gk As String = param.GetKey
-                                    If gk.NullOrEmptyS OrElse Not singleList.Add(gk) Then
-                                        Throw New Exception("key found twice: " + gk)
-                                    End If
-                                Next
-                            End Sub)
-
+        Dim ckT = Task.Run(Sub()
+                               Items = New List(Of Item)(pItC)
+                               Dim singleList As New HashSet(Of String)(pItC, StringComparer.Ordinal)
+                               For Each param In params.Items
+                                   Dim gk As String = param.GetKey
+                                   If gk.NullOrEmptyS OrElse Not singleList.Add(gk) Then
+                                       Throw New Exception(pItC & "/" & singleList.Count & "/key found twice: " & gk)
+                                   End If
+                               Next
+                           End Sub)
         InitializeComponent()
         Me.tlpMain.SuspendLayout()
-        Me.tlpRTB.SuspendLayout()
         Me.SuspendLayout()
-        'SimpleUI.ScaleClientSize(44, 34)
-        SimpleUI.ScaleClientSize(46, 34, FontHeight)
+        SimpleUI.ScaleClientSize(48, 34, FontHeight) 'Was: (44, 34)
         Me.Params = params
         Text = params.Title & " (" & pItC.ToInvariantString & " options)"
 
-        rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
-        rtbCommandLine.ContextMenuStrip?.Dispose()
-        rtbCommandLine.ContextMenuStrip = cmsCommandLine
+        MeTextOld = Text 'Debug
+
+        'rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
+        'rtbCommandLine.ContextMenuStrip = cmsCommandLine'inDesigner 
+        'rtbCommandLine.ContextMenuStrip?.Dispose() '- NoInitMenu
 
         cbGoTo.Sorted = False 'true 
         cbGoTo.SendMessageCue("Search")
@@ -59,22 +59,38 @@ Public Class CommandLineForm
           New ActionMenuItem("Help about " + params.GetPackage.Name, Sub() params.GetPackage.ShowHelp(), ImageHelp.GetImageC(Symbol.Help))})
         cms.ResumeLayout(False)
 
+        Try
+            ckT.Wait()
+        Catch ex As AggregateException
+            Throw New Exception(ex.InnerException.ToString, ex.InnerException)
+        End Try
+
         InitUI()
         SelectLastPage()
-        AddHandler params.ValueChanged, AddressOf ValueChanged
-        params.RaiseValueChanged(Nothing)
     End Sub
 
     Protected Overrides Sub OnLoad(args As EventArgs)
         MyBase.OnLoad(args)
-        Threading.Tasks.Task.Run(Sub()
-                                     Threading.Thread.Sleep(60)
-                                     If IsHandleCreated Then BeginInvoke(Sub() UpdateSearchComboBox())
-                                 End Sub)
+        Task.Run(Sub()
+                     IsHandleCr = True
+                     Threading.Thread.Sleep(60)
+                     If IsHandleCr Then
+                         RTBFont = rtbCommandLine.Font
+                         AddHandler Params.ValueChanged, AddressOf ValueChanged
+                         Params.RaiseValueChanged(Nothing)
+                         BeginInvoke(Sub() UpdateSearchComboBox())
+                     End If
+                 End Sub)
+
 
         Me.tlpMain.ResumeLayout(False)
-        Me.tlpRTB.ResumeLayout(False)
         Me.ResumeLayout(False)
+    End Sub
+
+    Protected Overrides Sub OnClosing(e As CancelEventArgs) 'debug
+        IsHandleCr = False
+        Text = MeTextOld
+        MyBase.OnClosing(e)
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
@@ -104,15 +120,50 @@ Public Class CommandLineForm
         SimpleUI.SelectLast(Params.Title + "page selection")
     End Sub
 
+    Private MeTextOld As String 'Debug
+    Private RTBLastH As Integer
+    Private IsHandleCr As Boolean
+    Private RTBFont As Font
+
     Sub ValueChanged(item As CommandLineParam)
-        rtbCommandLine.SetText(Params.GetCommandLine(False, False))
-        rtbCommandLine.SelectionLength = 0
-        If IsHandleCreated Then
-            Task.Run(Sub() BeginInvoke(Sub() rtbCommandLine.UpdateHeight()))
-        Else
-            rtbCommandLine.UpdateHeight()
-        End If
+        'rtbCommandLine.SetText(Params.GetCommandLine(False, False))
+        'rtbCommandLine.SelectionLength = 0
+        Dim rtbTxtT = Task.Run(Function() Params.GetCommandLine(False, False))
+        'Static fnt As New Font("Consolas", 9.75F * s.UIScaleFactor)
         ComboBoxUpdated = False
+        If Not RTBFont.Equals(rtbCommandLine.Font) Then Console.Beep(700, 12)
+        Dim rtbHeightT = Task.Run(Function() TextRenderer.MeasureText(rtbTxtT.Result, RTBFont, New Size(Width - 14, 100000), TextFormatFlags.WordBreak).Height + 1) 'width - margins
+        If IsHandleCr Then
+            Task.Run(Sub() If IsHandleCr Then BeginInvoke(
+                         Sub()
+                             Dim Ssw11 As New Stopwatch 'debug
+                             Dim Tttt1 As String
+                             Tttt1 = rtbTxtT.IsCompleted.ToString
+                             Ssw11.Restart()
+                             rtbCommandLine.SetText(rtbTxtT.Result)
+                             'rtbCommandLine.UpdateHeightAsync()
+                             rtbCommandLine.SelectionLength = 0
+                             Ssw11.Stop()
+                             Tttt1 &= Ssw11.ElapsedTicks / SWFreq & rtbHeightT.IsCompleted.ToString
+                             Ssw11.Restart()
+
+                             Dim mH As Integer = rtbHeightT.Result
+                             If mH - RTBLastH > 12 AndAlso mH < ScreenResPrim.Height * 0.4 Then 'diff > Font.height
+                                 rtbCommandLine.Height = mH
+                             End If
+                             RTBLastH = mH
+
+                             Ssw11.Stop()
+                             Tttt1 &= $"|{Ssw11.ElapsedTicks / SWFreq}ms|H:{mH}"
+                             Me.Text = Tttt1
+                         End Sub))
+        Else
+            rtbCommandLine.SetText(rtbTxtT.Result)
+            'rtbCommandLine.UpdateHeightAsync()
+            rtbCommandLine.SelectionLength = 0
+            rtbCommandLine.Height = rtbHeightT.Result
+            RTBLastH = rtbHeightT.Result
+        End If
         'UpdateSearchComboBox()
     End Sub
 
@@ -344,7 +395,7 @@ Public Class CommandLineForm
         End If
 
         If HighlightedControl IsNot Nothing Then
-            HighlightedControl.Font = New Font(HighlightedControl.Font.FontFamily, HighlightedControl.Font.Size, FontStyle.Regular)
+            HighlightedControl.Font = New Font(HighlightedControl.Font, FontStyle.Regular)
             HighlightedControl = Nothing
         End If
 
@@ -447,7 +498,7 @@ Public Class CommandLineForm
                 Dim matchI As Item = matchedItems.ElementAt(SearchIndex)
                 Dim control = matchI.Control
                 SimpleUI.ShowPage(matchI.Page)
-                control.Font = New Font(control.Font.FontFamily, control.Font.Size, FontStyle.Bold)
+                control.Font = New Font(control.Font, FontStyle.Bold)
                 HighlightedControl = control
                 Exit Sub
             End If
@@ -509,11 +560,9 @@ Public Class CommandLineForm
 
             If find.Length = 0 Then
                 Dim pos = rtbCommandLine.SelectionStart
-                Dim leftString = rtbCommandLine.Text.Substring(0, pos)
-                Dim left = leftString.LastIndexOf(" ", StringComparison.Ordinal) + 1
+                Dim left = rtbCommandLine.Text.Substring(0, pos).LastIndexOf(" ", StringComparison.Ordinal) + 1
                 Dim right = rtbCommandLine.Text.Length
-                Dim rightString = rtbCommandLine.Text.Remove(0, pos)
-                Dim index = rightString.IndexOf(" ", StringComparison.Ordinal)
+                Dim index = rtbCommandLine.Text.Remove(0, pos).IndexOf(" ", StringComparison.Ordinal)
 
                 If index > -1 Then
                     right = pos + index
@@ -529,7 +578,7 @@ Public Class CommandLineForm
                     find = find.Left("=")
                 End If
 
-                cmsIL.Add(New ActionMenuItem("Search " + find, Sub()
+                cmsIL.Add(New ActionMenuItem("Search " & find, Sub()
                                                                    cbGoTo.Text = find
                                                                    cbGoTo.Focus()
                                                                End Sub))

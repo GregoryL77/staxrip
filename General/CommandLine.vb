@@ -173,7 +173,7 @@ Namespace CommandLine
             End If
 
             If HelpSwitch.NotNullOrEmptyS Then
-                Return Text + HelpSwitch
+                Return Text & HelpSwitch
             End If
 
             Return Text
@@ -465,7 +465,7 @@ Namespace CommandLine
 
             If ArgsFunc Is Nothing Then
                 If Value <> DefaultValue OrElse AlwaysOn Then
-                    If Not Values Is Nothing Then
+                    If Values IsNot Nothing Then
                         If Values(Value).StartsWith("--", StringComparison.Ordinal) Then
                             Return Values(Value)
                         ElseIf Switch.NotNullOrEmptyS Then

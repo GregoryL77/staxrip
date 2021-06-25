@@ -652,7 +652,6 @@ Public Class NVEnc
         Protected Overrides Sub OnValueChanged(item As CommandLineParam)
             If NVForm IsNot Nothing Then
                 NVForm.tlpMain.SuspendLayout()
-                NVForm.tlpRTB.SuspendLayout()
                 NVForm.SuspendLayout()
             End If
 
@@ -771,7 +770,6 @@ Public Class NVEnc
             MyBase.OnValueChanged(item)
             If NVForm IsNot Nothing Then
                 NVForm.tlpMain.ResumeLayout()
-                NVForm.tlpRTB.ResumeLayout()
                 NVForm.ResumeLayout()
             End If
         End Sub
@@ -792,7 +790,7 @@ Public Class NVEnc
                     ret += ",prec=" & SmoothPrec.ValueText
                 End If
 
-                If ret IsNot "" Then
+                If ret.Length > 0 Then
                     Return "--vpp-smooth " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-smooth"
@@ -802,72 +800,72 @@ Public Class NVEnc
 
         Function GetColorSpace() As String
             If ColorSpace.Value Then
-                Dim ret = ""
+                Dim ret As String = ""
 
                 If ColorSpaceMatrixIn.Value <> ColorSpaceMatrixIn.DefaultValue AndAlso ColorSpaceMatrixOut.Value <> ColorSpaceMatrixOut.DefaultValue Then
-                    ret += ",matrix=" & ColorSpaceMatrixIn.ValueText & ":" & ColorSpaceMatrixOut.ValueText
+                    ret &= ",matrix=" & ColorSpaceMatrixIn.ValueText & ":" & ColorSpaceMatrixOut.ValueText
                 End If
 
                 If ColorSpaceColorPrimIn.Value <> ColorSpaceColorPrimIn.DefaultValue AndAlso ColorSpaceColorPrimOut.Value <> ColorSpaceColorPrimOut.DefaultValue Then
-                    ret += ",colorprim=" & ColorSpaceColorPrimIn.ValueText & ":" & ColorSpaceColorPrimOut.ValueText
+                    ret &= ",colorprim=" & ColorSpaceColorPrimIn.ValueText & ":" & ColorSpaceColorPrimOut.ValueText
                 End If
 
                 If ColorSpaceTransferIn.Value <> ColorSpaceTransferIn.DefaultValue AndAlso ColorSpaceTransferOut.Value <> ColorSpaceTransferOut.DefaultValue Then
-                    ret += ",transfer=" & ColorSpaceTransferIn.ValueText & ":" & ColorSpaceTransferOut.ValueText
+                    ret &= ",transfer=" & ColorSpaceTransferIn.ValueText & ":" & ColorSpaceTransferOut.ValueText
                 End If
 
                 If ColorSpaceRangeIn.Value <> ColorSpaceRangeIn.DefaultValue AndAlso ColorSpaceRangeOut.Value <> ColorSpaceRangeOut.DefaultValue Then
-                    ret += ",range=" & ColorSpaceRangeIn.ValueText & ":" & ColorSpaceRangeOut.ValueText
+                    ret &= ",range=" & ColorSpaceRangeIn.ValueText & ":" & ColorSpaceRangeOut.ValueText
                 End If
 
                 If ColorSpaceHDR2SDR.Value <> ColorSpaceHDR2SDR.DefaultValue Then
-                    ret += ",hdr2sdr=" & ColorSpaceHDR2SDR.ValueText
+                    ret &= ",hdr2sdr=" & ColorSpaceHDR2SDR.ValueText
                     Select Case ColorSpaceHDR2SDR.ValueText
                         Case = "hable"
                             If ColorSpaceHDRpA.Value <> ColorSpaceHDRpA.DefaultValue Then
-                                ret += ",a=" & ColorSpaceHDRpA.Value.ToInvariantString
+                                ret &= ",a=" & ColorSpaceHDRpA.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRpB.Value <> ColorSpaceHDRpB.DefaultValue Then
-                                ret += ",b=" & ColorSpaceHDRpB.Value.ToInvariantString
+                                ret &= ",b=" & ColorSpaceHDRpB.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRpC.Value <> ColorSpaceHDRpC.DefaultValue Then
-                                ret += ",c=" & ColorSpaceHDRpC.Value.ToInvariantString
+                                ret &= ",c=" & ColorSpaceHDRpC.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRpD.Value <> ColorSpaceHDRpD.DefaultValue Then
-                                ret += ",d=" & ColorSpaceHDRpD.Value.ToInvariantString
+                                ret &= ",d=" & ColorSpaceHDRpD.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRpE.Value <> ColorSpaceHDRpE.DefaultValue Then
-                                ret += ",e=" & ColorSpaceHDRpE.Value.ToInvariantString
+                                ret &= ",e=" & ColorSpaceHDRpE.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRpF.Value <> ColorSpaceHDRpF.DefaultValue Then
-                                ret += ",f=" & ColorSpaceHDRpF.Value.ToInvariantString
+                                ret &= ",f=" & ColorSpaceHDRpF.Value.ToInvariantString
                             End If
                         Case = "mobius"
                             If ColorSpaceHDRTransition.Value <> ColorSpaceHDRTransition.DefaultValue Then
-                                ret += ",transition=" & ColorSpaceHDRTransition.Value.ToInvariantString
+                                ret &= ",transition=" & ColorSpaceHDRTransition.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
-                                ret += ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
+                                ret &= ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
                             End If
                         Case = "reinhard"
                             If ColorSpaceHDRContrast.Value <> ColorSpaceHDRContrast.DefaultValue Then
-                                ret += ",contrast=" & ColorSpaceHDRContrast.Value.ToInvariantString
+                                ret &= ",contrast=" & ColorSpaceHDRContrast.Value.ToInvariantString
                             End If
                             If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
-                                ret += ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
+                                ret &= ",peak=" & ColorSpaceHDRPeak.Value.ToInvariantString
                             End If
                     End Select
                 End If
 
                 If ColorSpaceSourcePeak.Value <> ColorSpaceSourcePeak.DefaultValue Then
-                    ret += ",source_peak=" & ColorSpaceSourcePeak.Value.ToInvariantString
+                    ret &= ",source_peak=" & ColorSpaceSourcePeak.Value.ToInvariantString
                 End If
 
                 If ColorSpaceLDRNits.Value <> ColorSpaceLDRNits.DefaultValue Then
-                    ret += ",ldr_nits=" & ColorSpaceLDRNits.Value.ToInvariantString
+                    ret &= ",ldr_nits=" & ColorSpaceLDRNits.Value.ToInvariantString
                 End If
 
-                If ret IsNot "" Then
+                If ret.Length > 0 Then
                     Return "--vpp-colorspace " + ret.TrimStart(","c).TrimEnd
                 Else
                     Return "--vpp-colorspace"
@@ -893,7 +891,7 @@ Public Class NVEnc
                     ret += ",threshold=" & PmdThreshold.Value
                 End If
 
-                If ret IsNot "" Then
+                If ret.Length > 0 Then
                     Return "--vpp-pmd " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-pmd"
@@ -929,7 +927,7 @@ Public Class NVEnc
                     ret += ",swapuv=true"
                 End If
 
-                If ret IsNot "" Then
+                If ret.Length > 0 Then
                     Return "--vpp-tweak " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-tweak"
@@ -957,7 +955,7 @@ Public Class NVEnc
                     ret += "," & PadBottom.Value
                 End If
 
-                If ret IsNot "" Then
+                If ret.Length > 0 Then
                     Return "--vpp-pad " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-pad "
@@ -985,7 +983,7 @@ Public Class NVEnc
                     ret += ",th_lerp=" & KnnThLerp.Value.ToInvariantString
                 End If
 
-                If ret IsNot "" Then
+                If ret.Length > 0 Then
                     Return "--vpp-knn " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-knn"
@@ -1108,7 +1106,7 @@ Public Class NVEnc
                 ret += ",transpose=true"
             End If
 
-            If ret IsNot "" Then
+            If ret.Length > 0 Then
                 Return ("--vpp-transform " + ret.TrimStart(","c)).TrimEnd
             End If
         End Function

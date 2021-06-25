@@ -6,6 +6,7 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Drawing.Drawing2D
 Imports JM.LinqFaster
+Imports System.Drawing.Text
 
 Namespace UI
     Public Class TreeViewEx
@@ -23,9 +24,10 @@ Namespace UI
         Property SelectOnMouseDown() As Boolean
 
         Protected Overrides Sub OnAfterSelect(e As TreeViewEventArgs)
+            BeginUpdate() 'Test this, looks OK!
             If AutoCollaps Then
                 For Each i As TreeNode In If(e.Node.Parent Is Nothing, Nodes, e.Node.Parent.Nodes)
-                    If Not i Is e.Node Then
+                    If i IsNot e.Node Then
                         i.Collapse()
                     End If
                 Next
@@ -39,13 +41,14 @@ Namespace UI
             End Select
 
             MyBase.OnAfterSelect(e)
+            EndUpdate()
         End Sub
 
         Protected Overrides Sub WndProc(ByRef m As Message)
             If SelectOnMouseDown AndAlso m.Msg = &H201 Then 'WM_LBUTTONDOWN
                 Dim n = GetNodeAt(ClientMousePos)
 
-                If Not n Is Nothing AndAlso n.Nodes.Count = 0 Then
+                If n IsNot Nothing AndAlso n.Nodes.Count = 0 Then
                     SelectedNode = n
                     Focus()
                     Exit Sub
@@ -161,30 +164,30 @@ Namespace UI
         Function AddNode(path As String) As TreeNode
             Dim pathElements = path.SplitNoEmptyAndWhiteSpace({"|"c})
             Dim currentNodeList = Nodes
-            Dim currentPath = ""
+            'Dim currentPath As String
             Dim ret As TreeNode
 
             For Each iNodeName In pathElements
-                If currentPath.NotNullOrEmptyS Then
-                    currentPath += "|"
-                End If
+                'If currentPath.NotNullOrEmptyS Then currentPath &= "|" 'Seems to be Dead???
+                'currentPath &= iNodeName
 
-                currentPath += iNodeName
                 Dim found = False
+                Dim iNN As String = " " & iNodeName
 
                 For Each iNode As TreeNode In currentNodeList
-                    If String.Equals(iNode.Text, " " & iNodeName) Then
+                    If String.Equals(iNode.Text, iNN) Then
                         ret = iNode
                         currentNodeList = iNode.Nodes
                         found = True
-                        Exit For 'Added Test This !!!
+                        Exit For 'Added OK?!
                     End If
                 Next iNode
 
                 If Not found Then
-                    ret = New TreeNode With {.Text = " " + iNodeName}
+                    ret = New TreeNode With {.Text = iNN}
                     currentNodeList.Add(ret)
                     currentNodeList = ret.Nodes
+                    'Exit For 'Added Test This !!!
                 End If
             Next iNodeName
 
@@ -192,7 +195,7 @@ Namespace UI
         End Function
 
         Function GetNodes() As List(Of TreeNode)
-            Dim ret As New List(Of TreeNode)(16) '32
+            Dim ret As New List(Of TreeNode)(22) '21
             AddNodesRecursive(Nodes, ret)
             Return ret
         End Function
@@ -447,16 +450,16 @@ Namespace UI
         Private BorderRect As Native.RECT
 
         Sub New()
-            MyClass.New(True)
-        End Sub
-
-        Sub New(createMenu As Boolean)
-            If createMenu Then
-                InitMenu()
-            End If
-
+            'MyClass.New(True)
             'If VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
             BorderStyle = BorderStyle.None
+            'End If
+            InitMenu()
+        End Sub
+
+        Sub New(createMenu As Boolean) 'Override-No InitMenu  Workaround
+            'If createMenu Then
+            '    InitMenu()
             'End If
         End Sub
 
@@ -471,7 +474,7 @@ Namespace UI
             Dim cutItem = New ActionMenuItem("Cut", ImageHelp.GetImageC(Symbol.Cut)) With {.KeyDisplayString = "Ctrl+X"}
             Dim copyItem = New ActionMenuItem("Copy", Sub() Clipboard.SetText(SelectedText), ImageHelp.GetImageC(Symbol.Copy)) With {.KeyDisplayString = "Ctrl+C"}
             Dim pasteItem = New ActionMenuItem("Paste", ImageHelp.GetImageC(Symbol.Paste)) With {.KeyDisplayString = "Ctrl+V"}
-            cms.Items.AddRange({cutItem, copyItem, pasteItem, New ActionMenuItem("Copy Everything", Sub() Clipboard.SetText(Text))})
+            cms.Items.AddRange({cutItem, copyItem, pasteItem, New ActionMenuItem("Copy Everything", Sub() If Text.Length > 0 Then Clipboard.SetText(Text))})
             cms.ResumeLayout(False)
 
             AddHandler cutItem.Click, Sub()
@@ -485,9 +488,11 @@ Namespace UI
                                         End Sub
 
             AddHandler cms.Opening, Sub()
-                                        cutItem.Visible = SelectionLength > 0 AndAlso Not Me.ReadOnly
-                                        copyItem.Visible = SelectionLength > 0
-                                        pasteItem.Visible = Clipboard.GetText IsNot "" AndAlso Not Me.ReadOnly
+                                        Dim isSel As Boolean = SelectionLength > 0
+                                        Dim ro As Boolean = Not Me.ReadOnly
+                                        cutItem.Visible = ro AndAlso isSel
+                                        copyItem.Visible = isSel
+                                        pasteItem.Visible = ro AndAlso Clipboard.ContainsText
                                     End Sub
 
             ContextMenuStrip = cms
@@ -881,7 +886,7 @@ Namespace UI
             Dim name = path
             If path.Contains("|") Then name = path.RightLast("|").Trim
             'Dim rp = path.RightLast("|")
-            'If rp IsNot "" Then name = rp.Trim
+            'If rp.Length > 0 Then name = rp.Trim
             Dim ret = ActionMenuItem.Add(Menu.Items, path, Sub(o As Object) OnAction(name, o), obj, tip)
             ret.Tag = obj
             Return ret
@@ -987,12 +992,14 @@ Namespace UI
         Inherits RichTextBoxEx
 
         Public Sub New()
+            MyBase.New(False)
         End Sub
 
-        Public Sub New(createMenu As Boolean)
-            MyBase.New(createMenu)
-        End Sub
+        'Public Sub New(createMenu As Boolean)
+        '    MyBase.New(createMenu)
+        'End Sub
         Property LastCommandLine As String
+        Private FontBold As Font '= Font 
 
         Sub SetText(commandLine As String)
             If String.Equals(commandLine, LastCommandLine) Then
@@ -1000,26 +1007,29 @@ Namespace UI
             End If
 
             If commandLine.NullOrEmptyS Then
-                Text = ""
+                'Text = ""
+                Clear()
                 LastCommandLine = ""
                 Exit Sub
             End If
 
             BlockPaint = True
+            Clear() 'Todo: Test this !!! Or not needed ???
             Text = commandLine
-            SelectAll()
-            SelectionColor = ForeColor
-            SelectionFont = New Font(Font, FontStyle.Regular)
+            Text = commandLine.ToString 'Also to string added !!! Removet it ???
+            'SelectAll() 'Needed??
+
+            'SelectionColor = ForeColor 'Seems identical
+            If SelectionColor.ToArgb <> ForeColor.ToArgb OrElse Not Font.Equals(SelectionFont) Then Console.Beep(3700, 12) 'debug
+            'SelectionFont = Font  'ToDo : 9.75 Seems Permanent !!!
 
             If LastCommandLine.NotNullOrEmptyS Then
                 Dim selStart = GetCompareIndex(commandLine, LastCommandLine)
                 Dim selEnd = commandLine.Length - GetCompareIndex(ReverseString(commandLine), ReverseString(LastCommandLine))
 
                 If selEnd > selStart AndAlso selEnd - selStart < commandLine.Length - 1 Then
-                    While selStart > 0 AndAlso selStart + 1 < commandLine.Length AndAlso
-                        Not commandLine(selStart - 1) + commandLine(selStart) = " -"
-
-                        selStart = selStart - 1
+                    While selStart > 0 AndAlso selStart + 1 < commandLine.Length AndAlso Not String.Equals(commandLine(selStart - 1) & commandLine(selStart), " -")
+                        selStart -= 1
                     End While
 
                     If selEnd - selStart < 25 Then
@@ -1031,7 +1041,9 @@ Namespace UI
                             SelectionLength = selEnd - selStart
                         End If
 
-                        SelectionFont = New Font(Font, FontStyle.Bold)
+                        'SelectionFont = If(FontBold, New Font(Font, FontStyle.Bold)) 'ToDo : Test This !!!
+                        SelectionFont = FontBold 'Will Throw Null Excp ???
+
                     End If
                 End If
             End If
@@ -1062,29 +1074,32 @@ Namespace UI
         Protected Overrides Sub OnHandleCreated(e As EventArgs)
             MyBase.OnHandleCreated(e)
             If Not DesignMode Then
-                Font = New Font("Consolas", 10 * s.UIScaleFactor)
+                'Dim f = New Font("Consolas", 10 * s.UIScaleFactor)
+                Dim f = New Font("Consolas", 9.75F * s.UIScaleFactor) 'ToDo : Test This 9.75 !!!
+                Font = f
+                'SelectionFont = f
+                FontBold = New Font(f, FontStyle.Bold)
+
+                If SelectionColor.ToArgb <> ForeColor.ToArgb Then Console.Beep(4700, 700) 'debug
+
+                'SelectionColor = ForeColor ' Seems not needed ???
+
             End If
         End Sub
-
-        Sub UpdateHeight()
-            Using graphics = CreateGraphics()
-                'Dim stringSize = graphics.MeasureString(Text, Font, Size.Width)
-                'Size = New Size(Size.Width, CInt(stringSize.Height) + 1)
-
-                Dim measHeight = CInt(graphics.MeasureString(Text, Font, Width).Height)
-                'measHeight = TextRenderer.MeasureText(Text, Font, New Size(Width, 100000)).Height
-                Height = measHeight + 1
-            End Using
+        Protected Overrides Sub Dispose(disposing As Boolean) 'Needed???
+            FontBold = Nothing
+            MyBase.Dispose(disposing)
         End Sub
-
-        'Async Sub UpdateHeightAsync()
-        '    Dim txt = Text
-        '    Dim fnt As Font = Font
-        '    Dim heightMT = Await Task.Run(Function() TextRenderer.MeasureText(txt, fnt, New Size(Width, 100000)).Height + 1) 'is Font threadSafe??? or add var
-        '    'Using graphics = CreateGraphics()
-        '    'Return CInt(graphics.MeasureString(Text, Font, Width).Height)
-        '    'End Using
-        '    'End Function)
+        'Sub UpdateHeight()
+        '    Using graphics = CreateGraphics()
+        '        Dim measHeight = CInt(graphics.MeasureString(Text, FontRegular, Width).Height)
+        '        Height = measHeight + 1
+        '    End Using
+        'End Sub
+        'Async Sub UpdateHeightAsync(txt As String)
+        '    'Dim txt = Text
+        '    'Dim fnt As Font = Font
+        '    Dim heightMT = Await Task.Run(Function() TextRenderer.MeasureText(txt, FontRegular, New Size(Width, 100000), TextFormatFlags.WordBreak).Height + 1)
         '    Height = heightMT
         'End Sub
 
@@ -1140,9 +1155,7 @@ Namespace UI
             End If
 
             'vertical align middles
-            If Not WrapContents AndAlso
-                (FlowDirection = FlowDirection.LeftToRight OrElse
-                FlowDirection = FlowDirection.RightToLeft) Then
+            If Not WrapContents AndAlso (FlowDirection = FlowDirection.LeftToRight OrElse FlowDirection = FlowDirection.RightToLeft) Then
 
                 For Each ctrl As Control In Controls
                     Dim offset = 0

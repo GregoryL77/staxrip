@@ -627,7 +627,6 @@ Public Class AudioForm
         '
         Me.rtbCommandLine.BorderStyle = System.Windows.Forms.BorderStyle.None
         Me.rtbCommandLine.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.rtbCommandLine.LastCommandLine = Nothing
         Me.rtbCommandLine.Location = New System.Drawing.Point(0, 0)
         Me.rtbCommandLine.Margin = New System.Windows.Forms.Padding(0)
         Me.rtbCommandLine.Name = "rtbCommandLine"
@@ -666,16 +665,18 @@ Public Class AudioForm
 
     Private Profile, TempProfile As GUIAudioProfile
     Private IsHandleCr As Boolean
-    Private Updating As Boolean
+    Private NewRun As Integer
     Private SLock As New Object
+    Private RtbCmdFont As Font
 
     Sub New()
         MyBase.New()
         Task.Run(Sub() If Language.Languages IsNot Nothing Then ) 'Populate Lang first???
+
         InitializeComponent()
-        'rtbCommandLine.ReadOnly = True'InDesigner
         'rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None'InDesigner
         rtbCommandLine.InitMenu()
+        Me.RtbCmdFont = rtbCommandLine.Font
 
         Dim cms As New ContextMenuStripEx(components)
         cms.SuspendLayout()
@@ -695,7 +696,6 @@ Public Class AudioForm
         cms.ResumeLayout(False)
 
         mbSamplingRate.AddRange2({("Original", 0), ("11025 Hz", 11025), ("22050 Hz", 22050), ("44100 Hz", 44100), ("48000 Hz", 48000), ("88200 Hz", 88200), ("96000 Hz", 96000)})
-        mbLanguage.BuildLangMenu()
         cbDefaultTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
         cbForcedTrack.Visible = TypeOf p.VideoEncoder.Muxer Is MkvMuxer
         'numBitrate.Minimum = 1 'InDesigner
@@ -712,17 +712,15 @@ Public Class AudioForm
         TipProvider.SetTip("Custom command line arguments.", tbCustom, laCustom)
         TipProvider.SetTip("Default MKV Track.", cbDefaultTrack)
         TipProvider.SetTip("Forced MKV Track.", cbForcedTrack)
+
+        mbLanguage.BuildLangMenu()
     End Sub
 
-    Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
-        Me.Text = "Audio Settings" 'Debug
-        IsHandleCr = False
-        MyBase.OnFormClosing(args)
-    End Sub
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        IsHandleCr = False
         SimpleUI.SaveValEventsHLRemove()
 
-        'RtbCmdFont = Nothing
+        RtbCmdFont = Nothing
 
         If DialogResult = DialogResult.OK Then
             SetValues(Profile)
@@ -795,52 +793,49 @@ Public Class AudioForm
     Private TT222 As String = "" 'debug
 
     Sub UpdateControls()
-        If Updating OrElse Not IsHandleCr Then Exit Sub
-        Static RtbCmdFont As Font = rtbCommandLine.Font
+        If Not IsHandleCr Then Exit Sub
+        NewRun += 1
+        Text = TT222
+        If NewRun > 1 Then Exit Sub
+        'Static RtbCmdFont As Font = rtbCommandLine.Font
         Dim allowSTask = Task.Run(Sub() 'Run only last Event, ignore earlier
-                                      If Updating Then Exit Sub
                                       SyncLock SLock
-                                          If Updating OrElse Not IsHandleCr Then Exit Sub
-                                          Updating = True
-                                          Thread.Sleep(10)
+                                          Thread.Sleep(50)
+                                          If NewRun > 0 Then NewRun -= 1
+                                          TT222 = NewRun.ToInvariantString & "nR|"
+                                          If NewRun > 0 Then Exit Sub
                                       End SyncLock
-                                      Updating = False
 
-                                      Dim rtbTxt As String
-                                      Dim rtbSHeightT As Task(Of Integer) = Task.Run(Function()
-                                                                                         Dim SSW222 As New Stopwatch
-                                                                                         SSW222.Restart()
 
-                                                                                         rtbTxt = TempProfile.GetCommandLine(False)
+                                      If Not IsHandleCr Then Exit Sub
+                                          Dim rtbTxtT = Task.Run(Function() TempProfile.GetCommandLine(False))
+                                          Dim rtbSHeightT = Task.Run(Function()
+                                                                         Dim SSW222 As New Stopwatch
+                                                                         SSW222.Restart()
 
-                                                                                         SSW222.Stop()
-                                                                                         TT222 = CStr(SSW222.ElapsedTicks / SWFreq) & "msCT/"
-                                                                                         SSW222.Restart()
+                                                                         ' If Not RtbCmdFont.Equals(rtbCommandLine.Font) Then Console.Beep(700, 200)
+                                                                         Dim ret As Integer = TextRenderer.MeasureText(rtbTxtT.Result, RtbCmdFont, New Size(rtbCommandLine.Width, 100000), (TextFormatFlags.WordBreak Or TextFormatFlags.TextBoxControl)).Height + 1
 
-                                                                                         If Not RtbCmdFont.Equals(rtbCommandLine.Font) Then Console.Beep(700, 200)
-                                                                                         Dim ret As Integer = TextRenderer.MeasureText(rtbTxt, RtbCmdFont, New Size(rtbCommandLine.Width, 100000), TextFormatFlags.WordBreak).Height + 1
+                                                                         SSW222.Stop()
+                                                                         TT222 &= CStr(SSW222.ElapsedTicks / SWFreq) & "msMT|NR:" & NewRun.ToInvariantString
 
-                                                                                         SSW222.Stop()
-                                                                                         TT222 &= CStr(SSW222.ElapsedTicks / SWFreq) & "msMT| "
+                                                                         Return ret
+                                                                     End Function)
+                                          Dim Sels = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxtT))
 
-                                                                                         Return ret
-                                                                                     End Function)
+                                      If IsHandleCr Then BeginInvoke(Sub() UpdateControlsA(rtbTxtT, rtbSHeightT, Sels))
+                                      Task.Run(Sub() Console.Beep(6700, 9))
 
-                                      If IsHandleCr Then BeginInvoke(Sub() UpdateControlsA(rtbTxt, rtbSHeightT))
                                   End Sub)
         Dim aTCont = allowSTask.ContinueWith(Sub() If allowSTask.Exception IsNot Nothing Then Throw New AggregateException(allowSTask.Exception)) 'Debug
     End Sub
 
-    Sub UpdateControlsA(ByRef rtbTxt As String, rtbSHeightT As Task(Of Integer))
+    Sub UpdateControlsA(rtbTxtT As Task(Of String), rtbSHeightT As Task(Of Integer), selectionsT As Task(Of Integer()))
         If Not IsHandleCr Then Exit Sub
 
         Dim TT111 As String
         Dim SSW111 As New Stopwatch
-        SSW111.Restart()
-
-
-        SSW111.Stop()
-        TT111 = $"{SSW111.ElapsedTicks / SWFreq}msBI| "
+        TT111 = rtbTxtT.IsCompleted.ToString
         SSW111.Restart()
 
         If TempProfile.ExtractCore Then
@@ -878,15 +873,14 @@ Public Class AudioForm
         TempProfile.DefaultnameValue = Nothing
 
         tbProfileName.SendMessageCue(TempProfile.Name, False)
-        'Static rtbFont As New Font("Consolas", 10 * s.UIScaleFactor)
-        'If rtbText Is Nothing Then rtbText = TempProfile.GetCommandLine(False)
+
 
         SSW111.Stop()
-        TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msRTxtL:{rtbTxt.Length},{rtbSHeightT.Status}| "
+        TT111 &= $" |{SSW111.ElapsedTicks / SWFreq}msRTxtL:{rtbTxtT.Result?.Length}HTs:{rtbSHeightT.IsCompleted}|SelsT:{selectionsT.IsCompleted}| "
         SSW111.Restart()
 
 
-        rtbCommandLine.SetText(rtbTxt)
+        'rtbCommandLine.SetText(rtbTxtT)
         'rtbCommandLine.UpdateHeightAsync()
 
         'Dim sh As Integer = (rtbTxt.Length \ 88 + 1) * 16 + 2
@@ -895,15 +889,16 @@ Public Class AudioForm
         '    rtbCommandLine.Height = sh
         'End If
 
-        Dim my_sh As Integer = Math.Max(CInt(Math.Ceiling((rtbTxt.Length * 10 / rtbCommandLine.Width))) * 18, 18)  'EM=10 lh=18=16+2; 18= 16 * 1.115
+        Dim my_sh As Integer = Math.Max(CInt(Math.Floor(rtbTxtT.Result.Length * 10 / rtbCommandLine.Width)) * 17 + 1, 18)  'EM=10 lh=18=16+2; 18= 16 * 1.115
         'Dim cccccc = my_sh - rtbSHeightT
 
         Dim rtbSHeightRes = rtbSHeightT.Result
         SSW111.Stop()
-        TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msMH/myH:{rtbSHeightRes}/{my_sh}| "
+        TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msMH/myH:{rtbSHeightRes}/{my_sh}|"
         SSW111.Restart()
 
         rtbCommandLine.Height = rtbSHeightRes
+        rtbCommandLine.SetText(rtbTxtT, selectionsT)
 
         SSW111.Stop()
         TT111 &= $"{SSW111.ElapsedTicks / SWFreq}msFinH"

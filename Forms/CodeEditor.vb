@@ -36,7 +36,7 @@ Public Class CodeEditor
         MaximumSize = New Size((ScreenResPrim.Width - 18), (ScreenResPrim.Height - 46))
         MainFlowLayoutPanel.MaximumSize = New Size((ScreenResPrim.Width - 38), (ScreenResPrim.Height - 48 - 68))
 
-        Dim rtbScrFont As New Font("Consolas", 10.0F * s.UIScaleFactor)
+        Dim rtbScrFont As New Font("Consolas", 10 * s.UIScaleFactor)
         RTBFontHeight = rtbScrFont.Height
 
         Dim maxTW As Integer
@@ -64,7 +64,7 @@ Public Class CodeEditor
 
         Dim fPSz As New Size(RTBFontHeight * 7 + 6 + maxTW, totH + 4)
         MainFlowLayoutPanel.Size = fPSz
-        Me.ClientSize = New Size(fPSz.Width + 1, fPSz.Height + 28) 'New Size(fPSz.Width + 17, fpH + 67) 
+        Me.ClientSize = New Size(fPSz.Width + 1, fPSz.Height + 28) 'New Size(fPSz.Width + 17, fpH + 67)  'TODO: Change to Size!!!
 
         'bnCancel.Location = New Point(112, fPSz.Height + 2) 'OnResize
         'bnOK.Location = New Point(112 + 83 + 16, fPSz.Height + 2)
@@ -186,7 +186,7 @@ Public Class CodeEditor
 
         Dim cSZ = Me.ClientSize
         If cSZ.Height < fpH + 28 OrElse cSZ.Width < fPSz.Width + 1 Then
-            Me.ClientSize = New Size(fPSz.Width + 1, fpH + 28)
+            Me.ClientSize = New Size(fPSz.Width + 1, fpH + 28)  'TODO: Change to Size!!!
         Else
             PlaceButtons(cSZ, fPSz)
         End If
@@ -201,7 +201,7 @@ Public Class CodeEditor
     End Sub
 
     Function CreateFilterTable(filter As VideoFilter) As FilterTable
-        Return New FilterTable(filter, Me, New Font("Consolas", 10.0F * s.UIScaleFactor), New Size(304, 64)) 'TEst this !!! Seems Not Good!!!To Do!! Better Speparate Function to calculate RTB.SIZE
+        Return New FilterTable(filter, Me, New Font("Consolas", 10 * s.UIScaleFactor), New Size(304, 64)) 'TEst this !!! Seems Not Good!!!To Do!! Better Speparate Function to calculate RTB.SIZE
     End Function
 
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
@@ -402,12 +402,11 @@ Public Class CodeEditor
                                             Dim layT = Task.Run(Sub()
                                                                     If RTBEventSem Then Return
                                                                     SyncLock editorForm.FilterTabSLock
-                                                                        If RTBEventSem OrElse Me.IsDisposed Then Return
+                                                                        If RTBEventSem OrElse Me.IsDisposed OrElse Not editorForm.IsHandleCreated Then Return
                                                                         RTBEventSem = True
                                                                         Thread.Sleep(170) ' 150-210
                                                                     End SyncLock
                                                                     If Me.IsDisposed OrElse Not editorForm.IsHandleCreated Then Return
-                                                                    RTBEventSem = False
 
                                                                     Dim pcfa = Parent.Controls.OfType(Of FilterTable)().ToArray
                                                                     If pcfa.Length <> editorForm.RTBTxtCHeightA.Length Then
@@ -425,6 +424,7 @@ Public Class CodeEditor
                                                                     editorForm.Invoke(gt) 'Thread Safe Call
 
                                                                     'For r = 0 To pcfa.Length - 1 : rtbTxtA(r) = pcfa(r).rtbScript.Text : Next r 'unsafe
+                                                                    RTBEventSem = False
 
                                                                     Dim maxTW As Integer
                                                                     Dim tmts As Size

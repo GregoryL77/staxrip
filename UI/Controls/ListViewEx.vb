@@ -1,6 +1,7 @@
 ﻿
 Imports System.ComponentModel
 Imports System.Reflection
+Imports JM.LinqFaster
 
 Namespace UI
     Public Enum AutoCheckMode
@@ -586,14 +587,14 @@ Namespace UI
             End If
 
             BeginUpdate()
-
+            Dim wFH As Integer = CInt(FontHeight * 1.25)
             For Each header As ColumnHeader In Columns
                 Select Case header.Text
                     Case "Hidden"
                         header.Width = 0
                         Continue For
                     Case ""
-                        Columns(0).Width = CInt(FontHeight * 1.25) 'font.height Test This Experiment!!! NoScaling
+                        Columns(0).Width = wFH 'font.height Test This Experiment!!! NoScaling
                         Continue For
                 End Select
 
@@ -608,7 +609,7 @@ Namespace UI
             Next
 
             If lastAtListViewWidth Then
-                Dim widthAll = Aggregate i In Columns.OfType(Of ColumnHeader)() Into Sum(i.Width)
+                Dim widthAll = Columns.OfType(Of ColumnHeader).ToArray.SumF(Function(i) i.Width)
                 Columns(Columns.Count - 1).Width -= widthAll - ClientSize.Width
             End If
 

@@ -80,7 +80,7 @@ Namespace UI
                 If n.Index = 0 Then
                     Dim parentParentNodes As TreeNodeCollection = GetParentParentNodes(n)
 
-                    If Not parentParentNodes Is Nothing Then
+                    If parentParentNodes IsNot Nothing Then
                         Dim index As Integer = n.Parent.Index
                         n.Remove()
                         parentParentNodes.Insert(index, n)
@@ -99,7 +99,7 @@ Namespace UI
         Sub MoveSelectionRight()
             Dim n As TreeNode = SelectedNode
 
-            If Not n Is Nothing Then
+            If n IsNot Nothing Then
                 If n.Index > 0 Then
                     Dim previousNode As TreeNode = n.PrevNode
                     n.Remove()
@@ -112,7 +112,7 @@ Namespace UI
         Sub MoveSelectionDown()
             Dim n As TreeNode = SelectedNode
 
-            If Not n Is Nothing Then
+            If n IsNot Nothing Then
                 If n.NextNode Is Nothing Then
                     Dim parentParentNodes As TreeNodeCollection = GetParentParentNodes(n)
 
@@ -184,10 +184,9 @@ Namespace UI
                 Next iNode
 
                 If Not found Then
-                    ret = New TreeNode With {.Text = iNN}
+                    ret = New TreeNode(iNN)
                     currentNodeList.Add(ret)
                     currentNodeList = ret.Nodes
-                    'Exit For 'Added Test This !!!
                 End If
             Next iNodeName
 
@@ -569,9 +568,9 @@ Namespace UI
                 Marshal.StructureToPtr(par, m.LParam, False)
             End If
 
-            Const WVR_HREDRAW = &H100
-            Const WVR_VREDRAW = &H200
-            Const WVR_REDRAW = (WVR_HREDRAW Or WVR_VREDRAW)
+            Const WVR_HREDRAW = &H100S
+            Const WVR_VREDRAW = &H200S
+            Const WVR_REDRAW As Integer = (WVR_HREDRAW Or WVR_VREDRAW)
 
             m.Result = New IntPtr(WVR_REDRAW)
         End Sub
@@ -607,7 +606,7 @@ Namespace UI
 
         'Protected Overrides Sub OnHandleCreated(e As EventArgs)
         '    MyBase.OnHandleCreated(e)
-        '    'AutoWordSelection = False   'It's False by Default ??
+        '    'AutoWordSelection = False 'False by Default!
         'End Sub
     End Class
 
@@ -993,67 +992,104 @@ Namespace UI
 
         Public Sub New()
             MyBase.New(False)
+            Dim tFont As New Font("Consolas", 10 * s.UIScaleFactor)
+            Font = tFont
+            FontBold = New Font(tFont, FontStyle.Bold)
         End Sub
 
         'Public Sub New(createMenu As Boolean)
         '    MyBase.New(createMenu)
         'End Sub
-        Property LastCommandLine As String
-        Private FontBold As Font '= Font 
+        Private LastCommandLine As String
+        Private FontBold As Font
 
-        Sub SetText(commandLine As String)
-            If String.Equals(commandLine, LastCommandLine) Then
-                Exit Sub
-            End If
-
-            If commandLine.NullOrEmptyS Then
-                'Text = ""
-                Clear()
+        Function GetSelections(cmdTxtT As Task(Of String)) As Integer() 'Returns: {SelStart,SelEnd}
+            Dim cmdTxt = cmdTxtT.Result
+            If String.Equals(cmdTxt, LastCommandLine) Then Return Nothing
+            If cmdTxt.NullOrEmptyS Then
+                Clear() 'Is This not Illegal diff Thread??
                 LastCommandLine = ""
-                Exit Sub
+                Return Nothing
             End If
-
-            BlockPaint = True
-            Clear() 'Todo: Test this !!! Or not needed ???
-            Text = commandLine
-            Text = commandLine.ToString 'Also to string added !!! Removet it ???
-            'SelectAll() 'Needed??
-
-            'SelectionColor = ForeColor 'Seems identical
-            If SelectionColor.ToArgb <> ForeColor.ToArgb OrElse Not Font.Equals(SelectionFont) Then Console.Beep(3700, 12) 'debug
-            'SelectionFont = Font  'ToDo : 9.75 Seems Permanent !!!
 
             If LastCommandLine.NotNullOrEmptyS Then
-                Dim selStart = GetCompareIndex(commandLine, LastCommandLine)
-                Dim selEnd = commandLine.Length - GetCompareIndex(ReverseString(commandLine), ReverseString(LastCommandLine))
+                Dim selStart = GetCompareIndex(cmdTxt, LastCommandLine)
+                Dim selEnd = cmdTxt.Length - GetCompareIndex(ReverseString(cmdTxt), ReverseString(LastCommandLine))
 
-                If selEnd > selStart AndAlso selEnd - selStart < commandLine.Length - 1 Then
-                    While selStart > 0 AndAlso selStart + 1 < commandLine.Length AndAlso Not String.Equals(commandLine(selStart - 1) & commandLine(selStart), " -")
+                If selEnd > selStart AndAlso selEnd - selStart < cmdTxt.Length - 1 Then
+                    While selStart > 0 AndAlso selStart + 1 < cmdTxt.Length AndAlso Not String.Equals(cmdTxt(selStart - 1) & cmdTxt(selStart), " -")
                         selStart -= 1
                     End While
 
-                    If selEnd - selStart < 25 Then
-                        SelectionStart = selStart
-
-                        If selEnd - selStart = commandLine.Length Then
-                            SelectionLength = 0
-                        Else
-                            SelectionLength = selEnd - selStart
-                        End If
-
-                        'SelectionFont = If(FontBold, New Font(Font, FontStyle.Bold)) 'ToDo : Test This !!!
-                        SelectionFont = FontBold 'Will Throw Null Excp ???
-
+                    If selEnd - selStart < 35 Then 'maybe more than 25???
+                        LastCommandLine = cmdTxt
+                        Dim ret(1) As Integer
+                        ret(0) = selStart
+                        ret(1) = If(selEnd - selStart = cmdTxt.Length, 0, selEnd - selStart)
+                        Return ret
                     End If
                 End If
             End If
 
-            SelectionStart = commandLine.Length
+            LastCommandLine = cmdTxt
+            Return {}
+        End Function
+
+        Sub SetText(cmdTxtT As Task(Of String), selectionsT As Task(Of Integer()))
+            Dim cmdTxt = cmdTxtT.Result
+            If cmdTxt.NullOrEmptyS Then Exit Sub
+            Dim sel = selectionsT.Result
+            If sel Is Nothing Then Exit Sub
+
+            BlockPaint = True
+            Text = cmdTxt
+            If sel.Length = 2 Then
+                SelectionStart = sel(0)
+                SelectionLength = sel(1)
+                SelectionFont = FontBold
+                'SelectionStart = cmdTxt.Length
+            End If
             BlockPaint = False
+
             'Refresh()
             Invalidate()
-            LastCommandLine = commandLine
+            'LastCommandLine = cmdTxt
         End Sub
+
+        'Sub SetText(cmdTxtT As Task(Of String))
+        '    Dim cmdTxt = cmdTxtT.Result
+        '    If String.Equals(cmdTxt, LastCommandLine) Then Exit Sub
+        '    If cmdTxt.NullOrEmptyS Then
+        '        Clear()
+        '        LastCommandLine = ""
+        '        Exit Sub
+        '    End If
+
+        '    BlockPaint = True
+        '    Text = cmdTxt
+        '    If LastCommandLine.NotNullOrEmptyS Then
+        '        Dim selStart = GetCompareIndex(cmdTxt, LastCommandLine)
+        '        Dim selEnd = cmdTxt.Length - GetCompareIndex(ReverseString(cmdTxt), ReverseString(LastCommandLine))
+
+        '        If selEnd > selStart AndAlso selEnd - selStart < cmdTxt.Length - 1 Then
+        '            While selStart > 0 AndAlso selStart + 1 < cmdTxt.Length AndAlso Not String.Equals(cmdTxt(selStart - 1) & cmdTxt(selStart), " -")
+        '                selStart -= 1
+        '            End While
+
+        '            If selEnd - selStart < 35 Then 'maybe more than 25???
+        '                SelectionStart = selStart
+        '                SelectionLength = If(selEnd - selStart = cmdTxt.Length, 0, selEnd - selStart)
+        '                SelectionFont = FontBold
+        '            End If
+        '        End If
+        '    End If
+
+        '    'SelectionStart = cmdTxt.Length
+        '    BlockPaint = False
+        '    'Refresh()
+        '    Invalidate()
+        '    LastCommandLine = cmdTxt
+        'End Sub
 
         Function GetCompareIndex(a As String, b As String) As Integer
             For x = 0 To a.Length - 1
@@ -1071,21 +1107,16 @@ Namespace UI
             Return New String(chars)
         End Function
 
-        Protected Overrides Sub OnHandleCreated(e As EventArgs)
-            MyBase.OnHandleCreated(e)
-            If Not DesignMode Then
-                'Dim f = New Font("Consolas", 10 * s.UIScaleFactor)
-                Dim f = New Font("Consolas", 9.75F * s.UIScaleFactor) 'ToDo : Test This 9.75 !!!
-                Font = f
-                'SelectionFont = f
-                FontBold = New Font(f, FontStyle.Bold)
-
-                If SelectionColor.ToArgb <> ForeColor.ToArgb Then Console.Beep(4700, 700) 'debug
-
-                'SelectionColor = ForeColor ' Seems not needed ???
-
-            End If
-        End Sub
+        'Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        '    MyBase.OnHandleCreated(e)
+        '    If Not DesignMode Then
+        '        Font = New Font(FontBold, FontStyle.Regular)
+        '        'SelectionFont = New Font(FontBold, FontStyle.Regular)
+        '        'FontBold = New Font(f, FontStyle.Bold)
+        '        'If SelectionColor.ToArgb <> ForeColor.ToArgb Then Console.Beep(4700, 700) 'debug
+        '        'SelectionColor = ForeColor ' Seems not needed ???
+        '    End If
+        'End Sub
         Protected Overrides Sub Dispose(disposing As Boolean) 'Needed???
             FontBold = Nothing
             MyBase.Dispose(disposing)
@@ -1120,66 +1151,98 @@ Namespace UI
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             MyBase.OnLayout(levent)
+            Dim ctrlAr As Control() = Controls.OfType(Of Control).ToArray
+            If ctrlAr.Length <= 0 Then Exit Sub
+            SuspendLayout() 'ToDo: Test this
 
-            If Not WrapContents AndAlso FlowDirection = FlowDirection.LeftToRight Then
+            If Not WrapContents Then
+                Dim flowDirLtR As Boolean = FlowDirection = FlowDirection.LeftToRight
+                If flowDirLtR Then
+                    For i = 0 To ctrlAr.Length - 1 'each: ctrl As Control In Controls
+                        Dim nextPos As Integer
+                        Dim ctrl = ctrlAr(i)
+                        If ctrl.Visible Then
+                            nextPos += ctrl.Margin.Left + ctrl.Width + ctrl.Margin.Right
 
-                For Each ctrl As Control In Controls
-                    Dim nextPos As Integer
-                    If ctrl.Visible Then
-                        nextPos += ctrl.Margin.Left + ctrl.Width + ctrl.Margin.Right
+                            Dim expandetControl = TryCast(ctrl, SimpleUI.SimpleUIControl)
 
-                        Dim expandetControl = TryCast(ctrl, SimpleUI.SimpleUIControl)
+                            If expandetControl IsNot Nothing AndAlso expandetControl.Expand Then
+                                'Dim diff = Aggregate i2 In Controls.OfType(Of Control)() Into Sum(If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
+                                'Dim diff = ctrlAr.SumF(Function(i2) If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
+                                Dim diff As Integer = 0
+                                For c = 0 To ctrlAr.Length - 1
+                                    Dim cS = ctrlAr(c)
+                                    diff += If(cS.Visible, cS.Width + cS.Margin.Left + cS.Margin.Right, 0)
+                                Next c
 
-                        If expandetControl IsNot Nothing AndAlso expandetControl.Expand Then
-                            'Dim diff = Aggregate i2 In Controls.OfType(Of Control)() Into Sum(If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
-                            Dim diff = Controls.OfType(Of Control).ToArray.SumF(Function(i2) If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
+                                Dim hostWidth = Width - 1
 
-                            Dim hostWidth = Width - 1
-
-                            If ctrl.AutoSize Then
-                                nextPos += hostWidth - diff
-                            Else
-                                ctrl.Width += hostWidth - diff
-                                nextPos += hostWidth - diff
+                                If ctrl.AutoSize Then
+                                    nextPos += hostWidth - diff
+                                Else
+                                    ctrl.Width += hostWidth - diff
+                                    nextPos += hostWidth - diff
+                                End If
                             End If
                         End If
-                    End If
 
-                    Dim index = Controls.IndexOf(ctrl)
+                        If i < ctrlAr.Length - 1 Then 'Controls.IndexOf(ctrl) = i
+                            ctrlAr(i + 1).Left = nextPos
+                        End If
+                    Next i
+                End If
 
-                    If index < Controls.Count - 1 Then
-                        Dim ctrl2 = Controls(index + 1)
-                        ctrl2.Left = nextPos
+                'vertical align middles
+                If flowDirLtR OrElse FlowDirection = FlowDirection.RightToLeft Then
+                    For i = 0 To ctrlAr.Length - 1 'In Controls
+                        Dim ctrl As Control = ctrlAr(i)
+                        ctrl.Top = CInt((Height - ctrl.Height) / 2) + If(TypeOf ctrl Is CheckBox, 1, 0)
+                    Next i
+                End If
+            End If
+            'Dim labelBl0A = ctrlAr.OfType(Of SimpleUI.LabelBlock).Where(Function(block) block.Label.Offset = 0).ToArray
+            'If labelBl0A.Length > 0 Then
+            '    'Dim hMax = Aggregate i In labelBlocks Into Max(TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
+            '    Dim hMax = labelBl0A.MaxF(Function(i) TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
+            '    For Each lb In labelBl0A
+            '        lb.Label.Offset = hMax / lb.Label.Font.Height
+            '    Next
+            'End If
+            Dim lb0List As List(Of SimpleUI.LabelBlock)
+            Dim lFontH As Integer
+            Dim lb0WMax As Integer
+            For i = 0 To ctrlAr.Length - 1
+                Dim ctrl = ctrlAr(i)
+                If TypeOf ctrl Is SimpleUI.LabelBlock Then
+                    Dim lb = DirectCast(ctrl, SimpleUI.LabelBlock)
+                    If lb.Label.Offset = 0 Then
+                        Dim lF As Font
+                        Dim init As Boolean
+                        If Not init Then
+                            init = True
+                            lb0List = New List(Of SimpleUI.LabelBlock)(4)
+                            lF = lb.Label.Font
+                            lFontH = lF.Height
+                        End If
+                        Dim mLW = TextRenderer.MeasureText(lb.Label.Text, lF).Width
+                        If mLW > lb0WMax Then lb0WMax = mLW
+                        lb0List.Add(lb)
                     End If
-                Next
+                End If
+            Next i
+
+            If lFontH > 0 Then
+                For i = 0 To lb0List.Count - 1
+                    lb0List(i).Label.Offset = lb0WMax / lFontH
+                Next i
             End If
 
-            'vertical align middles
-            If Not WrapContents AndAlso (FlowDirection = FlowDirection.LeftToRight OrElse FlowDirection = FlowDirection.RightToLeft) Then
+            'If lb0List?.Count > LLLLMaxCount Then LLLLMaxCount = lb0List.Count 'debug
 
-                For Each ctrl As Control In Controls
-                    Dim offset = 0
-
-                    If TypeOf ctrl Is CheckBox Then
-                        offset = 1
-                    End If
-
-                    ctrl.Top = CInt((Height - ctrl.Height) / 2) + offset
-                Next
-            End If
-
-            Dim labelBlocks = From block In Controls.OfType(Of SimpleUI.LabelBlock)() Where block.Label.Offset = 0
-
-            If labelBlocks.Any Then
-                Dim labBlAr = labelBlocks.ToArray
-                'Dim hMax = Aggregate i In labelBlocks Into Max(TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
-                Dim hMax = labBlAr.MaxF(Function(i) TextRenderer.MeasureText(i.Label.Text, i.Label.Font).Width)
-
-                For Each lb In labBlAr 'labelBlocks
-                    lb.Label.Offset = hMax / lb.Label.Font.Height
-                Next
-            End If
+            ResumeLayout(False) '??? Not False ???
         End Sub
+
+        'Public Shared LLLLMaxCount As Integer  ' Debug
 
         Protected Overrides ReadOnly Property DefaultMargin As Padding
             Get

@@ -1,6 +1,7 @@
 
 Imports System.ComponentModel
 Imports System.Drawing.Design
+Imports System.Text
 Imports JM.LinqFaster
 
 Namespace UI
@@ -69,18 +70,19 @@ Namespace UI
                 Scale(New SizeF(1 * s.UIScaleFactor, 1 * s.UIScaleFactor))
             End If
 
-            Dim workAr As Size  'Rectangle
+            Dim workAr As Size
+            Dim w As Integer = -1
+            Dim h As Integer = -1
             If DefaultWidthScale <> 0 Then
-                'Dim fh As Integer = Font.Height
-                Dim fh As Integer = FontHeight
+                Dim fh As Integer = FontHeight 'NoScaling with this !!!???  Font.Height OK
                 Dim defaultWidth = CInt(fh * DefaultWidthScale)
                 Dim defaultHeight = CInt(fh * DefaultHeightScale)
 
                 Dim fName As String = Me.GetType().Name
-                Dim w = s.Storage.GetInt(fName + "width")
-                Dim h = s.Storage.GetInt(fName + "height")
+                w = s.Storage.GetInt(fName + "width")
+                h = s.Storage.GetInt(fName + "height")
 
-                If w = 0 OrElse w < (defaultWidth \ 2) OrElse h = 0 OrElse h < (defaultHeight \ 2) Then
+                If w < 0 OrElse w < (defaultWidth \ 2) OrElse h < 0 OrElse h < (defaultHeight \ 2) Then 'was:w=0,h=0
                     w = defaultWidth
                     h = defaultHeight
                 End If
@@ -90,19 +92,44 @@ Namespace UI
                     w = workAr.Width
                     h = workAr.Height
                 End If
-
-                Width = w
-                Height = h
+                'Size = New Size(w, h)
             End If
 
             If StartPosition = FormStartPosition.CenterScreen Then
+                If w < 0 Then w = Width
+                If h < 0 Then h = Height
                 If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
-                WindowPositions.CenterScreen(Me, workAr)
+                StartPosition = FormStartPosition.Manual 'WindowPositions.CenterScreen(Me, workAr)
+                Location = New Point((workAr.Width - w) \ 2, (workAr.Height - h) \ 2)
             End If
 
-            If Not DesignHelp.IsDesignMode Then
-                If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
-                s.WindowPositions?.RestorePosition(Me, workAr)
+            Dim pos As New Point(-100000, 0)
+            If Not DesignHelp.IsDesignMode Then 'Needed????
+                If TypeOf Me IsNot UI.InputBoxForm AndAlso s.WindowPositionsRemembered?.Length > 0 AndAlso s.WindowPositions IsNot Nothing Then
+                    pos = s.WindowPositions.RestorePosition(Me)
+                    If pos.X <> -100000 Then
+                        If w < 0 Then w = Width
+                        If h < 0 Then h = Height
+                        If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
+
+                        If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + w > workAr.Width OrElse pos.Y + h > workAr.Height Then
+                            pos = New Point((workAr.Width - w) \ 2, (workAr.Height - h) \ 2) 'CenterScreen(form, screenSz)
+                        End If
+                    End If
+                End If
+                'Else
+                'Dim dddddddddd__ddd = DesignHelp.IsDesignMode 'Debug
+            End If
+
+            If pos.X >= 0 Then
+                Me.StartPosition = FormStartPosition.Manual
+                If DefaultWidthScale <> 0 Then
+                    SetBounds(pos.X, pos.Y, w, h)
+                Else
+                    SetBounds(pos.X, pos.Y, 0, 0, BoundsSpecified.Location)
+                End If
+            ElseIf DefaultWidthScale <> 0 Then
+                SetBounds(0, 0, w, h, BoundsSpecified.Size)
             End If
 
             MyBase.OnLoad(args)
@@ -111,7 +138,7 @@ Namespace UI
         Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
             MyBase.OnFormClosing(args)
 
-            If Not s.WindowPositions Is Nothing Then
+            If s.WindowPositions IsNot Nothing Then
                 s.WindowPositions.Save(Me)
             End If
 
@@ -121,27 +148,32 @@ Namespace UI
         End Sub
 
         Sub SetTabIndexes(c As Control)
-            Dim index = 0
-            Dim controls = From i In c.Controls.OfType(Of Control)()
-                           Order By Math.Sqrt(i.Top * i.Top + i.Left * i.Left)
-            'Dim ca(c.Controls.Count - 1) As Control 'Test This!!!
-            'c.Controls.CopyTo(ca, 0)
-            'Dim ka(ca.Length - 1) As Double
-            'For i = 0 To ca.Length - 1
-            '    Dim ci = ca(i)
-            '    ka(i) = Math.Sqrt(ci.Top * ci.Top + ci.Left * ci.Left)
-            'Next i
-            'Array.Sort(ka, ca)
-            'For i = 0 To ca.Length - 1
-            '    ca(i).TabIndex = i
-            '    SetTabIndexes(ca(i))
-            'Next i
-            'Dim ttt = controls.ToArray.SequenceEqual(ca) 'Debug
-            For Each i In controls
-                i.TabIndex = index
-                index += 1
-                SetTabIndexes(i)
+            Dim ccn As Integer = c.Controls.Count - 1
+            If ccn < 0 Then Exit Sub
+
+            Dim ca(ccn) As Control
+            c.Controls.CopyTo(ca, 0)
+            Dim ka(ccn) As Double
+            Dim no0 As Boolean
+            For i = 0 To ccn
+                Dim ci = ca(i)
+                Dim ovc As Double = Math.Sqrt(ci.Top ^ 2 + ci.Left ^ 2) 'Test This
+                If ovc > 0 Then no0 = True
+                ka(i) = If(ovc > 0, ovc, i)
             Next i
+            If no0 Then Array.Sort(ka, ca)
+            For i = 0 To ccn
+                Dim ctrl As Control = ca(i)
+                ctrl.TabIndex = i
+                SetTabIndexes(ctrl)
+            Next i
+            'Dim ctrls = From i In c.Controls.OfType(Of Control)() Order By Math.Sqrt(i.Top ^ 2 + i.Left ^ 2)
+            'For Each i In ctrls
+            '    Dim index As Integer
+            '    i.TabIndex = index
+            '    index += 1
+            '    SetTabIndexes(i)
+            'Next i
         End Sub
 
         Sub RestoreClientSize(defaultWidthScale As Single, defaultHeightScale As Single)
@@ -150,8 +182,9 @@ Namespace UI
         End Sub
 
         Sub SaveClientSize()
-            s.Storage.SetInt(Me.GetType().Name + "width", Width)
-            s.Storage.SetInt(Me.GetType().Name + "height", Height)
+            Dim fName As String = Me.GetType().Name
+            s.Storage.SetInt(fName & "width", Width)
+            s.Storage.SetInt(fName & "height", Height)
         End Sub
     End Class
 
@@ -221,54 +254,55 @@ Namespace UI
 
     <Serializable()>
     Public Class WindowPositions
-        Public Positions As New Dictionary(Of String, Point)(37, StringComparer.Ordinal)
-        Private WindowStates As New Dictionary(Of String, FormWindowState)(37, StringComparer.Ordinal)
-
+        Private Positions As New Dictionary(Of String, Point)(37, StringComparer.Ordinal)
         Sub Save(form As Form)
-            SavePosition(form)
-            SaveWindowState(form)
+            If form.WindowState = FormWindowState.Normal Then Positions(form.Name & form.GetType().FullName & GetText(form)) = form.Location
+            'SavePosition(form)
+            'SaveWindowState(form) 'Dead Code ???
         End Sub
-
-        Sub SavePosition(form As Form)
-            If form.WindowState = FormWindowState.Normal Then
-                Positions(GetKey(form)) = form.Location
-            End If
-        End Sub
-
-        Sub SaveWindowState(form As Form)
-            WindowStates(GetKey(form)) = form.WindowState
-        End Sub
-
-        Shared Sub CenterScreen(form As Form, screenSize As Size) ' Screen.FromControl(form).WorkingArea
-            form.StartPosition = FormStartPosition.Manual
-            form.Location = New Point((screenSize.Width - form.Width) \ 2, (screenSize.Height - form.Height) \ 2)
-        End Sub
-
-        Sub RestorePosition(form As Form, screenSz As Size)
-            Dim text = GetText(form)
-
-            If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso TypeOf form IsNot UI.InputBoxForm Then
-                For Each i In s.WindowPositionsRemembered
-                    If text.StartsWith(i, StringComparison.Ordinal) OrElse String.Equals(i, "all") Then
-
-                        Dim pos As Point
-                        If Positions.TryGetValue(GetKey(form), pos) Then
-                            If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > screenSz.Width OrElse pos.Y + form.Height > screenSz.Height Then
-                                CenterScreen(form, screenSz)
-                            Else
-                                form.StartPosition = FormStartPosition.Manual
-                                form.Location = pos
-                            End If
-                        End If
-
-                        Exit For
-                    End If
-                Next
-            End If
-        End Sub
-
-        Function GetKey(form As Form) As String
-            Return form.Name + form.GetType().FullName + GetText(form)
+        'Private WindowStates As New Dictionary(Of String, FormWindowState)(37, StringComparer.Ordinal) 'Dead Code ???
+        'Sub SaveWindowState(form As Form) 'Dead Code ???
+        '    WindowStates(GetKey(form)) = form.WindowState
+        'End Sub
+        'Sub SavePosition(form As Form)
+        '    If form.WindowState = FormWindowState.Normal Then Positions(GetKey(form)) = form.Location
+        'End Sub
+        'Shared Sub CenterScreen(form As Form, screenSize As Size) ' Screen.FromControl(form).WorkingArea
+        '    form.StartPosition = FormStartPosition.Manual
+        '    form.Location = New Point((screenSize.Width - form.Width) \ 2, (screenSize.Height - form.Height) \ 2)
+        'End Sub
+        'Sub RestorePosition(form As Form, screenSz As Size) 'TODO make Function and SetBounds in one step
+        '    If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso TypeOf form IsNot UI.InputBoxForm Then
+        '        Dim text = GetText(form)
+        '        For Each i In s.WindowPositionsRemembered
+        '            If text.StartsWith(i, StringComparison.Ordinal) OrElse String.Equals(i, "all") Then
+        '                Dim pos As Point
+        '                If Positions.TryGetValue(GetKey(form), pos) Then
+        '                    form.StartPosition = FormStartPosition.Manual
+        '                    form.Location = If(pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > screenSz.Width OrElse pos.Y + form.Height > screenSz.Height,
+        '                        New Point((screenSz.Width - form.Width) \ 2, (screenSz.Height - form.Height) \ 2), 'CenterScreen(form, screenSz)
+        '                        pos)
+        '                End If
+        '                Exit For
+        '            End If
+        '        Next
+        '    End If
+        'End Sub
+        'Function GetKey(form As Form) As String
+        '    Return form.Name & form.GetType().FullName & GetText(form)
+        'End Function
+        Function RestorePosition(form As Form) As Point
+            Dim txt As String = GetText(form)
+            Dim wpr As String() = s.WindowPositionsRemembered
+            For i = 0 To wpr.Length - 1
+                Dim r = wpr(i)
+                If txt.StartsWith(r, StringComparison.Ordinal) OrElse String.Equals(r, "all") Then
+                    'Dim pos As Point
+                    Dim pos As Point = If(Positions.TryGetValue(form.Name & form.GetType().FullName & txt, pos), pos, New Point(-100000, 0))
+                    Return pos
+                End If
+            Next i
+            Return New Point(-100000, 0)
         End Function
 
         Function GetText(form As Form) As String
@@ -277,6 +311,12 @@ Namespace UI
                 Return "AudioConverter"
             ElseIf TypeOf form Is MainForm Then
                 Return "StaxRip"
+            ElseIf TypeOf form Is AudioForm Then
+                Return "Audio Settings"
+            ElseIf TypeOf form Is CodeEditor Then
+                Return "Code Editor"
+            ElseIf TypeOf form Is CustomMenuEditor Then
+                Return "Menu Editor"
             ElseIf TypeOf form Is HelpForm Then
                 Return "Help"
             ElseIf TypeOf form Is PreviewForm Then

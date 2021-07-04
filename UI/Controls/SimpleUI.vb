@@ -63,7 +63,7 @@ Public Class SimpleUI
             AddHandler fF.Load, eh
 
             Host.ResumeLayout(False) 'Test This !!! TODO :
-            ResumeLayout(False)
+            ResumeLayout()
             Tree.EndUpdate()
             'Parent.ResumeLayout(False) 'No way ???
 
@@ -88,9 +88,9 @@ Public Class SimpleUI
         Host.Size = New Size(Width - Tree.Width - CInt(fh / 3), Height)
 
         MyBase.OnLayout(levent)
-        Tree.EndUpdate()
         Host.ResumeLayout(False) 'ToDo Test this!!!
-        ResumeLayout(False)
+        ResumeLayout()
+        Tree.EndUpdate()
     End Sub
 
     Sub Save()
@@ -102,20 +102,22 @@ Public Class SimpleUI
     End Sub
 
     Sub Tree_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles Tree.AfterSelect
-        Dim node = e.Node
+        Tree.BeginUpdate() 'Test this 
 
+        Dim node = e.Node
         For Each i In Pages
             If i.Node IsNot node Then
                 DirectCast(i, Control).Visible = False
             End If
-        Next
+        Next i
         Dim nodeExists As Boolean
+        Dim fF = FindForm() 'test This !!!
         For Each i In Pages
             If i.Node Is node Then
                 If Not i.FormSizeScaleFactor.IsEmpty Then
-                    FindForm.ScaleClientSize(i.FormSizeScaleFactor.Width, i.FormSizeScaleFactor.Height)
+                    fF.ScaleClientSize(i.FormSizeScaleFactor.Width, i.FormSizeScaleFactor.Height)
                 ElseIf Not FormSizeScaleFactor.IsEmpty Then
-                    FindForm.ScaleClientSize(FormSizeScaleFactor.Width, FormSizeScaleFactor.Height)
+                    fF.ScaleClientSize(FormSizeScaleFactor.Width, FormSizeScaleFactor.Height)
                 End If
 
                 DirectCast(i, Control).Visible = True
@@ -126,19 +128,22 @@ Public Class SimpleUI
                 nodeExists = True
                 Exit For
             End If
-        Next
+        Next i
         ''If Pages.Where(Function(arg) arg.Node Is node).Count = 0 Then
         If Not nodeExists Then
             If node.Nodes.Count > 0 Then
                 Tree.SelectedNode = node.Nodes(0)
             End If
         End If
+
+        Tree.EndUpdate() 'Test this 
     End Sub
 
     Sub ShowPage(pagePath As String)
         For Each i In Pages
             If String.Equals(i.Path, pagePath) Then
                 Tree.SelectedNode = i.Node
+                Exit For 'Test this
             End If
         Next
     End Sub
@@ -147,6 +152,7 @@ Public Class SimpleUI
         For Each i In Pages
             If page Is i Then
                 Tree.SelectedNode = i.Node
+                Exit For 'Test this
             End If
         Next
     End Sub

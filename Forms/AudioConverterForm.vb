@@ -393,13 +393,13 @@ Public Class AudioConverterForm
     Private Shared OutPath As String
     Private Shared LastLogPath As String
     Private LogHeader As Boolean
-    Private ReadOnly AudioCL As CircularList(Of AudioProfile)
-    Private ReadOnly AudioSBL As SortableBindingList(Of AudioProfile)
+    Private AudioCL As CircularList(Of AudioProfile)
+    Private AudioSBL As SortableBindingList(Of AudioProfile)
 
     Private TBFindIdx As Integer = -1
     Private BuildFindT As Task(Of String())
 
-    Private ReadOnly StatTextSB As StringBuilder
+    Private StatTextSB As StringBuilder
     Private IsStatusFlashing As Boolean
     Private CurrentType As Type
     Private SelectChangeES As Boolean
@@ -415,9 +415,9 @@ Public Class AudioConverterForm
     Private ReadOnly PopulateRSW As New Stopwatch
     Private ReadOnly SW1 As New Stopwatch
     Private ReadOnly SW2 As New Stopwatch
-    Private ReadOnly AudioVideoFExts As HashSet(Of String)
+    Private AudioVideoFExts As HashSet(Of String)
     'Private ReadOnly InvalidPathCh As Char() = {":"c, "\"c, "/"c, "?"c, "^"c, "."c}
-    Private ReadOnly InvalidPathChHS As HashSet(Of Char)
+    Private InvalidPathChHS As HashSet(Of Char)
 
     'Private DGVEventCount As Integer
 
@@ -460,12 +460,14 @@ Public Class AudioConverterForm
                                                  ImageHelp.GetImageC(Symbol.FileExplorerApp),
                                                  ImageHelp.GetImageC(Symbol.fa_folder_open_o),
                                                  ImageHelp.GetImageC(Symbol.Save)})
+        Task.Run(Sub()
+                     StatTextSB = New StringBuilder(38)
+                     AudioCL = New CircularList(Of AudioProfile)
+                     AudioSBL = New SortableBindingList(Of AudioProfile)(AudioCL) With {.CheckConsistency = False, .SortOnChange = False, .RaiseListChangedEvents = True, .AllowNew = False}
+                     AudioVideoFExts = New HashSet(Of String)(FileTypes.Audio.ConcatA(FileTypes.VideoAudio), StringComparer.Ordinal)
+                     InvalidPathChHS = New HashSet(Of Char)({":"c, "\"c, "/"c, "?"c, "^"c, "."c})
+                 End Sub)
 
-        AudioVideoFExts = New HashSet(Of String)(FileTypes.Audio.ConcatA(FileTypes.VideoAudio), StringComparer.Ordinal)
-        InvalidPathChHS = New HashSet(Of Char)({":"c, "\"c, "/"c, "?"c, "^"c, "."c})
-        StatTextSB = New StringBuilder(38)
-        AudioCL = New CircularList(Of AudioProfile)
-        AudioSBL = New SortableBindingList(Of AudioProfile)(AudioCL) With {.CheckConsistency = False, .SortOnChange = False, .RaiseListChangedEvents = True, .AllowNew = False}
         InitializeComponent()
         Me.tlpMain.SuspendLayout()
         CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -484,24 +486,27 @@ Public Class AudioConverterForm
             '[InDesigner-InitSub]-dgvAudio.RowHeadersWidth = 24 ' (0)=42 +6 per number char
             .AutoGenerateColumns = False
             .DataSource = AudioSBL
-            Dim indexCol As New DataGridViewTextBoxColumn With {.SortMode = DataGridViewColumnSortMode.NotSortable, .HeaderText = "No.", .FillWeight = 10, .MinimumWidth = 28, .ReadOnly = True}
             'indexCol.ValueType = GetType(Integer) ; col.MinimumWidth = col.HeaderText.Length * 8 + 5 <no=32-noTTip> ; 'col.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
-            Dim profNameCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "Name", .HeaderText = "Profile", .FillWeight = 100, .MinimumWidth = 60, .ReadOnly = True}
-            Dim dispNameCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "DisplayName", .HeaderText = "Track", .FillWeight = 400, .MinimumWidth = 46, .ReadOnly = True}
-            Dim pathCol As New DataGridViewTextBoxColumn With {.DataPropertyName = "File", .HeaderText = "Full Path", .FillWeight = 500, .MinimumWidth = 74, .ReadOnly = True}
-            .Columns.AddRange({indexCol, profNameCol, dispNameCol, pathCol})
+            .Columns.AddRange({New DataGridViewTextBoxColumn With {.SortMode = DataGridViewColumnSortMode.NotSortable, .HeaderText = "No.", .FillWeight = 10, .MinimumWidth = 28, .[ReadOnly] = True},
+                               New DataGridViewTextBoxColumn With {.DataPropertyName = "Name", .HeaderText = "Profile", .FillWeight = 100, .MinimumWidth = 60, .[ReadOnly] = True},
+                               New DataGridViewTextBoxColumn With {.DataPropertyName = "DisplayName", .HeaderText = "Track", .FillWeight = 400, .MinimumWidth = 46, .[ReadOnly] = True},
+                               New DataGridViewTextBoxColumn With {.DataPropertyName = "File", .HeaderText = "Full Path", .FillWeight = 500, .MinimumWidth = 74, .[ReadOnly] = True}})
         End With
 
         If MaxThreads = 0 Then MaxThreads = s.ParallelProcsNum
         numThreads.Value = MaxThreads
         'UpdateDefaultButton()
         AddHandler TBFind.TextChanged, AddressOf TBFind_TextChanged
+        bnAdd.Select()
+        CMS = New ContextMenuStripEx(components)
+        '<.AddClickAction> bnMenuAudio.ClickAction = Sub() UpdateCMS(Me.bnMenuAudio, New System.ComponentModel.CancelEventArgs With {.Cancel = False})
+        CMS.SuspendLayout()
+        bnMenuAudio.ContextMenuStrip = CMS
 
         If Not imagesArrTask.IsCompleted Then Console.Beep(5500, 500) ' debug
 
         Dim imgsArr = imagesArrTask.Result
         BnFindNext.Image = imgsArr(0)
-        bnAdd.Select()
         bnAdd.Image = imgsArr(1)
         bnRemove.Image = imgsArr(2)
         bnPlay.Image = imgsArr(3)
@@ -512,11 +517,7 @@ Public Class AudioConverterForm
         bnAudioMediaInfo.Image = imgsArr(8)
         bnCMD.Image = imgsArr(9)
 
-        CMS = New ContextMenuStripEx(components)
-        '<.AddClickAction> bnMenuAudio.ClickAction = Sub() UpdateCMS(Me.bnMenuAudio, New System.ComponentModel.CancelEventArgs With {.Cancel = False})
-        With CMS
-            .SuspendLayout()
-            .Items.AddRange({
+        CMS.Items.AddRange({
             New ActionMenuItem("Select all  <Ctrl+A>", Sub() dgvAudio.SelectAll(), imgsArr(10)),
             New ActionMenuItem("Remove all", Sub()
                                                  PopulateTaskS = -1
@@ -579,10 +580,7 @@ Public Class AudioConverterForm
             New ActionMenuItem("Opus Help", Sub() Package.OpusEnc.ShowHelp()),
             New ActionMenuItem("ffmpeg Help", Sub() Package.ffmpeg.ShowHelp()),
             New ActionMenuItem("eac3to Help", Sub() g.ShellExecute("http://en.wikibooks.org/wiki/Eac3to"))})
-
-            bnMenuAudio.ContextMenuStrip = CMS
-            .ResumeLayout(False)
-        End With
+        CMS.ResumeLayout(False)
         'Me.tlpMain.ResumeLayout()
         'CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
         'Me.ResumeLayout()
@@ -677,32 +675,32 @@ Public Class AudioConverterForm
         'MsgBox($"{SW2.ElapsedTicks / SWFreq}msCMSOpen")
     End Sub
 
-    Private Sub UpdateControls(Optional SelRowsCount As Integer = -1, Optional CurrentRowI As Integer = -1)
+    Private Sub UpdateControls(Optional selRowsCount As Integer = -1, Optional currRowI As Integer = -1)
         ' SW1.Restart()
         Dim rC As Integer = AudioCL.Count
-        If SelRowsCount = -1 Then SelRowsCount = dgvAudio.Rows.GetRowCount(DataGridViewElementStates.Selected)
-        If CurrentRowI = -1 Then CurrentRowI = dgvAudio.CurrentCellAddress.Y
+        If selRowsCount = -1 Then selRowsCount = dgvAudio.Rows.GetRowCount(DataGridViewElementStates.Selected)
+        If currRowI = -1 Then currRowI = dgvAudio.CurrentCellAddress.Y
         StatTextSB.Length = 0
 
         If rC > 0 Then
-            StatTextSB.Append("Pos: ").Append((CurrentRowI + 1).ToInvariantString).Append(" Sel: ").Append(SelRowsCount.ToInvariantString).Append(" / Tot: ").Append(rC.ToInvariantString)
+            StatTextSB.Append("Pos: ").Append((currRowI + 1).ToInvariantString).Append(" Sel: ").Append(selRowsCount.ToInvariantString).Append(" / Tot: ").Append(rC.ToInvariantString)
         Else
             StatTextSB.Append("Please add or drag music files...")
         End If
 
         Me.BeginInvoke(Sub()
                            'SW2.Restart()
-                           'laAC.Text = "Pos: " & (CurrentRowI + 1).ToInvariantString & " | Sel: " & (SelRowsCount).ToInvariantString & " / Tot: " & (rC).ToInvariantString
+                           'laAC.Text = "Pos: " & (currRowI + 1).ToInvariantString & " | Sel: " & (selRowsCount).ToInvariantString & " / Tot: " & (rC).ToInvariantString
                            laAC.Text = StatTextSB.ToString
                            numThreads.Enabled = rC > 0
-                           bnRemove.Enabled = SelRowsCount > 0
-                           bnConvert.Enabled = SelRowsCount > 0
-                           bnUp.Enabled = SelRowsCount = 1 AndAlso CurrentRowI > 0
-                           bnDown.Enabled = SelRowsCount = 1 AndAlso CurrentRowI < rC - 1
-                           bnPlay.Enabled = CurrentRowI > -1
-                           bnEdit.Enabled = SelRowsCount > 0
-                           bnAudioMediaInfo.Enabled = CurrentRowI > -1
-                           bnCMD.Enabled = CurrentRowI > -1
+                           bnRemove.Enabled = selRowsCount > 0
+                           bnConvert.Enabled = selRowsCount > 0
+                           bnUp.Enabled = selRowsCount = 1 AndAlso currRowI > 0
+                           bnDown.Enabled = selRowsCount = 1 AndAlso currRowI < rC - 1
+                           bnPlay.Enabled = currRowI > -1
+                           bnEdit.Enabled = selRowsCount > 0
+                           bnAudioMediaInfo.Enabled = currRowI > -1
+                           bnCMD.Enabled = currRowI > -1
                            ' SW2.Stop()
                        End Sub)
         '   SW1.Stop()
@@ -806,7 +804,7 @@ Public Class AudioConverterForm
         If SelectChangeES AndAlso e.RowIndex = -1 AndAlso e.ColumnIndex > -1 AndAlso e.Button = MouseButtons.Left AndAlso AudioCL.Count > 0 Then
             SW2.Stop()
             Task.Run(Sub()
-                         UpdateControls(SelRowsCount:=1)
+                         UpdateControls(selRowsCount:=1)
                          SelectChangeES = False
                      End Sub)
         End If
@@ -1455,7 +1453,7 @@ Again: 'Debug StopWatch Use
         SW1.Stop()
         Dim st4 = SW1.ElapsedTicks / SWFreq
 
-        UpdateControls(SelRowsCount:=If(nrC > 1, 2, 1))
+        UpdateControls(selRowsCount:=If(nrC > 1, 2, 1))
         LastKeyDown = -1
         SelectChangeES = False
         ButtonAltImage(False)
@@ -1826,7 +1824,7 @@ Again: 'Debug StopWatch Use
         If e.KeyCode = Keys.F3 Then
             SW2.Stop()
             If LastKeyDown = 3 Then Task.Run(Sub()
-                                                 UpdateControls(SelRowsCount:=1)
+                                                 UpdateControls(selRowsCount:=1)
                                                  SelectChangeES = False
                                                  LastKeyDown = -1
                                              End Sub)
@@ -2132,7 +2130,7 @@ Again: 'Debug StopWatch Use
                 g.ShowCommandLinePreview("Command Line", (TryCast(ap, BatchAudioProfile)?.GetCode))
             End If
         Else
-                Task.Run(Sub() FlashingText("File not found ! Pos: " & (dgvAudio.CurrentCellAddress.Y + 1).ToInvariantString))
+            Task.Run(Sub() FlashingText("File not found ! Pos: " & (dgvAudio.CurrentCellAddress.Y + 1).ToInvariantString))
         End If
     End Sub
 

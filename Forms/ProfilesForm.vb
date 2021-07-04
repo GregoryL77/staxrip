@@ -36,7 +36,7 @@ Public Class ProfilesForm
     Friend WithEvents flpRight As FlowLayoutPanel
     Friend WithEvents tlpMain As TableLayoutPanel
     Friend WithEvents bnRename As System.Windows.Forms.Button
-    '<System.Diagnostics.DebuggerStepThrough()>
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.bnDown = New StaxRip.UI.ButtonEx()

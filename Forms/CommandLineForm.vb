@@ -11,6 +11,16 @@ Public Class CommandLineForm
     Private Items As List(Of Item)
     Private HighlightedControl As Control
     Private ComboBoxUpdated As Boolean
+    Private RTBLastH As Integer
+
+    'Private RTBLastLen As Integer
+
+    Private IsHandleCr As Boolean
+    Private RTBCmdFont As Font
+    Private RTBWidth As Integer
+    Private SLock As New Object
+    Private Running As Boolean
+    Private ScrollOn As Boolean
 
     Property HTMLHelp As String
 
@@ -26,20 +36,20 @@ Public Class CommandLineForm
                                    If gk.NullOrEmptyS OrElse Not singleList.Add(gk) Then
                                        Throw New Exception(pItC & "/" & singleList.Count & "/key found twice: " & gk)
                                    End If
-                               Next
+                               Next param
                            End Sub)
         InitializeComponent()
         Me.tlpMain.SuspendLayout()
+        Me.PanelB.SuspendLayout()
         Me.SuspendLayout()
-        SimpleUI.ScaleClientSize(48, 34, FontHeight) 'Was: (44, 34)
+        Dim sfh = If(s.UIScaleFactor = 1, 16, New Font("Segoe UI", 9 * s.UIScaleFactor).Height)
+        SimpleUI.Size = New Size(sfh * 50, sfh * 30) 'Was: (44, 32) Org:(40, 26)
+        RTBWidth = sfh * 50
+        RTBCmdFont = rtbCommandLine.Font 'New Font("Consolas", 10 * s.UIScaleFactor)
         Me.Params = params
-        Text = params.Title & " (" & pItC.ToInvariantString & " options)"
+        Me.Text = params.Title & " (" & pItC.ToInvariantString & " options)"
 
         MeTextOld = Text 'Debug
-
-        'rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
-        'rtbCommandLine.ContextMenuStrip = cmsCommandLine'inDesigner 
-        'rtbCommandLine.ContextMenuStrip?.Dispose() '- NoInitMenu
 
         cbGoTo.Sorted = False 'true 
         cbGoTo.SendMessageCue("Search")
@@ -66,6 +76,9 @@ Public Class CommandLineForm
         End Try
 
         InitUI()
+        AddHandler params.ValueChanged, AddressOf ValueChanged
+        params.RaiseValueChanged(Nothing)
+
         SelectLastPage()
     End Sub
 
@@ -74,19 +87,14 @@ Public Class CommandLineForm
         Task.Run(Sub()
                      IsHandleCr = True
                      Threading.Thread.Sleep(60)
-                     If IsHandleCr Then
-                         RTBFont = rtbCommandLine.Font
-                         AddHandler Params.ValueChanged, AddressOf ValueChanged
-                         Params.RaiseValueChanged(Nothing)
-                         BeginInvoke(Sub() UpdateSearchComboBox())
-                     End If
+                     If IsHandleCr Then BeginInvoke(Sub() UpdateSearchComboBox())
                  End Sub)
-
-
         Me.tlpMain.ResumeLayout(False)
+        Me.PanelB.ResumeLayout(False)
         Me.ResumeLayout(False)
     End Sub
 
+    Private MeTextOld As String 'Debug
     Protected Overrides Sub OnClosing(e As CancelEventArgs) 'debug
         IsHandleCr = False
         Text = MeTextOld
@@ -94,6 +102,7 @@ Public Class CommandLineForm
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        RTBCmdFont = Nothing
         SimpleUI.SaveLast(Params.Title + "page selection")
         RemoveHandler Params.ValueChanged, AddressOf ValueChanged
         RemoveHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
@@ -120,49 +129,80 @@ Public Class CommandLineForm
         SimpleUI.SelectLast(Params.Title + "page selection")
     End Sub
 
-    Private MeTextOld As String 'Debug
-    Private RTBLastH As Integer
-    Private IsHandleCr As Boolean
-    Private RTBFont As Font
-
     Sub ValueChanged(item As CommandLineParam)
         'rtbCommandLine.SetText(Params.GetCommandLine(False, False))
         'rtbCommandLine.SelectionLength = 0
-        Dim rtbTxtT = Task.Run(Function() Params.GetCommandLine(False, False))
-        'Static fnt As New Font("Consolas", 9.75F * s.UIScaleFactor)
         ComboBoxUpdated = False
-        If Not RTBFont.Equals(rtbCommandLine.Font) Then Console.Beep(700, 12)
-        Dim rtbHeightT = Task.Run(Function() TextRenderer.MeasureText(rtbTxtT.Result, RTBFont, New Size(Width - 14, 100000), TextFormatFlags.WordBreak).Height + 1) 'width - margins
         If IsHandleCr Then
-            Task.Run(Sub() If IsHandleCr Then BeginInvoke(
-                         Sub()
+
+            Dim rtbTxtT = Task.Run(Function() Params.GetCommandLine(False, False))
+            Dim rtbHeightT = Task.Run(Function() TextRenderer.MeasureText(rtbTxtT.Result, RTBCmdFont, New Size(RTBWidth, 100000), (TextFormatFlags.WordBreak Or TextFormatFlags.TextBoxControl)).Height + 2) 'rtbWidth=width-30
+            Dim SelsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxtT))
+            Task.Run(Sub()
+                         SyncLock SLock
+                             Running = True
+
+
                              Dim Ssw11 As New Stopwatch 'debug
+                             Ssw11.Restart()
                              Dim Tttt1 As String
-                             Tttt1 = rtbTxtT.IsCompleted.ToString
-                             Ssw11.Restart()
-                             rtbCommandLine.SetText(rtbTxtT.Result)
-                             'rtbCommandLine.UpdateHeightAsync()
-                             rtbCommandLine.SelectionLength = 0
+
+                             Dim my_sh As Integer = Math.Max(CInt(Math.Floor(rtbTxtT.Result.Length * 10 / RTBWidth)) * 17 + 2, 19)  'EM=10 lh=18=16+2; 18= 16 * 1.115'Testings ToDo!! 'RemoveIt!
+                             Dim rtbH As Integer = rtbHeightT.Result
+
                              Ssw11.Stop()
-                             Tttt1 &= Ssw11.ElapsedTicks / SWFreq & rtbHeightT.IsCompleted.ToString
+                             Tttt1 = SelsT.IsCompleted.ToString & Ssw11.ElapsedTicks / SWFreq
+                             'Console.Beep(7000, 14) 'Debug
                              Ssw11.Restart()
 
-                             Dim mH As Integer = rtbHeightT.Result
-                             If mH - RTBLastH > 12 AndAlso mH < ScreenResPrim.Height * 0.4 Then 'diff > Font.height
-                                 rtbCommandLine.Height = mH
+                             If Not Running AndAlso IsHandleCr Then
+                                 BeginInvoke(Sub()
+                                                 If Running Then Exit Sub
+                                                 Ssw11.Restart()
+
+                                                 If Math.Abs(rtbH - RTBLastH) > 12 Then 'diff > Font.height
+                                                     If rtbH <= ScreenResPrim.Height * 0.4 Then
+                                                         rtbCommandLine.Height = rtbH 'ToDO ADD Scroll ON/OFF ???
+                                                         'Height += rtbH - RTBLastH '???
+                                                         If ScrollOn Then
+                                                             ScrollOn = False
+                                                             rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None
+                                                         End If
+                                                     Else
+                                                         If Not ScrollOn Then
+                                                             ScrollOn = True
+                                                             rtbCommandLine.Height = CInt(ScreenResPrim.Height * 0.4)
+                                                             rtbCommandLine.ScrollBars = RichTextBoxScrollBars.Vertical 'WordWrap to HorizontalScroll Enable!
+                                                         End If
+                                                     End If
+                                                 End If
+
+                                                 rtbCommandLine.SetText(rtbTxtT, SelsT)
+                                                 RTBLastH = rtbH
+
+                                                 Ssw11.Stop()
+                                                 Tttt1 &= $"msSelsT&MHT|{Ssw11.ElapsedTicks / SWFreq}ms|H/MyH:{rtbH}/{my_sh}|{RTBCmdFont.Size}"
+                                                 Me.Text = Tttt1
+                                             End Sub)
                              End If
-                             RTBLastH = mH
-
-                             Ssw11.Stop()
-                             Tttt1 &= $"|{Ssw11.ElapsedTicks / SWFreq}ms|H:{mH}"
-                             Me.Text = Tttt1
-                         End Sub))
+                             Running = False
+                         End SyncLock
+                     End Sub)
         Else
-            rtbCommandLine.SetText(rtbTxtT.Result)
+            Dim rtbTxtT = Task.Run(Function() Params.GetCommandLine(False, False))
+            Dim SelsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxtT))
+            Dim rtbHeightT = Task.Run(Function() TextRenderer.MeasureText(rtbTxtT.Result, RTBCmdFont, New Size(RTBWidth, 100000), (TextFormatFlags.WordBreak Or TextFormatFlags.TextBoxControl)).Height + 2) 'rtbWidth=width-30
             'rtbCommandLine.UpdateHeightAsync()
-            rtbCommandLine.SelectionLength = 0
-            rtbCommandLine.Height = rtbHeightT.Result
-            RTBLastH = rtbHeightT.Result
+            'rtbCommandLine.SelectionLength = 0
+            rtbCommandLine.SetText(rtbTxtT, SelsT)
+            Dim rtbH As Integer = rtbHeightT.Result
+            If rtbH > ScreenResPrim.Height * 0.4 Then
+                ScrollOn = True
+                rtbCommandLine.ScrollBars = RichTextBoxScrollBars.Vertical 'WordWrap to HorizontalScroll Enable!
+                rtbH = CInt(ScreenResPrim.Height * 0.4)
+            End If
+            rtbCommandLine.Height = rtbH
+            RTBLastH = rtbH
         End If
         'UpdateSearchComboBox()
     End Sub

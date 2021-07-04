@@ -35,7 +35,7 @@ Public Class PreviewForm
     Friend WithEvents cmsMain As ContextMenuStripEx
     Friend WithEvents ToolTip As System.Windows.Forms.ToolTip
 
-    '<System.Diagnostics.DebuggerStepThrough()>
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.bnDelete = New StaxRip.UI.ButtonEx()

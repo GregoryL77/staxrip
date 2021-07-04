@@ -32,7 +32,7 @@ Public Class ProcessingForm
         MyBase.Dispose(disposing)
     End Sub
 
-    '<System.Diagnostics.DebuggerStepThrough()>
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.bnAbort = New System.Windows.Forms.Button()

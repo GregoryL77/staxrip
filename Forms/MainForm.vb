@@ -91,7 +91,7 @@ Public Class MainForm
     Friend WithEvents tlpSourceValues As TableLayoutPanel
     Public WithEvents TipProvider As StaxRip.UI.TipProvider
 
-    '<System.Diagnostics.DebuggerStepThrough()>
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.bnNext = New StaxRip.UI.ButtonEx()

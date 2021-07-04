@@ -573,14 +573,15 @@ Namespace UI
                                               ImageHelp.GetSymbolImageSmall(Symbol.More).ResizeIconSize(sic)})
 
             Dim symbComparer = New Comparison(Of Symbol)(Function(x, y) String.Compare([Enum](Of Symbol).GetName(x), [Enum](Of Symbol).GetName(y), StringComparison.OrdinalIgnoreCase))
-            Dim esv = [Enum](Of Symbol).GetValues
+            'Dim esk = [Enum](Of Symbol).GetNames 'Faster <0.1ms; Retrieving one by one ~0.3ms
+            Dim esv = [Enum](Of Symbol).GetValues '~0.3ms
 
             Dim EnumSag As Symbol()
             Dim EnumAwe As Symbol()
 
             Dim ESagImgsT = Task.Run(Function()
-                                         Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0)
-                                         Array.Sort(eSag, symbComparer)
+                                         Dim eSag As Symbol() = esv.WhereF(Function(s) s <= 61400 AndAlso s > 0) 'ToDO: Add sort Key Array; GetNames For Loop
+                                         Array.Sort(eSag, symbComparer) 'Now ~3ms
                                          EnumSag = eSag
                                          Dim retA(eSag.Length - 1) As Image
                                          'Parallel.For(0, eSag.Length, New ParallelOptions With {.MaxDegreeOfParallelism = 2}, Sub(n) retA(n) = ImageHelp.GetSymbolImage(eSag(n)))
@@ -643,7 +644,7 @@ Namespace UI
             ToolsToolStripDropDownButton.Image = imgAr(9)
             ToolStrip.ResumeLayout(False) 'Needed??? ToDo!!! Seems indeed needed!
 
-            Dim unused = Task.Run(
+            Dim _unused = Task.Run(
                 Sub()
                     For n = 1 To 3
                         Thread.Sleep(90) '30-60(onshown),60-105(new)

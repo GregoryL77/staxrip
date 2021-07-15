@@ -93,7 +93,7 @@ Public Class Package
         .IsIncluded = False,
         .VersionAllowAny = True,
         .Find = False,
-        .Locations = {Registry.ClassesRoot.GetString("CLSID\" + GUIDS.HaaliMuxer.ToString + "\InprocServer32", Nothing).Dir}})
+        .Locations = {Registry.ClassesRoot.GetString("CLSID\" & GUIDS.HaaliMuxer.ToString & "\InprocServer32", Nothing).Dir}})
 
     Shared Property NicAudio As Package = Add(New PluginPackage With {
         .Name = "NicAudio",
@@ -128,8 +128,7 @@ Public Class Package
         .IsIncluded = False,
         .VersionAllowAny = True,
         .Find = False,
-        .Description = "Versatile audio video convertor console app. " +
-                       "Custom build with non-free libraries like fdk-aac.",
+        .Description = "Versatile audio video convertor console app. " & "Custom build with non-free libraries like fdk-aac.",
         .RequiredFunc = Function() Audio.CommandContains("libfdk_aac")})
 
     Shared Property qaac As Package = Add(New Package With {
@@ -409,7 +408,7 @@ Public Class Package
         .Required = False,
         .WebURL = "https://sourceforge.net/projects/mpcbe/",
         .Description = "DirectShow based media player (GUI app).",
-        .Locations = {Registry.LocalMachine.GetString("SOFTWARE\MPC-BE", "ExePath").Dir, Folder.Programs + "MPC-BE x64"}}) '.Filename32 = "mpc-be.exe",
+        .Locations = {Registry.LocalMachine.GetString("SOFTWARE\MPC-BE", "ExePath").Dir, Folder.Programs & "MPC-BE x64"}}) '.Filename32 = "mpc-be.exe",
 
     Shared Property MpcHC As Package = Add(New Package With {
         .Name = "MPC-HC",
@@ -420,7 +419,7 @@ Public Class Package
         .Required = False,
         .WebURL = "https://mpc-hc.org/",
         .Description = "DirectShow based media player (GUI app).",
-        .Locations = {Registry.CurrentUser.GetString("Software\MPC-HC\MPC-HC", "ExePath").Dir, Folder.Programs + "MPC-HC"}})
+        .Locations = {Registry.CurrentUser.GetString("Software\MPC-HC\MPC-HC", "ExePath").Dir, Folder.Programs & "MPC-HC"}})
 
     Shared Property modPlus As Package = Add(New PluginPackage With {
         .Name = "modPlus",
@@ -690,9 +689,9 @@ Public Class Package
         .HelpURL = "https://github.com/FFMS/ffms2/tree/master/doc",
         .Description = "AviSynth+ and VapourSynth source filter supporting various input formats.",
         .AvsFilterNames = {"FFVideoSource", "FFAudioSource"},
-        .AvsFiltersFunc = Function() {New VideoFilter("Source", "FFVideoSource", $"FFVideoSource(""%source_file%"", cachefile=""%source_temp_file%.ffindex"")" + BR + "#AssumeFPS(25)")},
+        .AvsFiltersFunc = Function() {New VideoFilter("Source", "FFVideoSource", $"FFVideoSource(""%source_file%"", cachefile=""%source_temp_file%.ffindex"")" & BR & "#AssumeFPS(25)")},
         .VSFilterNames = {"ffms2"},
-        .VSFiltersFunc = Function() {New VideoFilter("Source", "ffms2", "clip = core.ffms2.Source(r""%source_file%"", cachefile=r""%source_temp_file%.ffindex"")" + BR + "#clip = core.std.AssumeFPS(clip, None, 25, 1)")}})
+        .VSFiltersFunc = Function() {New VideoFilter("Source", "ffms2", "clip = core.ffms2.Source(r""%source_file%"", cachefile=r""%source_temp_file%.ffindex"")" & BR & "#clip = core.std.AssumeFPS(clip, None, 25, 1)")}})
 
     Shared Property AviSynthShader As Package = Add(New PluginPackage With {
         .Name = "AviSynthShader DLL",
@@ -777,7 +776,7 @@ Public Class Package
         .AvsFilterNames = {"QTGMC"},
         .AvsFiltersFunc = Function() {
             New VideoFilter("Field", "QTGMC | QTGMC...", "QTGMC(preset=""$select:msg:Select a preset.;Draft;Ultra Fast;Super Fast;Very Fast;Faster;Fast;Medium;Slow;Slower;Very Slow;Placebo$"", InputType=$select:msg:Select Input Type;Interlaced|0;Progressive|1;Progressive Repair Details|2;Progressive Full Repair|3$, sourceMatch=3, sharpness=0.2, tr2=2, ediThreads=8)"),
-            New VideoFilter("Field", "QTGMC | QTGMC With Repair", "QTGMC1 = QTGMC(preset=""Slower"", inputType=2)" + BR + "QTGMC2 = QTGMC(preset=""Slower"", inputType=3, prevGlobals=""Reuse"")" + BR + "$select:msg:Select Repair Mode To Use;Repair|Repair(QTGMC1, QTGMC2, 1);Repair16|Repair16(QTGMC1, QTGMC2, 1)$")}})
+            New VideoFilter("Field", "QTGMC | QTGMC With Repair", "QTGMC1 = QTGMC(preset=""Slower"", inputType=2)" & BR & "QTGMC2 = QTGMC(preset=""Slower"", inputType=3, prevGlobals=""Reuse"")" & BR & "$select:msg:Select Repair Mode To Use;Repair|Repair(QTGMC1, QTGMC2, 1);Repair16|Repair16(QTGMC1, QTGMC2, 1)$")}})
 
     Shared Property SMDegrain As Package = Add(New PluginPackage With {
         .Name = "SMDegrain",
@@ -788,8 +787,8 @@ Public Class Package
         .AvsFilterNames = {"SMDegrain"},
         .AvsFiltersFunc = Function() {
             New VideoFilter("Noise", "SMDegrain | SMDGrain", "SMDegrain(tr=2, thSAD=250, contrasharp=false, refinemotion=true, lsb=false)"),
-            New VideoFilter("Noise", "SMDegrain | SMDGrain With Motion Vectors", "super_search = Dither_Luma_Rebuild(S0=1.0, c=0.0625).MSuper(rfilter=4)" + BR + "bv2 = super_search.MAnalyse(isb=true,  delta=2, overlap=4)" + BR + "bv1 = super_search.MAnalyse(isb=true,  delta=1, overlap=4)" + BR + "fv1 = super_search.MAnalyse(isb=false, delta=1, overlap=4)" + BR + "fv2 = super_search.MAnalyse(isb=false, delta=2, overlap=4)" + BR + "MDegrain2(MSuper(levels=1), bv1, fv1, bv2, fv2, thSAD=300, thSADC=150)"),
-            New VideoFilter("Noise", "SMDegrain | SMDGrain 16Bit", "sharp=last" + BR + "dfttest(tbsize=1, sigma=10, lsb=True)" + BR + "SMDegrain(tr=3, thSAD=300, CClip=sharp, lsb_in=True, lsb_out=True)")}})
+            New VideoFilter("Noise", "SMDegrain | SMDGrain With Motion Vectors", "super_search = Dither_Luma_Rebuild(S0=1.0, c=0.0625).MSuper(rfilter=4)" & BR & "bv2 = super_search.MAnalyse(isb=true,  delta=2, overlap=4)" & BR & "bv1 = super_search.MAnalyse(isb=true,  delta=1, overlap=4)" & BR & "fv1 = super_search.MAnalyse(isb=false, delta=1, overlap=4)" & BR & "fv2 = super_search.MAnalyse(isb=false, delta=2, overlap=4)" & BR & "MDegrain2(MSuper(levels=1), bv1, fv1, bv2, fv2, thSAD=300, thSADC=150)"),
+            New VideoFilter("Noise", "SMDegrain | SMDGrain 16Bit", "sharp=last" & BR & "dfttest(tbsize=1, sigma=10, lsb=True)" & BR & "SMDegrain(tr=3, thSAD=300, CClip=sharp, lsb_in=True, lsb_out=True)")}})
 
     Shared Property Zs_RF_Shared As Package = Add(New PluginPackage With {
         .Name = "Zs_RF_Shared",
@@ -828,12 +827,12 @@ Public Class Package
         .HelpUrlVapourSynth = "https://github.com/HolyWu/L-SMASH-Works/blob/master/VapourSynth/README",
         .AvsFilterNames = {"LSMASHVideoSource", "LSMASHAudioSource", "LWLibavVideoSource", "LWLibavAudioSource"},
         .AvsFiltersFunc = Function() {
-            New VideoFilter("Source", "LSMASHVideoSource", "LSMASHVideoSource(""%source_file%"")" + BR + "#AssumeFPS(25)"),
-            New VideoFilter("Source", "LWLibavVideoSource", "LWLibavVideoSource(""%source_file%"", cachefile=""%source_temp_file%.lwi"")" + BR + "#AssumeFPS(25)")},
+            New VideoFilter("Source", "LSMASHVideoSource", "LSMASHVideoSource(""%source_file%"")" & BR & "#AssumeFPS(25)"),
+            New VideoFilter("Source", "LWLibavVideoSource", "LWLibavVideoSource(""%source_file%"", cachefile=""%source_temp_file%.lwi"")" & BR & "#AssumeFPS(25)")},
         .VSFilterNames = {"lsmas.LibavSMASHSource", "lsmas.LWLibavSource"},
         .VSFiltersFunc = Function() {
-            New VideoFilter("Source", "LibavSMASHSource", "clip = core.lsmas.LibavSMASHSource(r""%source_file%"")" + BR + "#clip = core.std.AssumeFPS(clip, None, 25, 1)"),
-            New VideoFilter("Source", "LWLibavSource", "clip = core.lsmas.LWLibavSource(r""%source_file%"", cachefile=r""%source_temp_file%.lwi"")" + BR + "#clip = core.std.AssumeFPS(clip, None, 25, 1)")}})
+            New VideoFilter("Source", "LibavSMASHSource", "clip = core.lsmas.LibavSMASHSource(r""%source_file%"")" & BR & "#clip = core.std.AssumeFPS(clip, None, 25, 1)"),
+            New VideoFilter("Source", "LWLibavSource", "clip = core.lsmas.LWLibavSource(r""%source_file%"", cachefile=r""%source_temp_file%.lwi"")" & BR & "#clip = core.std.AssumeFPS(clip, None, 25, 1)")}})
 
     Shared Property BM3D As Package = Add(New PluginPackage With {
         .Name = "BM3D",
@@ -850,7 +849,7 @@ Public Class Package
         .AvsFilterNames = {"MCTemporalDenoise", "MCTemporalDenoisePP"},
         .AvsFiltersFunc = Function() {
             New VideoFilter("Noise", "MCTemporalDenoise | MCTemporalDenoise", "MCTemporalDenoise(settings=""medium"")"),
-            New VideoFilter("Noise", "MCTemporalDenoise | MCTemporalDenoisePP", "source=last" + BR + "denoised=FFT3Dfilter()" + BR + "MCTemporalDenoisePP(denoised)")}})
+            New VideoFilter("Noise", "MCTemporalDenoise | MCTemporalDenoisePP", "source=last" & BR & "denoised=FFT3Dfilter()" & BR & "MCTemporalDenoisePP(denoised)")}})
 
     Shared Property DFTTestAVS As Package = Add(New PluginPackage With {
         .Name = "DFTTest",
@@ -1260,7 +1259,7 @@ Public Class Package
             .Description = "A fast and accurate denoiser for a Full HD video from a H.264 camera. ",
             .WebURL = "http://avisynth.nl",
             .AvsFilterNames = {"DeNoiseMD1", "DenoiseMD2"},
-            .AvsFiltersFunc = Function() {New VideoFilter("Noise", "DeNoise | Denoise MD", "DeNoiseMD1(sigma=4, overlap=2, thcomp=80, str=0.8)" + "DitherPost(mode=7, ampo=1, ampn=0)")}})
+            .AvsFiltersFunc = Function() {New VideoFilter("Noise", "DeNoise | Denoise MD", "DeNoiseMD1(sigma=4, overlap=2, thcomp=80, str=0.8)" & "DitherPost(mode=7, ampo=1, ampn=0)")}})
 
         Add(New PluginPackage With {
             .Name = "DeNoiseMF",
@@ -1411,7 +1410,7 @@ Public Class Package
             .AvsFilterNames = {"RemoveGrain", "Clense", "ForwardClense", "BackwardClense", "Repair", "VerticalCleaner"},
             .AvsFiltersFunc = Function() {
                 New VideoFilter("Noise", "RemoveGrain | RemoveGrain", "RemoveGrain(mode=2, modeU=2, modeV=2, planar=false)"),
-                New VideoFilter("Noise", "RemoveGrain | RemoveGrain With Repair", "Processed = RemoveGrain(mode=2, modeU=2, modeV=2, planar=false)" + BR + "Repair(Processed, mode=2, modeU=2, modeV=2, planar=false)")}})
+                New VideoFilter("Noise", "RemoveGrain | RemoveGrain With Repair", "Processed = RemoveGrain(mode=2, modeU=2, modeV=2, planar=false)" & BR & "Repair(Processed, mode=2, modeU=2, modeV=2, planar=false)")}})
 
         Add(New PluginPackage With {
             .Name = "JPSDR",
@@ -1484,7 +1483,7 @@ Public Class Package
             .Description = "InsaneAA Anti-Aliasing Script.",
             .WebURL = "https://github.com/IFeelBloated/Fix-Telecined-Fades",
             .VSFilterNames = {"ftf.FixFades"},
-            .VSFiltersFunc = Function() {New VideoFilter("Restoration", "RCR | Fix Telecined Fades", "clip = core.fmtc.bitdepth (clip, bits=32)" + BR + "clip = core.ftf.FixFades(clip)" + BR + "clip = core.fmtc.bitdepth (clip, bits=8)")}})
+            .VSFiltersFunc = Function() {New VideoFilter("Restoration", "RCR | Fix Telecined Fades", "clip = core.fmtc.bitdepth (clip, bits=32)" & BR & "clip = core.ftf.FixFades(clip)" & BR & "clip = core.fmtc.bitdepth (clip, bits=8)")}})
 
         Add(New PluginPackage With {
             .Name = "vcmod",
@@ -1775,7 +1774,7 @@ Public Class Package
             .Name = "msmoosh",
             .Filename = "libmsmoosh.dll",
             .VSFilterNames = {"msmoosh.MSmooth", "msmoosh.MSharpen"},
-            .Description = "MSmooth is a spatial smoother that doesn't touch edges." + BR + "MSharpen is a sharpener that tries to sharpen only edges.",
+            .Description = "MSmooth is a spatial smoother that doesn't touch edges." & BR & "MSharpen is a sharpener that tries to sharpen only edges.",
             .WebURL = "http://github.com/dubhater/vapoursynth-msmoosh",
             .VSFiltersFunc = Function() {
                 New VideoFilter("Restoration", "DeBlock | MSmooth", "clip = core.msmoosh.MSmooth(clip, threshold=3.0, strength=1)"),
@@ -1943,11 +1942,11 @@ Public Class Package
 
                 If Not plugin.AvsFilterNames.NothingOrEmpty AndAlso Not plugin.VSFilterNames.NothingOrEmpty Then
 
-                    Return Name + " avs+vs"
+                    Return Name & " avs&vs"
                 ElseIf Not plugin.AvsFilterNames.NothingOrEmpty Then
-                    Return Name + " avs"
+                    Return Name & " avs"
                 ElseIf Not plugin.VSFilterNames.NothingOrEmpty Then
-                    Return Name + " vs"
+                    Return Name & " vs"
                 End If
             End If
 
@@ -1959,7 +1958,7 @@ Public Class Package
 
     Property Filename As String
         Get
-            'If g.Is32Bit AndAlso Filename32.NotNullOrEmptyS Then ' Assume 64 bit only!!!
+            'If g.Is32Bit AndAlso Filename32?.Length > 0 Then ' Assume 64 bit only!!!
             '    Return Filename32
             'End If
 
@@ -1996,7 +1995,7 @@ Public Class Package
 
     Overridable Property Required() As Boolean
         Get
-            If Not RequiredFunc Is Nothing Then
+            If RequiredFunc IsNot Nothing Then
                 Return RequiredFunc.Invoke
             End If
 
@@ -2008,7 +2007,7 @@ Public Class Package
     End Property
 
     Function GetTypeName() As String
-        If Not HelpSwitch Is Nothing Then
+        If HelpSwitch IsNot Nothing Then
             Return "Console App"
         ElseIf Description.ContainsEx("GUI app") Then
             Return "GUI App"
@@ -2063,17 +2062,17 @@ Public Class Package
         End If
 
         dic("AviSynth") = HelpUrlAviSynth
-        If HelpFilename.NotNullOrEmptyS Then
+        If HelpFilename?.Length > 0 Then
             dic("Local") = Directory & HelpFilename
         End If
         dic("Online") = HelpURL
         dic("VapourSynth") = HelpUrlVapourSynth
-        dic("Wiki") = "https://github.com/staxrip/staxrip/wiki/" + Name.Replace(" ", "-")
+        dic("Wiki") = "https://github.com/staxrip/staxrip/wiki/" & Name.Replace(" ", "-")
 
-        'Dim count = dic.Values.Where(Function(val) val.NotNullOrEmptyS).Count
+        'Dim count = dic.Values.Where(Function(val) val?.Length > 0).Count
         Dim cn As Integer
         For Each val In dic.Values
-            If val.NotNullOrEmptyS Then cn += 1
+            If val?.Length > 0 Then cn += 1
             If cn > 1 Then Exit For
         Next
 
@@ -2082,12 +2081,12 @@ Public Class Package
                 dialog.MainInstruction = "Choose option"
 
                 For Each pair In dic
-                    If pair.Value.NotNullOrEmptyS Then
+                    If pair.Value?.Length > 0 Then
                         dialog.AddCommand(pair.Key, pair.Value)
                     End If
                 Next
 
-                If dialog.Show.NotNullOrEmptyS Then
+                If dialog.Show?.Length > 0 Then
                     CreateHelpfile()
                     g.ShellExecute(dialog.SelectedValue)
                 End If
@@ -2100,21 +2099,21 @@ Public Class Package
 
     Public ReadOnly Property HelpFile As String
         Get
-            Return Directory + HelpFilename
+            Return Directory & HelpFilename
         End Get
     End Property
 
     Public ReadOnly Property URL As String
         Get
-            If WebURL.NotNullOrEmptyS Then
+            If WebURL?.Length > 0 Then
                 Return WebURL
-            ElseIf HelpURL.NotNullOrEmptyS Then
+            ElseIf HelpURL?.Length > 0 Then
                 Return HelpURL
-            ElseIf HelpUrlAviSynth.NotNullOrEmptyS Then
+            ElseIf HelpUrlAviSynth?.Length > 0 Then
                 Return HelpUrlAviSynth
-            ElseIf HelpUrlVapourSynth.NotNullOrEmptyS Then
+            ElseIf HelpUrlVapourSynth?.Length > 0 Then
                 Return HelpUrlVapourSynth
-            ElseIf DownloadURL.NotNullOrEmptyS Then
+            ElseIf DownloadURL?.Length > 0 Then
                 Return DownloadURL
             End If
         End Get
@@ -2122,20 +2121,20 @@ Public Class Package
 
     Public ReadOnly Property HelpFileOrURL As String
         Get
-            If HelpFilename.NotNullOrEmptyS Then
+            If HelpFilename?.Length > 0 Then
                 Return HelpFile
-            ElseIf HelpURL.NotNullOrEmptyS Then
+            ElseIf HelpURL?.Length > 0 Then
                 Return HelpURL
-            ElseIf HelpUrlAviSynth.NotNullOrEmptyS Then
+            ElseIf HelpUrlAviSynth?.Length > 0 Then
                 Return HelpUrlAviSynth
-            ElseIf HelpUrlVapourSynth.NotNullOrEmptyS Then
+            ElseIf HelpUrlVapourSynth?.Length > 0 Then
                 Return HelpUrlVapourSynth
-            ElseIf WebURL.NotNullOrEmptyS Then
+            ElseIf WebURL?.Length > 0 Then
                 Return WebURL
-            ElseIf DownloadURL.NotNullOrEmptyS Then
+            ElseIf DownloadURL?.Length > 0 Then
                 Return DownloadURL
             Else
-                Return "https://github.com/staxrip/staxrip/wiki/" + Name.Replace(" ", "-")
+                Return "https://github.com/staxrip/staxrip/wiki/" & Name.Replace(" ", "-")
             End If
         End Get
     End Property
@@ -2150,8 +2149,7 @@ Public Class Package
                 Dim stderr = HelpSwitch.Contains("stderr")
                 Dim switch = If(stderr, HelpSwitch.Replace("stderr", ""), HelpSwitch)
 
-                File.WriteAllText(HelpFile, BR + ProcessHelp.GetConsoleOutput(
-                    Path, switch, stderr).Trim + BR)
+                File.WriteAllText(HelpFile, BR & ProcessHelp.GetConsoleOutput(Path, switch, stderr).Trim & BR)
 
                 Return HelpFile.ReadAllText
             End If
@@ -2162,17 +2160,18 @@ Public Class Package
     End Function
 
     Function VerifyOK(Optional showEvenIfNotRequired As Boolean = False) As Boolean
-        If (Required() OrElse showEvenIfNotRequired) AndAlso (Required AndAlso GetStatus().NotNullOrEmptyS) Then
+        Dim req As Boolean = Required
+        If (req OrElse showEvenIfNotRequired) AndAlso (req AndAlso GetStatus().NotNullOrEmptyS) Then
             Using form As New AppsForm
                 form.ShowPackage(Me)
                 form.ShowDialog()
 
-                If GetStatus().NotNullOrEmptyS Then
+                If GetStatus()?.Length > 0 Then
                     Throw New AbortException()
                 End If
             End Using
 
-            If Required AndAlso GetStatus().NotNullOrEmptyS Then
+            If Required AndAlso GetStatus()?.Length > 0 Then
                 Return False
             End If
         End If
@@ -2199,7 +2198,7 @@ Public Class Package
             End If
         End If
 
-        If Not StatusFunc Is Nothing Then
+        If StatusFunc IsNot Nothing Then
             Return StatusFunc.Invoke
         End If
     End Function
@@ -2209,7 +2208,7 @@ Public Class Package
 
         If VersionAllowAny Then Return Nothing
 
-        If filepath.NotNullOrEmptyS Then
+        If filepath?.Length > 0 Then
             Dim flwt As Date = File.GetLastWriteTimeUtc(filepath)
 
             If Not (((VersionDate - flwt).TotalDays < -3 AndAlso VersionAllowNew) OrElse (flwt.AddDays(-2) < VersionDate AndAlso flwt.AddDays(2) > VersionDate)) Then
@@ -2233,7 +2232,7 @@ Public Class Package
 
     Function GetStatusDisplay() As String
         Dim gs As String = GetStatus()
-        If gs.NotNullOrEmptyS Then
+        If gs?.Length > 0 Then
             Return gs
         End If
 
@@ -2248,7 +2247,7 @@ Public Class Package
 
     Function IsVersionOld() As Boolean
         Dim filepath = Path
-        If filepath.NotNullOrEmptyS Then
+        If filepath?.Length > 0 Then
             If (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays > 3 Then
                 Return True
             End If
@@ -2257,7 +2256,7 @@ Public Class Package
 
     'Function IsVersionNew() As Boolean
     '    Dim filepath = Path
-    '    If filepath.NotNullOrEmptyS Then
+    '    If filepath?.Length > 0 Then
     '        If (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays < -3 Then
     '            Return True
     '        End If
@@ -2265,7 +2264,7 @@ Public Class Package
     'End Function
     Function IsVersionCorrect() As Boolean
         Dim filepath = Path
-        If filepath.NotNullOrEmptyS Then
+        If filepath?.Length > 0 Then
             Dim lastWrDays As Double = (VersionDate - File.GetLastWriteTimeUtc(filepath)).TotalDays
             Return Not lastWrDays > 3 AndAlso Not lastWrDays < -3
         End If
@@ -2279,7 +2278,7 @@ Public Class Package
 
         Dim filepath = Path
 
-        If filepath.NotNullOrEmptyS Then
+        If filepath?.Length > 0 Then
             Dim flwt As Date = File.GetLastWriteTimeUtc(filepath)
 
             If (VersionDate - flwt).TotalDays < -3 AndAlso VersionAllowNew Then
@@ -2302,20 +2301,21 @@ Public Class Package
     End Property
 
     Sub SetStoredPath(value As String)
-        s.Storage.SetString(Name + "custom path", value)
+        s.Storage.SetString(Name & "custom path", value)
     End Sub
 
     Function GetStoredPath() As String
         Dim ret As String
 
-        If Not s Is Nothing AndAlso Not s.Storage Is Nothing Then
-            ret = s.Storage.GetString(Name + "custom path")
+        If s IsNot Nothing AndAlso s.Storage IsNot Nothing Then
+            Dim key As String = Name & "custom path"
+            ret = s.Storage.GetString(key)
 
-            If ret.NotNullOrEmptyS Then
+            If ret?.Length > 0 Then
                 If File.Exists(ret) Then
                     Return ret
                 Else
-                    s.Storage.SetString(Name + "custom path", Nothing)
+                    s.Storage.SetString(key, Nothing)
                 End If
             End If
         End If
@@ -2325,7 +2325,7 @@ Public Class Package
 
     Function GetAviSynthHintDir() As String
         If Not s.AviSynthMode = FrameServerMode.Portable AndAlso
-            File.Exists(Folder.System + Filename) Then
+            File.Exists(Folder.System & Filename) Then
 
             Return Folder.System
         End If
@@ -2363,12 +2363,12 @@ Public Class Package
 
             exePath = FindEverywhere("python.exe", Python.Exclude(0))
 
-            If exePath.NotNullOrEmptyS Then
+            If exePath?.Length > 0 Then
                 Return exePath.Dir
             End If
         End If
 
-        Return Folder.Apps + "FrameServer\VapourSynth\"
+        Return Folder.Apps & "FrameServer\VapourSynth\"
     End Function
 
     Overridable ReadOnly Property Path As String
@@ -2379,10 +2379,10 @@ Public Class Package
                 Return ret
             End If
 
-            If Location.NotNullOrEmptyS Then
+            If Location?.Length > 0 Then
                 ret = GetPathFromLocation(Location)
 
-                If ret.NotNullOrEmptyS Then
+                If ret?.Length > 0 Then
                     Return ret
                 End If
             End If
@@ -2390,13 +2390,13 @@ Public Class Package
             If Not Locations.NothingOrEmpty Then
                 ret = GetPathFromLocation(Locations)
 
-                If ret.NotNullOrEmptyS Then
+                If ret?.Length > 0 Then
                     Return ret
                 End If
             End If
 
             If Not HintDirFunc Is Nothing Then
-                ret = HintDirFunc.Invoke + Filename
+                ret = HintDirFunc.Invoke & Filename
 
                 If File.Exists(ret) Then
                     Return ret
@@ -2407,20 +2407,20 @@ Public Class Package
 
             If Not plugin Is Nothing Then
                 If Not plugin.VSFilterNames Is Nothing AndAlso Not plugin.AvsFilterNames Is Nothing Then
-                    ret = Folder.Apps + "Plugins\Dual\" + Name + "\" + Filename
+                    ret = Folder.Apps & "Plugins\Dual\" & Name & "\" & Filename
 
                     If File.Exists(ret) Then
                         Return ret
                     End If
                 Else
                     If plugin.VSFilterNames Is Nothing Then
-                        ret = Folder.Apps + "Plugins\AVS\" + Name + "\" + Filename
+                        ret = Folder.Apps & "Plugins\AVS\" & Name & "\" & Filename
 
                         If File.Exists(ret) Then
                             Return ret
                         End If
                     Else
-                        ret = Folder.Apps + "Plugins\VS\" + Name + "\" + Filename
+                        ret = Folder.Apps & "Plugins\VS\" & Name & "\" & Filename
 
                         If File.Exists(ret) Then
                             Return ret
@@ -2436,7 +2436,7 @@ Public Class Package
                     ret = FindEverywhere(Filename, Exclude(0))
                 End If
 
-                If ret.NotNullOrEmptyS Then
+                If ret?.Length > 0 Then
                     Return ret
                 End If
             End If
@@ -2450,10 +2450,10 @@ Public Class Package
 
         'If Not dir.Contains(":\") AndAlso Not dir.StartsWith("\\", StringComparison.Ordinal) Then
         If Not dir.StartsWith("\\", StringComparison.Ordinal) AndAlso Not dir.Contains(":\") Then
-            dir = Folder.Apps + dir
+            dir = Folder.Apps & dir
         End If
 
-        Dim df As String = dir.FixDir + Filename
+        Dim df As String = dir.FixDir & Filename
         If File.Exists(df) Then
             Return df
         End If
@@ -2463,7 +2463,7 @@ Public Class Package
         For Each hintDir In dirs
             Dim ret = GetPathFromLocation(hintDir)
 
-            If ret.NotNullOrEmptyS Then
+            If ret?.Length > 0 Then
                 Return ret
             End If
         Next
@@ -2501,7 +2501,7 @@ Public Class Package
         For Each fn In fileNames
             Dim ret = FindEverywhere(fn)
 
-            If ret.NotNullOrEmptyS Then
+            If ret?.Length > 0 Then
                 Return ret
             End If
         Next
@@ -2510,10 +2510,10 @@ Public Class Package
     Shared Function FindInMuiCacheKey(ParamArray fileNames As String()) As String
         For Each exeName In fileNames
             Using key = Registry.ClassesRoot.OpenSubKey("Local Settings\Software\Microsoft\Windows\Shell\MuiCache")
-                If Not key Is Nothing Then
+                If key IsNot Nothing Then
                     For Each valueName In key.GetValueNames
                         If valueName.Contains(exeName) Then
-                            Dim ret = valueName.Left(exeName) + exeName
+                            Dim ret = valueName.Left(exeName) & exeName
 
                             If File.Exists(ret) Then
                                 Return ret
@@ -2524,10 +2524,10 @@ Public Class Package
             End Using
 
             Using key = Registry.CurrentUser.OpenSubKey("Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache")
-                If Not key Is Nothing Then
+                If key IsNot Nothing Then
                     For Each valueName In key.GetValueNames
                         If valueName.Contains(exeName) Then
-                            Dim ret = valueName.Left(exeName) + exeName
+                            Dim ret = valueName.Left(exeName) & exeName
 
                             If File.Exists(ret) Then
                                 Return ret
@@ -2540,10 +2540,10 @@ Public Class Package
     End Function
 
     Shared Function FindInPathEnvVar(filename As String) As String
-        Dim paths = Environment.GetEnvironmentVariable("path").SplitNoEmpty(";")
+        Dim paths = Environment.GetEnvironmentVariable("path").Split({";"c}, StringSplitOptions.RemoveEmptyEntries)
 
         For Each folder In paths
-            Dim filepath = folder.FixDir + filename
+            Dim filepath = folder.FixDir & filename
 
             If File.Exists(filepath) AndAlso Not New FileInfo(filepath).Length = 0 Then
                 Return filepath
@@ -2578,7 +2578,7 @@ Public Class Package
 
     ReadOnly Property ConfPath As String
         Get
-            Return Folder.Apps + "Conf\" + ID + ".conf"
+            Return Folder.Apps & "Conf\" & ID & ".conf"
         End Get
     End Property
 
@@ -2647,7 +2647,7 @@ Public Class PluginPackage
             Dim scriptLower = p.Script.GetScript().ToLowerInvariant
 
             For Each filterName In package.AvsFilterNames
-                If scriptLower.Contains(filterName.ToLowerInvariant + "(") Then Return True
+                If scriptLower.Contains(filterName.ToLowerInvariant & "(") Then Return True
 
                 If scriptLower.Contains("import") Then
                     Dim match = Regex.Match(scriptLower, "\bimport\s*\(\s*""\s*(.+\.avsi*)\s*""\s*\)",

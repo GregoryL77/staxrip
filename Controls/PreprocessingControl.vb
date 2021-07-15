@@ -1,4 +1,5 @@
 
+Imports System.Threading.Tasks
 Imports StaxRip.UI
 
 Public Class PreprocessingControl
@@ -170,24 +171,19 @@ Public Class PreprocessingControl
 
     Sub New()
         MyBase.New()
+        Dim imgs As Image()
+        Dim dmxT = Task.Run(Function()
+                                imgs = {ImageHelp.GetImageC(Symbol.Add), ImageHelp.GetImageC(Symbol.Remove), ImageHelp.GetImageC(Symbol.Up), ImageHelp.GetImageC(Symbol.Down), ImageHelp.GetImageC(Symbol.Repair)}
+                                Return ObjectHelp.GetCopy(Of List(Of Demuxer))(s.Demuxers)
+                            End Function)
         InitializeComponent()
 
-        TipProvider = New TipProvider(Nothing)
+        TipProvider = New TipProvider(Nothing) With {.TipsFunc = AddressOf GetTips}
         Dim deh As EventHandler = Sub()
                                       RemoveHandler Me.Disposed, deh
                                       TipProvider.Dispose()
                                   End Sub
         AddHandler Disposed, deh
-
-        For Each i In ObjectHelp.GetCopy(Of List(Of Demuxer))(s.Demuxers)
-            AddItem(i)
-        Next
-
-        bnAdd.Image = ImageHelp.GetImageC(Symbol.Add)
-        bnRemove.Image = ImageHelp.GetImageC(Symbol.Remove)
-        bnUp.Image = ImageHelp.GetImageC(Symbol.Up)
-        bnDown.Image = ImageHelp.GetImageC(Symbol.Down)
-        bnEdit.Image = ImageHelp.GetImageC(Symbol.Repair)
 
         For Each bn In {bnAdd, bnRemove, bnUp, bnDown, bnEdit}
             bn.TextImageRelation = TextImageRelation.Overlay
@@ -196,12 +192,24 @@ Public Class PreprocessingControl
             pad.Left = FontHeight \ 10
             pad.Right = pad.Left
             bn.Padding = pad
-        Next
+        Next bn
 
-        TipProvider.TipsFunc = AddressOf GetTips
-
+        lv.BeginUpdate()
         lv.SingleSelectionButtons = {bnEdit}
+        For Each i In dmxT.Result
+            Dim lvI = lv.Items.Add(i.ToString)
+            lvI.Checked = i.Active
+            lvI.Tag = i
+        Next i
         lv.UpdateControls()
+
+        bnAdd.Image = imgs(0)
+        bnRemove.Image = imgs(1)
+        bnUp.Image = imgs(2)
+        bnDown.Image = imgs(3)
+        bnEdit.Image = imgs(4)
+
+        lv.EndUpdate()
     End Sub
 
     Function GetTips() As StringPairList
@@ -210,11 +218,14 @@ Public Class PreprocessingControl
         ret.Add("Preprocessing", "The preprocessing menu defines a set of apps that are executed to demux, index or re-mux source files. The applications are executed one by one starting from the top so the next application can use the output from the previous application as input. It's possible to add custom apps by defining command lines.")
 
         For Each i As ListViewItem In lv.Items
-            If TypeOf i.Tag Is CommandLineDemuxer Then
-                Dim muxer = DirectCast(i.Tag, CommandLineDemuxer)
+            Dim it As Object = i.Tag
+            Dim muxer = TryCast(it, CommandLineDemuxer)
+            If muxer IsNot Nothing Then
+                'If TypeOf it Is CommandLineDemuxer Then
+                'Dim muxer = DirectCast(it, CommandLineDemuxer)
                 Dim help = muxer.GetHelp
 
-                If help.NotNullOrEmptyS Then
+                If help?.Length > 0 Then
                     ret.Add(muxer.Name, help)
                 End If
             End If
@@ -250,16 +261,12 @@ Public Class PreprocessingControl
     End Sub
 
     Sub lv_Layout(sender As Object, e As LayoutEventArgs) Handles lv.Layout
-        lv.Columns(0).Width = lv.Width - 5
+        lv.Columns(0).Width = lv.Width - 8 'lv.Width - 21 'lv.Width - SystemInformation.VerticalScrollBarWidth-4 '17-4
     End Sub
 
     Sub bnAdd_Click(sender As Object, e As EventArgs) Handles bnAdd.Click
-        Dim sb As New SelectionBox(Of Demuxer)
-        sb.Title = "New Demuxer"
-        sb.Text = "Please select a Demuxer."
-
-        Dim cli As New CommandLineDemuxer
-        cli.Name = "Command Line Demuxer"
+        Dim sb As New SelectionBox(Of Demuxer) With {.Title = "New Demuxer", .Text = "Please select a Demuxer."}
+        Dim cli As New CommandLineDemuxer With {.Name = "Command Line Demuxer"}
         sb.AddItem(cli)
 
         For Each i In Demuxer.GetDefaults()
@@ -280,6 +287,7 @@ Public Class PreprocessingControl
 
     Sub bnRestore_Click(sender As Object, e As EventArgs) Handles bnRestore.Click
         If MsgQuestion("Restore defaults?") = DialogResult.OK Then
+            lv.BeginUpdate()
             lv.Items.Clear()
 
             For Each dmx In Demuxer.GetDefaults()
@@ -287,6 +295,7 @@ Public Class PreprocessingControl
             Next
 
             lv.UpdateControls()
+            lv.EndUpdate()
         End If
     End Sub
 End Class

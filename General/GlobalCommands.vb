@@ -388,8 +388,9 @@ Public Class GlobalCommands
         Next
 
         Try
+            Dim fsA As String() = filter.Split({" "c}, StringSplitOptions.RemoveEmptyEntries)
             For Each i In Directory.GetFiles(Macro.Expand(dir))
-                For Each i2 In filter.SplitNoEmpty(" ")
+                For Each i2 In fsA
                     If i.ToUpperInvariant.EndsWith(i2.ToUpperInvariant, StringComparison.Ordinal) Then
                         FileHelp.Delete(i)
                     End If

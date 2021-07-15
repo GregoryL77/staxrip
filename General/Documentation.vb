@@ -10,8 +10,8 @@ Public Class Documentation
         GenerateToolFile()
         GenerateScreenshotsFile()
 
-        UpdateFile(Folder.Startup + "..\docs\generated\switches.rst", GetCommands(True))
-        UpdateFile(Folder.Startup + "..\docs\generated\commands.rst", GetCommands(False))
+        UpdateFile(Folder.Startup & "..\docs\generated\switches.rst", GetCommands(True))
+        UpdateFile(Folder.Startup & "..\docs\generated\commands.rst", GetCommands(False))
     End Sub
 
     Shared Function GetCommands(cli As Boolean) As String
@@ -29,13 +29,13 @@ Public Class Documentation
             Dim title = command.MethodInfo.Name
 
             If cli Then
-                title = "-" + title + ":"
+                title = "-" & title & ":"
 
                 For Each param In params
-                    title += param.Name + ","
+                    title &= param.Name & ","
                 Next
 
-                title = title.TrimEnd(",:".ToCharArray)
+                title = title.TrimEnd({","c, ":"c})
             End If
 
             sb.Append(".. option:: ").Append(title).Append(BR2)
@@ -50,13 +50,13 @@ Public Class Documentation
                 For Each param In params
                     Dim descAttrib = param.GetCustomAttribute(Of DescriptionAttribute)
 
-                    If Not descAttrib Is Nothing AndAlso descAttrib.Description.NotNullOrEmptyS Then
+                    If descAttrib IsNot Nothing AndAlso descAttrib.Description.NotNullOrEmptyS Then
                         hasDescription = True
                     End If
 
                     Dim nameAttrib = param.GetCustomAttribute(Of DispNameAttribute)
 
-                    If Not nameAttrib Is Nothing AndAlso
+                    If nameAttrib IsNot Nothing AndAlso
                         Not nameAttrib.DisplayName.IsEqualIgnoreCase(param.Name) Then
 
                         hasDescription = True
@@ -90,7 +90,7 @@ Public Class Documentation
                         End If
 
                         If param.ParameterType.IsEnum Then
-                            sb.Append(" ").Append(System.Enum.GetNames(param.ParameterType).Join(", "))
+                            sb.Append(" ").Append(String.Join(", ", System.Enum.GetNames(param.ParameterType)))
                         End If
 
                         sb.Append(BR)
@@ -106,12 +106,12 @@ Public Class Documentation
 
     Shared Sub GenerateMacroTableFile()
         Dim text =
-            ".. csv-table::" + BR +
-            "    :header: ""Name"", ""Description""" + BR +
-            "    :widths: auto" + BR2 +
-            "    " + g.ConvertToCSV(",", Macro.GetTips(False, True, False)).Right(BR).Right(BR).Replace(BR, BR + "    ")
+            ".. csv-table::" & BR &
+            "    :header: ""Name"", ""Description""" & BR &
+            "    :widths: auto" & BR2 &
+            "    " & g.ConvertToCSV(",", Macro.GetTips(False, True, False)).Right(BR).Right(BR).Replace(BR, BR & "    ")
 
-        UpdateFile(Folder.Startup + "..\docs\generated\macro-table.rst", text)
+        UpdateFile(Folder.Startup & "..\docs\generated\macro-table.rst", text)
     End Sub
 
     Shared Sub GenerateToolFile()
@@ -121,8 +121,7 @@ Public Class Documentation
         Dim rows As New List(Of Object)
 
         For Each pack In Package.Items.Values.OrderBy(Function(i) i.GetTypeName)
-            Dim row = New With {
-                .Name = "", .Type = "", .Filename = "", .Version = "", .ModifiedDate = ""}
+            Dim row = New With {.Name = "", .Type = "", .Filename = "", .Version = "", .ModifiedDate = ""}
 
             row.Name = pack.Name
             row.Type = pack.GetTypeName
@@ -140,10 +139,10 @@ Public Class Documentation
         Next
 
         Dim text =
-            ".. csv-table::" + BR +
-            "    :header: ""Name"", ""Type"", ""Filename"", ""Version"", ""Modified Date""" + BR +
-            "    :widths: auto" + BR2 +
-            "    " + g.ConvertToCSV(",", rows).Right(BR).Right(BR).Replace(BR, BR + "    ")
+            ".. csv-table::" & BR &
+            "    :header: ""Name"", ""Type"", ""Filename"", ""Version"", ""Modified Date""" & BR &
+            "    :widths: auto" & BR2 &
+            "    " & g.ConvertToCSV(",", rows).Right(BR).Right(BR).Replace(BR, BR & "    ")
 
         sb.Append(text).Append(BR2)
 
@@ -239,16 +238,16 @@ Public Class Documentation
     End Sub
 
     Shared Sub GenerateScreenshotsFile()
-        Dim screenshots = "Screenshots" + BR + "===========" + BR2 + ".. contents::" + BR2
-        Dim screenshotFiles = Directory.GetFiles(Folder.Startup + "..\docs\screenshots").ToList
+        Dim screenshots = "Screenshots" & BR & "===========" & BR2 & ".. contents::" & BR2
+        Dim screenshotFiles = Directory.GetFiles(Folder.Startup & "..\docs\screenshots").ToList
         screenshotFiles.Sort(New StringLogicalComparer)
 
         For Each i In screenshotFiles
             Dim name = i.Base.Replace("_", " ").Trim
-            screenshots += name + BR + "-".Multiply(name.Length) + BR2 + ".. image:: ../screenshots/" + i.FileName + BR2
+            screenshots &= name & BR & "-".Multiply(name.Length) & BR2 & ".. image:: ../screenshots/" & i.FileName & BR2
         Next
 
-        UpdateFile(Folder.Startup + "..\docs\generated\screenshots.rst", screenshots)
+        UpdateFile(Folder.Startup & "..\docs\generated\screenshots.rst", screenshots)
     End Sub
 
     Shared Sub UpdateFile(filepath As String, content As String)

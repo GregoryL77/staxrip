@@ -770,7 +770,7 @@ Public Class eac3toForm
         If Output.NullOrEmptyS Then
             MsgWarn("eac3to output was empty")
             Cancel()
-        ElseIf Output.ContainsAll("left eye", "right eye") Then
+        ElseIf Output.ContainsAll({"left eye", "right eye"}) Then
             MsgError("3D demuxing isn't supported.")
             Cancel()
         ElseIf Output.NotNullOrEmptyS Then
@@ -852,7 +852,7 @@ Public Class eac3toForm
                     End If
 
                     For Each pro In s.eac3toProfiles
-                        Dim searchWords = pro.Match.SplitNoEmptyAndNoWSDelim(" ")
+                        Dim searchWords = pro.Match.Split({" "c}, StringSplitOptions.RemoveEmptyEntries)
 
                         If searchWords.NothingOrEmpty Then
                             Continue For
@@ -879,16 +879,16 @@ Public Class eac3toForm
                     stream.ListViewItem = lvAudio.Items.Add(stream.ToString)
                     stream.ListViewItem.Tag = stream
 
-                    Dim autoCode = Project.PreferredAudio.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
-                    stream.ListViewItem.Checked = autoCode.ContainsAny("all", stream.Language.TwoLetterCode, stream.Language.ThreeLetterCode)
+                    Dim autoCode = Project.PreferredAudio.ToLower.Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries)
+                    stream.ListViewItem.Checked = autoCode.ContainsAny({"all", stream.Language.TwoLetterCode, stream.Language.ThreeLetterCode})
                 ElseIf stream.IsVideo Then
                     cbVideoStream.Items.Add(stream)
                 ElseIf stream.IsSubtitle Then
                     Dim item = lvSubtitles.Items.Add(stream.Language.ToString)
                     item.Tag = stream
 
-                    Dim autoCode = Project.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
-                    item.Checked = autoCode.ContainsAny("all", stream.Language.TwoLetterCode, stream.Language.ThreeLetterCode)
+                    Dim autoCode = Project.PreferredSubtitles.ToLower.Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries)
+                    item.Checked = autoCode.ContainsAny({"all", stream.Language.TwoLetterCode, stream.Language.ThreeLetterCode})
                 ElseIf stream.IsChapters Then
                     cbChapters.Visible = True
                 End If

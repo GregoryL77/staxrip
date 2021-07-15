@@ -10,26 +10,24 @@ Namespace CommandLine
         Event ValueChanged(item As CommandLineParam)
         MustOverride ReadOnly Property Items As List(Of CommandLineParam)
 
-        MustOverride Function GetCommandLine(
-            includePaths As Boolean,
-            includeExecutable As Boolean,
-            Optional pass As Integer = 1) As String
+        MustOverride Function GetCommandLine(includePaths As Boolean, includeExecutable As Boolean, Optional pass As Integer = 1) As String
 
         MustOverride Function GetPackage() As Package
 
         Sub Init(store As PrimitiveStore)
-            For Each i In Items
-                i.InitParam(store, Me)
-            Next
+            For n = 0 To Items.Count - 1
+                Items(n).InitParam(store, Me)
+            Next n
         End Sub
 
         Protected ItemsValue As List(Of CommandLineParam)
 
         Protected Sub Add(path As String, ParamArray items As CommandLineParam())
-            For Each i In items
+            For n = 0 To items.Length - 1
+                Dim i = items(n)
                 i.Path = path
                 ItemsValue.Add(i)
-            Next
+            Next n
         End Sub
 
         Function GetStringParam(switch As String) As StringParam
@@ -52,11 +50,12 @@ Namespace CommandLine
         End Sub
 
         Protected Overridable Sub OnValueChanged(item As CommandLineParam)
-            For Each i In Items
-                If Not i.VisibleFunc Is Nothing Then
+            For n = 0 To Items.Count - 1
+                Dim i = Items(n)
+                If i.VisibleFunc IsNot Nothing Then
                     i.Visible = i.Visible
                 End If
-            Next
+            Next n
 
             RaiseEvent ValueChanged(item)
         End Sub
@@ -64,7 +63,7 @@ Namespace CommandLine
         Function GetSAR() As String
             Dim param = GetStringParam("--sar")
 
-            If Not param Is Nothing AndAlso param.Value.NotNullOrEmptyS Then
+            If param IsNot Nothing AndAlso param.Value?.Length > 0 Then
                 Dim targetPAR = Calc.GetTargetPAR
                 Dim val = Calc.ParseCustomAR(param.Value, targetPAR.X, targetPAR.Y)
                 Dim isInTolerance = val = targetPAR AndAlso Not Calc.IsARSignalingRequired
@@ -104,7 +103,7 @@ Namespace CommandLine
         Property NoSwitch As String
         Property Path As String
         Property Switch As String
-        Property Switches As IEnumerable(Of String)
+        Property Switches As IEnumerable(Of String) 'ToDo Make switches array!!!!!!
         Property Text As String
         Property URLs As List(Of String)
         Property VisibleFunc As Func(Of Boolean)
@@ -121,13 +120,13 @@ Namespace CommandLine
         Function GetSwitches() As HashSet(Of String)
             Dim ret As New HashSet(Of String)(StringComparer.Ordinal)
 
-            If Switch.NotNullOrEmptyS Then ret.Add(Switch)
-            If NoSwitch.NotNullOrEmptyS Then ret.Add(NoSwitch)
-            If HelpSwitch.NotNullOrEmptyS Then ret.Add(HelpSwitch)
+            If Switch?.Length > 0 Then ret.Add(Switch)
+            If NoSwitch?.Length > 0 Then ret.Add(NoSwitch)
+            If HelpSwitch?.Length > 0 Then ret.Add(HelpSwitch)
 
-            If Not Switches.NothingOrEmpty Then
+            If Switches IsNot Nothing Then
                 For Each i In Switches
-                    If i.NotNullOrEmptyS Then
+                    If i?.Length > 0 Then
                         ret.Add(i)
                     End If
                 Next
@@ -140,7 +139,7 @@ Namespace CommandLine
 
         Property Visible As Boolean
             Get
-                If Not VisibleFunc Is Nothing Then
+                If VisibleFunc IsNot Nothing Then
                     Return VisibleFunc.Invoke
                 End If
 
@@ -164,15 +163,15 @@ Namespace CommandLine
         End Property
 
         Function GetKey() As String
-            If Name.NotNullOrEmptyS Then
+            If Name?.Length > 0 Then
                 Return Name
             End If
 
-            If Switch.NotNullOrEmptyS Then
+            If Switch?.Length > 0 Then
                 Return Switch
             End If
 
-            If HelpSwitch.NotNullOrEmptyS Then
+            If HelpSwitch?.Length > 0 Then
                 Return Text & HelpSwitch
             End If
 
@@ -224,13 +223,14 @@ Namespace CommandLine
             End If
 
             If ArgsFunc Is Nothing Then
-                If Value AndAlso DefaultValue = False Then
+                Dim val As Boolean = Value
+                If val AndAlso DefaultValue = False Then
                     If IntegerValue Then
                         Return Switch & Params.Separator & "1"
                     Else
                         Return Switch
                     End If
-                ElseIf Not Value AndAlso DefaultValue Then
+                ElseIf Not val AndAlso DefaultValue Then
                     If IntegerValue Then
                         Return Switch & Params.Separator & "0"
                     Else
@@ -359,8 +359,9 @@ Namespace CommandLine
             If Switch.NullOrEmptyS AndAlso ArgsFunc Is Nothing Then Return Nothing
 
             If ArgsFunc Is Nothing Then
-                If Value <> DefaultValue OrElse AlwaysOn Then
-                    Return Switch + Params.Separator + Value.ToInvariantString
+                Dim val As Double = Value
+                If val <> DefaultValue OrElse AlwaysOn Then
+                    Return Switch & Params.Separator & val.ToInvariantString
                 End If
             Else
                 Return ArgsFunc.Invoke()
@@ -383,7 +384,7 @@ Namespace CommandLine
         Property IntegerValue As Boolean
 
         Sub ShowOption(value As Integer, visible As Boolean)
-            If Not MenuButton Is Nothing Then
+            If MenuButton IsNot Nothing Then
                 For Each i In MenuButton.Menu.Items.OfType(Of ToolStripMenuItem)
                     If value.Equals(i.Tag) Then i.Visible = visible
                 Next
@@ -464,18 +465,19 @@ Namespace CommandLine
             If Not Visible Then Return Nothing
 
             If ArgsFunc Is Nothing Then
-                If Value <> DefaultValue OrElse AlwaysOn Then
+                Dim val As Integer = Value
+                If val <> DefaultValue OrElse AlwaysOn Then
                     If Values IsNot Nothing Then
-                        If Values(Value).StartsWith("--", StringComparison.Ordinal) Then
-                            Return Values(Value)
-                        ElseIf Switch.NotNullOrEmptyS Then
-                            Return Switch + Params.Separator & Values(Value)
+                        If Values(val).StartsWith("--", StringComparison.Ordinal) Then
+                            Return Values(val)
+                        ElseIf Switch?.Length > 0 Then
+                            Return Switch & Params.Separator & Values(val)
                         End If
-                    ElseIf Switch.NotNullOrEmptyS Then
+                    ElseIf Switch?.Length > 0 Then
                         If IntegerValue Then
-                            Return Switch + Params.Separator & Value
+                            Return Switch & Params.Separator & val
                         Else
-                            Return Switch + Params.Separator & Options(Value).ToLowerInvariant.Replace(" ", "")
+                            Return Switch & Params.Separator & Options(val).ToLowerInvariant.Replace(" ", "")
                         End If
                     End If
                 End If
@@ -531,7 +533,7 @@ Namespace CommandLine
                                         End Sub
             AddHandler TextEdit.Disposed, tedeh
 
-            If InitAction IsNot Nothing Then InitAction.Invoke(te)
+            InitAction?.Invoke(te)
         End Sub
 
         Sub TextChanged()
@@ -544,33 +546,34 @@ Namespace CommandLine
                 Return Nothing
             End If
 
-            If Not ArgsFunc Is Nothing Then
+            If ArgsFunc IsNot Nothing Then
                 Return ArgsFunc.Invoke
             Else
                 Dim val = Value
+                If val?.Length > 0 Then
+                    If RemoveSpace Then
+                        val = val.Replace(" ", "")
+                    End If
 
-                If RemoveSpace AndAlso val IsNot Nothing Then
-                    val = val.Replace(" ", "")
-                End If
-
-                If Not String.Equals(val, DefaultValue) AndAlso val.NotNullOrEmptyS Then
-                    If Switch.NullOrEmptyS Then
-                        If AlwaysOn Then
-                            If Quotes = QuotesMode.Always Then
-                                Return """" + val + """"
-                            ElseIf Quotes = QuotesMode.Auto Then
-                                Return val.Escape
-                            Else
-                                Return val
+                    If Not String.Equals(val, DefaultValue) Then
+                        If Switch.NullOrEmptyS Then
+                            If AlwaysOn Then
+                                If Quotes = QuotesMode.Always Then
+                                    Return """" & val & """"
+                                ElseIf Quotes = QuotesMode.Auto Then
+                                    Return val.Escape
+                                Else
+                                    Return val
+                                End If
                             End If
-                        End If
-                    Else
-                        If Quotes = QuotesMode.Always Then
-                            Return Switch + Params.Separator + """" + val + """"
-                        ElseIf Quotes = QuotesMode.Auto Then
-                            Return Switch + Params.Separator + val.Escape
                         Else
-                            Return Switch + Params.Separator + val
+                            If Quotes = QuotesMode.Always Then
+                                Return Switch & Params.Separator & """" & val & """"
+                            ElseIf Quotes = QuotesMode.Auto Then
+                                Return Switch & Params.Separator & val.Escape
+                            Else
+                                Return Switch & Params.Separator & val
+                            End If
                         End If
                     End If
                 End If

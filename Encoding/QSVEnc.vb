@@ -1,4 +1,6 @@
 ﻿
+Imports System.Text
+Imports JM.LinqFaster
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
 
@@ -33,7 +35,7 @@ Public Class QSVEnc
 
     Overrides Sub ShowConfigDialog()
         Dim params1 As New EncoderParams
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone
         params1.Init(store)
 
         Using form As New CommandLineForm(params1)
@@ -42,9 +44,9 @@ Public Class QSVEnc
                 $"<pre>{HelpDocument.ConvertChars(Package.QSVEnc.CreateHelpfile())}</pre>"
 
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of QSVEnc)(Me)
+                                        Dim enc = Me.GetDeepClone
                                         Dim params2 As New EncoderParams
-                                        Dim store2 = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim store2 = store.GetDeepClone
                                         params2.Init(store2)
                                         enc.Params = params2
                                         enc.ParamsStore = store2
@@ -335,7 +337,7 @@ Public Class QSVEnc
                         New BoolParam With {.Switch = "--lowlatency", .Text = "Low Latency"})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch.NotNullOrEmptyS Then
+                        If item.HelpSwitch?.Length > 0 Then
                             Continue For
                         End If
 
@@ -396,74 +398,77 @@ Public Class QSVEnc
                     sourcePath = p.Script.Path
 
                     If includePaths AndAlso FrameServerHelp.IsAviSynthPortableUsed Then
-                        ret += " --avsdll " + Package.AviSynth.Path.Escape
+                        ret &= " --avsdll " & Package.AviSynth.Path.Escape
                     End If
                 Case "qshw"
                     sourcePath = p.LastOriginalSourceFile
-                    ret += " --avhw"
+                    ret &= " --avhw"
                 Case "qssw"
                     sourcePath = p.LastOriginalSourceFile
-                    ret += " --avsw"
+                    ret &= " --avsw"
                 Case "ffdxva"
                     sourcePath = "-"
 
                     If includePaths Then
                         Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel dxva2 -i " +
-                            If(includePaths, p.LastOriginalSourceFile.Escape, "path") + " -f yuv4mpegpipe -pix_fmt " +
-                            pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
+                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") & " -threads 1 -hwaccel dxva2 -i " &
+                            If(includePaths, p.LastOriginalSourceFile.Escape, "path") & " -f yuv4mpegpipe -pix_fmt " &
+                            pix_fmt & " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " &
                             If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")
                     End If
                 Case "ffqsv"
                     sourcePath = "-"
 
                     If includePaths Then
-                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") + " -threads 1 -hwaccel qsv -i " + If(includePaths, p.LastOriginalSourceFile.Escape, "path") + " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " + If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")
+                        ret = If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg") & " -threads 1 -hwaccel qsv -i " & If(includePaths, p.LastOriginalSourceFile.Escape, "path") & " -f yuv4mpegpipe -strict -1 -pix_fmt yuv420p" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " & If(includePaths, Package.QSVEnc.Path.Escape, "QSVEncC64")
                     End If
             End Select
 
-            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
-
-            If q.Any Then
-                ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")
-            End If
+            Dim sb As New StringBuilder(256)
+            For i = 0 To Items.Count - 1
+                Dim arg As String = Items(i).GetArgs
+                If arg?.Length > 0 Then
+                    sb.Append(" ").Append(arg)
+                End If
+            Next i
+            ret &= sb.ToString
 
             Select Case Mode.ValueText
                 Case "icq", "la-icq"
-                    ret += " --" + Mode.ValueText + " " & CInt(Quality.Value)
+                    ret &= " --" & Mode.ValueText & " " & CInt(Quality.Value)
                 Case "qvbr-q"
-                    ret += " --qvbr-q " & CInt(Quality.Value) & " --qvbr " & p.VideoBitrate
+                    ret &= " --qvbr-q " & CInt(Quality.Value) & " --qvbr " & p.VideoBitrate
                 Case "cqp"
-                    ret += " --" + Mode.ValueText + " " & CInt(QPI.Value) & ":" & CInt(QPP.Value) & ":" & CInt(QPB.Value)
+                    ret &= " --" & Mode.ValueText & " " & CInt(QPI.Value) & ":" & CInt(QPP.Value) & ":" & CInt(QPB.Value)
                 Case Else
-                    ret += " --" + Mode.ValueText + " " & p.VideoBitrate
+                    ret &= " --" & Mode.ValueText & " " & p.VideoBitrate
             End Select
 
             If CInt(p.CropLeft Or p.CropTop Or p.CropRight Or p.CropBottom) <> 0 AndAlso
                 (p.Script.IsFilterActive("Crop", "Hardware Encoder") OrElse
                (Not String.Equals(Decoder.ValueText, "avs") AndAlso p.Script.IsFilterActive("Crop"))) Then
 
-                ret += " --crop " & p.CropLeft & "," & p.CropTop & "," & p.CropRight & "," & p.CropBottom
+                ret &= " --crop " & p.CropLeft & "," & p.CropTop & "," & p.CropRight & "," & p.CropBottom
             End If
 
             If p.Script.IsFilterActive("Resize", "Hardware Encoder") OrElse
                 (Not String.Equals(Decoder.ValueText, "avs") AndAlso p.Script.IsFilterActive("Resize")) Then
 
-                ret += " --output-res " & p.TargetWidth & "x" & p.TargetHeight
+                ret &= " --output-res " & p.TargetWidth & "x" & p.TargetHeight
             End If
 
             If Not String.Equals(Decoder.ValueText, "avs") Then
                 If p.Ranges.Count > 0 Then
-                    ret += " --trim " + p.Ranges.Select(Function(range) range.Start & ":" & range.End).Join(",")
+                    ret &= " --trim " & String.Join(",", p.Ranges.ToArray.SelectF(Function(range) range.Start & ":" & range.End))
                 End If
             End If
 
             If sourcePath = "-" Then
-                ret += " --y4m"
+                ret &= " --y4m"
             End If
 
             If includePaths Then
-                ret += " -i " + sourcePath.Escape + " -o " + targetPath.Escape
+                ret &= " -i " & sourcePath.Escape & " -o " & targetPath.Escape
             End If
 
             Return ret.Trim
@@ -477,7 +482,7 @@ Public Class QSVEnc
                     ret += "" & mctfval.Value
                 End If
 
-                If ret.NotNullOrEmptyS Then
+                If ret?.Length > 0 Then
                     Return "--vpp-mctf " + ret.TrimStart(","c)
                 Else
                     Return "--vpp-mctf"

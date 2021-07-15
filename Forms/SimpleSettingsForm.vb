@@ -1,4 +1,5 @@
 ﻿
+Imports System.ComponentModel
 Imports StaxRip.UI
 
 Public Class SimpleSettingsForm
@@ -114,11 +115,51 @@ Public Class SimpleSettingsForm
 
 #End Region
 
+    Event FilesDropped(files As String())
+
     Private HelpParagraphs As String()
+    Private FileDropValue As Boolean
+
+
+    <DefaultValue(False)>
+    Property FileDrop As Boolean 'Moved From FormBase <Misc.vb>
+        Get
+            Return FileDropValue
+        End Get
+        Set(value As Boolean)
+            FileDropValue = value
+            AllowDrop = value
+        End Set
+    End Property
+
+    Protected Overrides Sub OnDragEnter(e As DragEventArgs)
+        MyBase.OnDragEnter(e)
+
+        If FileDrop Then
+            Dim files = TryCast(e.Data.GetData(DataFormats.FileDrop), String())
+
+            If Not files.NothingOrEmpty Then
+                e.Effect = DragDropEffects.Copy
+            End If
+        End If
+    End Sub
+
+    Protected Overrides Sub OnDragDrop(args As DragEventArgs)
+        MyBase.OnDragDrop(args)
+
+        If FileDrop Then
+            Dim files = TryCast(args.Data.GetData(DataFormats.FileDrop), String())
+
+            If Not files.NothingOrEmpty Then
+                RaiseEvent FilesDropped(files)
+            End If
+        End If
+    End Sub
 
     Sub New(title As String, ParamArray helpParagraphs As String())
         InitializeComponent()
-        ScaleClientSize(40, 27, FontHeight)
+        'ScaleClientSize(40, 27, FontHeight)
+        ScaleClientSize(48, 29, FontHeight)
         Text = title
         Me.HelpParagraphs = helpParagraphs
         SimpleUI.Tree.Select()
@@ -129,13 +170,13 @@ Public Class SimpleSettingsForm
         hevent.Handled = True
         form.Doc.WriteStart(Text)
 
-        If Not HelpParagraphs Is Nothing Then
+        If HelpParagraphs IsNot Nothing Then
             For Each i As String In HelpParagraphs
                 form.Doc.WriteParagraph(i)
             Next
         End If
 
-        If Not SimpleUI.ActivePage.TipProvider Is Nothing Then
+        If SimpleUI.ActivePage.TipProvider IsNot Nothing Then
             form.Doc.WriteTips(SimpleUI.ActivePage.TipProvider.GetTips)
         End If
 

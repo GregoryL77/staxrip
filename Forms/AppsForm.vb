@@ -3,7 +3,7 @@ Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Threading
 Imports System.Threading.Tasks
-
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class AppsForm
@@ -379,6 +379,11 @@ Public Class AppsForm
     Sub New()
         MyBase.New()
         InitializeComponent()
+        tv.BeginUpdate()
+        Me.ToolStrip.SuspendLayout()
+        flp.SuspendLayout()
+        Me.tlpMain.SuspendLayout()
+        Me.SuspendLayout()
         RestoreClientSize(45, 32)
         tv.ItemHeight = CInt(FontHeight * 1.5)
         tv.Scrollable = True
@@ -391,8 +396,9 @@ Public Class AppsForm
             ToolStripRendererEx.FontHeight = ToolStrip.Font.Height
         End If
 
-        miEditChangelog.Visible = g.IsDevelopmentPC
-        miAutoUpdate.Visible = g.IsDevelopmentPC
+        Dim isDevPC As Boolean = g.IsDevelopmentPC
+        miEditChangelog.Visible = isDevPC
+        miAutoUpdate.Visible = isDevPC
 
         AddHandler SetupButton.Click, Sub()
                                           CurrentPackage.SetupAction.Invoke
@@ -402,33 +408,38 @@ Public Class AppsForm
         SetupButton.ForeColor = Color.Red
         SetupButton.TextImageRelation = TextImageRelation.ImageBeforeText
         SetupButton.Image = StockIcon.GetSmallImage(StockIconIdentifier.Shield)
-        SetupButton.Font = New Font("Segoe UI", 10)
+        Dim fnS10 As New Font("Segoe UI", 10)
+        SetupButton.Font = fnS10
         SetupButton.Margin = New Padding(FontHeight \ 3)
         SetupButton.Padding = New Padding(FontHeight \ 5)
         SetupButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
         SetupButton.AutoSize = True
 
         AddHandler DownloadButton.Click, Sub() g.ShellExecute(CurrentPackage.DownloadURL)
-        DownloadButton.Font = New Font("Segoe UI", 10)
+        DownloadButton.Font = fnS10
         DownloadButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
         DownloadButton.AutoSize = True
 
-        Dim titleHeaderLabel = New Label With {
-            .Font = New Font(flp.Font.FontFamily, 14 * s.UIScaleFactor, FontStyle.Bold),
-            .AutoSize = True
-        }
-
+        Dim fff As FontFamily = flp.Font.FontFamily
+        Dim titleHeaderLabel = New Label With {.Font = New Font(fff, 14 * s.UIScaleFactor, FontStyle.Bold), .AutoSize = True}
         Headers("Title") = titleHeaderLabel
         flp.Controls.Add(titleHeaderLabel)
-        AddSection("Status")
+        Dim ffont = New Font(fff, 9 * s.UIScaleFactor, FontStyle.Bold)
+        AddSection("Status", ffont)
         flp.Controls.Add(SetupButton)
         flp.Controls.Add(DownloadButton)
-        AddSection("Location")
-        AddSection("Version")
-        AddSection("AviSynth Filters")
-        AddSection("VapourSynth Filters")
-        AddSection("Filters")
-        AddSection("Description")
+        AddSection("Location", ffont)
+        AddSection("Version", ffont)
+        AddSection("AviSynth Filters", ffont)
+        AddSection("VapourSynth Filters", ffont)
+        AddSection("Filters", ffont)
+        AddSection("Description", ffont)
+
+        tv.EndUpdate()
+        Me.ToolStrip.ResumeLayout(False)
+        flp.ResumeLayout(False)
+        Me.tlpMain.ResumeLayout(False)
+        Me.ResumeLayout(False)
     End Sub
 
     Sub ShowActivePackage()
@@ -440,25 +451,24 @@ Public Class AppsForm
 
         Headers("Title").Text = CurrentPackage.Name
 
-        SetupButton.Text = "Install " + CurrentPackage.Name
-        SetupButton.Visible = Not CurrentPackage.SetupAction Is Nothing AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
+        SetupButton.Text = "Install " & CurrentPackage.Name
+        SetupButton.Visible = CurrentPackage.SetupAction IsNot Nothing AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
 
-        DownloadButton.Text = "Download and install " + CurrentPackage.Name
+        DownloadButton.Text = "Download and install " & CurrentPackage.Name
         DownloadButton.Visible = CurrentPackage.DownloadURL.NotNullOrEmptyS AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
 
         tsbExplore.Enabled = path.NotNullOrEmptyS
-        tsbLaunch.Enabled = Not CurrentPackage.LaunchAction Is Nothing AndAlso CurrentPackage.GetStatus.NullOrEmptyS
+        tsbLaunch.Enabled = CurrentPackage.LaunchAction IsNot Nothing AndAlso CurrentPackage.GetStatus.NullOrEmptyS
         tsbWebsite.Enabled = CurrentPackage.URL.NotNullOrEmptyS
         tsbDownload.Enabled = CurrentPackage.DownloadURL.NotNullOrEmptyS
 
-        tsbVersion.Enabled = path.FileExists AndAlso
-            Not (CurrentPackage.IsVersionOld() AndAlso Not CurrentPackage.VersionAllowOld)
+        tsbVersion.Enabled = path.FileExists AndAlso Not (CurrentPackage.IsVersionOld() AndAlso Not CurrentPackage.VersionAllowOld)
 
         miEditPath.Enabled = Not path.StartsWithEx(Folder.System) AndAlso Not path.ContainsEx("FrameServer")
         miFindPath.Enabled = miEditPath.Enabled
         miClearPaths.Enabled = miEditPath.Enabled
 
-        s.StringDictionary("RecentExternalApplicationControl") = CurrentPackage.Name + CurrentPackage.Version
+        s.StringDictionary("RecentExternalApplicationControl") = CurrentPackage.Name & CurrentPackage.Version
 
         flp.SuspendLayout()
 
@@ -468,14 +478,14 @@ Public Class AppsForm
         If File.Exists(path) Then
             Dim lwtU As Date = File.GetLastWriteTimeUtc(path) 'Package.IsVersionCorrect
             Contents("Version").Text = If(Not (CurrentPackage.VersionDate - lwtU).TotalDays > 3 AndAlso Not (CurrentPackage.VersionDate - lwtU).TotalDays < -3, CurrentPackage.Version, "Unknown")
-            Contents("Version").Text += " (" + lwtU.ToShortDateString() + ")"
+            Contents("Version").Text &= " (" & lwtU.ToShortDateString() & ")"
         Else
             Contents("Version").Text = "-"
         End If
 
         Contents("Status").Text = CurrentPackage.GetStatusDisplay()
 
-        If CurrentPackage.GetStatus.NotNullOrEmptyS AndAlso CurrentPackage.Required Then
+        If CurrentPackage.GetStatus?.Length > 0 AndAlso CurrentPackage.Required Then
             Contents("Status").ForeColor = Color.Red
         Else
             Contents("Status").ForeColor = Color.Black
@@ -495,8 +505,7 @@ Public Class AppsForm
         If TypeOf CurrentPackage Is PluginPackage Then
             Dim plugin = DirectCast(CurrentPackage, PluginPackage)
 
-            If Not plugin.AvsFilterNames Is Nothing AndAlso
-                Not plugin.VSFilterNames Is Nothing Then
+            If plugin.AvsFilterNames IsNot Nothing AndAlso plugin.VSFilterNames IsNot Nothing Then
 
                 Headers("AviSynth Filters").Visible = True
                 Contents("AviSynth Filters").Text = plugin.AvsFilterNames.Join(", ")
@@ -505,11 +514,11 @@ Public Class AppsForm
                 Headers("VapourSynth Filters").Visible = True
                 Contents("VapourSynth Filters").Text = plugin.VSFilterNames.Join(", ")
                 Contents("VapourSynth Filters").Visible = True
-            ElseIf Not plugin.AvsFilterNames Is Nothing Then
+            ElseIf plugin.AvsFilterNames IsNot Nothing Then
                 Headers("Filters").Visible = True
                 Contents("Filters").Text = plugin.AvsFilterNames.Join(", ")
                 Contents("Filters").Visible = True
-            ElseIf Not plugin.VSFilterNames Is Nothing Then
+            ElseIf plugin.VSFilterNames IsNot Nothing Then
                 Headers("Filters").Visible = True
                 Contents("Filters").Text = plugin.VSFilterNames.Join(", ")
                 Contents("Filters").Visible = True
@@ -519,18 +528,18 @@ Public Class AppsForm
         flp.ResumeLayout()
     End Sub
 
-    Sub AddSection(title As String)
+    Sub AddSection(title As String, fnt As Font)
         Dim controlMargin = CInt(FontHeight / 10)
 
         Dim headerLabel = New Label With {
-            .Text = title,
-            .Font = New Font(flp.Font.FontFamily, 9 * s.UIScaleFactor, FontStyle.Bold),
+            .Font = fnt,
+            .Margin = New Padding(controlMargin, controlMargin, 0, 0),
             .AutoSize = True,
-            .Margin = New Padding(controlMargin, controlMargin, 0, 0)}
+            .Text = title}
 
         Dim contentLabel = New Label With {
-            .AutoSize = True,
-            .Margin = New Padding(controlMargin, CInt(controlMargin / 3), 0, 0)}
+            .Margin = New Padding(controlMargin, CInt(controlMargin / 3), 0, 0),
+            .AutoSize = True}
 
         Headers(title) = headerLabel
         Contents(title) = contentLabel
@@ -549,15 +558,16 @@ Public Class AppsForm
         For Each i In tv.GetNodes
             If package Is i.Tag Then
                 tv.SelectedNode = i
+                Exit For 'Test This !!!!
             End If
         Next
     End Sub
 
     Sub ShowPackage(tn As TreeNode)
-        If Not tn Is Nothing AndAlso Not tn.Tag Is Nothing Then
+        If tn IsNot Nothing AndAlso tn.Tag IsNot Nothing Then
             Dim newPackage = DirectCast(tn.Tag, Package)
 
-            If Not newPackage Is CurrentPackage Then
+            If newPackage IsNot CurrentPackage Then
                 CurrentPackage = newPackage
                 ShowActivePackage()
             End If
@@ -600,7 +610,7 @@ Public Class AppsForm
             tv.SelectedNode = e.Node.Nodes(0)
         End If
 
-        If Not e.Node.Tag Is Nothing Then
+        If e.Node.Tag IsNot Nothing Then
             ShowPackage(e.Node)
         End If
     End Sub
@@ -615,29 +625,28 @@ Public Class AppsForm
         For Each pack In Package.Items.Values
             Dim plugin = TryCast(pack, PluginPackage)
 
-            Dim searchString = pack.Name + pack.Description + pack.Version + pack.WebURL +
-                plugin?.VSFilterNames.Join(" ") + pack.Path + plugin?.AvsFilterNames.Join(" ")
+            Dim searchString = pack.Name & pack.Description & pack.Version & pack.WebURL & plugin?.VSFilterNames.Join(" ") & pack.Path & plugin?.AvsFilterNames.Join(" ")
 
             If searchString?.ToLowerInvariant.Contains(sbt) Then
                 If plugin Is Nothing Then
-                    If pack.TreePath.NotNullOrEmptyS Then
-                        Dim n = tv.AddNode(pack.TreePath + "|" + pack.Name)
+                    If pack.TreePath?.Length > 0 Then
+                        Dim n = tv.AddNode(pack.TreePath & "|" & pack.Name)
                         Nodes.Add(n)
                         n.Tag = pack
                     Else
-                        Dim n = tv.AddNode("Apps|" + pack.Name)
+                        Dim n = tv.AddNode("Apps|" & pack.Name)
                         Nodes.Add(n)
                         n.Tag = pack
                     End If
                 Else
                     If plugin.AvsFilterNames?.Length > 0 Then
-                        Dim n = tv.AddNode("AviSynth|" + pack.Name)
+                        Dim n = tv.AddNode("AviSynth|" & pack.Name)
                         Nodes.Add(n)
                         n.Tag = pack
                     End If
 
                     If plugin.VSFilterNames?.Length > 0 Then
-                        Dim n = tv.AddNode("VapourSynth|" + pack.Name)
+                        Dim n = tv.AddNode("VapourSynth|" & pack.Name)
                         Nodes.Add(n)
                         n.Tag = pack
                     End If
@@ -654,7 +663,7 @@ Public Class AppsForm
         ToolStrip.Enabled = tvNC > 0
         flp.Enabled = tvNC > 0
 
-        If sbt.NotNullOrEmptyS Then
+        If sbt?.Length > 0 Then
             tv.ExpandAll()
         Else
             ShowPackage(current)
@@ -699,16 +708,16 @@ Public Class AppsForm
                                    version.ProductBuildPart & "." & version.ProductPrivatePart
 
         If fileVersionString <> "0.0.0.0" Then
-            msg += BR2 + "File Version: " + fileVersionString + " (often not correct!)"
+            msg &= BR2 & "File Version: " & fileVersionString & " (often not correct!)"
         End If
 
         If productVersionString <> "0.0.0.0" Then
-            msg += BR2 + "Product Version: " + productVersionString + " (often not correct!)"
+            msg &= BR2 & "Product Version: " & productVersionString & " (often not correct!)"
         End If
 
         Dim input = InputBox.Show(msg, "StaxRip", CurrentPackage.Version)
 
-        If input.NotNullOrEmptyS Then
+        If input?.Length > 0 Then
             CurrentPackage.SetVersion(input.Replace(";", "_"))
             ShowActivePackage()
             g.DefaultCommands.TestAndDynamicFileCreation()
@@ -728,7 +737,7 @@ Public Class AppsForm
             row.Folder = pack.Directory
 
             If pack.IsVersionCorrect Then
-                row.Version = "'" + pack.Version + "'"
+                row.Version = "'" & pack.Version & "'"
             End If
 
             If File.Exists(pack.Path) Then
@@ -745,7 +754,7 @@ Public Class AppsForm
 
             Select Case td.Show
                 Case "csv"
-                    Dim csvFile = Folder.Temp + "staxrip tools.csv"
+                    Dim csvFile = Folder.Temp & "staxrip tools.csv"
                     g.ConvertToCSV(";", rows).WriteFileUTF8(csvFile)
                     g.ShellExecute(g.GetAppPathForExtension("csv", "txt"), csvFile.Escape)
                 Case "ogv"
@@ -760,8 +769,8 @@ Public Class AppsForm
         For Each pair In Package.Items
             Dim pack = pair.Value
 
-            If pack.Required AndAlso pack.GetStatus.NotNullOrEmptyS Then
-                txt += pack.Name + ": " + pack.GetStatus + BR2
+            If pack.Required AndAlso pack.GetStatus?.Length > 0 Then
+                txt &= pack.Name & ": " & pack.GetStatus & BR2
             End If
         Next
 
@@ -774,8 +783,8 @@ Public Class AppsForm
 
     Sub miBrowsePath_Click(sender As Object, e As EventArgs) Handles miEditPath.Click
         Using dialog As New OpenFileDialog
-            dialog.SetInitDir(s.Storage.GetString(CurrentPackage.Name + "custom path"))
-            dialog.Filter = "|" + CurrentPackage.Filename + "|All Files|*.*"
+            dialog.SetInitDir(s.Storage.GetString(CurrentPackage.Name & "custom path"))
+            dialog.Filter = "|" & CurrentPackage.Filename & "|All Files|*.*"
 
             If dialog.ShowDialog = DialogResult.OK Then
                 If Not s.AllowCustomPathsInStartupFolder AndAlso
@@ -786,14 +795,17 @@ Public Class AppsForm
                     Exit Sub
                 End If
 
-                s.Storage.SetString(CurrentPackage.Name + "custom path", dialog.FileName)
+                s.Storage.SetString(CurrentPackage.Name & "custom path", dialog.FileName)
                 ShowActivePackage()
             End If
         End Using
     End Sub
 
     Sub miClearCustomPath_Click(sender As Object, e As EventArgs) Handles miClearPaths.Click
-        Dim packs = Package.Items.Values.Where(Function(pack) pack.GetStoredPath().NotNullOrEmptyS).ToArray
+        Dim pVals As SortedDictionary(Of String, Package).ValueCollection = Package.Items.Values
+        Dim pvalsA(pVals.Count - 1) As Package
+        pVals.CopyTo(pvalsA, 0)
+        Dim packs = pvalsA.WhereF(Function(pack) pack.GetStoredPath().NotNullOrEmptyS)
 
         If packs.Length > 0 Then
             Using td As New TaskDialog(Of Package)
@@ -803,7 +815,7 @@ Public Class AppsForm
                     td.AddCommand(pack.Name, pack.GetStoredPath, pack)
                 Next
 
-                If Not td.Show Is Nothing Then
+                If td.Show IsNot Nothing Then
                     td.SelectedValue.SetStoredPath(Nothing)
                     ShowActivePackage()
                 End If
@@ -842,7 +854,7 @@ Public Class AppsForm
                               End If
                           Next
                       Catch
-                          If MsgQuestion("The Find Path feature requires the installation of the tool Everything." + BR2 +
+                          If MsgQuestion("The Find Path feature requires the installation of the tool Everything." & BR2 &
                                          "Open Everything website?") = DialogResult.OK Then
                               g.ShellExecute("https://www.voidtools.com")
                           End If
@@ -943,7 +955,7 @@ Public Class AppsForm
     End Sub
 
     Sub miEditChangelog_Click(sender As Object, e As EventArgs) Handles miEditChangelog.Click
-        Dim path = Folder.Startup + "..\Changelog.md"
+        Dim path = Folder.Startup & "..\Changelog.md"
 
         If File.Exists(path) Then
             g.ShellExecute(path)

@@ -416,7 +416,6 @@ Public Class AudioConverterForm
     Private ReadOnly SW1 As New Stopwatch
     Private ReadOnly SW2 As New Stopwatch
     Private AudioVideoFExts As HashSet(Of String)
-    'Private ReadOnly InvalidPathCh As Char() = {":"c, "\"c, "/"c, "?"c, "^"c, "."c}
     Private InvalidPathChHS As HashSet(Of Char)
 
     'Private DGVEventCount As Integer
@@ -461,7 +460,7 @@ Public Class AudioConverterForm
                                                  ImageHelp.GetImageC(Symbol.fa_folder_open_o),
                                                  ImageHelp.GetImageC(Symbol.Save)})
         Task.Run(Sub()
-                     StatTextSB = New StringBuilder(38)
+                     StatTextSB = New StringBuilder(40)
                      AudioCL = New CircularList(Of AudioProfile)
                      AudioSBL = New SortableBindingList(Of AudioProfile)(AudioCL) With {.CheckConsistency = False, .SortOnChange = False, .RaiseListChangedEvents = True, .AllowNew = False}
                      AudioVideoFExts = New HashSet(Of String)(FileTypes.Audio.ConcatA(FileTypes.VideoAudio), StringComparer.Ordinal)
@@ -480,7 +479,7 @@ Public Class AudioConverterForm
         With dgvAudio
             'GetType(DataGridViewEx).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or BindingFlags.Instance Or BindingFlags.NonPublic, Nothing, dgvAudio, New Object() {True}) ' It's overrides in Parent Class
             .DefaultCellStyle.DataSourceNullValue = Nothing
-            .DefaultCellStyle.FormatProvider = CultureInfo.InvariantCulture
+            .DefaultCellStyle.FormatProvider = InvariantCult
             .ColumnHeadersDefaultCellStyle.Font = New Font(Me.Font, FontStyle.Bold)
             .RowTemplate.Height = 20 'FontHeight[16] + 4 'or *1.25 ?, AutoResize=20, def=22
             '[InDesigner-InitSub]-dgvAudio.RowHeadersWidth = 24 ' (0)=42 +6 per number char
@@ -502,8 +501,6 @@ Public Class AudioConverterForm
         '<.AddClickAction> bnMenuAudio.ClickAction = Sub() UpdateCMS(Me.bnMenuAudio, New System.ComponentModel.CancelEventArgs With {.Cancel = False})
         CMS.SuspendLayout()
         bnMenuAudio.ContextMenuStrip = CMS
-
-        If Not imagesArrTask.IsCompleted Then Console.Beep(5500, 500) ' debug
 
         Dim imgsArr = imagesArrTask.Result
         BnFindNext.Image = imgsArr(0)
@@ -812,11 +809,11 @@ Public Class AudioConverterForm
 
     Private Sub dgvAudio_CellValueNeeded(sender As Object, e As DataGridViewCellValueEventArgs) Handles dgvAudio.CellValueNeeded
         '  If e.ColumnIndex = 0 Then 'DGVEventCount += 1
-        e.Value = (e.RowIndex + 1).ToString(CultureInfo.InvariantCulture)
+        e.Value = (e.RowIndex + 1).ToString(InvariantCult)
     End Sub
 
     Private Sub dgvAudio_CellFormatting(sender As Object, e As DataGridViewCellFormattingEventArgs) Handles dgvAudio.CellFormatting
-        'If e.CellStyle.DataSourceNullValue IsNot Nothing OrElse e.CellStyle.FormatProvider IsNot CultureInfo.InvariantCulture Then Console.Beep(3700, 10) 'DGVEventCount += 1
+        'If e.CellStyle.DataSourceNullValue IsNot Nothing OrElse e.CellStyle.FormatProvider IsNot InvariantCult Then Console.Beep(3700, 10) 'DGVEventCount += 1
         e.FormattingApplied = True
     End Sub
 
@@ -1180,9 +1177,9 @@ Again: 'Debug StopWatch Use
             StatusText("Converting...")
 
             If Not LogHeader Then
-                If Log.IsEmpty Then Log.WriteEnvironment()
-                Log.WriteHeader("Audio Converter")
                 LogHeader = True
+                Log.WriteEnvironment()
+                Log.WriteHeader("Audio Converter")
             End If
             Log.WriteHeader("Audio Converter queue started: " & Date.Now.ToString)
 
@@ -1392,7 +1389,7 @@ Again: 'Debug StopWatch Use
                                          SyncLock SLock
                                              If Not LogHeader Then
                                                  LogHeader = True
-                                                 If Log.IsEmpty Then Log.WriteEnvironment()
+                                                 Log.WriteEnvironment()
                                                  Log.WriteHeader("Audio Converter")
                                              End If
                                          End SyncLock
@@ -1442,7 +1439,7 @@ Again: 'Debug StopWatch Use
         Dim nrC = AudioCL.Count
 
         If nrC > 0 Then
-            dgvAudio.CurrentCell = dgvAudio.Rows.Item(nrC - 1).Cells(occ)
+            dgvAudio.CurrentCell = dgvAudio.Rows.Item(nrC - 1).Cells(occ) 'Errors Weirdo ?????? Test This ToDO!
             dgvAudio.Rows.Item(If(rC > 0, rC - 1, 0)).Selected = True
             PopulateIter = 1
             If nrC > 100 Then dgvAudio.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
@@ -1526,30 +1523,29 @@ Again: 'Debug StopWatch Use
                                                                                          pls.Stop()
                                                                                          Return
                                                                                      End If
-                                                                                     With arP(i)
-                                                                                         If (dgvAudio.Rows.GetRowState(i) And DataGridViewElementStates.Displayed) = 0 Then
-                                                                                             If Not MediaInfo.Cache.ContainsKey(.FileKeyHashValue) Then
-                                                                                                 Dim mi = New MediaInfo(.FileValue)
-                                                                                                 If PopulateTaskS <= 0 Then
-                                                                                                     pls.Stop()
-                                                                                                     Return
+                                                                                     If (Me.dgvAudio.Rows.GetRowState(i) And Global.System.Windows.Forms.DataGridViewElementStates.Displayed) = 0 Then
+                                                                                         Dim ap As AudioProfile = arP(i)
+                                                                                         If Not MediaInfo.Cache.ContainsKey(ap.FileKeyHashValue) Then
+                                                                                             Dim mi = New MediaInfo(ap.FileValue)
+                                                                                             If PopulateTaskS <= 0 Then
+                                                                                                 pls.Stop()
+                                                                                                 Return
+                                                                                             End If
+                                                                                             If (Me.dgvAudio.Rows.GetRowState(i) And Global.System.Windows.Forms.DataGridViewElementStates.Displayed) = 0 Then
+                                                                                                 mTS.Item(ap.FileKeyHashValue) = mi
+                                                                                                 ''MediaInfo.Cache.Item(arP(i).FileKeyHashValue) = mi
+                                                                                                 If ap.DefaultName Is Nothing Then ' Or remove it ???
                                                                                                  End If
-                                                                                                 If (dgvAudio.Rows.GetRowState(i) And DataGridViewElementStates.Displayed) = 0 Then
-                                                                                                     mTS.Item(.FileKeyHashValue) = mi
-                                                                                                     ''MediaInfo.Cache.Item(arP(i).FileKeyHashValue) = mi
-                                                                                                     If .DefaultName Is Nothing Then ' Or remove it ???
-                                                                                                     End If
-                                                                                                     If .DisplayName Is Nothing Then
-                                                                                                     End If
-                                                                                                 End If
-                                                                                             Else
-                                                                                                 If .DefaultName Is Nothing Then
-                                                                                                 End If
-                                                                                                 If .DisplayName Is Nothing Then
+                                                                                                 If ap.DisplayName Is Nothing Then
                                                                                                  End If
                                                                                              End If
+                                                                                         Else
+                                                                                             If ap.DefaultName Is Nothing Then
+                                                                                             End If
+                                                                                             If ap.DisplayName Is Nothing Then
+                                                                                             End If
                                                                                          End If
-                                                                                     End With
+                                                                                     End If
                                                                                  End Sub)
                                                            If pl.IsCompleted Then
                                                                PopulateIter += 20
@@ -1615,7 +1611,7 @@ Again: 'Debug StopWatch Use
                             Else
                                 avF = gfT.Result
                             End If
-                            If avF.Length <= 0 Then MsgWarn("No supported Audio/Video files found.")
+                            If avF.Length <= 0 Then MsgWarn("No supported Audio/Video files found in this location:", dialog.SelectedPath, dWidth:=240)
                         End If
                     End Using
             End Select
@@ -1623,9 +1619,8 @@ Again: 'Debug StopWatch Use
             If avF?.Length > 0 Then ProcessInputAudioFiles(avF)
 
         Catch ex As Exception
-            Log.Write("Audio Converter File opening error", ex.ToString)
-            MsgInfo("Files opening error", ex.ToString)
-        Finally
+            Log.Write("Audio Converter Files opening error", ex.ToString)
+            g.ShowException(ex, "Files opening error from selected location")
         End Try
     End Sub
 

@@ -435,7 +435,7 @@ Public Class FrameServerHelp
     End Function
 
     Shared Function IsAviSynthInstalled() As Boolean
-        Return (Folder.System + "AviSynth.dll").FileExists
+        Return (Folder.System & "AviSynth.dll").FileExists
     End Function
 
     Shared Function IsAviSynthUsed() As Boolean

@@ -990,6 +990,8 @@ Namespace UI
     Public Class CommandLineRichTextBox
         Inherits RichTextBoxEx
 
+        Private FontBold As Font
+
         Public Sub New()
             MyBase.New(False)
             Dim tFont As New Font("Consolas", 10 * s.UIScaleFactor)
@@ -997,32 +999,19 @@ Namespace UI
             FontBold = New Font(tFont, FontStyle.Bold)
         End Sub
 
-        'Public Sub New(createMenu As Boolean)
-        '    MyBase.New(createMenu)
-        'End Sub
-        Private LastCommandLine As String
-        Private FontBold As Font
-
-        Function GetSelections(cmdTxtT As Task(Of String)) As Integer() 'Returns: {SelStart,SelEnd}
-            Dim cmdTxt = cmdTxtT.Result
-            If String.Equals(cmdTxt, LastCommandLine) Then Return Nothing
-            If cmdTxt.NullOrEmptyS Then
-                Clear() 'Is This not Illegal diff Thread??
-                LastCommandLine = ""
-                Return Nothing
-            End If
-
-            If LastCommandLine.NotNullOrEmptyS Then
-                Dim selStart = GetCompareIndex(cmdTxt, LastCommandLine)
-                Dim selEnd = cmdTxt.Length - GetCompareIndex(ReverseString(cmdTxt), ReverseString(LastCommandLine))
+        Function GetSelections(cmdTxt As String, lastTxt As String) As Integer() 'Returns: {SelStart,SelEnd} 
+            'If cmdTxt.NullOrEmptyS Then Return Nothing
+            '''If String.Equals(cmdTxt, lastTxt) Then Return Nothing' Moved to callers
+            If lastTxt.Length > 0 Then
+                Dim selStart = GetCompareIndex(cmdTxt, lastTxt)
+                Dim selEnd = cmdTxt.Length - GetCompareIndex(ReverseString(cmdTxt), ReverseString(lastTxt))
 
                 If selEnd > selStart AndAlso selEnd - selStart < cmdTxt.Length - 1 Then
-                    While selStart > 0 AndAlso selStart + 1 < cmdTxt.Length AndAlso Not String.Equals(cmdTxt(selStart - 1) & cmdTxt(selStart), " -")
+                    While selStart > 0 AndAlso selStart + 1 < cmdTxt.Length AndAlso Not String.Equals(cmdTxt.Substring(selStart - 1, 2), " -")
                         selStart -= 1
                     End While
 
-                    If selEnd - selStart < 35 Then 'maybe more than 25???
-                        LastCommandLine = cmdTxt
+                    If selEnd - selStart < 35 Then 'maybe more than 25[org]???
                         Dim ret(1) As Integer
                         ret(0) = selStart
                         ret(1) = If(selEnd - selStart = cmdTxt.Length, 0, selEnd - selStart)
@@ -1031,14 +1020,16 @@ Namespace UI
                 End If
             End If
 
-            LastCommandLine = cmdTxt
             Return {}
         End Function
 
-        Sub SetText(cmdTxtT As Task(Of String), selectionsT As Task(Of Integer()))
-            Dim cmdTxt = cmdTxtT.Result
-            If cmdTxt.NullOrEmptyS Then Exit Sub
-            Dim sel = selectionsT.Result
+        Sub SetText(cmdTxt As String, selectionsT As Task(Of Integer()))
+            'If cmdTxt.NullOrEmptyS Then
+            '    Clear()
+            '    Exit Sub
+            'End If
+
+            Dim sel = selectionsT?.Result
             If sel Is Nothing Then Exit Sub
 
             BlockPaint = True
@@ -1049,54 +1040,19 @@ Namespace UI
                 SelectionFont = FontBold
                 'SelectionStart = cmdTxt.Length
             End If
+            'Refresh() TestThis here - Blank RTB ????
             BlockPaint = False
 
             'Refresh()
             Invalidate()
-            'LastCommandLine = cmdTxt
         End Sub
-
-        'Sub SetText(cmdTxtT As Task(Of String))
-        '    Dim cmdTxt = cmdTxtT.Result
-        '    If String.Equals(cmdTxt, LastCommandLine) Then Exit Sub
-        '    If cmdTxt.NullOrEmptyS Then
-        '        Clear()
-        '        LastCommandLine = ""
-        '        Exit Sub
-        '    End If
-
-        '    BlockPaint = True
-        '    Text = cmdTxt
-        '    If LastCommandLine.NotNullOrEmptyS Then
-        '        Dim selStart = GetCompareIndex(cmdTxt, LastCommandLine)
-        '        Dim selEnd = cmdTxt.Length - GetCompareIndex(ReverseString(cmdTxt), ReverseString(LastCommandLine))
-
-        '        If selEnd > selStart AndAlso selEnd - selStart < cmdTxt.Length - 1 Then
-        '            While selStart > 0 AndAlso selStart + 1 < cmdTxt.Length AndAlso Not String.Equals(cmdTxt(selStart - 1) & cmdTxt(selStart), " -")
-        '                selStart -= 1
-        '            End While
-
-        '            If selEnd - selStart < 35 Then 'maybe more than 25???
-        '                SelectionStart = selStart
-        '                SelectionLength = If(selEnd - selStart = cmdTxt.Length, 0, selEnd - selStart)
-        '                SelectionFont = FontBold
-        '            End If
-        '        End If
-        '    End If
-
-        '    'SelectionStart = cmdTxt.Length
-        '    BlockPaint = False
-        '    'Refresh()
-        '    Invalidate()
-        '    LastCommandLine = cmdTxt
-        'End Sub
 
         Function GetCompareIndex(a As String, b As String) As Integer
             For x = 0 To a.Length - 1
                 If x > b.Length - 1 OrElse x > a.Length - 1 OrElse a(x) <> b(x) Then
                     Return x
                 End If
-            Next
+            Next x
 
             Return 0
         End Function
@@ -1107,33 +1063,10 @@ Namespace UI
             Return New String(chars)
         End Function
 
-        'Protected Overrides Sub OnHandleCreated(e As EventArgs)
-        '    MyBase.OnHandleCreated(e)
-        '    If Not DesignMode Then
-        '        Font = New Font(FontBold, FontStyle.Regular)
-        '        'SelectionFont = New Font(FontBold, FontStyle.Regular)
-        '        'FontBold = New Font(f, FontStyle.Bold)
-        '        'If SelectionColor.ToArgb <> ForeColor.ToArgb Then Console.Beep(4700, 700) 'debug
-        '        'SelectionColor = ForeColor ' Seems not needed ???
-        '    End If
-        'End Sub
         Protected Overrides Sub Dispose(disposing As Boolean) 'Needed???
             FontBold = Nothing
             MyBase.Dispose(disposing)
         End Sub
-        'Sub UpdateHeight()
-        '    Using graphics = CreateGraphics()
-        '        Dim measHeight = CInt(graphics.MeasureString(Text, FontRegular, Width).Height)
-        '        Height = measHeight + 1
-        '    End Using
-        'End Sub
-        'Async Sub UpdateHeightAsync(txt As String)
-        '    'Dim txt = Text
-        '    'Dim fnt As Font = Font
-        '    Dim heightMT = Await Task.Run(Function() TextRenderer.MeasureText(txt, FontRegular, New Size(Width, 100000), TextFormatFlags.WordBreak).Height + 1)
-        '    Height = heightMT
-        'End Sub
-
     End Class
 
     <ProvideProperty("Expand", GetType(Control))>
@@ -1213,8 +1146,10 @@ Namespace UI
             Dim lb0WMax As Integer
             For i = 0 To ctrlAr.Length - 1
                 Dim ctrl = ctrlAr(i)
-                If TypeOf ctrl Is SimpleUI.LabelBlock Then
-                    Dim lb = DirectCast(ctrl, SimpleUI.LabelBlock)
+                'If TypeOf ctrl Is SimpleUI.LabelBlock Then
+                'Dim lb = DirectCast (ctrl, SimpleUI.LabelBlock)
+                Dim lb = TryCast(ctrl, SimpleUI.LabelBlock)
+                If lb IsNot Nothing Then
                     If lb.Label.Offset = 0 Then
                         Dim lF As Font
                         Dim init As Boolean
@@ -1594,7 +1529,7 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub OnFontChanged(e As EventArgs)
-            ItemHeight = CInt(Font.Height * 1.4)
+            ItemHeight = CInt(Font.Height * 1.4) 
             MyBase.OnFontChanged(e)
         End Sub
 

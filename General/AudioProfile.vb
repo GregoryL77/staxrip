@@ -759,20 +759,21 @@ Public Class GUIAudioProfile
         Get
             Select Case Params.ChannelsMode
                 Case ChannelsMode.Original
-
-                    If ChannelsValue <= 0 OrElse Not AudioConverterForm.AudioConverterMode Then
+                    Dim chv As Integer = ChannelsValue
+                    If chv <= 0 OrElse Not AudioConverterForm.AudioConverterMode Then
                         If Stream IsNot Nothing Then
-                            ChannelsValue = Math.Abs(If(Stream.Channels > Stream.Channels2, Stream.Channels, Stream.Channels2))
+                            chv = Math.Abs(If(Stream.Channels > Stream.Channels2, Stream.Channels, Stream.Channels2))
                         Else
                             If (AudioConverterForm.AudioConverterMode AndAlso File.NotNullOrEmptyS) OrElse IO.File.Exists(File) Then 'AudioConverter Opt.
-                                ChannelsValue = Math.Abs(MediaInfo.GetChannels(File, FileKeyHashValue))
+                                chv = Math.Abs(MediaInfo.GetChannels(File, FileKeyHashValue))
                             End If
                         End If
                     End If
 
-                    ChannelsValue = If(ChannelsValue > 0 AndAlso ChannelsValue <= (1 << 18), ChannelsValue, 6)
+                    ChannelsValue = If(chv > 0 AndAlso chv <= 4096, chv, 6)
                     Return ChannelsValue
-                Case ChannelsMode._1
+                Case ChannelsMode._1 'To ChannelsMode._8
+                    ' Return Params.ChannelsMode 'Maybe like This ????
                     Return 1
                 Case ChannelsMode._2
                     Return 2
@@ -821,18 +822,19 @@ Public Class GUIAudioProfile
         End If
 
         If Depth > 0 Then Return Depth
+        Dim sd As Integer = SourceDepth
 
-        If SourceDepth <= 0 OrElse Not AudioConverterForm.AudioConverterMode Then
+        If sd <= 0 OrElse Not AudioConverterForm.AudioConverterMode Then
             If Stream IsNot Nothing Then
-                SourceDepth = Math.Abs(Stream.BitDepth)
+                sd = Math.Abs(Stream.BitDepth)
             Else
                 If (AudioConverterForm.AudioConverterMode AndAlso File.NotNullOrEmptyS) OrElse IO.File.Exists(File) Then
-                    SourceDepth = Math.Abs(MediaInfo.GetAudio(File, "BitDepth", FileKeyHashValue).ToInt)
+                    sd = Math.Abs(MediaInfo.GetAudio(File, "BitDepth", FileKeyHashValue).ToInt)
                 End If
             End If
         End If
 
-        SourceDepth = If(SourceDepth > 0 AndAlso SourceDepth <= 64, SourceDepth, 16)
+        SourceDepth = If(sd > 0 AndAlso sd <= 64, sd, 16)
         Return SourceDepth
 
     End Function
@@ -1013,7 +1015,7 @@ Public Class GUIAudioProfile
                 If Params.ProbeSize <> 5 Then
                     sb.Append(" -probesize ").Append(Params.ProbeSize).Append("M")
                 End If
-                String.Format("sd")
+
                 If Params.AnalyzeDuration <> 5 Then
                     sb.Append(" -analyzeduration ").Append(Params.AnalyzeDuration).Append("M")
                 End If
@@ -1345,7 +1347,6 @@ Public Class GUIAudioProfile
             If Params.ProbeSize <> 5 Then
                 sb.Append(" -probesize ").Append(Params.ProbeSize).Append("M")
             End If
-
             If Params.AnalyzeDuration <> 5 Then
                 sb.Append(" -analyzeduration ").Append(Params.AnalyzeDuration).Append("M")
             End If
@@ -1353,6 +1354,13 @@ Public Class GUIAudioProfile
             sb.Append(" -sn -vn -dn -i ").Append(File.LongPathPrefix.Escape)
         Else
             sb.Append("ffmpeg")
+
+            If Params.ProbeSize <> 5 Then
+                sb.Append(" -probesize ").Append(Params.ProbeSize).Append("M")
+            End If
+            If Params.AnalyzeDuration <> 5 Then
+                sb.Append(" -analyzeduration ").Append(Params.AnalyzeDuration).Append("M")
+            End If
         End If
 
         If Stream IsNot Nothing AndAlso Streams.Count > 1 Then
@@ -1433,7 +1441,6 @@ Public Class GUIAudioProfile
             If Params.ProbeSize <> 5 Then
                 sb.Append(" -probesize ").Append(Params.ProbeSize).Append("M")
             End If
-
             If Params.AnalyzeDuration <> 5 Then
                 sb.Append(" -analyzeduration ").Append(Params.AnalyzeDuration).Append("M")
             End If
@@ -1441,6 +1448,13 @@ Public Class GUIAudioProfile
             sb.Append(" -sn -vn -dn -i ").Append(File.LongPathPrefix.Escape)
         Else
             sb.Append("ffmpeg")
+
+            If Params.ProbeSize <> 5 Then
+                sb.Append(" -probesize ").Append(Params.ProbeSize).Append("M")
+            End If
+            If Params.AnalyzeDuration <> 5 Then
+                sb.Append(" -analyzeduration ").Append(Params.AnalyzeDuration).Append("M")
+            End If
         End If
 
         If Stream IsNot Nothing AndAlso Streams.Count > 1 Then
@@ -1807,7 +1821,6 @@ Public Class GUIAudioProfile
             Case AudioCodec.AAC
                 If Params.Encoder = GuiAudioEncoder.fdkaac Then Return True
         End Select
-        Return False
     End Function
 
     Function VBRMode() As Boolean
@@ -1830,7 +1843,6 @@ Public Class GUIAudioProfile
             Case AudioCodec.MP3, AudioCodec.Vorbis
                 If Params.RateMode = AudioRateMode.VBR Then Return True Else Return False
         End Select
-        Return False
     End Function
 
     <NonSerialized()> Public DefaultnameValue As String
@@ -1873,7 +1885,6 @@ Public Class GUIAudioProfile
 
             DefaultnameValue = If(ExtractDTSCore AndAlso ExtractCore, "Extract DTS Core", sb.ToString)
             Return DefaultnameValue
-
         End Get
     End Property
 
@@ -1884,7 +1895,6 @@ Public Class GUIAudioProfile
                     Return True
                 End If
             End If
-            Return False
         End Get
     End Property
 
@@ -2248,7 +2258,7 @@ Public Enum AudioDownMixMode
 End Enum
 
 Public Enum ChannelsMode
-    Original
+    Original = 0
     <DispName("1 (Mono)")> _1 = 1 '2021 Added Literal Numeric assigment = ??? Test This !
     <DispName("2 (Stereo)")> _2 = 2
     <DispName("5.1")> _6 = 6

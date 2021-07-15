@@ -457,7 +457,7 @@ Public Class CommandLineAudioEncoderForm
         Me.Profile = profile
         TempProfile = profile.GetDeepClone
         tbType.Text = TempProfile.OutputFileType
-        tbInput.Text = TempProfile.SupportedInput.Join(" ")
+        tbInput.Text = String.Join(" ", TempProfile.SupportedInput)
 
         If Not String.Equals(TempProfile.Name, TempProfile.DefaultName) Then
             tbProfileName.Text = TempProfile.Name
@@ -543,7 +543,7 @@ Public Class CommandLineAudioEncoderForm
     End Sub
 
     Sub tbInput_TextChanged() Handles tbInput.TextChanged
-        TempProfile.SupportedInput = tbInput.Text.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
+        TempProfile.SupportedInput = tbInput.Text.ToLower.Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries)
         EditControl.UpdatePreview()
     End Sub
 

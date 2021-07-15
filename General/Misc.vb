@@ -491,7 +491,7 @@ Public Class Language
 
     Sub New()
         Me.IsCommon = IsCommon
-        CultureInfoValue = CultureInfo.InvariantCulture
+        CultureInfoValue = InvariantCult
         LCIDValue = 127  '(127) Invariant
     End Sub
 
@@ -521,7 +521,7 @@ Public Class Language
             CultureInfoValue = New CultureInfo(twoLetterCode)
             LCIDValue = CultureInfoValue.LCID
         Catch ex As Exception
-            CultureInfoValue = CultureInfo.InvariantCulture
+            CultureInfoValue = InvariantCult
             LCIDValue = 127
         End Try
     End Sub
@@ -656,7 +656,7 @@ Public Class Language
                     New Language(22, True), '22 "pt"
                     New Language(25, True), '25 "ru"
                     New Language(10, True), '10 "es"
-                    New Language(CultureInfo.InvariantCulture, True)} '127
+                    New Language(InvariantCult, True)} '127
                 'Is now(2021) 296 (Full 303)
                 'l.Add(New Language(69, True)) '69 "bn"
                 'l.Add(New Language(62, True)) '62 "ms"
@@ -707,12 +707,12 @@ Public Class Language
         Return String.Compare(Name, other.Name, StringComparison.OrdinalIgnoreCase)
     End Function
 
-    Overrides Function Equals(o As Object) As Boolean
-        'If TypeOf o Is Language Then
-        'Return CultureInfo.Equals(DirectCast(o, Language).CultureInfo)
-        Dim l As Language = TryCast(o, Language)
+    Overrides Function Equals(obj As Object) As Boolean
+        'If TypeOf obj Is Language Then
+        'Return CultureInfo.Equals(DirectCast(obj, Language).CultureInfo)
+        Dim l As Language = TryCast(obj, Language)
         If l IsNot Nothing Then Return CultureInfo.Equals(l.CultureInfo)
-        Return False
+        'Return False
     End Function
 End Class
 
@@ -1154,7 +1154,7 @@ Public Class AudioStream
                 sb.Append(" ").Append(Language.Name)
             End If
 
-            If Title.NotNullOrEmptyS AndAlso Not String.Equals(Title, " ") Then
+            If Title?.Length > 0 AndAlso Not String.Equals(Title, " ") Then
                 sb.Append(" ").Append(Title)
             End If
 
@@ -1177,8 +1177,8 @@ Public Class AudioStream
                 Case "MPEG-1 Audio layer 3"
                     Return "mp3"
                 Case "MPEG Audio"
-                    If FormatProfile = "Layer 2" Then Return "mp2"
-                    If FormatProfile = "Layer 3" Then Return "mp3"
+                    If String.Equals(FormatProfile, "Layer 3") Then Return "mp3"
+                    If String.Equals(FormatProfile, "Layer 2") Then Return "mp2"
                 Case "Opus"
                     Return "opus"
                 Case "FLAC"
@@ -1279,11 +1279,11 @@ Public Class Subtitle
 
     ReadOnly Property Filename As String
         Get
-            Dim ret = "ID" & (StreamOrder + 1)
-            ret += " " + Language.Name
+            Dim ret = "ID" & (StreamOrder & 1)
+            ret &= " " & Language.Name
 
             If Title.NotNullOrEmptyS AndAlso Not Title.Equals(" ") AndAlso p.SourceFile.NotNullOrEmptyS Then
-                ret += " {" + Title.Shorten(50).EscapeIllegalFileSysChars + "}"
+                ret &= " {" & Title.Shorten(50).EscapeIllegalFileSysChars & "}"
             End If
 
             Return ret
@@ -1292,7 +1292,7 @@ Public Class Subtitle
 
     ReadOnly Property ExtFull As String
         Get
-            Return "." + Ext
+            Return "." & Ext
         End Get
     End Property
 
@@ -1332,6 +1332,7 @@ Public Class Subtitle
             Return ret
         End If
 
+        Dim separators As Char() = {","c, ";"c, " "c}
         If path.Ext.Equals("idx") Then
             Dim indexData As Integer
             Dim st As Subtitle = Nothing
@@ -1345,18 +1346,18 @@ Public Class Subtitle
                     Try
                         st.Language = New Language(New CultureInfo(line.Substring(4, 2)))
                     Catch
-                        st.Language = New Language(CultureInfo.InvariantCulture)
+                        st.Language = New Language(InvariantCult)
                     End Try
 
-                    Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
-                    st.Enabled = autoCode.ContainsAny("all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode)
+                    Dim autoCode = p.PreferredSubtitles.ToLower.Split(separators, StringSplitOptions.RemoveEmptyEntries)
+                    st.Enabled = autoCode.ContainsAny({"all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode})
 
-                    If Not st Is Nothing Then
+                    If st IsNot Nothing Then
                         st.IndexIDX = CInt(Regex.Match(line, ", index: (\d+)").Groups(1).Value)
                     End If
                 End If
 
-                If Not st Is Nothing AndAlso line.StartsWith("timestamp: ") Then
+                If st IsNot Nothing AndAlso line.StartsWith("timestamp: ") Then
                     st.StreamOrder = indexData
                     st.Path = path
                     indexData += 1
@@ -1384,8 +1385,7 @@ Public Class Subtitle
                 ret.Add(i)
             Next
         Else
-            Dim st As New Subtitle()
-            st.Size = New FileInfo(path).Length
+            Dim st As New Subtitle With {.Size = New FileInfo(path).Length}
             Dim match = Regex.Match(path, " ID(\d+)")
 
             If match.Success Then
@@ -1404,28 +1404,23 @@ Public Class Subtitle
                 st.Title = title.Left("}").UnescapeIllegalFileSysChars
             End If
 
-            Dim autoCode = p.PreferredSubtitles.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
-            st.Enabled = autoCode.ContainsAny("all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode)
+            Dim autoCode = p.PreferredSubtitles.ToLower.Split(separators, StringSplitOptions.RemoveEmptyEntries)
+            st.Enabled = autoCode.ContainsAny({"all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode})
 
             st.Path = path
             ret.Add(st)
         End If
 
-        Dim enabledSubs = ret.Where(Function(val) val.Enabled)
-
         Select Case p.DefaultSubtitle
             Case DefaultSubtitleMode.Single
-                If enabledSubs.Any Then
-                    enabledSubs(0).Default = True
-                End If
+                Dim enabledSubs = ret.Where(Function(val) val.Enabled).Take(2)
+                If enabledSubs.Count = 1 Then enabledSubs.ElementAt(0).Default = True
             Case DefaultSubtitleMode.First
-                If enabledSubs.Any Then
-                    enabledSubs(0).Default = True
-                End If
+                Dim e1 = ret.Where(Function(val) val.Enabled).Take(1).ElementAtOrDefault(0)
+                If e1 IsNot Nothing Then e1.Default = True
             Case DefaultSubtitleMode.Second
-                If enabledSubs.Count > 1 Then
-                    enabledSubs(1).Default = True
-                End If
+                Dim e2 = ret.Where(Function(val) val.Enabled).Take(2).ElementAtOrDefault(1)
+                If e2 IsNot Nothing Then e2.Default = True
         End Select
 
         For Each st In ret
@@ -1466,15 +1461,15 @@ Public Class Subtitle
             Dim inSub = subtitles(x)
 
             If Not inSub.Enabled OrElse Not File.Exists(inSub.Path) OrElse inSub.Path.Contains("_cut_") Then Continue For
-            Dim aviPath = p.TempDir + inSub.Path.Base + "_cut_mm.avi"
-            Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", CultureInfo.InvariantCulture)
-            Dim r = p.CutFrameRate.ToString("f9", CultureInfo.InvariantCulture)
-            Dim args = $"-f lavfi -i color=c=black:s=16x16:d={d}:r={r} -y -hide_banner -c:v copy " + aviPath.Escape
+            Dim aviPath = p.TempDir & inSub.Path.Base & "_cut_mm.avi"
+            Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", InvariantCult)
+            Dim r = p.CutFrameRate.ToString("f9", InvariantCult)
+            Dim args = $"-f lavfi -i color=c=black:s=16x16:d={d}:r={r} -y -hide_banner -c:v copy " & aviPath.Escape
 
             Using proc As New Proc
                 proc.Header = "Create avi file for subtitle cutting"
                 proc.SkipStrings = {"frame=", "size="}
-                proc.WriteLog("mkvmerge cannot cut subtitles without video so a avi file has to be created" + BR2)
+                proc.WriteLog("mkvmerge cannot cut subtitles without video so a avi file has to be created" & BR2)
                 proc.Encoding = Encoding.UTF8
                 proc.Package = Package.ffmpeg
                 proc.Arguments = args
@@ -1488,17 +1483,17 @@ Public Class Subtitle
             End If
 
             Dim id = If(FileTypes.SubtitleSingle.ContainsString(inSub.Path.Ext), 0, inSub.StreamOrder)
-            Dim mkvPath = p.TempDir + inSub.Path.Base + " ID" & id & "_cut_sub.mkv"
-            args = "-o " + mkvPath.Escape + " " + aviPath.Escape
+            Dim mkvPath = p.TempDir & inSub.Path.Base & " ID" & id & "_cut_sub.mkv"
+            args = "-o " & mkvPath.Escape & " " & aviPath.Escape
 
             If Not FileTypes.SubtitleExludingContainers.ContainsString(inSub.Path.Ext) Then
-                args += " --no-audio --no-video --no-chapters --no-attachments --no-track-tags --no-global-tags"
+                args &= " --no-audio --no-video --no-chapters --no-attachments --no-track-tags --no-global-tags"
             End If
 
-            If Not FileTypes.SubtitleSingle.ContainsString(inSub.Path.Ext) Then args += " --subtitle-tracks " & id
-            args += " " + inSub.Path.Escape
-            args += " --split parts-frames:" + p.Ranges.Select(Function(v) v.Start & "-" & v.End).Join(",+")
-            args += " --ui-language en"
+            If Not FileTypes.SubtitleSingle.ContainsString(inSub.Path.Ext) Then args &= " --subtitle-tracks " & id
+            args &= " " & inSub.Path.Escape
+            args &= " --split parts-frames:" & String.Join(",+", p.Ranges.ToArray.SelectF(Function(v) v.Start & "-" & v.End))
+            args &= " --ui-language en"
 
             Using proc As New Proc
                 proc.Header = "Cut subtitle"
@@ -1516,15 +1511,15 @@ Public Class Subtitle
                 Log.WriteLine(MediaInfo.GetSummary(mkvPath))
             End If
 
-            Dim subPath = p.TempDir + inSub.Path.Base + " ID" & id & "_cut_" + inSub.ExtFull
-            args = "tracks " + mkvPath.Escape + " 1:" + subPath.Escape
+            Dim subPath = p.TempDir & inSub.Path.Base & " ID" & id & "_cut_" & inSub.ExtFull
+            args = "tracks " & mkvPath.Escape & " 1:" & subPath.Escape
 
             Using proc As New Proc
                 proc.Header = "Demux subtitle"
                 proc.SkipString = "Progress: "
                 proc.Encoding = Encoding.UTF8
                 proc.Package = Package.mkvextract
-                proc.Arguments = args + " --ui-language en"
+                proc.Arguments = args & " --ui-language en"
                 proc.AllowedExitCodes = {0, 1, 2}
                 proc.Start()
             End Using
@@ -1548,7 +1543,7 @@ Public Class Subtitle
             Else
                 emptySubs.Add(subtitles(x))
             End If
-        Next
+        Next x
 
         For Each i In emptySubs
             subtitles.Remove(i)
@@ -1596,8 +1591,8 @@ Public Class FileTypes
     '    Return "*." + values.Join(";*.") + "|*." + values.Join(";*.") + "|All Files|*.*"
     'End Function
     Shared Function GetFilter(values As String()) As String
-        Dim vj As String = values.Join(";*.")
-        Return "*." + vj + "|*." + vj + "|All Files|*.*"
+        Dim vj As String = String.Join(";*.", values)
+        Return "*." & vj & "|*." & vj & "|All Files|*.*"
     End Function
 End Class
 
@@ -1632,7 +1627,7 @@ Public Class OS
             If VideoControllersValue Is Nothing Then
                 Try 'bug report received
                     Dim mc As New ManagementClass("Win32_VideoController")
-                    VideoControllersValue = mc.GetInstances().OfType(Of ManagementBaseObject)().Select(Function(val) CStr(val("Caption"))).ToArray
+                    VideoControllersValue = mc.GetInstances().OfType(Of ManagementBaseObject)().Select(Function(val) CStr(val.Item("Caption"))).ToArray
                     'Array.ForEach(Of String)(VideoControllersValue, Sub(val As String)
                     '                                                    If val.Contains("Intel") Then GPUType = GPUType Or 2UI
                     '                                                    If val.Contains("NVIDIA") Then GPUType = GPUType Or 4UI

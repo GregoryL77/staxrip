@@ -27,7 +27,7 @@ Public MustInherit Class VideoEncoder
 
     ReadOnly Property OutputExtFull As String
         Get
-            Return "." + OutputExt
+            Return "." & OutputExt
         End Get
     End Property
 
@@ -36,7 +36,7 @@ Public MustInherit Class VideoEncoder
             If TypeOf Muxer Is NullMuxer Then
                 Return p.TargetFile
             Else
-                Return p.TempDir + p.TargetFile.Base + "_out." + OutputExt
+                Return p.TempDir & p.TargetFile.Base + "_out." & OutputExt
             End If
         End Get
     End Property
@@ -123,7 +123,7 @@ Public MustInherit Class VideoEncoder
         Dim MasteringDisplay_ColorPrimaries = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_ColorPrimaries")
         Dim MasteringDisplay_Luminance = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_Luminance")
 
-        If MasteringDisplay_ColorPrimaries.NotNullOrEmptyS AndAlso MasteringDisplay_Luminance.NotNullOrEmptyS Then
+        If MasteringDisplay_ColorPrimaries?.Length > 0 AndAlso MasteringDisplay_Luminance?.Length > 0 Then
             Dim luminanceMatch = Regex.Match(MasteringDisplay_Luminance, "min: ([\d\.]+) cd/m2, max: ([\d\.]+) cd/m2")
 
             If luminanceMatch.Success Then
@@ -324,7 +324,7 @@ Public MustInherit Class VideoEncoder
         g.MainForm.llMuxer.Text = Muxer.OutputExt.ToUpperInvariant
         Dim newPath = p.TargetFile.ChangeExt(Muxer.OutputExt)
 
-        If p.SourceFile.NotNullOrEmptyS AndAlso newPath.ToLowerInvariant.Equals(p.SourceFile.ToLowerInvariant) Then
+        If p.SourceFile?.Length > 0 AndAlso newPath.ToLowerInvariant.Equals(p.SourceFile.ToLowerInvariant) Then
             newPath = newPath.Dir + newPath.Base + "_new" + newPath.ExtFull
         End If
 
@@ -413,7 +413,7 @@ Public MustInherit Class VideoEncoder
     Shared Sub SaveProfile(encoder As VideoEncoder)
         Dim name = InputBox.Show("Please enter a profile name.", "Profile Name", encoder.Name)
 
-        If name.NotNullOrEmptyS Then
+        If name?.Length > 0 Then
             encoder.Name = name
 
             For Each i In From prof In s.VideoEncoderProfiles.ToArray
@@ -464,19 +464,18 @@ Public MustInherit Class BasicVideoEncoder
             End If
 
             For Each i In {"tune", "preset", "profile"}
-                Dim match = Regex.Match(commandLine, "(.*)(--" + i + "\s\w+)(.*)")
+                Dim match = Regex.Match(commandLine, "(.*)(--" & i & "\s\w+)(.*)")
 
                 If match.Success Then
-                    commandLine = match.Groups(2).Value + " " + match.Groups(1).Value + " " + match.Groups(3).Value
+                    commandLine = match.Groups(2).Value & " " & match.Groups(1).Value & " " & match.Groups(3).Value
                 End If
             Next
 
-            Dim a = commandLine.SplitNoEmptyAndNoWSDelim(" ")
+            Dim a = commandLine.Split({" "c}, StringSplitOptions.RemoveEmptyEntries)
 
             For x = 0 To a.Length - 1
                 For Each param In params.Items
-                    If Not param.ImportAction Is Nothing AndAlso
-                        param.GetSwitches.Contains(a(x)) AndAlso a.Length - 1 > x Then
+                    If param.ImportAction IsNot Nothing AndAlso param.GetSwitches.Contains(a(x)) AndAlso a.Length - 1 > x Then
 
                         param.ImportAction.Invoke(a(x), a(x + 1))
                         params.RaiseValueChanged(param)
@@ -535,7 +534,7 @@ Public MustInherit Class BasicVideoEncoder
                                     Exit For
                                 End If
                             ElseIf a.Length - 1 = x Then
-                                If Not optionParam.Values Is Nothing Then
+                                If optionParam.Values IsNot Nothing Then
                                     For xOpt = 0 To optionParam.Values.Length - 1
                                         If a(x) = optionParam.Values(xOpt) AndAlso optionParam.Values(xOpt).StartsWith("--", StringComparison.Ordinal) Then
                                             optionParam.Value = xOpt
@@ -679,7 +678,7 @@ Public Class BatchEncoder
             End Try
         End Using
 
-        Dim bits = (New FileInfo(p.TempDir + p.TargetFile.Base + "_CompCheck." + OutputExt).Length) * 8
+        Dim bits = (New FileInfo(p.TempDir & p.TargetFile.Base & "_CompCheck." & OutputExt).Length) * 8
         p.Compressibility = (bits / script.GetFrameCount) / (p.TargetWidth * p.TargetHeight)
 
         OnAfterCompCheck()

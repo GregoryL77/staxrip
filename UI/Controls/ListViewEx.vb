@@ -113,27 +113,29 @@ Namespace UI
         End Sub
 
         Sub UpdateControls()
-            If Not UpButton Is Nothing Then
+            If UpButton IsNot Nothing Then
                 UpButton.Enabled = CanMoveUp()
             End If
 
-            If Not DownButton Is Nothing Then
+            If DownButton IsNot Nothing Then
                 DownButton.Enabled = CanMoveDown()
             End If
 
-            If Not RemoveButton Is Nothing Then
-                RemoveButton.Enabled = Not SelectedItem() Is Nothing
+            Dim siC As Integer = SelectedItems.Count
+            If RemoveButton IsNot Nothing Then
+                'RemoveButton.Enabled = SelectedItem() IsNot Nothing
+                RemoveButton.Enabled = If(siC > 0, SelectedItems(0).Tag, Nothing) IsNot Nothing
             End If
 
-            If Not SingleSelectionButtons Is Nothing Then
+            If SingleSelectionButtons IsNot Nothing Then
                 For Each button In SingleSelectionButtons
-                    button.Enabled = SelectedItems.Count = 1
+                    button.Enabled = siC = 1
                 Next
             End If
 
-            If Not MultiSelectionButtons Is Nothing Then
+            If MultiSelectionButtons IsNot Nothing Then
                 For Each button In MultiSelectionButtons
-                    button.Enabled = SelectedItems.Count > 0
+                    button.Enabled = siC > 0
                 Next
             End If
         End Sub
@@ -143,7 +145,8 @@ Namespace UI
         End Function
 
         Function CanMoveDown() As Boolean
-            Return SelectedIndices.Count > 0 AndAlso SelectedIndices(SelectedIndices.Count - 1) < Items.Count - 1
+            Dim siC As Integer = SelectedIndices.Count
+            Return siC > 0 AndAlso SelectedIndices(siC - 1) < Items.Count - 1
         End Function
 
         Sub MoveSelectionTop()
@@ -508,15 +511,15 @@ Namespace UI
             MyBase.OnHandleCreated(e)
             Native.SetWindowTheme(Handle, "explorer", Nothing)
 
-            If Not UpButton Is Nothing Then
+            If UpButton IsNot Nothing Then
                 UpButton.AddClickAction(AddressOf MoveSelectionUp)
             End If
 
-            If Not DownButton Is Nothing Then
+            If DownButton IsNot Nothing Then
                 DownButton.AddClickAction(AddressOf MoveSelectionDown)
             End If
 
-            If Not RemoveButton Is Nothing Then
+            If RemoveButton IsNot Nothing Then
                 RemoveButton.AddClickAction(AddressOf RemoveSelection)
             End If
 
@@ -533,7 +536,7 @@ Namespace UI
 
             Dim sorter = TryCast(ListViewItemSorter, ColumnSorter)
 
-            If Not sorter Is Nothing Then
+            If sorter IsNot Nothing Then
                 If sorter.LastColumn = e.Column Then
                     If Sorting = SortOrder.Ascending Then
                         Sorting = SortOrder.Descending

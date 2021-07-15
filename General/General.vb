@@ -760,7 +760,7 @@ Public Class ReflectionSettingBag(Of T)
         Get
             Dim field = Obj.GetType.GetField(Name, BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
 
-            If Not field Is Nothing Then
+            If field IsNot Nothing Then
                 Return DirectCast(field.GetValue(Obj), T)
             Else
                 Return DirectCast(Obj.GetType.GetProperty(Name).GetValue(Obj, Nothing), T)
@@ -1027,7 +1027,7 @@ Public Class Command
                 End If
             Next
 
-            Return paramList.Join(BR)
+            Return String.Join(BR, paramList)
         End If
     End Function
 End Class
@@ -1171,8 +1171,8 @@ End Class
 
 Public Module MainModule
     Public Const BR As String = VB6.vbCrLf
-    Public Const BR2 As String = VB6.vbCrLf + VB6.vbCrLf
-    Public Const BR3 As String = VB6.vbCrLf + VB6.vbCrLf + VB6.vbCrLf
+    Public Const BR2 As String = VB6.vbCrLf & VB6.vbCrLf
+    Public Const BR3 As String = VB6.vbCrLf & VB6.vbCrLf & VB6.vbCrLf
     Public Log As LogBuilder
 
     Sub MsgInfo(text As Object, Optional content As Object = Nothing, Optional dWidth As UInteger = 0)

@@ -13,27 +13,27 @@ Imports KGySoft.CoreLibraries
 Imports Microsoft.Win32
 Imports VB6 = Microsoft.VisualBasic
 Imports Force.DeepCloner
+Imports KGySoft.Collections
 
 Module StringExtensions
-    Public SeparatorD As Char = Path.DirectorySeparatorChar
+    Public ReadOnly SeparatorD As Char = Path.DirectorySeparatorChar
     'Public InvalidFileSystemCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}
-    Public InvalidFSChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}.SelectF(Function(c) Convert.ToUInt16(c))
+    Public ReadOnly InvalidFSChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c, "^"c}.SelectF(Function(c) Convert.ToUInt16(c))
     'Public InvalidFileCh As Char() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}
-    Public InvalidFChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}.SelectF(Function(c) Convert.ToUInt16(c))
+    Public ReadOnly InvalidFChI16 As UShort() = {":"c, "\"c, "/"c, "?"c, """"c, "|"c, ">"c, "<"c, "*"c}.SelectF(Function(c) Convert.ToUInt16(c))
     'Public EscapeCh As Char() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}
-    Public EscapeChI16 As UShort() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}.SelectF(Function(c) Convert.ToUInt16(c))
+    Public ReadOnly EscapeChI16 As UShort() = {" "c, "("c, ")"c, ";"c, "="c, "~"c, "*"c, "&"c, "$"c, "%"c}.SelectF(Function(c) Convert.ToUInt16(c))
     'Public EscapeChHS As HashSet(Of Char) = EscapeCh.ToHashSet
-
-    <Extension>
-    Function TrimTrailingSeparator(instance As String) As String
-        If instance Is Nothing Then Return ""
-        If instance.Length > 3 Then Return instance.TrimEnd(SeparatorD)
-        Return instance
-    End Function
-
+    Public ReadOnly InvariantCult As CultureInfo = CultureInfo.InvariantCulture
+    '<Extension>
+    'Function TrimTrailingSeparator(instance As String) As String
+    '    If instance Is Nothing Then Return String.Empty
+    '    If instance.Length > 3 Then Return instance.TrimEnd(SeparatorD)
+    '    Return instance
+    'End Function
     <Extension()>
     Function Parent(path As String) As String
-        If path Is Nothing Then Return ""
+        If path Is Nothing Then Return String.Empty
 
         Dim temp = If(path.Length > 3, path.TrimEnd({SeparatorD}), path)
         Dim si As Integer = temp.LastIndexOf(SeparatorD)
@@ -48,7 +48,7 @@ Module StringExtensions
     <Extension>
     Function IndentLines(instance As String, value As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         instance = value & instance
@@ -58,7 +58,7 @@ Module StringExtensions
 
     <Extension>
     Function StartsWithEx(instance As String, value As String) As Boolean
-        If instance IsNot Nothing AndAlso value.NotNullOrEmptyS Then
+        If instance IsNot Nothing AndAlso value?.Length > 0 Then
             Return instance.StartsWith(value, StringComparison.Ordinal)
         End If
     End Function
@@ -80,7 +80,7 @@ Module StringExtensions
     <Extension>
     Function ToLowerEx(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         Return instance.ToLowerInvariant
@@ -89,7 +89,7 @@ Module StringExtensions
     <Extension>
     Function TrimEx(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         Return instance.Trim
@@ -97,7 +97,7 @@ Module StringExtensions
 
     <Extension>
     Function PathStartsWith(instance As String, value As String) As Boolean
-        If instance IsNot Nothing AndAlso value.NotNullOrEmptyS Then
+        If instance IsNot Nothing AndAlso value?.Length > 0 Then
             Return instance.ToLowerInvariant.StartsWith(value.ToLowerInvariant, StringComparison.Ordinal)
         End If
     End Function
@@ -105,7 +105,7 @@ Module StringExtensions
     <Extension>
     Sub ThrowIfContainsNewLine(instance As String)
         If instance?.Contains(BR) Then
-            Throw New Exception("String contains a line break char: " + instance)
+            Throw New Exception("String contains a line break char: " & instance)
         End If
     End Sub
 
@@ -126,9 +126,7 @@ Module StringExtensions
 
     <Extension>
     Function IsValidFileName(instance As String) As Boolean
-        If instance Is Nothing Then
-            Return False
-        End If
+        If instance Is Nothing Then Return False
 
         For i = 0 To instance.Length - 1
             Dim chInt As UShort = Convert.ToUInt16(instance(i))
@@ -143,24 +141,19 @@ Module StringExtensions
 
     <Extension>
     Function IsDosCompatible(instance As String) As Boolean
-        If instance.NullOrEmptyS Then
-            Return True
-        End If
+        If instance.NullOrEmptyS Then Return True
 
         For i = 0 To instance.Length - 1 'TODO: Tests!!! or merge with Stax
             If Convert.ToUInt16(instance(i)) > 127 Then Return False
         Next i
         Return True
-
         'Dim bytes = Encoding.Convert(Encoding.Unicode, Encoding.GetEncoding(ConsoleHelp.DosCodePage), Encoding.Unicode.GetBytes(instance))
         'Return instance.Equals(Encoding.Unicode.GetString(Encoding.Convert(Encoding.GetEncoding(ConsoleHelp.DosCodePage), Encoding.Unicode, bytes)))
     End Function
 
     <Extension>
     Function IsANSICompatible(instance As String) As Boolean
-        If instance.NullOrEmptyS Then
-            Return True
-        End If
+        If instance.NullOrEmptyS Then Return True
 
         Dim bytes = Encoding.Convert(Encoding.Unicode, Encoding.Default, Encoding.Unicode.GetBytes(instance))
         Return instance = Encoding.Unicode.GetString(Encoding.Convert(Encoding.Default, Encoding.Unicode, bytes))
@@ -168,34 +161,29 @@ Module StringExtensions
 
     <Extension()>
     Function FileName(instance As String) As String
-        If instance Is Nothing Then
-            Return ""
-        End If
+        If instance Is Nothing Then Return String.Empty
 
         Dim index = instance.LastIndexOf(SeparatorD)
-
         If index > -1 Then
             Return instance.Substring(index + 1)
         End If
 
         Return instance
     End Function
-
-    <Extension()>
-    Function Upper(instance As String) As String
-        If instance Is Nothing Then Return ""
-        Return instance.ToUpperInvariant
-    End Function
-
+    '<Extension()>
+    'Function Upper(instance As String) As String
+    '    If instance Is Nothing Then Return String.Empty
+    '    Return instance.ToUpperInvariant
+    'End Function
     <Extension()>
     Function Lower(instance As String) As String
-        If instance Is Nothing Then Return ""
+        If instance Is Nothing Then Return String.Empty
         Return instance.ToLowerInvariant
     End Function
 
     <Extension()>
     Function ChangeExt(instance As String, value As String) As String
-        If instance.NullOrEmptyS Then Return ""
+        If instance.NullOrEmptyS Then Return String.Empty
         If value.NullOrEmptyS Then Return instance
 
         If Not value.StartsWith(".", StringComparison.Ordinal) Then
@@ -208,7 +196,7 @@ Module StringExtensions
     <Extension()>
     Function Escape(instance As String) As String
         If instance.NullOrEmptyS Then
-            Return ""
+            Return String.Empty
         End If
         'For iCh = 0 To EscapeChI16.Length - 1 'Worst Perf - string-ForLoop->ChArray.Contains is Faster than string.contains, string.ToCharArray.containsF is Faster;'2550ms-ContainsF ; ForLoop 2400ms ; 2xForLoop NoCharArray 2350ms-Fastest NoSimd,Simd~1200ms
         'Dim iChA = instance.ToCharArray.SelectF(Function(ch) Convert.ToUInt16(ch))
@@ -259,38 +247,38 @@ Module StringExtensions
 
     <Extension()>
     Function Ext(instance As String) As String
-        If instance Is Nothing Then Return ""
+        If instance Is Nothing Then Return String.Empty
 
         For x = instance.Length - 1 To 0 Step -1
-            If instance(x) = SeparatorD Then Return ""
+            If instance(x) = SeparatorD Then Return String.Empty
 
             If instance(x) = "."c Then
                 Return instance.Substring(x + 1).ToLowerInvariant
             End If
         Next
 
-        Return ""
+        Return String.Empty
     End Function
 
     <Extension()>
     Function ExtFull(instance As String) As String
-        If instance Is Nothing Then Return ""
+        If instance Is Nothing Then Return String.Empty
 
         For x = instance.Length - 1 To 0 Step -1
-            If instance(x) = SeparatorD Then Return ""
+            If instance(x) = SeparatorD Then Return String.Empty
 
             If instance(x) = "."c Then
                 Return instance.Substring(x).ToLowerInvariant
             End If
         Next
 
-        Return ""
+        Return String.Empty
     End Function
 
     <Extension()>
     Function Base(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         Dim ret = instance
@@ -306,7 +294,7 @@ Module StringExtensions
     <Extension()>
     Function Dir(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         Dim ln As Integer = instance.LastIndexOf(SeparatorD)
@@ -321,7 +309,7 @@ Module StringExtensions
     <Extension()>
     Function LongPathPrefix(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         Dim MAX_PATH = 260
@@ -337,7 +325,7 @@ Module StringExtensions
     <Extension()>
     Function ToShortFilePath(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         If instance.StartsWith("\\?\", StringComparison.Ordinal) Then
@@ -366,7 +354,7 @@ Module StringExtensions
     <Extension()>
     Function DirName(instance As String) As String
         If instance Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         If instance.Length > 3 Then
@@ -374,7 +362,7 @@ Module StringExtensions
         End If
 
         Dim idx As Integer = instance.LastIndexOf(SeparatorD)
-        Return If(idx >= 0, instance.Substring(idx + 1), "")
+        Return If(idx >= 0, instance.Substring(idx + 1), String.Empty)
 
     End Function
 
@@ -384,30 +372,28 @@ Module StringExtensions
     End Function
 
     <Extension()>
-    Function ContainsAll(instance As String, ParamArray all As String()) As Boolean
-        If instance.NotNullOrEmptyS Then
+    Function ContainsAll(instance As String, all As String()) As Boolean
+        If instance?.Length > 0 Then
             Return all.AllF(Function(arg) instance.Contains(arg))
         End If
     End Function
 
     <Extension()>
-    Function ContainsAny(instance As String, ParamArray any As String()) As Boolean
-        If instance.NotNullOrEmptyS AndAlso any IsNot Nothing Then
+    Function ContainsAny(instance As String, any As String()) As Boolean
+        If instance?.Length > 0 AndAlso any IsNot Nothing Then
             For i = 0 To any.Length - 1
                 If instance.Contains(any(i)) Then Return True
             Next i
         End If
-
-        Return False
     End Function
 
     <Extension()>
     Function EqualsEx(instance As String, value As String) As Boolean 'marginally slower for nulls/"", 4xfaster in NoEmpt strings than =/<>
         If instance Is Nothing Then ' if instance="" andalso value="" return true
-            instance = ""
+            instance = String.Empty
         End If
         If value Is Nothing Then
-            value = ""
+            value = String.Empty
         End If
         Return String.Equals(value, instance)
     End Function
@@ -420,7 +406,7 @@ Module StringExtensions
         For i = 0 To values.Length - 1
             If String.Equals(values(i), instance) Then Return True
         Next i
-        Return False
+        'Return values.Contains(instance) -Org Stax
     End Function
 
     <Extension()>
@@ -440,7 +426,7 @@ Module StringExtensions
 
     <Extension()>
     Function FixDir(instance As String) As String
-        If instance.NullOrEmptyS Then Return "" ' is nothing
+        If instance.NullOrEmptyS Then Return String.Empty ' is nothing
         Dim c As Integer
         For i = instance.Length - 1 To 0 Step -1
             If instance(i) = SeparatorD Then
@@ -474,62 +460,56 @@ Module StringExtensions
 
     <Extension()>
     Function IsInt(value As String) As Boolean
-        Return Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, Nothing)
+        Return Integer.TryParse(value, NumberStyles.Integer, InvariantCult, Nothing)
     End Function
 
     <Extension()>
     Function ToInt(value As String, Optional defaultValue As Integer = 0I) As Integer
         Dim ret As Integer
-        Return If(Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, ret), ret, defaultValue)
+        Return If(Integer.TryParse(value, NumberStyles.Integer, InvariantCult, ret), ret, defaultValue)
     End Function
 
     <Extension()>
     Function ToIntM(value As String) As Integer '-&H7FFFFFFEI) 'opt -2147483646I 
         Dim ret As Integer
-        Return If(Integer.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, ret), ret, -2147483646I) 'int.min -2
+        Return If(Integer.TryParse(value, NumberStyles.Integer, InvariantCult, ret), ret, -2147483646I) 'int.min -2
     End Function
-
-    <Extension()>
-    Function IsSingle(value As String) As Boolean
-        If value.NotNullOrEmptyS Then
-            value = value.Replace(",", ".")
-
-            Return Single.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, Nothing)
-        End If
-    End Function
-
+    '<Extension()>
+    'Function IsSingle(value As String) As Boolean
+    '    If value?.Length > 0 Then
+    '        value = value.Replace(",", ".")
+    '        Return Single.TryParse(value, NumberStyles.Float, InvariantCult, Nothing)
+    '    End If
+    'End Function
     <Extension()>
     Function ToSingle(value As String, Optional defaultValue As Single = 0F) As Single
-        If value.NotNullOrEmptyS Then
+        If value?.Length > 0 Then
             value = value.Replace(",", ".")
 
             Dim ret As Single
 
-            If Single.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, ret) Then
+            If Single.TryParse(value, NumberStyles.Float, InvariantCult, ret) Then
                 Return ret
             End If
         End If
 
         Return defaultValue
     End Function
-
-    <Extension()>
-    Function IsDouble(value As String) As Boolean
-        If value.NotNullOrEmptyS Then
-            value = value.Replace(",", ".")
-
-            Return Double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, Nothing)
-        End If
-    End Function
-
+    '<Extension()>
+    'Function IsDouble(value As String) As Boolean
+    '    If value?.Length > 0 Then
+    '        value = value.Replace(",", ".")
+    '        Return Double.TryParse(value, NumberStyles.Float, InvariantCult, Nothing)
+    '    End If
+    'End Function
     <Extension()>
     Function ToDouble(value As String, Optional defaultValue As Double = 0R) As Double
-        If value.NotNullOrEmptyS Then
+        If value?.Length > 0 Then
             value = value.Replace(",", ".")
 
             Dim ret As Double
 
-            If Double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, ret) Then
+            If Double.TryParse(value, NumberStyles.Float, InvariantCult, ret) Then
                 Return ret
             End If
         End If
@@ -539,45 +519,45 @@ Module StringExtensions
 
     <Extension()>
     Function FormatColumn(value As String, delimiter As String) As String
-        If value.NullOrEmptyS Then Return ""
-        Dim lines = value.SplitKeepEmpty(BR)
-        Dim leftSides As New List(Of String)
+        If value.NullOrEmptyS Then Return String.Empty
+        Dim lines = value.Split({CChar(BR)}, StringSplitOptions.None)
+        Dim leftSides As New List(Of String)(lines.Length)
         Dim highest As Integer
 
-        For Each i In lines
-            Dim pos = i.IndexOf(delimiter, StringComparison.Ordinal)
+        For Each str In lines
+            Dim pos = str.IndexOf(delimiter, StringComparison.Ordinal)
 
             If pos > 0 Then
-                Dim st As String = i.Substring(0, pos).Trim
+                Dim st As String = str.Substring(0, pos).Trim
                 If st.Length > highest Then highest = st.Length
                 leftSides.Add(st)
             Else
-                If i.Length > highest Then highest = i.Length
-                leftSides.Add(i)
+                If str.Length > highest Then highest = str.Length
+                leftSides.Add(str)
             End If
-        Next
+        Next str
 
-        'highest = Aggregate i In leftSides Into Max(i.Length)
-        'highest = leftSides.MaxF(Function(le) le.Length)
-        Dim ret As New List(Of String)
+        'highest = Aggregate str In leftSides Into Max(str.Length)
+        'highest = leftSides.MaxF(Function(str) str.Length)
+        Dim ret As New List(Of String)(lines.Length)
 
         For i = 0 To lines.Length - 1
             Dim line = lines(i)
 
             If line.Contains(delimiter) Then
-                ret.Add(leftSides(i).PadRight(highest) + " " + delimiter + " " + line.Substring(line.IndexOf(delimiter, StringComparison.Ordinal) + 1).Trim)
+                ret.Add(leftSides(i).PadRight(highest) & " " & delimiter & " " & line.Substring(line.IndexOf(delimiter, StringComparison.Ordinal) + 1).Trim)
             Else
                 ret.Add(leftSides(i))
             End If
-        Next
+        Next i
 
-        Return ret.Join(BR)
+        Return String.Join(BR, ret)
     End Function
 
     <Extension()>
     Function ReadAllText(instance As String) As String
         If Not File.Exists(instance) Then
-            Return ""
+            Return String.Empty
         End If
 
         Return File.ReadAllText(instance)
@@ -586,7 +566,7 @@ Module StringExtensions
     <Extension()>
     Function ReadAllTextDefault(instance As String) As String
         If Not File.Exists(instance) Then
-            Return ""
+            Return String.Empty
         End If
 
         Return File.ReadAllText(instance, Encoding.Default)
@@ -619,7 +599,7 @@ Module StringExtensions
     <Extension()>
     Function Left(value As String, index As Integer) As String
         If value Is Nothing OrElse index < 0 Then
-            Return ""
+            Return String.Empty
         End If
 
         If index > value.Length Then
@@ -632,11 +612,11 @@ Module StringExtensions
     <Extension()>
     Function Left(value As String, start As String) As String
         If value Is Nothing Then 'OrElse start Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         Dim ln As Integer = value.IndexOf(start, StringComparison.Ordinal)
-        Return If(ln > 0, value.Substring(0, ln), "")
+        Return If(ln > 0, value.Substring(0, ln), String.Empty)
 
     End Function
 
@@ -644,28 +624,28 @@ Module StringExtensions
     Function LeftLast(value As String, start As String) As String
 
         Dim ln As Integer = value.LastIndexOf(start, StringComparison.Ordinal)
-        Return If(ln > 0, value.Substring(0, ln), "")
+        Return If(ln > 0, value.Substring(0, ln), String.Empty)
 
     End Function
 
     <Extension()>
     Function Right(value As String, start As String) As String
         If value Is Nothing Then ' OrElse start.Length <= 0 OrElse start.NullOrEmptyS MUST be Empty String 'start' proof!
-            Return ""
+            Return String.Empty
         End If
 
         Dim idx As Integer = value.IndexOf(start, StringComparison.Ordinal)
-        Return If(idx >= 0, value.Substring(idx + start.Length), "")
+        Return If(idx >= 0, value.Substring(idx + start.Length), String.Empty)
     End Function
 
     <Extension()>
     Function RightLast(value As String, start As String) As String
         If value Is Nothing Then ' OrElse start.Length <= 0 OrElse start.NullOrEmptyS MUST be Empty String 'start' proof!
-            Return ""
+            Return String.Empty
         End If
 
         Dim idx As Integer = value.LastIndexOf(start, StringComparison.Ordinal)
-        Return If(idx >= 0, value.Substring(idx + start.Length), "")
+        Return If(idx >= 0, value.Substring(idx + start.Length), String.Empty)
     End Function
 
     <Extension()>
@@ -709,17 +689,17 @@ Module StringExtensions
 
     <Extension()>
     Function IsSameBase(instance As String, b As String) As Boolean
-        Return instance.Base.IsEqualIgnoreCase(b.Base)
+        Return String.Equals(instance.Base, b.Base, StringComparison.OrdinalIgnoreCase)
     End Function
 
     <Extension()>
     Function EscapeIllegalFileSysChars(value As String) As String
-        If value Is Nothing Then Return ""
+        If value Is Nothing Then Return String.Empty
 
         For i = 0 To value.Length - 1
             Dim chInt As UShort = Convert.ToUInt16(value(i))
             If chInt < 32 OrElse InvalidFSChI16.ContainsS(chInt) Then
-                value = value.Replace(value(i), "__" + Uri.EscapeDataString(value(i)).TrimStart("%"c) + "__")
+                value = value.Replace(value(i), "__" & Uri.EscapeDataString(value(i)).TrimStart("%"c) & "__")
             End If
         Next
 
@@ -729,7 +709,7 @@ Module StringExtensions
     <Extension()>
     Function UnescapeIllegalFileSysChars(value As String) As String
         If value Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         For Each match As Match In Regex.Matches(value, "__(\w\w)__")
@@ -738,32 +718,28 @@ Module StringExtensions
 
         Return value
     End Function
-
+    '<Extension()>
+    'Function SplitNoEmpty(value As String, delimiters As String()) As String()
+    '    Return value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+    'End Function
+    '<Extension()>
+    'Function SplitKeepEmpty(value As String, delimiters As Char()) As String()
+    '    Return value.Split(delimiters, StringSplitOptions.None)
+    'End Function
+    '<Extension()>
+    'Function SplitNoEmptyAndNoWSDelim(value As String, delimiters As Char()) As String()
+    '    If value Is Nothing Then Return {}
+    '    Return value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+    'End Function
     <Extension()>
-    Function SplitNoEmpty(value As String, ParamArray delimiters As String()) As String()
-        Return value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
-    End Function
-
-    <Extension()>
-    Function SplitKeepEmpty(value As String, ParamArray delimiters As String()) As String()
-        Return value.Split(delimiters, StringSplitOptions.None)
-    End Function
-
-    <Extension()>
-    Function SplitNoEmptyAndNoWSDelim(value As String, ParamArray delimiters As String()) As String()
-        If value Is Nothing Then Return {}
-        Return value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
-    End Function
-
-    <Extension()>
-    Function SplitNoEmptyAndWhiteSpace(value As String, ParamArray delimiters As Char()) As String()
+    Function SplitNoEmptyAndWhiteSpace(value As String, delimiters As Char()) As String()
         If value Is Nothing Then Return {}
 
-        Dim a = value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
-        Dim ret As New List(Of String)(a.Length)
+        Dim sAr = value.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+        Dim ret As New List(Of String)(sAr.Length)
 
-        For i = 0 To a.Length - 1
-            Dim ss As String = a(i)
+        For i = 0 To sAr.Length - 1
+            Dim ss As String = sAr(i)
             ss = ss.Trim
 
             If ss.Length > 0 Then
@@ -776,22 +752,37 @@ Module StringExtensions
 
     <Extension()>
     Function SplitLinesNoEmpty(value As String) As String()
-        Return SplitNoEmpty(value, Environment.NewLine)
+        Return value.Split({Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries)
     End Function
 
     <Extension()>
     Function RemoveChars(value As String, chars As Char()) As String
-        'Dim ivnC = chars.ToHashSet 'Fastest 2-3X
-        'Dim ret = value.ToList
-        'For iCV = ret.Count - 1 To 0 Step -1
-        '    If ivnC.Contains(ret(iCV)) Then ret.RemoveAt(iCV)
-        'Next iCV
-        'Return New String(ret.ToArray)
-        Dim ret = value
-        For ic = 0 To chars.Length - 1
-            ret = ret.Replace(chars(ic), "")
-        Next
-        Return ret
+        If value?.Length > 0 Then
+            '    Dim invCHS = chars.ToHashSet 'Fastest 2-3X 'list Add verion
+            '    Dim vcA = value.ToCharArray
+            '    Dim retS As New List(Of Char)(value.Length)
+            '    For i = 0 To vcA.Length - 1
+            '        Dim ch As Char = vcA(i)
+            '        If Not invCHS.Contains(ch) Then
+            '            retS.Add(ch)
+            '        End If
+            '    Next i
+            '    Return New String(retS.ToArray)
+            Dim invCHS = chars.ToHashSet 'Fastest 2-3X
+            Dim retS = value.ToCircularList 'List Remove Version
+            For i = retS.Count - 1 To 0 Step -1
+                If invCHS.Contains(retS(i)) Then
+                    retS.RemoveAt(i)
+                End If
+            Next i
+            Return New String(retS.ToArray)
+        End If
+        Return String.Empty
+        'Dim ret = value 'Replace version
+        'For ic = 0 To chars.Length - 1
+        '    ret = ret.Replace(chars(ic), "")
+        'Next
+        'Return ret
     End Function
 
     <Extension()>
@@ -802,7 +793,7 @@ Module StringExtensions
     <Extension()>
     Function ReplaceRecursive(value As String, find As String, replace As String) As String
         If value Is Nothing Then
-            Return ""
+            Return String.Empty
         End If
 
         While value.Contains(find)
@@ -823,7 +814,7 @@ Module StringExtensions
 
     <Extension()>
     Sub ToClipboard(value As String)
-        If value.NotNullOrEmptyS Then
+        If value?.Length > 0 Then
             Clipboard.SetText(value)
         Else
             Clipboard.Clear()
@@ -836,7 +827,7 @@ Module MiscExtensions
 
     Public ReadOnly ScreenResPrim As Size = Screen.PrimaryScreen.Bounds.Size
     Public ReadOnly CPUsC As Integer = Environment.ProcessorCount
-    Public ReadOnly SWFreq As Double = Stopwatch.Frequency / 1000
+    Public ReadOnly SWFreq As Integer = CInt(Stopwatch.Frequency / 1000)
 
     Public Sub WarmUpCpu()
         Dim itr As Integer = 1000000 '~200ms
@@ -863,57 +854,58 @@ Module MiscExtensions
 
     <Extension()>
     Function ToInvariantString(value As Double, format As String) As String
-        Return value.ToString(format, CultureInfo.InvariantCulture)
+        Return value.ToString(format, InvariantCult)
     End Function
 
     <Extension()>
     Function ToInvariantString(value As Double) As String
-        Return value.ToString(CultureInfo.InvariantCulture)
+        Return value.ToString(InvariantCult)
     End Function
 
     <Extension()>
     Function ToInvariantString(value As Single) As String
-        Return value.ToString(CultureInfo.InvariantCulture)
+        Return value.ToString(InvariantCult)
     End Function
 
     <Extension()>
     Function ToInvariantString(instance As Integer) As String
-        Return instance.ToString(CultureInfo.InvariantCulture)
+        Return instance.ToString(InvariantCult)
     End Function
 
     <Extension()>
     Function ToInvariantString(instance As Long) As String
-        Return instance.ToString(CultureInfo.InvariantCulture)
+        Return instance.ToString(InvariantCult)
     End Function
-
-    <Extension()>
-    Function ToInvariantString(instance As IConvertible) As String
-        If instance Is Nothing Then
-            Return ""
-        End If
-
-        Return instance.ToString(CultureInfo.InvariantCulture)
-    End Function
+    '<Extension()>
+    'Function ToInvariantString(instance As IConvertible) As String
+    '    If instance Is Nothing Then Return String.Empty
+    '    Return instance.ToString(InvariantCult)
+    'End Function
 
     <Extension()>
     Function ToInvariantString(instance As Date, format As String) As String
-        Return instance.ToString(format, CultureInfo.InvariantCulture)
+        Return instance.ToString(format, InvariantCult)
     End Function
 
     <Extension()>
     Function ContainsString(instance As String(), value As String) As Boolean
-        If instance IsNot Nothing AndAlso value.NotNullOrEmptyS Then
+        If instance IsNot Nothing AndAlso value?.Length > 0 Then
             For i = 0 To instance.Length - 1
                 If String.Equals(instance(i), value) Then Return True
             Next i
         End If
-
-        Return False
     End Function
 
     <Extension()>
-    Function ContainsAny(instance As String(), ParamArray values As String()) As Boolean
-        Return instance.AnyF(Function(arg) values.ContainsString(arg))
+    Function ContainsAny(instance As String(), values As String()) As Boolean
+        For i = 0 To instance.Length - 1 'Todo test This !!!!!!!!!!!!! & Remove ParamArray
+            'If ContainsString(values, instance(i)) Then Return True
+            Dim inst As String = instance(i)
+            For v = 0 To values.Length - 1
+                If String.Equals(values(v), inst) Then Return True
+            Next v
+        Next i
+        'Return instance.AnyF(Function(arg) values.ContainsString(arg))
     End Function
     '<Extension()> Function ContainsAny(Of T)(instance As IEnumerable(Of T), values As IEnumerable(Of T)) As Boolean
     '    Return instance.Any(Function(arg) values.Contains(arg))
@@ -925,44 +917,38 @@ Module MiscExtensions
     End Function
 
     <Extension()>
-    Function Sort(Of T)(instance As IEnumerable(Of T)) As IEnumerable(Of T)
+    Function Sort(instance As IEnumerable(Of String)) As IEnumerable(Of String)
         Dim ret = instance.ToArray
-        Array.Sort(Of T)(ret)
+        Array.Sort(ret)
         Return ret
     End Function
 
     <Extension()>
-    Function Join(instance As List(Of String), delimiter As String, Optional removeEmpty As Boolean = False) As String
+    Function Join(instance As String(), delimiter As String) As String ', Optional removeEmpty As Boolean = False)
         If instance Is Nothing Then Return Nothing
-        If removeEmpty Then instance = instance.WhereF(Function(arg) arg.NotNullOrEmptyS)
-        Return String.Join(delimiter, instance)
+        Dim iLen As Integer = instance.Length
+        If iLen <= 0 Then Return String.Empty
+        'If removeEmpty Then instance = instance.WhereF(Function(arg) arg?.Length > 0)
+        Return String.Join(delimiter, instance, 0, iLen)
     End Function
-
-    <Extension()>
-    Function Join(instance As String(), delimiter As String, Optional removeEmpty As Boolean = False) As String
-        If instance Is Nothing Then Return Nothing
-        If removeEmpty Then instance = instance.WhereF(Function(arg) arg.NotNullOrEmptyS)
-        Return String.Join(delimiter, instance)
-    End Function
-
-    <Extension()>
-    Function Join(instance As IEnumerable(Of String), delimiter As String, Optional removeEmpty As Boolean = False) As String
-
-        If instance Is Nothing Then
-            Return Nothing
-        End If
-
-        If removeEmpty Then
-            instance = instance.Where(Function(arg) arg.NotNullOrEmptyS)
-        End If
-
-        Return String.Join(delimiter, instance)
-    End Function
-
+    '<Extension()>
+    'Function Join(instance As List(Of String), delimiter As String) As String ', Optional removeEmpty As Boolean = False)
+    '    If instance Is Nothing Then Return Nothing
+    '    Dim iCn As Integer = instance.Count
+    '    If iCn <= 0 Then Return String.Empty
+    '    'If removeEmpty Then instance = instance.WhereF(Function(arg) arg?.Length > 0)
+    '    Return String.Join(delimiter, instance.ToArray, 0, iCn) 'or Not ToArray ???
+    'End Function
+    '<Extension()>
+    'Function Join(instance As IEnumerable(Of String), delimiter As String) As String ' , Optional removeEmpty As Boolean = False)
+    '    If instance Is Nothing Then Return Nothing
+    '    'If removeEmpty Then instance = instance.Where(Function(arg) arg?.Length > 0)
+    '    Return String.Join(delimiter, instance)
+    'End Function
     <Extension>
     Public Function ConcatA(Of T)(first As T(), second As T()) As T()
         'If second Is Nothing Then
-        '    Return If(first, Nothing)
+        '    Return first
         'ElseIf first Is Nothing Then
         '    Return second
         'End If
@@ -1009,7 +995,7 @@ Module MiscExtensions
     Function NothingOrEmpty(strings As String()) As Boolean
         If strings?.Length > 0 Then
             For i = 0 To strings.Length - 1
-                If strings(i).NotNullOrEmptyS Then
+                If strings(i)?.Length > 0 Then
                     Return False
                 End If
             Next i
@@ -1044,13 +1030,12 @@ Module MiscExtensions
                 Case 2
                     If strings.Contains(Nothing) AndAlso strings.Contains("") Then Return True
             End Select
-            Return False
         End If
     End Function
 
     <Extension()>
     Function NothingOrEmpty(strings As IEnumerable(Of String)) As Boolean
-        If strings?.Any(Function(itm) itm.NotNullOrEmptyS) Then
+        If strings?.Any(Function(itm) itm IsNot Nothing AndAlso itm.Length > 0) Then
             Return False
         End If
 
@@ -1174,12 +1159,12 @@ Module ControlExtension
     <Extension()>
     Function GetMaxTextSpace(instance As Control, ParamArray values As String()) As String
         Dim ret As String
+        Dim iFn As Font = instance.Font
+        Dim iW As Integer = instance.Width
 
         For x = 4 To 2 Step -1
-            ret = values.Join("".PadRight(x))
-            Dim testWidth = TextRenderer.MeasureText(ret, instance.Font).Width
-
-            If testWidth < instance.Width Then
+            ret = String.Join("".PadRight(x), values)
+            If TextRenderer.MeasureText(ret, iFn).Width < iW Then
                 Return ret
             End If
         Next
@@ -1201,7 +1186,6 @@ Module UIExtensions
 
     <Extension()>
     Function ResizeIconSize(img As Image, newSize As Size) As Image
-
         If img IsNot Nothing AndAlso img.Size <> newSize Then
             Dim s = newSize
             Dim r As New Bitmap(s.Width, s.Height)
@@ -1212,7 +1196,6 @@ Module UIExtensions
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality
                 g.DrawImage(img, 0, 0, s.Width, s.Height)
             End Using
-
             Return r
         End If
 

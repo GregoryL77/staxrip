@@ -74,14 +74,14 @@ Public Class aomenc
 
     Overrides Sub ShowConfigDialog()
         Dim newParams As New AV1Params
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone
         newParams.Init(store)
 
         Using form As New CommandLineForm(newParams)
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of aomenc)(Me)
+                                        Dim enc = Me.GetDeepClone
                                         Dim params2 As New AV1Params
-                                        Dim store2 = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim store2 = store.GetDeepClone
                                         params2.Init(store2)
                                         enc.Params = params2
                                         enc.ParamsStore = store2
@@ -344,19 +344,11 @@ Public Class AV1Params
         ItemsValue.Add(item)
     End Sub
 
-    Overloads Overrides Function GetCommandLine(
-        includePaths As Boolean, includeExecutable As Boolean, Optional pass As Integer = 1) As String
-
-        Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase +
-                       p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
+    Overloads Overrides Function GetCommandLine(includePaths As Boolean, includeExecutable As Boolean, Optional pass As Integer = 1) As String
+        Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase & p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
     End Function
 
-    Overloads Function GetArgs(
-        pass As Integer,
-        script As VideoScript,
-        targetPath As String,
-        includePaths As Boolean,
-        includeExecutable As Boolean) As String
+    Overloads Function GetArgs(pass As Integer, script As VideoScript, targetPath As String, includePaths As Boolean, includeExecutable As Boolean) As String
 
         Dim sb As New StringBuilder(512)
 
@@ -368,7 +360,8 @@ Public Class AV1Params
             End If
         End If
 
-        Select Case Mode.Value
+        Dim modeVal As Integer = Mode.Value
+        Select Case modeVal
             Case 0
                 sb.Append(" --passes=1")
             Case 1
@@ -379,15 +372,16 @@ Public Class AV1Params
             sb.Append(" --target-bitrate=").Append(p.VideoBitrate)
         End If
 
-        Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
-
-        If q.Any Then
-            sb.Append(" ").Append(q.Select(Function(item) item.GetArgs).Join(" "))
-        End If
+        For i = 0 To Items.Count - 1
+            Dim arg As String = Items(i).GetArgs
+            If arg?.Length > 0 Then
+                sb.Append(" ").Append(arg)
+            End If
+        Next i
 
         If includePaths Then
-            If Mode.Value = 1 Then
-                sb.Append(" --fpf=").Append((p.TempDir + p.TargetFile.Base + ".txt").Escape)
+            If modeVal = 1 Then
+                sb.Append(" --fpf=").Append((p.TempDir & p.TargetFile.Base & ".txt").Escape)
             End If
 
             sb.Append(" -o ").Append(targetPath.Escape)

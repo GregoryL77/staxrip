@@ -1,4 +1,5 @@
 
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class CommandLineDemuxForm
@@ -342,10 +343,10 @@ Public Class CommandLineDemuxForm
         Temp = ObjectHelp.GetCopy(Of CommandLineDemuxer)(demuxer)
 
         tbName.Text = Temp.Name
-        tbInput.Text = Temp.InputExtensions.ToArray.Join(" ")
-        tbInputFormats.Text = Temp.InputFormats.ToArray.Join(" ")
-        tbSourceFilters.Text = Temp.SourceFilters.ToArray.Join(" ")
-        tbVideoOut.Text = Temp.OutputExtensions.ToArray.Join(" ")
+        tbInput.Text = String.Join(" ", Temp.InputExtensions)
+        tbInputFormats.Text = String.Join(" ", Temp.InputFormats)
+        tbSourceFilters.Text = String.Join(" ", Temp.SourceFilters)
+        tbVideoOut.Text = String.Join(" ", Temp.OutputExtensions)
         tbArguments.Text = Temp.Arguments
         tbCommand.Text = Temp.Command
 
@@ -362,10 +363,11 @@ Public Class CommandLineDemuxForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         If DialogResult = DialogResult.OK Then
             Target.Name = tbName.Text
-            Target.InputExtensions = tbInput.Text.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
-            Target.InputFormats = ConvertFormat(tbInputFormats.Text).SplitNoEmptyAndNoWSDelim(",", ";", " ")
-            Target.OutputExtensions = tbVideoOut.Text.ToLower.SplitNoEmptyAndNoWSDelim(",", ";", " ")
-            Target.SourceFilters = tbSourceFilters.Text.SplitNoEmptyAndNoWSDelim(",", ";", " ")
+            Dim delimiters As Char() = {","c, ";"c, " "c}
+            Target.InputExtensions = tbInput.Text.ToLower.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+            Target.InputFormats = ConvertFormat(tbInputFormats.Text).Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+            Target.OutputExtensions = tbVideoOut.Text.ToLower.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
+            Target.SourceFilters = tbSourceFilters.Text.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
             Target.Command = tbCommand.Text
             Target.Arguments = tbArguments.Text
         End If
@@ -394,16 +396,21 @@ Public Class CommandLineDemuxForm
     End Sub
 
     Sub HelpToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles HelpToolStripMenuItem.Click
-        For Each pack In Package.Items.Values
-            If tbName.Text.Equals(pack.Name) Then
+        Dim tbTxt As String = tbName.Text
+        Dim pVals = Package.Items.Values
+        Dim pValsA(pVals.Count - 1) As Package
+        pVals.CopyTo(pValsA, 0)
+        For i = 0 To pValsA.Length - 1
+            Dim pack = pValsA(i)
+            If tbTxt.Equals(pack.Name) Then
                 pack.ShowHelp()
 
                 Exit Sub
             End If
-        Next
+        Next i
 
-        MsgWarn("The demuxer name '" + tbName.Text + "' does not match with the name of one of StaxRip's apps. StaxRip includes the following apps:" + BR2 +
-                Package.Items.Values.Where(Function(package) Not TypeOf package Is PluginPackage).Select(Function(package) package.Name).ToArray.Sort.Join(", "))
+        MsgWarn("The demuxer name '" & tbTxt & "' does not match with the name of one of StaxRip's apps. StaxRip includes the following apps:" & BR2 &
+              String.Join(", ", pValsA.WhereSelectF(Function(package) TypeOf package IsNot PluginPackage, Function(package) package.Name).Sort))
     End Sub
 
     Protected Overrides Sub OnHelpRequested(hevent As HelpEventArgs)

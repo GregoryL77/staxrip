@@ -53,7 +53,8 @@ Public Class SimpleUI
                                              Tree.ItemHeight = CInt(Tree.Height / (Tree.Nodes.Count)) - 2
                                          End If
 
-                                         Dim tFH As Integer = Tree.Font.Height
+
+                                         Dim tFH As Integer = If(s.UIScaleFactor <> 1, Tree.Font.Height, 16) 'Tree.Font.Height
                                          If Tree.ItemHeight > CInt(tFH * 1.5) Then
                                              Tree.ItemHeight = CInt(tFH * 1.5)
                                          End If
@@ -191,11 +192,11 @@ Public Class SimpleUI
         If q IsNot Nothing Then
             Return DirectCast(q, FlowPage)
         Else
-            Return CreateFlowPage(path, True)
+            Return CreateFlowPage(path, autoSuspend:=  True)
         End If
     End Function
 
-    Private SaveValEventHList As List(Of SaveValuesEventHandler) 'Debug Test
+    Public SaveValEventHList As List(Of SaveValuesEventHandler) 'Debug Test
     Public Function SaveValEventsHLCreate(Optional capacity As Integer = 0) As List(Of SaveValuesEventHandler)
         SaveValEventHList = If(capacity = 0, New List(Of SaveValuesEventHandler), New List(Of SaveValuesEventHandler)(capacity))
         Return SaveValEventHList
@@ -443,7 +444,7 @@ Public Class SimpleUI
         Property Expand As Boolean Implements SimpleUIControl.Expand
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Height = FontHeight * 2
+            Height = If(s.UIScaleFactor <> 1, FontHeight * 2, 16 * 2)  'FontHeight * 2
             MyBase.OnLayout(levent)
         End Sub
     End Class
@@ -471,7 +472,7 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Dim fh As Integer = FontHeight
+            Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
             Margin = New Padding(CInt(fh / 8)) With {.Left = If(MarginLeft <> 0, CInt(MarginLeft), CInt(fh / 4))}
             MyBase.OnLayout(levent)
         End Sub
@@ -546,7 +547,7 @@ Public Class SimpleUI
         Overrides Function GetPreferredSize(proposedSize As Size) As Size
             If Offset > 0 Then
                 Dim ret = MyBase.GetPreferredSize(proposedSize)
-                Dim fhof As Integer = Offset * FontHeight
+                Dim fhof As Integer = Offset * If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
 
                 If ret.Width < fhof Then
                     ret.Width = fhof
@@ -572,7 +573,7 @@ Public Class SimpleUI
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             'dialog size
-            Dim fh As Integer = FontHeight  '=Font.Height 'Experimant - NoScaling!!! Test This!!!
+            Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight  '=Font.Height 'Experimant - NoScaling!!! Test This!!!
             Size = New Size(CInt(fh * 4.5), CInt(fh * 1.3))
             MyBase.OnLayout(levent)
         End Sub
@@ -662,7 +663,7 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Dim fh As Integer = FontHeight
+            Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
             If TextBox.Multiline Then
                 Height = fh * MultilineHeightFactor
             Else
@@ -884,7 +885,7 @@ Public Class SimpleUI
         Public Overrides Function GetPreferredSize(proposedSize As Size) As Size
             If Offset > 0 Then
                 Dim ret = MyBase.GetPreferredSize(proposedSize)
-                Dim fhoff As Integer = CInt(Offset * FontHeight)
+                Dim fhoff As Integer = CInt(Offset * If(s.UIScaleFactor <> 1, FontHeight, 16)) 'FontHeight)
 
                 If ret.Width < fhoff Then
                     ret.Width = fhoff
@@ -905,13 +906,20 @@ Public Class SimpleUI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Dim fh15 As Integer = FontHeight \ 15
+            ' Dim fh15 As Integer = 1 'if(s.UIScaleFactor <> 1,FontHeight \ 15,1)
             For Each ctrl As Control In Controls
-                ctrl.Margin = New Padding(fh15)
+                ctrl.Margin = New Padding(1) '(fh15)
             Next
 
             MyBase.OnLayout(levent)
         End Sub
+
+        Protected Overrides ReadOnly Property DefaultMargin As Padding 'Added Test This! Todo !!!!!!!
+            Get
+                'Dim dddddd = MyBase.DefaultMargin
+                Return New Padding(1) '(fh15) ' Dim fh15 As Integer = 1 'if(s.UIScaleFactor <> 1, FontHeight \ 15, 1)
+            End Get
+        End Property
     End Class
 
     MustInherit Class LabelBlock
@@ -1050,7 +1058,7 @@ Public Class SimpleUI
 
         Sub New(ui As SimpleUI)
             MyBase.New(ui)
-            Dim fh As Integer = FontHeight
+            Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
             Button.Width = fh * 2
             Button.Height = CInt(fh * 1.5)
             Button.ShowMenuSymbol = True
@@ -1177,7 +1185,7 @@ Public Class SimpleUI
 
         Sub New(ui As SimpleUI)
             MyBase.New(ui)
-            Dim fh As Integer = FontHeight
+            Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
             Button.Width = fh * 2
             Button.Height = CInt(fh * 1.45)
             Button.AutoSizeMode = AutoSizeMode.GrowOnly
@@ -1235,7 +1243,7 @@ Public Class SimpleUI
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             If Button IsNot Nothing Then
-                Dim fh As Integer = FontHeight
+                Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
                 Button.Size = New Size(fh * 10, CInt(fh * 1.5))
             End If
 

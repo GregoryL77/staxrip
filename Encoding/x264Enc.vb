@@ -1,4 +1,5 @@
 ﻿
+Imports System.Text
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
 
@@ -33,10 +34,11 @@ Public Class x264Enc
 
     Overrides ReadOnly Property OutputExt As String
         Get
-            If Params.Muxer.Value = 0 OrElse Params.Muxer.Value = 1 Then
+            Dim pmVal As Integer = Params.Muxer.Value
+            If pmVal = 0 OrElse pmVal = 1 Then
                 Return "h264"
             Else
-                Return Params.Muxer.ValueText.ToLower
+                Return Params.Muxer.ValueText.ToLowerInvariant
             End If
         End Get
     End Property
@@ -49,9 +51,10 @@ Public Class x264Enc
         p.Script.Synchronize()
         Encode("Video encoding", GetArgs(1, p.Script), s.ProcessPriority)
 
-        If Params.Mode.Value = x264RateMode.TwoPass Then
+        Dim modeVal As Integer = Params.Mode.Value
+        If modeVal = x264RateMode.TwoPass Then
             Encode("Video encoding second pass", GetArgs(2, p.Script), s.ProcessPriority)
-        ElseIf Params.Mode.Value = x264RateMode.ThreePass Then
+        ElseIf modeVal = x264RateMode.ThreePass Then
             Encode("Video encoding second pass", GetArgs(3, p.Script), s.ProcessPriority)
             Encode("Video encoding third pass", GetArgs(2, p.Script), s.ProcessPriority)
         End If
@@ -175,7 +178,8 @@ Public Class x264Enc
 
     Overrides Property QualityMode() As Boolean
         Get
-            Return Params.Mode.Value = x264RateMode.Quantizer OrElse Params.Mode.Value = x264RateMode.Quality
+            Dim modeVal As Integer = Params.Mode.Value
+            Return modeVal = x264RateMode.Quantizer OrElse modeVal = x264RateMode.Quality
         End Get
         Set(Value As Boolean)
         End Set
@@ -462,11 +466,10 @@ Public Class x264Params
         .Text = "Psy RD",
         .ArgsFunc = Function() As String
                         If Psy.Value Then
-                            If PsyRD.Value <> PsyRD.DefaultValue OrElse
-                                PsyTrellis.Value <> PsyTrellis.DefaultValue OrElse
-                                Not Psy.DefaultValue Then
-
-                                Return "--psy-rd " & PsyRD.Value.ToInvariantString & ":" & PsyTrellis.Value.ToInvariantString
+                            Dim psRDVal As Double = PsyRD.Value
+                            Dim psTrVal As Double = PsyTrellis.Value
+                            If psRDVal <> PsyRD.DefaultValue OrElse psTrVal <> PsyTrellis.DefaultValue OrElse Not Psy.DefaultValue Then
+                                Return "--psy-rd " & psRDVal.ToInvariantString & ":" & psTrVal.ToInvariantString
                             End If
                         Else
                             If Psy.DefaultValue Then
@@ -554,229 +557,459 @@ Public Class x264Params
         .Options = {"Automatic", "None", "vspipe y4m", "vspipe raw", "ffmpeg y4m", "ffmpeg raw", "ffmpeg CUDA y4m"}}
 
     Sub ApplyValues(isDefault As Boolean)
-        Dim setVal = Sub(param As CommandLineParam, value As Object)
-                         If TypeOf param Is BoolParam Then
-                             If isDefault Then
-                                 DirectCast(param, BoolParam).DefaultValue = CBool(value)
-                             Else
-                                 DirectCast(param, BoolParam).Value = CBool(value)
-                             End If
-                         ElseIf TypeOf param Is NumParam Then
-                             If isDefault Then
-                                 DirectCast(param, NumParam).DefaultValue = CDbl(value)
-                             Else
-                                 DirectCast(param, NumParam).Value = CDbl(value)
-                             End If
-                         ElseIf TypeOf param Is OptionParam Then
-                             If isDefault Then
-                                 DirectCast(param, OptionParam).DefaultValue = CInt(value)
-                             Else
-                                 DirectCast(param, OptionParam).Value = CInt(value)
-                             End If
-                         End If
-                     End Sub
-
-        setVal(Deblock, True)
-        setVal(DeblockA, 0)
-        setVal(DeblockB, 0)
-        setVal(BFrames, 3)
-        setVal(AqMode, 1)
-        setVal(BAdapt, 1)
-        setVal(Cabac, True)
-        setVal(Weightp, 2)
-        setVal(Mbtree, True)
-        setVal(Me_, 1)
-        setVal(MixedRefs, True)
-        setVal(I4x4, True)
-        setVal(P4x4, False)
-        setVal(B8x8, True)
-        setVal(I8x8, True)
-        setVal(P8x8, True)
-        setVal(_8x8dct, True)
-        setVal(RcLookahead, 40)
-        setVal(Ref, 3)
-        setVal(Scenecut, 40)
-        setVal(Subme, 7)
-        setVal(Trellis, 1)
-        setVal(Weightb, True)
-        setVal(Direct, 1)
-        setVal(Merange, 16)
-        setVal(Fastpskip, True)
-        setVal(Psy, True)
-        setVal(PsyRD, 1)
-        setVal(PsyTrellis, 0)
-        setVal(AqStrength, 1)
-        setVal(DctDecimate, True)
-        setVal(DeadzoneInter, 21)
-        setVal(DeadzoneIntra, 11)
-        setVal(Ipratio, 1.4)
-        setVal(Pbratio, 1.3)
-        setVal(Qcomp, 0.6)
-        setVal(ForceCFR, False)
-        setVal(SlowFirstpass, False)
+        'Dim setVal = Sub(param As CommandLineParam, value As Object) 'ToDO Throw away this Boxing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        '                 If TypeOf param Is BoolParam Then
+        '                     If isDefault Then
+        '                         DirectCast(param, BoolParam).DefaultValue = CBool(value)
+        '                     Else
+        '                         DirectCast(param, BoolParam).Value = CBool(value)
+        '                     End If
+        '                 ElseIf TypeOf param Is NumParam Then
+        '                     If isDefault Then
+        '                         DirectCast(param, NumParam).DefaultValue = CDbl(value)
+        '                     Else
+        '                         DirectCast(param, NumParam).Value = CDbl(value)
+        '                     End If
+        '                 ElseIf TypeOf param Is OptionParam Then
+        '                     If isDefault Then
+        '                         DirectCast(param, OptionParam).DefaultValue = CInt(value)
+        '                     Else
+        '                         DirectCast(param, OptionParam).Value = CInt(value)
+        '                     End If
+        '                 End If
+        '             End Sub
+        If isDefault Then
+            Deblock.DefaultValue = True
+            DeblockA.DefaultValue = 0
+            DeblockB.DefaultValue = 0
+            BFrames.DefaultValue = 3
+            AqMode.DefaultValue = 1
+            BAdapt.DefaultValue = 1
+            Cabac.DefaultValue = True
+            Weightp.DefaultValue = 2
+            Mbtree.DefaultValue = True
+            Me_.DefaultValue = 1
+            MixedRefs.DefaultValue = True
+            I4x4.DefaultValue = True
+            P4x4.DefaultValue = False
+            B8x8.DefaultValue = True
+            I8x8.DefaultValue = True
+            P8x8.DefaultValue = True
+            _8x8dct.DefaultValue = True
+            RcLookahead.DefaultValue = 40
+            Ref.DefaultValue = 3
+            Scenecut.DefaultValue = 40
+            Subme.DefaultValue = 7
+            Trellis.DefaultValue = 1
+            Weightb.DefaultValue = True
+            Direct.DefaultValue = 1
+            Merange.DefaultValue = 16
+            Fastpskip.DefaultValue = True
+            Psy.DefaultValue = True
+            PsyRD.DefaultValue = 1
+            PsyTrellis.DefaultValue = 0
+            AqStrength.DefaultValue = 1
+            DctDecimate.DefaultValue = True
+            DeadzoneInter.DefaultValue = 21
+            DeadzoneIntra.DefaultValue = 11
+            Ipratio.DefaultValue = 1.4
+            Pbratio.DefaultValue = 1.3
+            Qcomp.DefaultValue = 0.6
+            ForceCFR.DefaultValue = False
+            SlowFirstpass.DefaultValue = False
+        Else
+            Deblock.Value = True
+            DeblockA.Value = 0
+            DeblockB.Value = 0
+            BFrames.Value = 3
+            AqMode.Value = 1
+            BAdapt.Value = 1
+            Cabac.Value = True
+            Weightp.Value = 2
+            Mbtree.Value = True
+            Me_.Value = 1
+            MixedRefs.Value = True
+            I4x4.Value = True
+            P4x4.Value = False
+            B8x8.Value = True
+            I8x8.Value = True
+            P8x8.Value = True
+            _8x8dct.Value = True
+            RcLookahead.Value = 40
+            Ref.Value = 3
+            Scenecut.Value = 40
+            Subme.Value = 7
+            Trellis.Value = 1
+            Weightb.Value = True
+            Direct.Value = 1
+            Merange.Value = 16
+            Fastpskip.Value = True
+            Psy.Value = True
+            PsyRD.Value = 1
+            PsyTrellis.Value = 0
+            AqStrength.Value = 1
+            DctDecimate.Value = True
+            DeadzoneInter.Value = 21
+            DeadzoneIntra.Value = 11
+            Ipratio.Value = 1.4
+            Pbratio.Value = 1.3
+            Qcomp.Value = 0.6
+            ForceCFR.Value = False
+            SlowFirstpass.Value = False
+        End If
 
         Select Case Preset.Value
             Case 0 'ultrafast
-                setVal(Deblock, False)
-                setVal(_8x8dct, False)
-                setVal(BFrames, 0)
-                setVal(AqMode, 0)
-                setVal(BAdapt, 0)
-                setVal(Cabac, False)
-                setVal(Weightp, 0)
-                setVal(Mbtree, False)
-                setVal(Me_, 0)
-                setVal(MixedRefs, False)
-                setVal(RcLookahead, 0)
-                setVal(Ref, 1)
-                setVal(I4x4, False)
-                setVal(P4x4, False)
-                setVal(B8x8, False)
-                setVal(I8x8, False)
-                setVal(P8x8, False)
-                setVal(Scenecut, 0)
-                setVal(Subme, 0)
-                setVal(Trellis, 0)
-                setVal(Weightb, False)
+                If isDefault Then
+                    Deblock.DefaultValue = False
+                    _8x8dct.DefaultValue = False
+                    BFrames.DefaultValue = 0
+                    AqMode.DefaultValue = 0
+                    BAdapt.DefaultValue = 0
+                    Cabac.DefaultValue = False
+                    Weightp.DefaultValue = 0
+                    Mbtree.DefaultValue = False
+                    Me_.DefaultValue = 0
+                    MixedRefs.DefaultValue = False
+                    RcLookahead.DefaultValue = 0
+                    Ref.DefaultValue = 1
+                    I4x4.DefaultValue = False
+                    P4x4.DefaultValue = False
+                    B8x8.DefaultValue = False
+                    I8x8.DefaultValue = False
+                    P8x8.DefaultValue = False
+                    Scenecut.DefaultValue = 0
+                    Subme.DefaultValue = 0
+                    Trellis.DefaultValue = 0
+                    Weightb.DefaultValue = False
+                Else
+                    Deblock.Value = False
+                    _8x8dct.Value = False
+                    BFrames.Value = 0
+                    AqMode.Value = 0
+                    BAdapt.Value = 0
+                    Cabac.Value = False
+                    Weightp.Value = 0
+                    Mbtree.Value = False
+                    Me_.Value = 0
+                    MixedRefs.Value = False
+                    RcLookahead.Value = 0
+                    Ref.Value = 1
+                    I4x4.Value = False
+                    P4x4.Value = False
+                    B8x8.Value = False
+                    I8x8.Value = False
+                    P8x8.Value = False
+                    Scenecut.Value = 0
+                    Subme.Value = 0
+                    Trellis.Value = 0
+                    Weightb.Value = False
+                End If
+
             Case 1 'superfast
-                setVal(Weightp, 1)
-                setVal(Mbtree, False)
-                setVal(Me_, 0)
-                setVal(MixedRefs, False)
-                setVal(P4x4, False)
-                setVal(B8x8, False)
-                setVal(P8x8, False)
-                setVal(RcLookahead, 0)
-                setVal(Ref, 1)
-                setVal(Subme, 1)
-                setVal(Trellis, 0)
+                If isDefault Then
+                    Weightp.DefaultValue = 1
+                    Mbtree.DefaultValue = False
+                    Me_.DefaultValue = 0
+                    MixedRefs.DefaultValue = False
+                    P4x4.DefaultValue = False
+                    B8x8.DefaultValue = False
+                    P8x8.DefaultValue = False
+                    RcLookahead.DefaultValue = 0
+                    Ref.DefaultValue = 1
+                    Subme.DefaultValue = 1
+                    Trellis.DefaultValue = 0
+                Else
+                    Weightp.Value = 1
+                    Mbtree.Value = False
+                    Me_.Value = 0
+                    MixedRefs.Value = False
+                    P4x4.Value = False
+                    B8x8.Value = False
+                    P8x8.Value = False
+                    RcLookahead.Value = 0
+                    Ref.Value = 1
+                    Subme.Value = 1
+                    Trellis.Value = 0
+                End If
             Case 2 'veryfast
-                setVal(Weightp, 1)
-                setVal(MixedRefs, False)
-                setVal(RcLookahead, 10)
-                setVal(Ref, 1)
-                setVal(Subme, 2)
-                setVal(Trellis, 0)
+                If isDefault Then
+                    Weightp.DefaultValue = 1
+                    MixedRefs.DefaultValue = False
+                    RcLookahead.DefaultValue = 10
+                    Ref.DefaultValue = 1
+                    Subme.DefaultValue = 2
+                    Trellis.DefaultValue = 0
+                Else
+                    Weightp.Value = 1
+                    MixedRefs.Value = False
+                    RcLookahead.Value = 10
+                    Ref.Value = 1
+                    Subme.Value = 2
+                    Trellis.Value = 0
+                End If
             Case 3 'faster
-                setVal(Weightp, 1)
-                setVal(MixedRefs, False)
-                setVal(RcLookahead, 20)
-                setVal(Ref, 2)
-                setVal(Subme, 4)
+                If isDefault Then
+                    Weightp.DefaultValue = 1
+                    MixedRefs.DefaultValue = False
+                    RcLookahead.DefaultValue = 20
+                    Ref.DefaultValue = 2
+                    Subme.DefaultValue = 4
+                Else
+                    Weightp.Value = 1
+                    MixedRefs.Value = False
+                    RcLookahead.Value = 20
+                    Ref.Value = 2
+                    Subme.Value = 4
+                End If
             Case 4 'fast
-                setVal(Weightp, 1)
-                setVal(RcLookahead, 30)
-                setVal(Ref, 2)
-                setVal(Subme, 6)
+                If isDefault Then
+                    Weightp.DefaultValue = 1
+                    RcLookahead.DefaultValue = 30
+                    Ref.DefaultValue = 2
+                    Subme.DefaultValue = 6
+                Else
+                    Weightp.Value = 1
+                    RcLookahead.Value = 30
+                    Ref.Value = 2
+                    Subme.Value = 6
+                End If
             Case 5 'medium
             Case 6 'slow
-                setVal(RcLookahead, 50)
-                setVal(Ref, 5)
-                setVal(Subme, 8)
-                setVal(Trellis, 2)
-                setVal(Direct, 3)
+                If isDefault Then
+                    RcLookahead.DefaultValue = 50
+                    Ref.DefaultValue = 5
+                    Subme.DefaultValue = 8
+                    Trellis.DefaultValue = 2
+                    Direct.DefaultValue = 3
+                Else
+                    RcLookahead.Value = 50
+                    Ref.Value = 5
+                    Subme.Value = 8
+                    Trellis.Value = 2
+                    Direct.Value = 3
+                End If
             Case 7 'slower
-                setVal(BAdapt, 2)
-                setVal(Me_, 2)
-                setVal(RcLookahead, 60)
-                setVal(Ref, 8)
-                setVal(I4x4, True)
-                setVal(P4x4, True)
-                setVal(B8x8, True)
-                setVal(I8x8, True)
-                setVal(P8x8, True)
-                setVal(Subme, 9)
-                setVal(Trellis, 2)
-                setVal(Direct, 3)
+                If isDefault Then
+                    BAdapt.DefaultValue = 2
+                    Me_.DefaultValue = 2
+                    RcLookahead.DefaultValue = 60
+                    Ref.DefaultValue = 8
+                    I4x4.DefaultValue = True
+                    P4x4.DefaultValue = True
+                    B8x8.DefaultValue = True
+                    I8x8.DefaultValue = True
+                    P8x8.DefaultValue = True
+                    Subme.DefaultValue = 9
+                    Trellis.DefaultValue = 2
+                    Direct.DefaultValue = 3
+                Else
+                    BAdapt.Value = 2
+                    Me_.Value = 2
+                    RcLookahead.Value = 60
+                    Ref.Value = 8
+                    I4x4.Value = True
+                    P4x4.Value = True
+                    B8x8.Value = True
+                    I8x8.Value = True
+                    P8x8.Value = True
+                    Subme.Value = 9
+                    Trellis.Value = 2
+                    Direct.Value = 3
+                End If
             Case 8 'veryslow
-                setVal(BFrames, 8)
-                setVal(BAdapt, 2)
-                setVal(Me_, 2)
-                setVal(RcLookahead, 60)
-                setVal(Ref, 16)
-                setVal(I4x4, True)
-                setVal(P4x4, True)
-                setVal(B8x8, True)
-                setVal(I8x8, True)
-                setVal(P8x8, True)
-                setVal(Subme, 10)
-                setVal(Trellis, 2)
-                setVal(Direct, 3)
-                setVal(Merange, 24)
+                If isDefault Then
+                    BFrames.DefaultValue = 8
+                    BAdapt.DefaultValue = 2
+                    Me_.DefaultValue = 2
+                    RcLookahead.DefaultValue = 60
+                    Ref.DefaultValue = 16
+                    I4x4.DefaultValue = True
+                    P4x4.DefaultValue = True
+                    B8x8.DefaultValue = True
+                    I8x8.DefaultValue = True
+                    P8x8.DefaultValue = True
+                    Subme.DefaultValue = 10
+                    Trellis.DefaultValue = 2
+                    Direct.DefaultValue = 3
+                    Merange.DefaultValue = 24
+                Else
+                    BFrames.Value = 8
+                    BAdapt.Value = 2
+                    Me_.Value = 2
+                    RcLookahead.Value = 60
+                    Ref.Value = 16
+                    I4x4.Value = True
+                    P4x4.Value = True
+                    B8x8.Value = True
+                    I8x8.Value = True
+                    P8x8.Value = True
+                    Subme.Value = 10
+                    Trellis.Value = 2
+                    Direct.Value = 3
+                    Merange.Value = 24
+                End If
             Case 9 'placebo
-                setVal(BFrames, 16)
-                setVal(BAdapt, 2)
-                setVal(Me_, 4)
-                setVal(RcLookahead, 60)
-                setVal(Ref, 16)
-                setVal(I4x4, True)
-                setVal(P4x4, True)
-                setVal(B8x8, True)
-                setVal(I8x8, True)
-                setVal(P8x8, True)
-                setVal(Subme, 11)
-                setVal(Trellis, 2)
-                setVal(Direct, 3)
-                setVal(Merange, 24)
-                setVal(Fastpskip, False)
-                setVal(SlowFirstpass, True)
+                If isDefault Then
+                    BFrames.DefaultValue = 16
+                    BAdapt.DefaultValue = 2
+                    Me_.DefaultValue = 4
+                    RcLookahead.DefaultValue = 60
+                    Ref.DefaultValue = 16
+                    I4x4.DefaultValue = True
+                    P4x4.DefaultValue = True
+                    B8x8.DefaultValue = True
+                    I8x8.DefaultValue = True
+                    P8x8.DefaultValue = True
+                    Subme.DefaultValue = 11
+                    Trellis.DefaultValue = 2
+                    Direct.DefaultValue = 3
+                    Merange.DefaultValue = 24
+                    Fastpskip.DefaultValue = False
+                    SlowFirstpass.DefaultValue = True
+                Else
+                    BFrames.Value = 16
+                    BAdapt.Value = 2
+                    Me_.Value = 4
+                    RcLookahead.Value = 60
+                    Ref.Value = 16
+                    I4x4.Value = True
+                    P4x4.Value = True
+                    B8x8.Value = True
+                    I8x8.Value = True
+                    P8x8.Value = True
+                    Subme.Value = 11
+                    Trellis.Value = 2
+                    Direct.Value = 3
+                    Merange.Value = 24
+                    Fastpskip.Value = False
+                    SlowFirstpass.Value = True
+                End If
         End Select
 
         Select Case Tune.Value
             Case 1 'film
-                setVal(DeblockA, -1)
-                setVal(DeblockB, -1)
-                setVal(PsyTrellis, 0.15)
+                If isDefault Then
+                    DeblockA.DefaultValue = -1
+                    DeblockB.DefaultValue = -1
+                    PsyTrellis.DefaultValue = 0.15
+                Else
+                    DeblockA.Value = -1
+                    DeblockB.Value = -1
+                    PsyTrellis.Value = 0.15
+                End If
+
             Case 2 'animation
-                setVal(DeblockA, 1)
-                setVal(DeblockB, 1)
-                Dim val = If(isDefault, BFrames.DefaultValue, BFrames.Value) + 2
-                setVal(BFrames, If(val > 16, 16, val))
-                setVal(PsyRD, 0.4)
-                setVal(AqStrength, 0.6)
+                If isDefault Then
+                    DeblockA.DefaultValue = 1
+                    DeblockB.DefaultValue = 1
+                    Dim val = BFrames.DefaultValue + 2
+                    BFrames.DefaultValue = If(val > 16, 16, val)
+                    PsyRD.DefaultValue = 0.4
+                    AqStrength.DefaultValue = 0.6
+                Else
+                    DeblockA.Value = 1
+                    DeblockB.Value = 1
+                    Dim val = BFrames.Value + 2
+                    BFrames.Value = If(val > 16, 16, val)
+                    PsyRD.Value = 0.4
+                    AqStrength.Value = 0.6
+                End If
             Case 3 'grain
-                setVal(DeblockA, -2)
-                setVal(DeblockB, -2)
-                setVal(PsyTrellis, 0.25)
-                setVal(AqStrength, 0.5)
-                setVal(DctDecimate, False)
-                setVal(DeadzoneInter, 6)
-                setVal(DeadzoneIntra, 6)
-                setVal(Ipratio, 1.1)
-                setVal(Pbratio, 1.1)
-                setVal(Qcomp, 0.8)
+                If isDefault Then
+                    DeblockA.DefaultValue = -2
+                    DeblockB.DefaultValue = -2
+                    PsyTrellis.DefaultValue = 0.25
+                    AqStrength.DefaultValue = 0.5
+                    DctDecimate.DefaultValue = False
+                    DeadzoneInter.DefaultValue = 6
+                    DeadzoneIntra.DefaultValue = 6
+                    Ipratio.DefaultValue = 1.1
+                    Pbratio.DefaultValue = 1.1
+                    Qcomp.DefaultValue = 0.8
+                Else
+                    DeblockA.Value = -2
+                    DeblockB.Value = -2
+                    PsyTrellis.Value = 0.25
+                    AqStrength.Value = 0.5
+                    DctDecimate.Value = False
+                    DeadzoneInter.Value = 6
+                    DeadzoneIntra.Value = 6
+                    Ipratio.Value = 1.1
+                    Pbratio.Value = 1.1
+                    Qcomp.Value = 0.8
+                End If
             Case 4 'stillimage
-                setVal(DeblockA, -3)
-                setVal(DeblockB, -3)
-                setVal(PsyRD, 2)
-                setVal(PsyTrellis, 0.7)
-                setVal(AqStrength, 1.2)
+                If isDefault Then
+                    DeblockA.DefaultValue = -3
+                    DeblockB.DefaultValue = -3
+                    PsyRD.DefaultValue = 2
+                    PsyTrellis.DefaultValue = 0.7
+                    AqStrength.DefaultValue = 1.2
+                Else
+                    DeblockA.Value = -3
+                    DeblockB.Value = -3
+                    PsyRD.Value = 2
+                    PsyTrellis.Value = 0.7
+                    AqStrength.Value = 1.2
+                End If
             Case 5 'psnr
-                setVal(AqMode, 0)
-                setVal(Psy, False)
+                If isDefault Then
+                    AqMode.DefaultValue = 0
+                    Psy.DefaultValue = False
+                Else
+                    AqMode.Value = 0
+                    Psy.Value = False
+                End If
             Case 6 'ssim
-                setVal(AqMode, 2)
-                setVal(Psy, False)
+                If isDefault Then
+                    AqMode.DefaultValue = 2
+                    Psy.DefaultValue = False
+                Else
+                    AqMode.Value = 2
+                    Psy.Value = False
+                End If
             Case 7 'fastdecode
-                setVal(Deblock, False)
-                setVal(Cabac, False)
-                setVal(Weightp, 0)
-                setVal(Weightb, False)
+                If isDefault Then
+                    Deblock.DefaultValue = False
+                    Cabac.DefaultValue = False
+                    Weightp.DefaultValue = 0
+                    Weightb.DefaultValue = False
+                Else
+                    Deblock.Value = False
+                    Cabac.Value = False
+                    Weightp.Value = 0
+                    Weightb.Value = False
+                End If
             Case 8 'zerolatency
-                setVal(BFrames, 0)
-                setVal(Mbtree, False)
-                setVal(RcLookahead, 0)
-                setVal(ForceCFR, True)
+                If isDefault Then
+                    BFrames.DefaultValue = 0
+                    Mbtree.DefaultValue = False
+                    RcLookahead.DefaultValue = 0
+                    ForceCFR.DefaultValue = True
+                Else
+                    BFrames.Value = 0
+                    Mbtree.Value = False
+                    RcLookahead.Value = 0
+                    ForceCFR.Value = True
+                End If
         End Select
 
         Select Case Profile.Value
             Case 1 'baseline
-                setVal(Cabac, False)
-                setVal(_8x8dct, False)
-                setVal(BFrames, 0)
-                setVal(Weightp, 0)
+                If isDefault Then
+                    Cabac.DefaultValue = False
+                    _8x8dct.DefaultValue = False
+                    BFrames.DefaultValue = 0
+                    Weightp.DefaultValue = 0
+                Else
+                    Cabac.Value = False
+                    _8x8dct.Value = False
+                    BFrames.Value = 0
+                    Weightp.Value = 0
+                End If
             Case 2 'main
-                setVal(_8x8dct, False)
+                If isDefault Then _8x8dct.DefaultValue = False Else _8x8dct.Value = False
         End Select
     End Sub
 
@@ -952,7 +1185,7 @@ Public Class x264Params
                     CustomSecondPass)
 
                 For Each item In ItemsValue
-                    If item.HelpSwitch.NotNullOrEmptyS Then
+                    If item.HelpSwitch?.Length > 0 Then
                         Continue For
                     End If
 
@@ -972,7 +1205,7 @@ Public Class x264Params
 
     Public Overrides Sub ShowHelp(id As String)
         If Control.ModifierKeys = Keys.Control OrElse Control.ModifierKeys = Keys.Shift Then
-            g.ShellExecute("http://www.chaneru.com/Roku/HLS/X264_Settings.htm#" + id.TrimStart("-"c))
+            g.ShellExecute("http://www.chaneru.com/Roku/HLS/X264_Settings.htm#" & id.TrimStart("-"c))
         Else
             g.ShowCommandLineHelp(Package.x264, id)
         End If
@@ -991,38 +1224,33 @@ Public Class x264Params
             BlockValueChanged = False
         End If
 
-        If Not DeblockA.NumEdit Is Nothing Then
-            DeblockA.NumEdit.Enabled = Deblock.Value
-            DeblockB.NumEdit.Enabled = Deblock.Value
+        If DeblockA.NumEdit IsNot Nothing Then
+            Dim dbVal As Boolean = Deblock.Value
+            DeblockA.NumEdit.Enabled = dbVal
+            DeblockB.NumEdit.Enabled = dbVal
 
-            PsyRD.NumEdit.Enabled = Psy.Value
-            PsyTrellis.NumEdit.Enabled = Psy.Value
+            Dim pVal As Boolean = Psy.Value
+            PsyRD.NumEdit.Enabled = pVal
+            PsyTrellis.NumEdit.Enabled = pVal
         End If
 
         MyBase.OnValueChanged(item)
     End Sub
 
-    Overloads Overrides Function GetCommandLine(
-        includePaths As Boolean, includeExecutable As Boolean, Optional pass As Integer = 1) As String
-
-        Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase +
-                       p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
+    Overloads Overrides Function GetCommandLine(includePaths As Boolean, includeExecutable As Boolean, Optional pass As Integer = 1) As String
+        Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase & p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
     End Function
 
-    Overloads Function GetArgs(
-        pass As Integer,
-        script As VideoScript,
-        targetPath As String,
-        includePaths As Boolean,
-        includeExecutable As Boolean) As String
+    Overloads Function GetArgs(pass As Integer, script As VideoScript, targetPath As String, includePaths As Boolean, includeExecutable As Boolean) As String
 
         ApplyValues(True)
 
-        Dim args As String
+        ' Dim args As String
+        Dim sb As New StringBuilder(512)
         Dim pipeTool = If(p.Script.Engine = ScriptEngine.AviSynth, PipingToolAVS, PipingToolVS).ValueText
 
         If includePaths AndAlso includeExecutable Then
-            Dim pipeCmd = ""
+            ' Dim pipeCmd = ""
 
             If pipeTool.Equals("automatic") Then
                 If p.Script.Engine = ScriptEngine.AviSynth Then
@@ -1032,11 +1260,12 @@ Public Class x264Params
                 End If
             End If
 
+
             Select Case pipeTool
                 Case "vspipe y4m"
-                    pipeCmd = Package.vspipe.Path.Escape + " " + script.Path.Escape + " - --y4m | "
+                    sb.Append(Package.vspipe.Path.Escape).Append(" ").Append(script.Path.Escape).Append(" - --y4m | ")
                 Case "vspipe raw"
-                    pipeCmd = Package.vspipe.Path.Escape + " " + script.Path.Escape + " - | "
+                    sb.Append(Package.vspipe.Path.Escape).Append(" ").Append(script.Path.Escape).Append(" - | ")
                 Case "avs2pipemod y4m"
                     Dim dll As String
 
@@ -1044,7 +1273,7 @@ Public Class x264Params
                         dll = " -dll=" + Package.AviSynth.Path.Escape
                     End If
 
-                    pipeCmd = Package.avs2pipemod.Path.Escape + dll + " -y4mp " + script.Path.Escape + " | "
+                    sb.Append(Package.avs2pipemod.Path.Escape).Append(dll).Append(" -y4mp ").Append(script.Path.Escape).Append(" | ")
                 Case "avs2pipemod raw"
                     Dim dll As String
 
@@ -1052,12 +1281,11 @@ Public Class x264Params
                         dll = " -dll=" + Package.AviSynth.Path.Escape
                     End If
 
-                    pipeCmd = Package.avs2pipemod.Path.Escape + dll + " -rawvideo " + script.Path.Escape + " | "
+                    sb.Append(Package.avs2pipemod.Path.Escape).Append(dll).Append(" -rawvideo ").Append(script.Path.Escape).Append(" | ")
                 Case "ffmpeg y4m"
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f yuv4mpegpipe -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
+                    sb.Append(Package.ffmpeg.Path.Escape).Append(" -i ").Append(script.Path.Escape).Append(" -f yuv4mpegpipe -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ")
                 Case "ffmpeg raw"
-                    pipeCmd = Package.ffmpeg.Path.Escape + " -i " + script.Path.Escape + " -f rawvideo -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
-
+                    sb.Append(Package.ffmpeg.Path.Escape).Append(" -i ").Append(script.Path.Escape).Append(" -f rawvideo -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ")
                 Case "ffmpegcuda y4m"
 
                     'To DO Check Vsync: 0 - passthrough Each frame Is passed with its timestamp from the demuxer to the muxer, 
@@ -1069,57 +1297,66 @@ Public Class x264Params
                     'seems like death switch, nvidia paper recommends vsync 0
 
                     Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
-                    pipeCmd = Package.ffmpeg.Path.Escape + If(p.ExtractTimestamps, " -vsync 0", " -vsync 1") + " -hwaccel cuda -i " +
-                        p.SourceFile.Escape + " -f yuv4mpegpipe -pix_fmt " + pix_fmt + " -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | "
+                    sb.Append(Package.ffmpeg.Path.Escape).Append(If(p.ExtractTimestamps, " -vsync 0", " -vsync 1")).Append(" -hwaccel cuda -i ").Append(p.SourceFile.Escape).
+                        Append(" -f yuv4mpegpipe -pix_fmt ").Append(pix_fmt).Append(" -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ")
 
             End Select
 
-            args += pipeCmd + Package.x264.Path.Escape
+            sb.Append(Package.x264.Path.Escape)
         End If
 
-        If Mode.Value = x264RateMode.TwoPass OrElse Mode.Value = x264RateMode.ThreePass Then
-            args += " --pass " & pass
+        Dim modeVal As Integer = Mode.Value
+
+        If modeVal = x264RateMode.TwoPass OrElse modeVal = x264RateMode.ThreePass Then
+            sb.Append(" --pass ").Append(pass)
 
             If pass = 1 Then
-                If CustomFirstPass.Value.NotNullOrEmptyS Then
-                    args += " " + CustomFirstPass.Value
+                Dim cVal As String = CustomFirstPass.Value
+                If cVal?.Length > 0 Then
+                    sb.Append(" ").Append(cVal)
                 End If
             Else
-                If CustomSecondPass.Value.NotNullOrEmptyS Then
-                    args += " " + CustomSecondPass.Value
+                Dim cVal As String = CustomSecondPass.Value
+                If cVal?.Length > 0 Then
+                    sb.Append(" ").Append(cVal)
                 End If
             End If
         End If
 
-        If Mode.Value = x264RateMode.Quantizer Then
+        If modeVal = x264RateMode.Quantizer Then
             If Not IsCustom(pass, "--qp") Then
-                args += " --qp " + CInt(Quant.Value).ToString
+                sb.Append(" --qp ").Append(CInt(Quant.Value).ToInvariantString)
             End If
-        ElseIf Mode.Value = x264RateMode.Quality Then
+        ElseIf modeVal = x264RateMode.Quality Then
             If Not IsCustom(pass, "--crf") Then
-                args += " --crf " + Quant.Value.ToInvariantString
+                sb.Append(" --crf ").Append(Quant.Value.ToInvariantString)
             End If
         Else
             If Not IsCustom(pass, "--bitrate") Then
-                If Bitrate.Value <> 0 Then
-                    args += " --bitrate " & Bitrate.Value
+                Dim brVal As Double = Bitrate.Value
+                If brVal <> 0 Then
+                    sb.Append(" --bitrate ").Append(brVal)
                 Else
-                    args += " --bitrate " & p.VideoBitrate
+                    sb.Append(" --bitrate ").Append(p.VideoBitrate)
                 End If
             End If
         End If
 
-        Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS AndAlso Not IsCustom(pass, i.Switch)
-
-        If q.Any Then
-            args += " " + q.Select(Function(item) item.GetArgs).Join(" ")
-        End If
+        'Dim q = From i In Items Where i.GetArgs?.Length > 0 AndAlso Not IsCustom(pass, i.Switch)
+        'If q.Any Then args &= " " & q.Select(Function(item) item.GetArgs).Join(" ")
+        For i = 0 To Items.Count - 1
+            Dim prm = Items(i)
+            Dim arg As String = prm.GetArgs
+            If arg?.Length > 0 AndAlso Not IsCustom(pass, prm.Switch) Then
+                sb.Append(" ").Append(arg)
+            End If
+        Next i
 
         If includePaths Then
             Dim input = If(String.Equals(pipeTool, "none"), script.Path.ToShortFilePath.Escape, "-")
             Dim dmx = Demuxer.ValueText
 
-            If dmx = "automatic" Then
+            If String.Equals(dmx, "automatic") Then
                 If String.Equals(pipeTool, "none") Then
                     dmx = ""
                 ElseIf pipeTool.EndsWith(" y4m", StringComparison.Ordinal) Then
@@ -1129,60 +1366,62 @@ Public Class x264Params
                 End If
             End If
 
-            If dmx.NotNullOrEmptyS Then
+            If dmx?.Length > 0 Then
                 Dim info = script.GetInfo
 
-                args += $" --demuxer {dmx} --frames " & info.FrameCount
+                sb.Append(" --demuxer ").Append(dmx).Append(" --frames ").Append(info.FrameCount.ToInvariantString)
 
                 If dmx = "raw" Then
-                    args += $" --input-res {info.Width}x{info.Height}"
+                    sb.Append(" --input-res ").Append(info.Width).Append("x").Append(info.Height)
 
-                    If Not args.Contains("--fps ") Then
-                        args += $" --fps {info.FrameRateNum}/{info.FrameRateDen}"
+                    If Not sb.ToString.Contains("--fps ") Then
+                        sb.Append(" --fps ").Append(info.FrameRateNum).Append("/").Append(info.FrameRateDen)
                     End If
                 End If
             End If
 
-            If Mode.Value = x264RateMode.TwoPass OrElse Mode.Value = x264RateMode.ThreePass Then
-                args += " --stats " + (p.TempDir + p.TargetFile.Base + ".stats").Escape
+            If modeVal = x264RateMode.TwoPass OrElse modeVal = x264RateMode.ThreePass Then
+                sb.Append(" --stats ").Append((p.TempDir & p.TargetFile.Base & ".stats").Escape)
             End If
 
-            If (Mode.Value = x264RateMode.ThreePass AndAlso (pass = 1 OrElse pass = 3)) OrElse
-                Mode.Value = x264RateMode.TwoPass AndAlso pass = 1 Then
-
-                args += " --output NUL " + input
+            If (modeVal = x264RateMode.ThreePass AndAlso (pass = 1 OrElse pass = 3)) OrElse modeVal = x264RateMode.TwoPass AndAlso pass = 1 Then
+                sb.Append(" --output NUL ").Append(input)
             Else
-                args += " --output " + targetPath.ToShortFilePath.Escape + " " + input
+                sb.Append(" --output ").Append(targetPath.ToShortFilePath.Escape).Append(" ").Append(input)
             End If
         End If
 
-        Return Macro.Expand(args.Trim.FixBreak.Replace(BR, " "))
+        Return Macro.Expand(sb.ToString.Trim.FixBreak.Replace(BR, " "))
     End Function
 
     Function GetPartitionsArg() As String
-        If I4x4.Value = I4x4.DefaultValue AndAlso I8x8.Value = I8x8.DefaultValue AndAlso
-                P4x4.Value = P4x4.DefaultValue AndAlso P8x8.Value = P8x8.DefaultValue AndAlso
-                B8x8.Value = B8x8.DefaultValue Then
+        Dim i4Val As Boolean = I4x4.Value
+        Dim i8Val As Boolean = I8x8.Value
+        Dim p4Val As Boolean = P4x4.Value
+        Dim p8Val As Boolean = P8x8.Value
+        Dim b8Val As Boolean = B8x8.Value
 
+        If i4Val = I4x4.DefaultValue AndAlso i8Val = I8x8.DefaultValue AndAlso p4Val = P4x4.DefaultValue AndAlso p8Val = P8x8.DefaultValue AndAlso b8Val = B8x8.DefaultValue Then
             Return Nothing
         End If
 
-        If I4x4.Value AndAlso I8x8.Value AndAlso P4x4.Value AndAlso P8x8.Value AndAlso B8x8.Value Then
+        If i4Val AndAlso i8Val AndAlso p4Val AndAlso p8Val AndAlso b8Val Then
             Return "--partitions all"
-        ElseIf Not I4x4.Value AndAlso Not I8x8.Value AndAlso Not P4x4.Value AndAlso Not P8x8.Value AndAlso Not B8x8.Value Then
+        ElseIf Not i4Val AndAlso Not i8Val AndAlso Not p4Val AndAlso Not p8Val AndAlso Not b8Val Then
             Return "--partitions none"
         End If
 
-        Dim partitions As String
+        Dim sb As New StringBuilder(25)
 
-        If I4x4.Value Then partitions += "i4x4,"
-        If I8x8.Value Then partitions += "i8x8,"
-        If P4x4.Value Then partitions += "p4x4,"
-        If P8x8.Value Then partitions += "p8x8,"
-        If B8x8.Value Then partitions += "b8x8"
+        If i4Val Then sb.Append("i4x4,")
+        If i8Val Then sb.Append("i8x8,")
+        If p4Val Then sb.Append("p4x4,")
+        If p8Val Then sb.Append("p8x8,")
+        If b8Val Then sb.Append("b8x8,") '"," added at end 
 
-        If partitions.NotNullOrEmptyS Then
-            Return "--partitions " + partitions.TrimEnd(","c)
+        Dim sbL As Integer = sb.Length
+        If sbL > 0 Then
+            Return "--partitions " & sb.ToString(0, sbL - 1) 'partitions.TrimEnd(","c)
         End If
     End Function
 
@@ -1191,22 +1430,30 @@ Public Class x264Params
             Return False
         End If
 
-        If Mode.Value = x264RateMode.TwoPass OrElse Mode.Value = x264RateMode.ThreePass Then
+        Dim modeVal As Integer = Mode.Value
+        If modeVal = x264RateMode.TwoPass OrElse modeVal = x264RateMode.ThreePass Then
             If pass = 1 Then
-                If CustomFirstPass.Value?.Contains(switch + " ") OrElse
-                    CustomFirstPass.Value?.EndsWith(switch, StringComparison.Ordinal) Then
-                    Return True
+                Dim val2 As String = CustomFirstPass.Value
+                If val2?.Length > 0 Then
+                    If val2.EndsWith(switch, StringComparison.Ordinal) OrElse val2.Contains(switch & " ") Then
+                        Return True
+                    End If
                 End If
             Else
-                If CustomSecondPass.Value?.Contains(switch + " ") OrElse
-                    CustomSecondPass.Value?.EndsWith(switch, StringComparison.Ordinal) Then
-                    Return True
+                Dim val1 As String = CustomSecondPass.Value
+                If val1?.Length > 0 Then
+                    If val1.EndsWith(switch, StringComparison.Ordinal) OrElse val1.Contains(switch & " ") Then
+                        Return True
+                    End If
                 End If
             End If
         End If
 
-        If Custom.Value?.Contains(switch + " ") OrElse Custom.Value?.EndsWith(switch, StringComparison.Ordinal) Then
-            Return True
+        Dim cval As String = Custom.Value
+        If cval?.Length > 0 Then
+            If cval.EndsWith(switch, StringComparison.Ordinal) OrElse cval.Contains(switch & " ") Then
+                Return True
+            End If
         End If
     End Function
 

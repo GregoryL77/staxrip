@@ -34,9 +34,9 @@ Public Class VideoScript
     End Function
 
     Overridable Function GetScript(skipCategory As String) As String
-        Dim sb As New StringBuilder(1024) '1024
+        Dim sb As New StringBuilder(1024)
 
-        If p.CodeAtTop.NotNullOrEmptyS Then
+        If p.CodeAtTop?.Length > 0 Then
             sb.AppendLine(p.CodeAtTop)
         End If
 
@@ -95,7 +95,7 @@ Public Class VideoScript
 
     Sub SetFilter(category As String, name As String, script As String)
         For Each i In Filters
-            If i.Category = category Then
+            If String.Equals(i.Category, category) Then
                 i.Path = name
                 i.Script = script
                 i.Active = True
@@ -128,19 +128,19 @@ Public Class VideoScript
     Sub ActivateFilter(category As String)
         Dim filter = GetFilter(category)
 
-        If Not filter Is Nothing Then
+        If filter IsNot Nothing Then
             filter.Active = True
         End If
     End Sub
 
     Function IsFilterActive(category As String) As Boolean
         Dim filter = GetFilter(category)
-        Return Not filter Is Nothing AndAlso filter.Active
+        Return filter IsNot Nothing AndAlso filter.Active
     End Function
 
     Function IsFilterActive(category As String, name As String) As Boolean
         Dim filter = GetFilter(category)
-        Return Not filter Is Nothing AndAlso filter.Active AndAlso filter.Name = name
+        Return filter IsNot Nothing AndAlso filter.Active AndAlso String.Equals(filter.Name, name)
     End Function
 
     Function GetFiltersCopy() As List(Of VideoFilter)
@@ -161,11 +161,12 @@ Public Class VideoScript
     End Function
 
     Function GetFilter(category As String) As VideoFilter
-        For Each filter In Filters
-            If EqualsEx(filter.Category, category) Then
+        For i = 0 To Filters.Count - 1
+            Dim filter = Filters(i)
+            If String.Equals(filter.Category, category) Then
                 Return filter
             End If
-        Next
+        Next i
     End Function
 
     <NonSerialized()> Public LastCode As String
@@ -179,7 +180,7 @@ Public Class VideoScript
 
         Dim srcFilter = GetFilter("Source")
 
-        If Not srcFilter Is Nothing AndAlso Not srcFilter.Script.Contains("(") Then
+        If srcFilter IsNot Nothing AndAlso Not srcFilter.Script.Contains("(") Then
             Exit Sub
         End If
 
@@ -188,31 +189,31 @@ Public Class VideoScript
         If convertToRGB Then
             If Engine = ScriptEngine.AviSynth Then
                 If p.SourceHeight > 576 Then
-                    code += BR + "ConvertBits(8)" + BR + "ConvertToRGB32(matrix=""Rec709"")"
+                    code &= BR & "ConvertBits(8)" & BR & "ConvertToRGB32(matrix=""Rec709"")"
                 Else
-                    code += BR + "ConvertBits(8)" + BR + "ConvertToRGB32(matrix=""Rec601"")"
+                    code &= BR & "ConvertBits(8)" & BR & "ConvertToRGB32(matrix=""Rec601"")"
                 End If
 
                 If flipVertical Then
-                    code += BR + "FlipVertical()"
+                    code &= BR & "FlipVertical()"
                 End If
             Else
                 code = code.Trim
 
                 If Not code.Contains(".set_output(") Then
-                    code += BR + "clip.set_output()"
+                    code &= BR & "clip.set_output()"
                 End If
 
-                Dim match = Regex.Match(code, "(\w+)\.set_output\(\)")
+                Dim match = Regex.Match(code, "(\w&)\.set_output\(\)")
                 Dim clipname = match.Groups(1).Value
 
                 Dim vsCode = ""
 
                 If flipVertical Then
-                    vsCode += BR + "clipname = core.std.FlipVertical(clipname)" + BR
+                    vsCode &= BR & "clipname = core.std.FlipVertical(clipname)" & BR
                 End If
 
-                vsCode += "
+                vsCode &= "
 if clipname.format.id == vs.RGB24:
     _matrix_in_s = 'rgb'
 else:
@@ -277,19 +278,19 @@ clipname.set_output()
     Shared Function GetVsPortableAutoLoadPluginCode() As String
         If FrameServerHelp.IsPortable Then
             Dim ret As String
-            Dim dir = Folder.Settings + "Plugins\VapourSynth\"
+            Dim dir = Folder.Settings & "Plugins\VapourSynth\"
 
             If dir.DirExists Then
                 For Each file In Directory.GetFiles(dir, "*.dll")
-                    ret += "core.std.LoadPlugin(r""" + file + """, altsearchpath=True)" + BR
+                    ret &= "core.std.LoadPlugin(r""" & file & """, altsearchpath=True)" & BR
                 Next
             End If
 
-            dir = Folder.Settings + "Plugins\Dual\"
+            dir = Folder.Settings & "Plugins\Dual\"
 
             If dir.DirExists Then
                 For Each file In Directory.GetFiles(dir, "*.dll")
-                    ret += "core.std.LoadPlugin(r""" + file + """, altsearchpath=True)" + BR
+                    ret &= "core.std.LoadPlugin(r""" & file & """, altsearchpath=True)" & BR
                 Next
             End If
 
@@ -302,30 +303,30 @@ clipname.set_output()
         ModifyVSScript(script, code)
 
         If Not script.Contains("import importlib.machinery") AndAlso code.Contains("SourceFileLoader") Then
-            code = "import importlib.machinery" + BR + code
+            code = "import importlib.machinery" & BR & code
         End If
 
         If Not script.Contains("import vapoursynth") Then
             code =
-                "import os, sys" + BR +
-                "import vapoursynth as vs" + BR + "core = vs.core" + BR +
-                GetVsPortableAutoLoadPluginCode() + BR +
-                "sys.path.append(r""" + Folder.Startup + "Apps\Plugins\VS\Scripts"")" + BR + code
+                "import os, sys" & BR &
+                "import vapoursynth as vs" & BR & "core = vs.core" & BR &
+                GetVsPortableAutoLoadPluginCode() & BR &
+                "sys.path.append(r""" & Folder.Startup & "Apps\Plugins\VS\Scripts"")" & BR & code
         End If
 
         Dim clip As String
 
-        If code.NotNullOrEmptyS Then
-            clip = code + script
+        If code?.Length > 0 Then
+            clip = code & script
         Else
             clip = script
         End If
 
         If Not clip.Contains(".set_output(") Then
             If clip.EndsWith(BR, StringComparison.Ordinal) Then
-                clip += "clip.set_output()"
+                clip &= "clip.set_output()"
             Else
-                clip += BR + "clip.set_output()"
+                clip &= BR & "clip.set_output()"
             End If
         End If
 
@@ -336,7 +337,7 @@ clipname.set_output()
         For Each plugin In Package.Items.Values.OfType(Of PluginPackage)()
             Dim fp = plugin.Path
 
-            If fp.NotNullOrEmptyS Then
+            If fp?.Length > 0 Then
                 If Not plugin.VSFilterNames Is Nothing Then
                     For Each filterName In plugin.VSFilterNames
                         If script.Contains(filterName) Then
@@ -345,15 +346,15 @@ clipname.set_output()
                     Next
                 End If
 
-                Dim scriptCode = script + code
+                Dim scriptCode = script & code
 
-                If scriptCode.Contains("import " + plugin.Name) Then
+                If scriptCode.Contains("import " & plugin.Name) Then
                     WriteVSCode(script, code, Nothing, plugin)
                 End If
 
                 If Not plugin.AvsFilterNames Is Nothing Then
                     For Each filterName In plugin.AvsFilterNames
-                        If script.Contains(".avs." + filterName) Then
+                        If script.Contains(".avs." & filterName) Then
                             WriteVSCode(script, code, filterName, plugin)
                         End If
                     Next
@@ -369,65 +370,55 @@ clipname.set_output()
         plugin As PluginPackage)
 
         If plugin.Filename.Ext.Equals("py") Then
-            Dim line = plugin.Name + " = importlib.machinery.SourceFileLoader('" +
-                plugin.Name + "', r""" + plugin.Path + """).load_module()"
+            Dim line = plugin.Name & " = importlib.machinery.SourceFileLoader('" & plugin.Name & "', r""" & plugin.Path & """).load_module()"
 
             If Not script.Contains(line) AndAlso Not code.Contains(line) Then
-                code = line + BR + code
+                code = line & BR & code
                 Dim scriptCode = plugin.Path.ReadAllText
                 ModifyVSScript(scriptCode, code)
             End If
         Else
-            If s.LoadVapourSynthPlugins AndAlso Not IsVsPluginInAutoLoadFolder(plugin.Filename) AndAlso
-                Not script.Contains(plugin.Filename) AndAlso Not code.Contains(plugin.Filename) Then
+            If s.LoadVapourSynthPlugins AndAlso Not IsVsPluginInAutoLoadFolder(plugin.Filename) AndAlso Not script.Contains(plugin.Filename) AndAlso Not code.Contains(plugin.Filename) Then
 
                 Dim line As String
 
-                If script.Contains(".avs." + filterName) OrElse
-                    code.Contains(".avs." + filterName) Then
+                If script.Contains(".avs." & filterName) OrElse code.Contains(".avs." & filterName) Then
 
-                    line = "core.avs.LoadPlugin(r""" + plugin.Path + """)" + BR
+                    line = "core.avs.LoadPlugin(r""" & plugin.Path & """)" & BR
                 Else
-                    line = "core.std.LoadPlugin(r""" + plugin.Path + """, altsearchpath=True)" + BR
+                    line = "core.std.LoadPlugin(r""" & plugin.Path & """, altsearchpath=True)" & BR
                 End If
 
-                code += line
+                code &= line
             End If
         End If
     End Sub
 
     Shared Function IsVsPluginInAutoLoadFolder(filename As String) As Boolean
         If FrameServerHelp.IsPortable Then
-            Dim folders = {
-                Package.VapourSynth.Directory + "vapoursynth64\plugins\",
-                Package.VapourSynth.Directory + "vapoursynth64\coreplugins\",
-                Folder.Settings + "Plugins\VapourSynth\",
-                Folder.Settings + "Plugins\Dual\"}
+            Dim folders = {Package.VapourSynth.Directory & "vapoursynth64\plugins\", Package.VapourSynth.Directory & "vapoursynth64\coreplugins\", Folder.Settings & "Plugins\VapourSynth\", Folder.Settings & "Plugins\Dual\"}
 
             For Each folder In folders
-                If File.Exists(folder + filename) Then
+                If File.Exists(folder & filename) Then
                     Return True
                 End If
             Next
         Else
-            Return File.Exists(Folder.Plugins + filename)
+            Return File.Exists(Folder.Plugins & filename)
         End If
     End Function
 
     Shared Function IsAvsPluginInAutoLoadFolder(filename As String) As Boolean
         If FrameServerHelp.IsPortable Then
-            Dim folders = {
-                Package.AviSynth.Directory + "plugins\",
-                Folder.Settings + "Plugins\AviSynth\",
-                Folder.Settings + "Plugins\Dual\"}
+            Dim folders = {Package.AviSynth.Directory & "plugins\", Folder.Settings & "Plugins\AviSynth\", Folder.Settings & "Plugins\Dual\"}
 
             For Each folder In folders
-                If File.Exists(folder + filename) Then
+                If File.Exists(folder & filename) Then
                     Return True
                 End If
             Next
         Else
-            Return (Folder.Plugins + filename).FileExists
+            Return (Folder.Plugins & filename).FileExists
         End If
     End Function
 
@@ -439,31 +430,31 @@ clipname.set_output()
         For Each plugin In plugins
             Dim fp = plugin.Path
 
-            If fp.NotNullOrEmptyS Then
-                If Not plugin.AvsFilterNames Is Nothing Then
+            If fp?.Length > 0 Then
+                If plugin.AvsFilterNames IsNot Nothing Then
                     For Each filterName In plugin.AvsFilterNames
                         If s.LoadAviSynthPlugins AndAlso
                             Not IsAvsPluginInAutoLoadFolder(plugin.Filename) AndAlso
                             scriptLower.Contains(filterName.ToLowerInvariant) Then
 
                             If plugin.Filename.Ext.Equals("dll") Then
-                                Dim load = "LoadPlugin(""" + fp + """)" + BR
+                                Dim load = "LoadPlugin(""" & fp & """)" & BR
 
                                 If Not scriptLower.Contains(load.ToLowerInvariant) AndAlso
                                     Not loadCode.ToLowerInvariant.Contains(load.ToLowerInvariant) AndAlso
                                     Not scriptAlready.ToLowerInvariant.Contains(load.ToLowerInvariant) Then
 
-                                    loadCode += load
+                                    loadCode &= load
                                 End If
 
                             ElseIf plugin.Filename.Ext.Equals("avsi") Then
-                                Dim avsiImport = "Import(""" + fp + """)" + BR
+                                Dim avsiImport = "Import(""" & fp & """)" & BR
 
                                 If Not scriptLower.Contains(avsiImport.ToLowerInvariant) AndAlso
                                     Not loadCode.Contains(avsiImport) AndAlso
                                     Not scriptAlready.Contains(avsiImport.ToLowerInvariant) Then
 
-                                    loadCode += avsiImport
+                                    loadCode &= avsiImport
                                 End If
                             End If
                         End If
@@ -484,7 +475,7 @@ clipname.set_output()
                 Dim match = Regex.Match(line, "\bimport\s*\(\s*""\s*(.+\.avsi*)\s*""\s*\)", RegexOptions.IgnoreCase)
 
                 If match.Success AndAlso File.Exists(match.Groups(1).Value) Then
-                    ret += GetAVSLoadCode(match.Groups(1).Value.ReadAllText, code)
+                    ret &= GetAVSLoadCode(match.Groups(1).Value.ReadAllText, code)
                 End If
             End If
         Next
@@ -495,28 +486,28 @@ clipname.set_output()
     Shared Function ModifyAVSScript(script As String) As String
         Dim newScript As String
         Dim loadCode = GetAVSLoadCode(script, "")
-        newScript = loadCode + script
-        newScript = GetAVSLoadCodeFromImports(newScript) + newScript
+        newScript = loadCode & script
+        newScript = GetAVSLoadCodeFromImports(newScript) & newScript
 
         Dim initCode As String
 
         If FrameServerHelp.IsPortable Then
-            initCode = "AddAutoloadDir(""" + Package.AviSynth.Directory + "plugins"")" + BR
+            initCode = "AddAutoloadDir(""" & Package.AviSynth.Directory & "plugins"")" & BR
 
-            Dim pluginDir = Folder.Settings + "Plugins\AviSynth"
+            Dim pluginDir = Folder.Settings & "Plugins\AviSynth"
 
             If FolderHelp.HasFiles(pluginDir) Then
-                initCode += "AddAutoloadDir(""" + pluginDir + """)" + BR
+                initCode &= "AddAutoloadDir(""" & pluginDir & """)" & BR
             End If
 
-            pluginDir = Folder.Settings + "Plugins\Dual"
+            pluginDir = Folder.Settings & "Plugins\Dual"
 
             If FolderHelp.HasFiles(pluginDir) Then
-                initCode += "AddAutoloadDir(""" + pluginDir + """)" + BR
+                initCode &= "AddAutoloadDir(""" & pluginDir & """)" & BR
             End If
         End If
 
-        Return initCode + newScript
+        Return initCode & newScript
     End Function
 
     Function GetFramerate() As Double
@@ -566,8 +557,8 @@ clipname.set_output()
         script.Filters.Add(New VideoFilter("Crop", "Crop", "clip = core.std.Crop(clip, %crop_left%, %crop_right%, %crop_top%, %crop_bottom%)", False))
         script.Filters.Add(New VideoFilter("Noise", "DFTTest", "clip = core.dfttest.DFTTest(clip, sigma=6, tbsize=3, opt=3)", False))
         script.Filters.Add(New VideoFilter("Field", "QTGMC Medium", $"clip = core.std.SetFieldBased(clip, 2) # 1=BFF, 2=TFF{BR}clip = havsfunc.QTGMC(clip, TFF=True, Preset='Medium')", False))
-        script.Filters.Add(New VideoFilter("FrameRate", "SVPFlow", "crop_string = """"" + BR + "resize_string = """"" + BR + "super_params = ""{pel:1,scale:{up:0},gpu:1,full:false,rc:true}""" + BR + "analyse_params = ""{block:{w:16},main:{search:{coarse:{type:4,distance:-6,bad:{sad:2000,range:24}},type:4}},refine:[{thsad:250}]}""" + BR + "smoothfps_params = ""{gpuid:11,linear:true,rate:{num:60000,den:1001,abs:true},algo:23,mask:{area:200},scene:{}}""" + BR + "def interpolate(clip):" + BR + "    input = clip" + BR + "    if crop_string!='':" + BR + "        input = eval(crop_string)" + BR + "    if resize_string!='':" + BR + "        input = eval(resize_string)" + BR + "    super   = core.svp1.Super(input,super_params)" + BR + "    vectors = core.svp1.Analyse(super[""clip""],super[""data""],input,analyse_params)" + BR + "    smooth  = core.svp2.SmoothFps(input,super[""clip""],super[""data""],vectors[""clip""],vectors[""data""],smoothfps_params,src=clip)" + BR + "    smooth  = core.std.AssumeFPS(smooth,fpsnum=smooth.fps_num,fpsden=smooth.fps_den)" + BR + "    return smooth" + BR + "clip =  interpolate(clip)", False))
-        script.Filters.Add(New VideoFilter("Color", "Respec", "clip = core.fmtc.resample(clip, css='444')" + BR + "clip = core.fmtc.matrix(clip, mats='709', matd='709')" + BR + "clip = core.fmtc.resample(clip, css='420')" + BR + "clip = core.fmtc.bitdepth(clip, bits=10, fulls=False, fulld=False)", False))
+        script.Filters.Add(New VideoFilter("FrameRate", "SVPFlow", "crop_string = """"" & BR & "resize_string = """"" & BR & "super_params = ""{pel:1,scale:{up:0},gpu:1,full:false,rc:true}""" & BR & "analyse_params = ""{block:{w:16},main:{search:{coarse:{type:4,distance:-6,bad:{sad:2000,range:24}},type:4}},refine:[{thsad:250}]}""" & BR & "smoothfps_params = ""{gpuid:11,linear:true,rate:{num:60000,den:1001,abs:true},algo:23,mask:{area:200},scene:{}}""" & BR & "def interpolate(clip):" & BR & "    input = clip" & BR & "    if crop_string!='':" & BR & "        input = eval(crop_string)" & BR & "    if resize_string!='':" & BR & "        input = eval(resize_string)" & BR & "    super   = core.svp1.Super(input,super_params)" & BR & "    vectors = core.svp1.Analyse(super[""clip""],super[""data""],input,analyse_params)" & BR & "    smooth  = core.svp2.SmoothFps(input,super[""clip""],super[""data""],vectors[""clip""],vectors[""data""],smoothfps_params,src=clip)" & BR & "    smooth  = core.std.AssumeFPS(smooth,fpsnum=smooth.fps_num,fpsden=smooth.fps_den)" & BR & "    return smooth" & BR & "clip =  interpolate(clip)", False))
+        script.Filters.Add(New VideoFilter("Color", "Respec", "clip = core.fmtc.resample(clip, css='444')" & BR & "clip = core.fmtc.matrix(clip, mats='709', matd='709')" & BR & "clip = core.fmtc.resample(clip, css='420')" & BR & "clip = core.fmtc.bitdepth(clip, bits=10, fulls=False, fulld=False)", False))
         script.Filters.Add(New VideoFilter("Resize", "BicubicResize", "clip = core.resize.Bicubic(clip, %target_width%, %target_height%)", False))
         ret.Add(script)
 
@@ -610,7 +601,7 @@ Public Class TargetVideoScript
                 Return ""
             End If
 
-            Return p.TempDir + p.TargetFile.Base + "." + FileType
+            Return p.TempDir & p.TargetFile.Base & "." & FileType
         End Get
         Set(value As String)
         End Set
@@ -627,7 +618,7 @@ Public Class SourceVideoScript
                 Return ""
             End If
 
-            Return p.TempDir + p.TargetFile.Base + "_source." + FileType
+            Return p.TempDir & p.TargetFile.Base & "_source." & FileType
         End Get
         Set(value As String)
         End Set
@@ -724,7 +715,7 @@ Public Class FilterCategory
     End Function
 
     Shared Sub AddFilter(filter As VideoFilter, list As List(Of FilterCategory))
-        Dim matchingCategory = list.FirstOrDefaultF(Function(category) category.Name = filter.Category)
+        Dim matchingCategory = list.FirstOrDefaultF(Function(category) EqualsEx(category.Name, filter.Category))
 
         If matchingCategory Is Nothing Then
             Dim newCategory As New FilterCategory(filter.Category)
@@ -740,12 +731,12 @@ Public Class FilterCategory
             Dim filters As VideoFilter() = Nothing
 
             If engine = ScriptEngine.AviSynth Then
-                If Not i.AvsFiltersFunc Is Nothing Then filters = i.AvsFiltersFunc.Invoke
+                If i.AvsFiltersFunc IsNot Nothing Then filters = i.AvsFiltersFunc.Invoke
             Else
-                If Not i.VSFiltersFunc Is Nothing Then filters = i.VSFiltersFunc.Invoke
+                If i.VSFiltersFunc IsNot Nothing Then filters = i.VSFiltersFunc.Invoke
             End If
 
-            If Not filters Is Nothing Then
+            If filters IsNot Nothing Then
                 For Each iFilter In filters
                     Dim matchingCategory = list.FirstOrDefaultF(Function(category) category.Name.EqualsEx(iFilter.Category))
 
@@ -776,7 +767,7 @@ Public Class FilterCategory
         framerate.Filters.Add(New VideoFilter(framerate.Name, "AssumeFPS", "AssumeFPS($select:msg:Select a frame rate;24000/1001|24000, 1001;24;25;30000/1001|30000, 1001;30;50;60000/1001|60000, 1001;60;120;144;240$)"))
         framerate.Filters.Add(New VideoFilter(framerate.Name, "AssumeFPS Source File", "AssumeFPS(%media_info_video:FrameRate%)"))
         framerate.Filters.Add(New VideoFilter(framerate.Name, "ConvertFPS", "ConvertFPS($select:msg:Select a frame rate;24;25;29.970;30;50;59.940;60;120;144;240;$)"))
-        framerate.Filters.Add(New VideoFilter(framerate.Name, "SVPFlow", "Threads = 8" + BR + "super_params = ""{pel:2,gpu:1}""" + BR + "analyse_params = """"""{block:{w:16,h:16}, main:{search:{coarse:{distance:-10}}}, refine:[{thsad:200}]}"""""" " + BR + "smoothfps_params = ""{rate:{num:4,den:2},algo:23,cubic:1}""" + BR + "super = SVSuper(super_params)" + BR + "vectors = SVAnalyse(super, analyse_params)" + BR + "SVSmoothFps(super, vectors, smoothfps_params, mt=threads)" + BR + "#Prefetch(threads) must be added at the end of the script and Threads=9 after the source" + BR + "Prefetch(threads)"))
+        framerate.Filters.Add(New VideoFilter(framerate.Name, "SVPFlow", "Threads = 8" & BR & "super_params = ""{pel:2,gpu:1}""" & BR & "analyse_params = """"""{block:{w:16,h:16}, main:{search:{coarse:{distance:-10}}}, refine:[{thsad:200}]}"""""" " & BR & "smoothfps_params = ""{rate:{num:4,den:2},algo:23,cubic:1}""" & BR & "super = SVSuper(super_params)" & BR & "vectors = SVAnalyse(super, analyse_params)" & BR & "SVSmoothFps(super, vectors, smoothfps_params, mt=threads)" & BR & "#Prefetch(threads) must be added at the end of the script and Threads=9 after the source" & BR & "Prefetch(threads)"))
         ret.Add(framerate)
 
         Dim color As New FilterCategory("Color")
@@ -804,14 +795,14 @@ Public Class FilterCategory
         ret.Add(line)
 
         Dim field As New FilterCategory("Field")
-        field.Filters.Add(New VideoFilter(field.Name, "IVTC", "Telecide(guide=1)" + BR + "Decimate()"))
+        field.Filters.Add(New VideoFilter(field.Name, "IVTC", "Telecide(guide=1)" & BR & "Decimate()"))
         field.Filters.Add(New VideoFilter(field.Name, "FieldDeinterlace", "FieldDeinterlace()"))
         field.Filters.Add(New VideoFilter(field.Name, "Select", "$select:Even|SelectEven();Odd|SelectOdd()$"))
         field.Filters.Add(New VideoFilter(field.Name, "Assume", "$select:TFF|AssumeTFF();BFF|AssumeTFF()$"))
         ret.Add(field)
 
         Dim noise As New FilterCategory("Noise")
-        noise.Filters.Add(New VideoFilter(noise.Name, "RemoveGrain | RemoveGrain | RemoveGrain16 with Repair16", "Processed = Dither_removegrain16(mode=2, modeU=2, modeV=2)" + BR + "Dither_repair16(Processed, mode=2, modeU=2, modeV=2)"))
+        noise.Filters.Add(New VideoFilter(noise.Name, "RemoveGrain | RemoveGrain | RemoveGrain16 with Repair16", "Processed = Dither_removegrain16(mode=2, modeU=2, modeV=2)" & BR & "Dither_repair16(Processed, mode=2, modeU=2, modeV=2)"))
         ret.Add(noise)
 
         Dim misc As New FilterCategory("Misc")
@@ -831,7 +822,7 @@ Public Class FilterCategory
         resize.Filters.Add(New VideoFilter(resize.Name, "Advanced | Hardware Encoder", "# hardware encoder resizes"))
         resize.Filters.Add(New VideoFilter(resize.Name, "Advanced | SuperRes", "$select:msg:Select Version;SuperResXBR|SuperResXBR;SuperRes|SuperRes;SuperXBR|SuperXBR$(passes=$select:msg:How Many Passes Do you wish to Perform?;2;3;4;5$, factor=$select:msg:Factor Increase by?;2;4$)"))
         resize.Filters.Add(New VideoFilter(resize.Name, "Advanced | Dither_Resize16", "Dither_resize16(%target_width%, %target_height%)"))
-        resize.Filters.Add(New VideoFilter(resize.Name, "Advanced | Dither_Resize16 In Linear Light", "Dither_convert_yuv_to_rgb (matrix=""2020"", output=""rgb48y"", lsb_in=true)" + BR + "Dither_y_gamma_to_linear(tv_range_in=false, tv_range_out=false, curve=""2020"", sigmoid=true)" + BR + "Dither_resize16nr(%target_width%, %target_height%, kernel=""spline36"")" + BR + "Dither_y_linear_to_gamma(tv_range_in=false, tv_range_out=false, curve=""2020"", sigmoid=true)" + BR + "r = SelectEvery (3, 0)" + BR + "g = SelectEvery (3, 1)" + BR + "b = SelectEvery (3, 2)" + BR + "Dither_convert_rgb_to_yuv(r, g, b, matrix=""2020"", lsb=true)"))
+        resize.Filters.Add(New VideoFilter(resize.Name, "Advanced | Dither_Resize16 In Linear Light", "Dither_convert_yuv_to_rgb (matrix=""2020"", output=""rgb48y"", lsb_in=true)" & BR & "Dither_y_gamma_to_linear(tv_range_in=false, tv_range_out=false, curve=""2020"", sigmoid=true)" & BR & "Dither_resize16nr(%target_width%, %target_height%, kernel=""spline36"")" & BR & "Dither_y_linear_to_gamma(tv_range_in=false, tv_range_out=false, curve=""2020"", sigmoid=true)" & BR & "r = SelectEvery (3, 0)" & BR & "g = SelectEvery (3, 1)" & BR & "b = SelectEvery (3, 2)" & BR & "Dither_convert_rgb_to_yuv(r, g, b, matrix=""2020"", lsb=true)"))
         ret.Add(resize)
 
         Dim crop As New FilterCategory("Crop")
@@ -866,8 +857,8 @@ Public Class FilterCategory
         framerate.Filters.Add(New VideoFilter(framerate.Name, "AssumeFPS | AssumeFPS Source", "clip = core.std.AssumeFPS(clip, fpsnum=int(%media_info_video:FrameRate% * 1000), fpsden=1000)"))
         framerate.Filters.Add(New VideoFilter(framerate.Name, "AssumeFPS | AssumeFPS", "clip = core.std.AssumeFPS(clip, None, $select:msg:Select a frame rate.;24000/1001|24000, 1001;24|24, 1;25|25, 1;30000/1001|30000, 1001;30|30, 1;50|50, 1;60000/1001|60000, 1001;60|60, 1$)"))
         framerate.Filters.Add(New VideoFilter(framerate.Name, "InterFrame", "clip = havsfunc.InterFrame(clip, Preset='Medium', Tuning='$select:msg:Select the Tuning Preset;Animation;Film;Smooth;Weak$', NewNum=$enter_text:Enter the NewNum Value$, NewDen=$enter_text:Enter the NewDen Value$, OverrideAlgo=$select:msg:Which Algorithm Do you Wish to Use?;Strong Predictions|2;Intelligent|13;Smoothest|23$, GPU=$select:msg:Enable GPU Feature?;True;False$)"))
-        framerate.Filters.Add(New VideoFilter(framerate.Name, "SVPFlow | MV", "sup = core.mv.Super(clip, pel=2, hpad=0, vpad=0)" + BR + "bvec = core.mv.Analyse(sup, blksize=16, isb=True, chroma=True, search=3, searchparam=1)" + BR + "fvec = core.mv.Analyse(sup, blksize=16, isb=False, chroma=True, search=3, searchparam=1)" + BR + "$select:msg:Select FPS Filter to Use;FlowFPS|clip = core.mv.FlowFPS(clip, sup, bvec, fvec, mask=2;BlockFPS|clip = core.mv.BlockFPS(clip, sup, bvec, fvec, mode=3, thscd2=12$, num=$enter_text:Enter The Num Value$, den=$enter_text:Enter The Den Value$)"))
-        framerate.Filters.Add(New VideoFilter(framerate.Name, "SVPFlow | Core", "crop_string = ''" + BR + "resize_string = ''" + BR + "super_params = '{pel:1,scale:{up:0},gpu:1,full:false,rc:true}'" + BR + "analyse_params = '{block:{w:16},main:{search:{coarse:{type:4,distance:-6,bad:{sad:2000,range:24}},type:4}},refine:[{thsad:250}]}'" + BR + "smoothfps_params = '{gpuid:11,linear:true,rate:{num:60000,den:1001,abs:true},algo:23,mask:{area:200},scene:{}}'" + BR + "def interpolate(clip):" + BR + "    input = clip" + BR + "    if crop_string!='':" + BR + "        input = eval(crop_string)" + BR + "    if resize_string != '':" + BR + "        input = eval(resize_string)" + BR + "    super   = core.svp1.Super(input, super_params)" + BR + "    vectors = core.svp1.Analyse(super['clip'], super['data'], input, analyse_params)" + BR + "    smooth  = core.svp2.SmoothFps(input, super['clip'], super['data'], vectors['clip'], vectors['data'], smoothfps_params, src=clip)" + BR + "    smooth  = core.std.AssumeFPS(smooth, fpsnum=smooth.fps_num, fpsden=smooth.fps_den)" + BR + "    return smooth" + BR + "clip =  interpolate(clip)"))
+        framerate.Filters.Add(New VideoFilter(framerate.Name, "SVPFlow | MV", "sup = core.mv.Super(clip, pel=2, hpad=0, vpad=0)" & BR & "bvec = core.mv.Analyse(sup, blksize=16, isb=True, chroma=True, search=3, searchparam=1)" & BR & "fvec = core.mv.Analyse(sup, blksize=16, isb=False, chroma=True, search=3, searchparam=1)" & BR & "$select:msg:Select FPS Filter to Use;FlowFPS|clip = core.mv.FlowFPS(clip, sup, bvec, fvec, mask=2;BlockFPS|clip = core.mv.BlockFPS(clip, sup, bvec, fvec, mode=3, thscd2=12$, num=$enter_text:Enter The Num Value$, den=$enter_text:Enter The Den Value$)"))
+        framerate.Filters.Add(New VideoFilter(framerate.Name, "SVPFlow | Core", "crop_string = ''" & BR & "resize_string = ''" & BR & "super_params = '{pel:1,scale:{up:0},gpu:1,full:false,rc:true}'" & BR & "analyse_params = '{block:{w:16},main:{search:{coarse:{type:4,distance:-6,bad:{sad:2000,range:24}},type:4}},refine:[{thsad:250}]}'" & BR & "smoothfps_params = '{gpuid:11,linear:true,rate:{num:60000,den:1001,abs:true},algo:23,mask:{area:200},scene:{}}'" & BR & "def interpolate(clip):" & BR & "    input = clip" & BR & "    if crop_string!='':" & BR & "        input = eval(crop_string)" & BR & "    if resize_string != '':" & BR & "        input = eval(resize_string)" & BR & "    super   = core.svp1.Super(input, super_params)" & BR & "    vectors = core.svp1.Analyse(super['clip'], super['data'], input, analyse_params)" & BR & "    smooth  = core.svp2.SmoothFps(input, super['clip'], super['data'], vectors['clip'], vectors['data'], smoothfps_params, src=clip)" & BR & "    smooth  = core.std.AssumeFPS(smooth, fpsnum=smooth.fps_num, fpsden=smooth.fps_den)" & BR & "    return smooth" & BR & "clip =  interpolate(clip)"))
         ret.Add(framerate)
 
         Dim color As New FilterCategory("Color")
@@ -876,7 +867,7 @@ Public Class FilterCategory
         color.Filters.Add(New VideoFilter(color.Name, "Dither | SmoothGrad", "clip = muvsfunc.GradFun3(src=clip, mode=6, smode=1)"))
         color.Filters.Add(New VideoFilter(color.Name, "Dither | Stack", "$select:Native to Stack16|clip = core.fmtc.nativetostack16(clip);Stack16 to Native|clip = fmtc.stack16tonative(clip)$"))
         color.Filters.Add(New VideoFilter(color.Name, "Dither | To RGB / YUV", "clip = $select:To RGB|mvsfunc.ToRGB;To YUV|mvsfunc.ToYUV$(clip,matrix='$select:msg:Select Matrix;470bg;240;709;2020;2020cl;bt2020c$')"))
-        color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Respec", "clip = core.fmtc.resample (clip, css='444')" + BR + "clip = core.fmtc.matrix (clip, mats='$select:msg:Select Input Colorspace;240;601;709;2020$', matd='$select:msg:Select Output Colorspace;240;601;709;2020$')" + BR + "clip = core.fmtc.resample (clip, css='420')" + BR + "clip = core.fmtc.bitdepth (clip, bits=8, fulls=$select:msg:Select Input Range;Limited|False;Full|True$, fulld=$select:msg:Select Output Range;Limited|False;Full|True$)"))
+        color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Respec", "clip = core.fmtc.resample (clip, css='444')" & BR & "clip = core.fmtc.matrix (clip, mats='$select:msg:Select Input Colorspace;240;601;709;2020$', matd='$select:msg:Select Output Colorspace;240;601;709;2020$')" & BR & "clip = core.fmtc.resample (clip, css='420')" & BR & "clip = core.fmtc.bitdepth (clip, bits=8, fulls=$select:msg:Select Input Range;Limited|False;Full|True$, fulld=$select:msg:Select Output Range;Limited|False;Full|True$)"))
         color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Matrix", "clip = core.fmtc.matrix(clip, mat='$select:msg:Select Matrix;Linear;470m;470bg;240m;SRGB;709;2020$')"))
         color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Primaries", "clip = core.fmtc.primaries(clip, prims='$select:msg:Select Input;470m;470bg;240m;SRGB;709;2020$', primd='$select:msg:Select Output;Linear;470m;470bg;240m;SRGB;709;2020$')"))
         color.Filters.Add(New VideoFilter(color.Name, "ColorSpace | Transfer", "clip = core.fmtc.transfer(clip, transs='$select:msg:Select Input;Linear;470m;470bg;240m;SRGB;709;2020;2084$', transd='$select:msg:Select Output;Linear;470m;470bg;240m;SRGB;709;2020;2084$')"))
@@ -899,7 +890,7 @@ Public Class FilterCategory
         ret.Add(line)
 
         Dim field As New FilterCategory("Field")
-        field.Filters.Add(New VideoFilter(field.Name, "IVTC", "clip = core.vivtc.VFM(clip, 1)" + BR + "clip = core.vivtc.VDecimate(clip)"))
+        field.Filters.Add(New VideoFilter(field.Name, "IVTC", "clip = core.vivtc.VFM(clip, 1)" & BR & "clip = core.vivtc.VDecimate(clip)"))
         field.Filters.Add(New VideoFilter(field.Name, "W3FDIF", "clip = core.w3fdif.W3FDIF(clip,$select:msg:Select Order Option;BFF|0;TFF|1$,$select:msg:Select Interlacing Filter Coefficients;Simple|0;Complex|1$)"))
         field.Filters.Add(New VideoFilter(field.Name, "Select", "$select:Even|clip = clip[::2];Odd|clip = clip[1::2]$"))
         field.Filters.Add(New VideoFilter(field.Name, "eedi", "$select:eedi2|clip = core.eedi2.EEDI2;eedi3|clip = core.eedi3m.EEDI3$(clip,$select:msg:Select Field;Bottom Field|0;Top Field|1;Alternate Each Frame Bottom Field|2;Alternate Each Frame Top Field|3$)"))
@@ -910,17 +901,17 @@ Public Class FilterCategory
         Dim noise As New FilterCategory("Noise")
         noise.Filters.Add(New VideoFilter(noise.Name, "RemoveGrain | SMDegrain", "clip = havsfunc.SMDegrain(clip, contrasharp=True)"))
         noise.Filters.Add(New VideoFilter(noise.Name, "RemoveGrain | RemoveGrain | RemoveGrain", "clip = core.rgvs.RemoveGrain(clip, 1)"))
-        noise.Filters.Add(New VideoFilter(noise.Name, "RemoveGrain | RemoveGrain | RemoveGrain with Repair", "Processed = core.rgvs.RemoveGrain(clip, 1)" + BR + "clip = core.rgvs.Repair(clip,Processed, mode=2)"))
+        noise.Filters.Add(New VideoFilter(noise.Name, "RemoveGrain | RemoveGrain | RemoveGrain with Repair", "Processed = core.rgvs.RemoveGrain(clip, 1)" & BR & "clip = core.rgvs.Repair(clip,Processed, mode=2)"))
         noise.Filters.Add(New VideoFilter(noise.Name, "mClean", "clip = G41Fun.mClean(clip)"))
         noise.Filters.Add(New VideoFilter(noise.Name, "MCTemporalDenoise", "clip = havsfunc.MCTemporalDenoise(i=clip, settings='$select:msg:Select Strength;Very Low;Low;Medium;High;Very High$')"))
         noise.Filters.Add(New VideoFilter(noise.Name, "BM3D", "clip = mvsfunc.BM3D(clip, sigma=[3,3,3], radius1=0)"))
         ret.Add(noise)
 
         Dim misc As New FilterCategory("Misc")
-        misc.Filters.Add(New VideoFilter(misc.Name, "UnSpec", "clip = core.resize.Point(clip, matrix_in_s='unspec',range_s='limited')" + BR + "clip = core.std.AssumeFPS(clip, fpsnum=int(%media_info_video:FrameRate% * 1000), fpsden=1000)" + BR + "clip = core.std.SetFrameProp(clip=clip, prop='_ColorRange', intval=1)"))
+        misc.Filters.Add(New VideoFilter(misc.Name, "UnSpec", "clip = core.resize.Point(clip, matrix_in_s='unspec',range_s='limited')" & BR & "clip = core.std.AssumeFPS(clip, fpsnum=int(%media_info_video:FrameRate% * 1000), fpsden=1000)" & BR & "clip = core.std.SetFrameProp(clip=clip, prop='_ColorRange', intval=1)"))
         misc.Filters.Add(New VideoFilter(misc.Name, "Histogram", "clip = muvsfunc.DisplayHistogram(clip)"))
         misc.Filters.Add(New VideoFilter(misc.Name, "Cube", "clip = core.timecube.Cube(clip, cube=r""$browse_file$"")"))
-        misc.Filters.Add(New VideoFilter(misc.Name, "Anamorphic to Standard", "clip = core.fmtc.resample (clip, w=1280, h=720, css='444')" + BR + "clip = core.fmtc.matrix (clip, mat='709', col_fam=vs.RGB)" + BR + "clip = core.fmtc.transfer (clip, transs='1886', transd='srgb')" + BR + "clip = core.fmtc.bitdepth (clip, bits=8)"))
+        misc.Filters.Add(New VideoFilter(misc.Name, "Anamorphic to Standard", "clip = core.fmtc.resample (clip, w=1280, h=720, css='444')" & BR & "clip = core.fmtc.matrix (clip, mat='709', col_fam=vs.RGB)" & BR & "clip = core.fmtc.transfer (clip, transs='1886', transd='srgb')" & BR & "clip = core.fmtc.bitdepth (clip, bits=8)"))
         ret.Add(misc)
 
         Dim resize As New FilterCategory("Resize")

@@ -73,14 +73,14 @@ Public Class Rav1e
     Overrides Sub ShowConfigDialog()
 
         Dim newParams As New Rav1eParams
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone
         newParams.Init(store)
 
         Using form As New CommandLineForm(newParams)
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of Rav1e)(Me)
+                                        Dim enc = Me.GetDeepClone
                                         Dim params2 As New Rav1eParams
-                                        Dim store2 = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim store2 = store.GetDeepClone
                                         params2.Init(store2)
                                         enc.Params = params2
                                         enc.ParamsStore = store2
@@ -269,7 +269,7 @@ Public Class Rav1eParams
                 Custom)
 
                 For Each item In ItemsValue
-                    If item.HelpSwitch.NotNullOrEmptyS Then
+                    If item.HelpSwitch?.Length > 0 Then
                         Continue For
                     End If
 
@@ -304,18 +304,11 @@ Public Class Rav1eParams
             ItemsValue.Add(i)
         Next
     End Sub
-    Overloads Overrides Function GetCommandLine(includePaths As Boolean,
-                                                includeExecutable As Boolean,
-                                                Optional pass As Integer = 1) As String
-
+    Overloads Overrides Function GetCommandLine(includePaths As Boolean, includeExecutable As Boolean, Optional pass As Integer = 1) As String
         Return GetArgs(1, p.Script, p.VideoEncoder.OutputPath.DirAndBase & p.VideoEncoder.OutputExtFull, includePaths, includeExecutable)
     End Function
 
-    Overloads Function GetArgs(pass As Integer,
-                               script As VideoScript,
-                               targetPath As String,
-                               includePaths As Boolean,
-                               includeExecutable As Boolean) As String
+    Overloads Function GetArgs(pass As Integer, script As VideoScript, targetPath As String, includePaths As Boolean, includeExecutable As Boolean) As String
 
         Dim sb As New StringBuilder(256)
 
@@ -324,11 +317,12 @@ Public Class Rav1eParams
                 Append(If(script.Path.Ext.Equals("vpy"), " -f vapoursynth", "")).Append(" -i ").Append(script.Path.Escape).Append(" -f yuv4mpegpipe -strict -1 - | ").Append(Package.Rav1e.Path.Escape)
         End If
 
-        Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
-
-        If q.Any Then
-            sb.Append(" ").Append(q.Select(Function(item) item.GetArgs).Join(" "))
-        End If
+        For i = 0 To Items.Count - 1
+            Dim arg As String = Items(i).GetArgs
+            If arg?.Length > 0 Then
+                sb.Append(" ").Append(arg)
+            End If
+        Next i
 
         sb.Append(" -o ").Append(targetPath.Escape).Append(" - ")
 

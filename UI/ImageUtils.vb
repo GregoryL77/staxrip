@@ -100,7 +100,7 @@ Public Class Thumbnails
         Dim columnCount = s.Storage.GetInt("Thumbnail Columns", 4)
         Dim rowCount = s.Storage.GetInt("Thumbnail Rows", 6)
         Dim dar = MediaInfo.GetVideo(inputFile, "DisplayAspectRatio")
-        Dim height = CInt(width / Convert.ToSingle(dar, CultureInfo.InvariantCulture))
+        Dim height = CInt(width / Convert.ToSingle(dar, InvariantCult))
         Dim gap = CInt((width * columnCount) * (s.Storage.GetInt("Thumbnail Margin", 5) / 1000))
         Dim font = New Font(fontname, (width * columnCount) \ 80, FontStyle.Bold, GraphicsUnit.Pixel)
         Dim foreColor = Color.Black

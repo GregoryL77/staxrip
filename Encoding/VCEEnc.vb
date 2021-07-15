@@ -1,4 +1,5 @@
 ﻿
+Imports System.Text
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
 
@@ -33,14 +34,14 @@ Public Class VCEEnc
 
     Overrides Sub ShowConfigDialog()
         Dim params1 As New EncoderParams
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone
         params1.Init(store)
 
         Using f As New CommandLineForm(params1)
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of VCEEnc)(Me)
+                                        Dim enc = Me.GetDeepClone
                                         Dim params2 As New EncoderParams
-                                        Dim store2 = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim store2 = store.GetDeepClone
                                         params2.Init(store2)
                                         enc.Params = params2
                                         enc.ParamsStore = store2
@@ -203,7 +204,7 @@ Public Class VCEEnc
                         New BoolParam With {.Switch = "--filler", .Text = "Use filler data"})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch.NotNullOrEmptyS Then
+                        If item.HelpSwitch?.Length > 0 Then
                             Continue For
                         End If
 
@@ -266,11 +267,14 @@ Public Class VCEEnc
                     ret += " --avhw"
             End Select
 
-            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
-
-            If q.Any Then
-                ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")
-            End If
+            Dim sb As New StringBuilder(256)
+            For i = 0 To Items.Count - 1
+                Dim arg As String = Items(i).GetArgs
+                If arg?.Length > 0 Then
+                    sb.Append(" ").Append(arg)
+                End If
+            Next i
+            ret &= sb.ToString
 
             Select Case Mode.Value
                 Case 0

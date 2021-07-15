@@ -323,7 +323,7 @@ Public Class CodeEditor
         MainFlowLayoutPanel.SuspendLayout()
         Dim firstTable = DirectCast(MainFlowLayoutPanel.Controls(0), FilterTable)
         firstTable.tbName.Text = "merged"
-        firstTable.rtbScript.Text = MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray.SelectF(Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" + arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " + BR))).Join(BR) + BR2 + BR2
+        firstTable.rtbScript.Text = String.Join(BR, MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray.SelectF(Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" & arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " & BR)))) & BR2 & BR2
         For x = MainFlowLayoutPanel.Controls.Count - 1 To 1 Step -1
             Dim del = MainFlowLayoutPanel.Controls.Item(x)
             MainFlowLayoutPanel.Controls.RemoveAt(x)
@@ -452,7 +452,7 @@ Public Class CodeEditor
                                                                                 RTBEventSem = False
                                                                                 editorForm.RTBTxtMaxCWidth = 0
                                                                                 editorForm.RTBTxtCHeightA = {}
-                                                                                Console.Beep(7200, 300)
+                                                                                g.ShowException(layT.Exception.InnerException, "CodeEditor Layout TextChanged Event Task Exception", layT.Exception.ToString)
                                                                             End If
                                                                         End Sub) 'debug
                                         End Sub
@@ -513,11 +513,11 @@ Public Class CodeEditor
                     value = value.Replace("""", "'")
                 End If
 
-                newParameters.Add(parameter.Name + "=" + value)
+                newParameters.Add(parameter.Name & "=" & value)
             Next
 
             rtbScript.Text = Regex.Replace(code, parameters.FunctionName + "\((.+)\)",
-                                           parameters.FunctionName + "(" + newParameters.Join(", ") + ")")
+                                           parameters.FunctionName & "(" & String.Join(", ", newParameters.ToArray) & ")")
         End Sub
 
         Sub HandleMouseUp(sender As Object, e As MouseEventArgs)

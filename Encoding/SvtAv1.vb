@@ -1,4 +1,5 @@
 ﻿
+Imports System.Text
 Imports StaxRip.CommandLine
 Imports StaxRip.UI
 
@@ -33,14 +34,14 @@ Public Class SVTAV1
 
     Overrides Sub ShowConfigDialog()
         Dim encParams As New EncoderParams
-        Dim store = DirectCast(ObjectHelp.GetCopy(ParamsStore), PrimitiveStore)
+        Dim store = ParamsStore.GetDeepClone
         encParams.Init(store)
 
         Using form As New CommandLineForm(encParams)
             Dim saveProfileAction = Sub()
-                                        Dim enc = ObjectHelp.GetCopy(Of SVTAV1)(Me)
+                                        Dim enc = Me.GetDeepClone
                                         Dim encParamsCopy As New EncoderParams
-                                        Dim storeCopy = DirectCast(ObjectHelp.GetCopy(store), PrimitiveStore)
+                                        Dim storeCopy = store.GetDeepClone
                                         encParamsCopy.Init(storeCopy)
                                         enc.Params = encParamsCopy
                                         enc.ParamsStore = storeCopy
@@ -130,13 +131,13 @@ Public Class SVTAV1
                         New NumParam With {.Switch = "-q", .Text = "QP", .Init = 50, .Config = {0, 63, 1}})
 
                     For Each item In ItemsValue
-                        If item.HelpSwitch.NotNullOrEmptyS Then
+                        If item.HelpSwitch?.Length > 0 Then
                             Continue For
                         End If
 
                         Dim switches = item.GetSwitches
-
                         If switches.NothingOrEmpty Then
+
                             Continue For
                         End If
 
@@ -157,32 +158,31 @@ Public Class SVTAV1
             includeExecutable As Boolean,
             Optional pass As Integer = 1) As String
 
-            Dim ret = ""
+            Dim sb As New StringBuilder(256)
+
             Dim targetPath = p.VideoEncoder.OutputPath.ChangeExt(p.VideoEncoder.OutputExt)
 
             If includePaths AndAlso includeExecutable Then
-                ret = Package.ffmpeg.Path.Escape +
-                    If(p.Script.Engine = ScriptEngine.VapourSynth, " -f vapoursynth", "") +
-                    " -i " + p.Script.Path.Escape +
-                    " -f yuv4mpegpipe -strict -1" & s.GetFFLogLevel(FfLogLevel.fatal) & " -hide_banner - | " +
-                    Package.SVTAV1.Path.Escape
+                sb.Append(Package.ffmpeg.Path.Escape).Append(If(p.Script.Engine = ScriptEngine.VapourSynth, " -f vapoursynth", "")).Append(" -i ").Append(p.Script.Path.Escape).
+                    Append(" -f yuv4mpegpipe -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ").Append(Package.SVTAV1.Path.Escape)
             End If
 
-            Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS
-
-            If q.Any Then
-                ret += " " + q.Select(Function(item) item.GetArgs).Join(" ")
-            End If
+            For i = 0 To Items.Count - 1
+                Dim arg As String = Items(i).GetArgs
+                If arg?.Length > 0 Then
+                    sb.Append(" ").Append(arg)
+                End If
+            Next i
 
             If Mode.Value <> 0 Then
-                ret += " -tbr " & p.VideoBitrate
+                sb.Append(" -tbr ").Append(p.VideoBitrate)
             End If
 
             If includePaths Then
-                ret += " -n " & p.Script.GetFrameCount & " -i stdin -b " + targetPath.Escape
+                sb.Append(" -n ").Append(p.Script.GetFrameCount).Append(" -i stdin -b ").Append(targetPath.Escape)
             End If
 
-            Return ret.Trim
+            Return sb.ToString.Trim
         End Function
 
         Public Overrides Function GetPackage() As Package

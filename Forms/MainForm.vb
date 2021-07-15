@@ -1407,8 +1407,8 @@ Public Class MainForm
                         If File.Exists(recentProj) AndAlso Not String.Equals(recentProj.Base, "recover") Then
                             Dim name = recentProj
 
-                            If recentProj.Length > 70 Then
-                                name = "..." + name.Remove(0, name.Length - 70)
+                            If recentProj.Length > 120 Then
+                                name = "..." & name.Remove(0, name.Length - 120)
                             End If
 
                             tsddI.Add(New ActionMenuItem(name, Sub() LoadProject(recentProj)))
@@ -1884,8 +1884,8 @@ Public Class MainForm
 
         For Each filter In allFilters
             For Each filterName In filterNames
-                If filter.Script.ToLowerInvariant.Contains(filterName.ToLowerInvariant + "(") OrElse
-                    filter.Script.ToLowerInvariant.Contains(filterName.ToLowerInvariant + ".") Then
+                If filter.Script.ToLowerInvariant.Contains(filterName.ToLowerInvariant & "(") OrElse
+                    filter.Script.ToLowerInvariant.Contains(filterName.ToLowerInvariant & ".") Then
 
                     If filters.FindIndex(Function(val) EqualsEx(val.Name, filter.Name)) < 0 Then
                         filters.Add(filter.GetCopy)
@@ -1921,7 +1921,7 @@ Public Class MainForm
 
     Sub OpenVideoSourceFiles(files As IEnumerable(Of String), isEncoding As Boolean)
         Dim recoverPath = g.ProjectPath
-        Dim recoverProjectPath = Folder.Temp + Guid.NewGuid.ToString + ".bin"
+        Dim recoverProjectPath = Folder.Temp & Guid.NewGuid.ToString & ".bin"
         Dim recoverText = Text
 
         SafeSerialization.Serialize(p, recoverProjectPath)
@@ -1942,7 +1942,7 @@ Public Class MainForm
                 Dim name = i.FileName
 
                 If name.ToUpperInvariant Like "VTS_0#_0.VOB" Then
-                    If MsgQuestion("Are you sure you want to open the file " + name + "," + BR +
+                    If MsgQuestion("Are you sure you want to open the file " & name & "," & BR &
                            "the first VOB file usually contains a menu.") = DialogResult.Cancel Then
 
                         Throw New AbortException
@@ -2104,7 +2104,7 @@ Public Class MainForm
             Dim sourcePAR = MediaInfo.GetVideo(p.LastOriginalSourceFile, "PixelAspectRatio")
 
             If sourcePAR.NotNullOrEmptyS Then
-                p.SourcePAR.X = CInt(Convert.ToSingle(sourcePAR, CultureInfo.InvariantCulture) * 1000)
+                p.SourcePAR.X = CInt(Convert.ToSingle(sourcePAR, InvariantCult) * 1000)
                 p.SourcePAR.Y = 1000
             End If
 
@@ -2475,7 +2475,7 @@ Public Class MainForm
 
                 'TODO: 10 bit support 
                 p.Script.GetFilter("Source").Script += BR + "clip = clip.resize.Bicubic(matrix_s = '" + matrix + "', format = vs.YUV420P8)"
-            ElseIf editAVS AndAlso Not sourceFilter.Script.ContainsAny("ConvertToYV12", "ConvertToYUV420") AndAlso
+            ElseIf editAVS AndAlso Not sourceFilter.Script.ContainsAny({"ConvertToYV12", "ConvertToYUV420"}) AndAlso
                 Not sourceFilter.Script.Contains("ConvertToYUV420") Then
 
                 p.Script.GetFilter("Source").Script += BR + "ConvertToYUV420()"
@@ -2505,7 +2505,7 @@ Public Class MainForm
 
         If Not sourceFilter.Script.Contains("(") Then
             For Each pref In preferences
-                Dim extensions = pref.Name.SplitNoEmptyAndNoWSDelim({",", " ", ";"})
+                Dim extensions = pref.Name.Split({","c, " "c, ";"c}, StringSplitOptions.RemoveEmptyEntries)
 
                 For Each extension In extensions
                     extension = extension.ToLowerInvariant
@@ -2747,10 +2747,10 @@ Public Class MainForm
             End If
         End If
 
-        lAspectRatioError.Text = Calc.GetAspectRatioError.ToString("f2") + "%"
+        lAspectRatioError.Text = Calc.GetAspectRatioError.ToString("f2") & "%"
 
         If isCropped Then
-            lCrop.Text = cropw.ToInvariantString() + "/" + croph.ToInvariantString()
+            lCrop.Text = cropw.ToInvariantString() & "/" & croph.ToInvariantString()
         Else
             lCrop.Text = "disabled"
         End If
@@ -2758,7 +2758,7 @@ Public Class MainForm
         Dim widthZoom = p.TargetWidth / cropw * 100
         Dim heightZoom = p.TargetHeight / croph * 100
 
-        lZoom.Text = widthZoom.ToString("f1") + "/" + heightZoom.ToString("f1")
+        lZoom.Text = widthZoom.ToString("f1") & "/" & heightZoom.ToString("f1")
         lPixel.Text = CInt(p.TargetWidth * p.TargetHeight).ToInvariantString
 
         Dim trackBarValue = CInt((p.TargetWidth - 320) / p.ForcedOutputMod)
@@ -2790,24 +2790,23 @@ Public Class MainForm
         If p.SourceSeconds > 0 Then
             lSource1.Text = lSource1.GetMaxTextSpace(
                 g.GetTimeString(p.SourceSeconds),
-                If(p.SourceSize / 1024 ^ 2 < 1024, CInt(p.SourceSize / 1024 ^ 2).ToInvariantString + "MB",
-                (p.SourceSize / 1024 ^ 3).ToString("f1") + "GB"),
-                If(p.SourceBitrate > 0, (p.SourceBitrate / 1000).ToString("f1") + "Mb/s", ""),
-                p.SourceFrameRate.ToString.Shorten(9) + "fps",
+                If(p.SourceSize / 1024 ^ 2 < 1024, CInt(p.SourceSize / 1024 ^ 2).ToInvariantString & "MB", (p.SourceSize / 1024 ^ 3).ToString("f1") & "GB"),
+                If(p.SourceBitrate > 0, (p.SourceBitrate / 1000).ToString("f1") & "Mb/s", ""),
+                p.SourceFrameRate.ToString.Shorten(9) & "fps",
                 p.SourceVideoFormat, p.SourceVideoFormatProfile)
 
             lSource2.Text = lSource1.GetMaxTextSpace(
-                p.SourceWidth.ToInvariantString + "x" + p.SourceHeight.ToInvariantString, p.SourceColorSpace,
+                p.SourceWidth.ToInvariantString & "x" & p.SourceHeight.ToInvariantString, p.SourceColorSpace,
                 p.SourceChromaSubsampling, If(p.SourceVideoBitDepth <> 0, p.SourceVideoBitDepth & "Bits", ""),
                 p.SourceScanType, If(p.SourceScanType = "Interlaced", p.SourceScanOrder, ""))
 
             lTarget1.Text = lSource1.GetMaxTextSpace(g.GetTimeString(p.TargetSeconds),
-                p.TargetFrameRate.ToString.Shorten(9) + "fps", "Audio Bitrate: " & CInt(Calc.GetAudioBitrate))
+                p.TargetFrameRate.ToString.Shorten(9) & "fps", "Audio Bitrate: " & CInt(Calc.GetAudioBitrate))
 
             If p.VideoEncoder.IsCompCheckEnabled Then
                 laTarget2.Text = lSource1.GetMaxTextSpace(
-                    "Quality: " & CInt(Calc.GetPercent).ToInvariantString() + " %",
-                    "Compressibility: " + p.Compressibility.ToString("f2"))
+                    "Quality: " & CInt(Calc.GetPercent).ToInvariantString() & " %",
+                    "Compressibility: " & p.Compressibility.ToString("f2"))
             End If
         Else
             lTarget1.Text = ""
@@ -2843,7 +2842,7 @@ Public Class MainForm
             Dim enc = DirectCast(p.VideoEncoder, BasicVideoEncoder)
             Dim param = enc.CommandLineParams.GetOptionParam("--vpp-resize")
 
-            If Not param Is Nothing AndAlso param.Value > 0 AndAlso
+            If param IsNot Nothing AndAlso param.Value > 0 AndAlso
                 Not p.Script.IsFilterActive("Resize", "Hardware Encoder") Then
 
                 If ProcessTip("In order to use a resize filter of the hardware encoder select 'Hardware Encoder' as resize filter from the filters menu.") Then
@@ -2884,7 +2883,7 @@ Public Class MainForm
                 End If
             End If
 
-            If p.RemindToCrop AndAlso Not TypeOf p.VideoEncoder Is NullEncoder AndAlso
+            If p.RemindToCrop AndAlso TypeOf p.VideoEncoder IsNot NullEncoder AndAlso
                 ProcessTip("Click here to open the crop dialog. When done continue with Next.") Then
 
                 AssistantMethod = AddressOf ShowCropDialog
@@ -2893,7 +2892,7 @@ Public Class MainForm
             End If
 
             If (EqualsEx(p.Audio0.File, p.Audio1.File) AndAlso p.Audio0.Stream Is Nothing) OrElse
-                (Not p.Audio0.Stream Is Nothing AndAlso Not p.Audio1.Stream Is Nothing AndAlso
+                (p.Audio0.Stream IsNot Nothing AndAlso p.Audio1.Stream IsNot Nothing AndAlso
                 p.Audio0.Stream.StreamOrder = p.Audio1.Stream.StreamOrder) Then
 
                 If ProcessTip("The first and second audio source files or streams are identical.") Then
@@ -2905,7 +2904,7 @@ Public Class MainForm
             End If
 
             If Not p.VideoEncoder.Muxer.IsSupported(p.VideoEncoder.OutputExt) Then
-                If ProcessTip("The encoder outputs '" + p.VideoEncoder.OutputExt + "' but the container '" + p.VideoEncoder.Muxer.Name + "' supports only " + p.VideoEncoder.Muxer.SupportedInputTypes.Join(", ") + ".") Then
+                If ProcessTip("The encoder outputs '" & p.VideoEncoder.OutputExt & "' but the container '" & p.VideoEncoder.Muxer.Name & "' supports only " & String.Join(", ", p.VideoEncoder.Muxer.SupportedInputTypes) & ".") Then
                     gbAssistant.Text = "Encoder conflicts with container"
                     g.Highlight(True, llMuxer)
                     g.Highlight(True, lgbEncoder.Label)
@@ -2933,7 +2932,7 @@ Public Class MainForm
                 End If
 
                 If ap.File.NotNullOrEmptyS AndAlso Not p.VideoEncoder.Muxer.IsSupported(ap.OutputFileType) AndAlso Not String.Equals(ap.OutputFileType, "ignore") Then
-                    If ProcessTip("The audio format is '" + ap.OutputFileType + "' but the container '" + p.VideoEncoder.Muxer.Name + "' supports only " + p.VideoEncoder.Muxer.SupportedInputTypes.Join(", ") + ". Select another audio profile or another container.") Then
+                    If ProcessTip("The audio format is '" & ap.OutputFileType & "' but the container '" & p.VideoEncoder.Muxer.Name & "' supports only " & String.Join(", ", p.VideoEncoder.Muxer.SupportedInputTypes) & ". Select another audio profile or another container.") Then
                         g.Highlight(True, llMuxer)
                         gbAssistant.Text = "Audio format conflicts with container"
                         CanIgnoreTip = False
@@ -2943,7 +2942,7 @@ Public Class MainForm
             Next
 
             If Not EqualsEx(p.VideoEncoder.Muxer.OutputExtFull, p.TargetFile.ExtFull) Then
-                If ProcessTip("The container requires " + p.VideoEncoder.Muxer.OutputExt.ToUpperInvariant + " as target file type.") Then
+                If ProcessTip("The container requires " & p.VideoEncoder.Muxer.OutputExt.ToUpperInvariant & " as target file type.") Then
                     g.Highlight(True, tbTargetFile)
                     gbAssistant.Text = "Invalid File Type"
                     CanIgnoreTip = False
@@ -3022,7 +3021,7 @@ Public Class MainForm
                         Return False
                     End If
                 Else
-                    If ProcessTip("The target file already exist." + BR + p.TargetFile) Then
+                    If ProcessTip("The target file already exist." & BR & p.TargetFile) Then
                         tbTargetFile.BackColor = Color.Yellow
                         gbAssistant.Text = "Target File"
                         Return False
@@ -3032,7 +3031,7 @@ Public Class MainForm
 
             If p.Script.Info.Width Mod p.ForcedOutputMod <> 0 Then
                 If ProcessTip("Change output width to be divisible by " & p.ForcedOutputMod &
-                              " or customize:" + BR + "Options > Image > Output Mod") Then
+                              " or customize:" & BR & "Options > Image > Output Mod") Then
                     CanIgnoreTip = Not p.AutoCorrectCropValues
                     g.Highlight(True, tbTargetWidth)
                     g.Highlight(True, lSAR)
@@ -3043,7 +3042,7 @@ Public Class MainForm
 
             If p.Script.Info.Height Mod p.ForcedOutputMod <> 0 Then
                 If ProcessTip("Change output height to be divisible by " & p.ForcedOutputMod &
-                              " or customize:" + BR + "Options > Image > Output Mod") Then
+                              " or customize:" & BR & "Options > Image > Output Mod") Then
                     CanIgnoreTip = Not p.AutoCorrectCropValues
                     g.Highlight(True, tbTargetHeight)
                     g.Highlight(True, lSAR)
@@ -3116,7 +3115,7 @@ Public Class MainForm
 
         gbAssistant.Text = "Add Job"
 
-        If laTip.Font.Size <> (9 * s.UIScaleFactor) Then
+        If s.UIScaleFactor <> 1 AndAlso laTip.Font.Size <> (9 * s.UIScaleFactor) Then
             laTip.SetFontSize(9 * s.UIScaleFactor)
         End If
 
@@ -3244,7 +3243,7 @@ Public Class MainForm
 
             If i.InputExtensions?.Length = 0 OrElse i.InputExtensions.ContainsString(p.SourceFile.Ext) Then
                 If Not srcScript?.Contains("(") OrElse i.SourceFilters.NothingOrEmpty OrElse
-                    srcScript.ContainsAny(i.SourceFilters.SelectF(Function(val) val.ToLowerInvariant + "(")) Then
+                    srcScript.ContainsAny(i.SourceFilters.SelectF(Function(val) val.ToLowerInvariant & "(")) Then
 
                     Dim inputFormats = i.InputFormats.NothingOrEmpty OrElse
                         i.InputFormats.ContainsString(getFormat())
@@ -3526,7 +3525,7 @@ Public Class MainForm
             t.Help = "Title or beginning of the title of windows of which the location should be remembered. For all windows enter '''all'''."
             t.Label.Offset = 12
             t.Edit.Expand = True
-            t.Edit.Text = s.WindowPositionsRemembered.Join(", ")
+            t.Edit.Text = String.Join(", ", s.WindowPositionsRemembered)
             t.Edit.SaveAction = Sub(value) s.WindowPositionsRemembered = value.SplitNoEmptyAndWhiteSpace({","c})
 
             n = ui.AddNum(page)
@@ -3541,8 +3540,8 @@ Public Class MainForm
             b.Field = NameOf(s.EnableTooltips)
 
             '############# Preprocessing
-            ui.AddControlPage(New PreprocessingControl, "Preprocessing").FormSizeScaleFactor = New Size(40, 22)
-            ui.FormSizeScaleFactor = New Size(33, 22)
+            ui.AddControlPage(New PreprocessingControl, "Preprocessing").FormSizeScaleFactor = New Size(50, 24)  '(40, 22)
+            ui.FormSizeScaleFactor = New Size(37, 24) '(33, 22)
 
             '############# System
             Dim systemPage = ui.CreateFlowPage("System", True)
@@ -3664,11 +3663,7 @@ Public Class MainForm
         End Using
     End Sub
 
-    Function AddFilterPreferences(
-        ui As SimpleUI,
-        pagePath As String,
-        preferences As StringPairList,
-        profiles As List(Of FilterCategory)) As BindingSource
+    Function AddFilterPreferences(ui As SimpleUI, pagePath As String, preferences As StringPairList, profiles As List(Of FilterCategory)) As BindingSource
 
         Dim filterPage = ui.CreateDataPage(pagePath)
 
@@ -3705,7 +3700,7 @@ Public Class MainForm
         Dim ret2 As New BindingSource
 
         'ret2.DataSource = ObjectHelp.GetCopy(New StringPairList(preferences.Where(Function(a) filterNames.ContainsString(a.Value) AndAlso a.Name.NotNullOrEmptyS))) 'Is deepClone needed???
-        ret2.DataSource = New StringPairList(preferences.Where(Function(a) filterNames.ContainsString(a.Value) AndAlso a.Name.NotNullOrEmptyS)).GetDeepClone
+        ret2.DataSource = New StringPairList(preferences.WhereF(Function(a) filterNames.ContainsString(a.Value) AndAlso a.Name.NotNullOrEmptyS)).GetDeepClone
 
         filterPage.DataSource = ret2
         Return ret2
@@ -3754,15 +3749,15 @@ Public Class MainForm
     <Command("Saves the current project as template.")>
     Sub SaveProjectAsTemplate()
         If p.SourceFile.NullOrEmptyS Then
-            Dim box As New InputBox
-            box.Text = "Enter the name of the template."
-            box.Title = "Save Template"
-            box.Value = p.TemplateName
-            box.CheckBoxText = "Load template on startup"
+            Dim box As New InputBox With {
+                .Text = "Enter the name of the template.",
+                .Title = "Save Template",
+                .Value = p.TemplateName,
+                .CheckBoxText = "Load template on startup"}
 
             If box.Show = DialogResult.OK Then
                 p.TemplateName = box.Value.RemoveChars(Path.GetInvalidFileNameChars)
-                SaveProjectPath(Folder.Template + p.TemplateName + ".srip")
+                SaveProjectPath(Folder.Template & p.TemplateName & ".srip")
                 UpdateTemplatesMenuAsync()
 
                 If box.Checked Then
@@ -4108,7 +4103,7 @@ Public Class MainForm
         End If
 
         If templateName.NotNullOrEmptyS Then
-            LoadProject(Folder.Template + templateName + ".srip")
+            LoadProject(Folder.Template & templateName & ".srip")
         End If
     End Sub
 
@@ -4315,7 +4310,7 @@ Public Class MainForm
 
             t = ui.AddText(audioPage)
             t.Text = "Preferred Languages"
-            t.Help = "Preferred audio languages using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all languages just enter 'all'." + BR2 + String.Join(BR, Language.Languages.WhereSelectF(Function(lw) lw.IsCommon, Function(ls) ls.ToString + ": " + ls.TwoLetterCode + ", " + ls.ThreeLetterCode))
+            t.Help = "Preferred audio languages using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all languages just enter 'all'." & BR2 & String.Join(BR, Language.Languages.WhereSelectF(Function(lw) lw.IsCommon, Function(ls) ls.ToString & ": " & ls.TwoLetterCode & ", " & ls.ThreeLetterCode))
             t.Field = NameOf(p.PreferredAudio)
 
             Dim cut = ui.AddMenu(Of CuttingMode)(audioPage)
@@ -4385,7 +4380,7 @@ Public Class MainForm
 
             t = ui.AddText(subPage)
             t.Text = "Preferred Languages"
-            t.Help = "Subtitles demuxed and loaded automatically using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all subtitles just enter all." + BR2 + String.Join(BR, Language.Languages.WhereSelectF(Function(lw) lw.IsCommon, Function(ls) ls.ToString + ": " + ls.TwoLetterCode + ", " + ls.ThreeLetterCode))
+            t.Help = "Subtitles demuxed and loaded automatically using [http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes two or three letter language code] separated by space, comma or semicolon. For all subtitles just enter all." & BR2 & String.Join(BR, Language.Languages.WhereSelectF(Function(lw) lw.IsCommon, Function(ls) ls.ToString & ": " & ls.TwoLetterCode & ", " & ls.ThreeLetterCode))
             t.Field = NameOf(p.PreferredSubtitles)
 
             Dim tbm = ui.AddTextMenu(subPage)
@@ -4410,7 +4405,7 @@ Public Class MainForm
 
             b = ui.AddBool(subPage)
             b.Text = "Add hardcoded subtitle"
-            b.Help = "Automatically hardcodes a subtitle." + BR2 + "Supported formats are SRT, ASS and VobSub."
+            b.Help = "Automatically hardcodes a subtitle." & BR2 & "Supported formats are SRT, ASS and VobSub."
             b.Field = NameOf(p.HarcodedSubtitle)
 
             Dim pathPage = ui.CreateFlowPage("Paths", True)
@@ -4455,7 +4450,7 @@ Public Class MainForm
                                   Dim tempDir = g.BrowseFolder(p.TempDir)
 
                                   If tempDir.NotNullOrEmptyS Then
-                                      Return tempDir.FixDir + "%source_name%_temp"
+                                      Return tempDir.FixDir & "%source_name%_temp"
                                   End If
                               End Function
 
@@ -4580,7 +4575,7 @@ Public Class MainForm
     Sub DisableCropFilter()
         Dim f = p.Script.GetFilter("Crop")
 
-        If Not f Is Nothing AndAlso CInt(p.CropLeft Or p.CropTop Or p.CropRight Or p.CropBottom) = 0 Then
+        If f IsNot Nothing AndAlso CInt(p.CropLeft Or p.CropTop Or p.CropRight Or p.CropBottom) = 0 Then
             f.Active = False
             FiltersListView.Load()
         End If
@@ -4607,30 +4602,30 @@ Public Class MainForm
         Dim wasMultiline As Boolean
 
         For Each i In categories
-            ret += "[" + i.Name + "]" + BR
+            ret &= "[" & i.Name & "]" & BR
 
             For Each filter In i.Filters
                 If filter.Script.Contains(BR) Then
                     Dim lines = filter.Script.SplitLinesNoEmpty
 
                     For x = 0 To lines.Length - 1
-                        lines(x) = "    " + lines(x)
+                        lines(x) = "    " & lines(x)
                     Next
 
-                    ret += BR + filter.Path + " =" + BR + lines.Join(BR) + BR
+                    ret &= BR & filter.Path & " =" & BR & String.Join(BR, lines) & BR
                     wasMultiline = True
                 Else
                     If wasMultiline Then
-                        ret += BR
+                        ret &= BR
                     End If
 
-                    ret += filter.Path + " = " + filter.Script + BR
+                    ret &= filter.Path & " = " & filter.Script & BR
                     wasMultiline = False
                 End If
             Next
 
             If Not ret.EndsWith(BR2, StringComparison.Ordinal) Then
-                ret += BR
+                ret &= BR
             End If
         Next
 
@@ -4672,19 +4667,19 @@ Public Class MainForm
                         If Not filter Is Nothing Then
                             If filter.Script.NullOrEmptyS Then
                                 If line.StartsWith(VB6.vbTab, StringComparison.Ordinal) Then
-                                    filter.Script += line.Remove(0, 1)
+                                    filter.Script &= line.Remove(0, 1)
                                 End If
 
                                 If line.StartsWith("    ", StringComparison.Ordinal) Then
-                                    filter.Script += line.Remove(0, 4)
+                                    filter.Script &= line.Remove(0, 4)
                                 End If
                             Else
                                 If line.StartsWith(VB6.vbTab, StringComparison.Ordinal) Then
-                                    filter.Script += BR + line.Remove(0, 1)
+                                    filter.Script &= BR & line.Remove(0, 1)
                                 End If
 
                                 If line.StartsWith("    ", StringComparison.Ordinal) Then
-                                    filter.Script += BR + line.Remove(0, 4)
+                                    filter.Script &= BR & line.Remove(0, 4)
                                 End If
                             End If
                         End If
@@ -4708,7 +4703,7 @@ Public Class MainForm
                     Next
 
                     If Not found AndAlso {"Source", "Crop", "Resize"}.ContainsString(i.Name) Then
-                        MsgWarn("The category '" + i.Name + "' was recreated. A Source, Crop and Resize category is mandatory.")
+                        MsgWarn("The category '" & i.Name & "' was recreated. A Source, Crop and Resize category is mandatory.")
                         filterProfiles.Add(i)
                     End If
                 Next
@@ -5245,7 +5240,7 @@ Public Class MainForm
                     End If
                 End If
             Catch ex As Exception
-                MsgWarn("Error parsing argument:" + BR2 + i.Value + BR2 + ex.Message)
+                MsgWarn("Error parsing argument:" & BR2 & i.Value & BR2 & ex.Message)
             End Try
         Next
 
@@ -5382,13 +5377,13 @@ Public Class MainForm
                             proc.Header = "Merge source files"
 
                             For Each i In files
-                                Log.WriteLine(MediaInfo.GetSummary(i) + "---------------------------------------------------------" + BR2)
+                                Log.WriteLine(MediaInfo.GetSummary(i) & "---------------------------------------------------------" & BR2)
                             Next
 
                             proc.Encoding = Encoding.UTF8
                             proc.Package = Package.mkvmerge
-                            Dim outFile = files(0).DirAndBase + "_merged.mkv"
-                            proc.Arguments = "-o " + outFile.Escape + " """ + files.Join(""" + """) + """"
+                            Dim outFile = files(0).DirAndBase & "_merged.mkv"
+                            proc.Arguments = "-o " & outFile.Escape & " """ & String.Join(""" & """, files) & """"
 
                             Try
                                 proc.Start()
@@ -6197,12 +6192,6 @@ Public Class MainForm
         MyBase.OnActivated(e)
         UpdateNextButton()
         ProcController.LastActivation = Environment.TickCount
-
-        'If ActionMenuItem.LayoutSuspendList IsNot Nothing Then 'debug Test !!!!
-        '    ActionMenuItem.LayoutSuspendList = Nothing
-        '    Console.Beep(2000, 300)
-        'End If
-
         BeginInvoke(New Action(Sub()
                                    Application.DoEvents()
                                    Assistant()
@@ -6257,12 +6246,6 @@ Public Class MainForm
     Protected Overrides Sub OnDeactivate(e As EventArgs)
         MyBase.OnDeactivate(e)
         UpdateNextButton()
-
-        'If ActionMenuItem.LayoutSuspendList IsNot Nothing Then 'debug Test !!!!
-        '    ActionMenuItem.LayoutSuspendList = Nothing
-        '    Console.Beep(2000, 300)
-        'End If
-
     End Sub
 
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)

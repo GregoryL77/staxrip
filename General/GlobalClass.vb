@@ -578,8 +578,7 @@ Public Class GlobalClass
         Dim laySL As New List(Of ToolStripDropDown)
 
         For Each iProfile As Profile In profiles
-
-            Dim a = iProfile.Name.SplitNoEmpty("|")
+            Dim a = iProfile.Name.Split({"|"c}, StringSplitOptions.RemoveEmptyEntries)
             Dim l = ic
             For i = 0 To a.Length - 1
                 Dim found As Boolean = False
@@ -1030,7 +1029,7 @@ Public Class GlobalClass
     Sub ShowException(ex As Exception, Optional mainInstruction As String = Nothing, Optional content As String = Nothing, Optional timeout As Integer = 0)
 
         Try
-            Using td As New TaskDialog(Of String)(352)
+            Using td As New TaskDialog(Of String)(388)
                 If mainInstruction.NullOrEmptyS Then
                     If TypeOf ex Is ErrorAbortException Then
                         td.MainInstruction = DirectCast(ex, ErrorAbortException).Title & $" ({Application.ProductVersion})"

@@ -1,16 +1,11 @@
 
 Imports System.ComponentModel
 Imports System.Drawing.Design
-Imports System.Text
-Imports JM.LinqFaster
 
 Namespace UI
     Public Class FormBase
         Inherits Form
 
-        Event FilesDropped(files As String())
-
-        Private FileDropValue As Boolean
         Private DefaultWidthScale As Single
         Private DefaultHeightScale As Single
 
@@ -18,43 +13,8 @@ Namespace UI
         Shadows Property FontHeight As Integer
 
         Sub New()
-            Font = New Font("Segoe UI", 9)
-            FontHeight = If(s.UIScaleFactor = 1, 16, Font.Height) ' Test This Experiment!!! NoScaling
-        End Sub
-
-        <DefaultValue(False)>
-        Property FileDrop As Boolean
-            Get
-                Return FileDropValue
-            End Get
-            Set(value As Boolean)
-                FileDropValue = value
-                AllowDrop = value
-            End Set
-        End Property
-
-        Protected Overrides Sub OnDragEnter(e As DragEventArgs)
-            MyBase.OnDragEnter(e)
-
-            If FileDrop Then
-                Dim files = TryCast(e.Data.GetData(DataFormats.FileDrop), String())
-
-                If Not files.NothingOrEmpty Then
-                    e.Effect = DragDropEffects.Copy
-                End If
-            End If
-        End Sub
-
-        Protected Overrides Sub OnDragDrop(args As DragEventArgs)
-            MyBase.OnDragDrop(args)
-
-            If FileDrop Then
-                Dim files = TryCast(args.Data.GetData(DataFormats.FileDrop), String())
-
-                If Not files.NothingOrEmpty Then
-                    RaiseEvent FilesDropped(files)
-                End If
-            End If
+            Font = New Font("Segoe UI", 9) 'FH=16
+            FontHeight = 16 'If(s.UIScaleFactor = 1, 16, Font.Height) ' Test This Experiment!!! NoScaling
         End Sub
 
         Sub SetMinimumSize(w As Integer, h As Integer)
@@ -66,7 +26,9 @@ Namespace UI
             SetTabIndexes(Me)
 
             If s.UIScaleFactor <> 1 Then
-                Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+                Dim fn As New Font("Segoe UI", 9 * s.UIScaleFactor)
+                FontHeight = fn.Height 'Added ??? Experimental ?
+                Font = fn
                 Scale(New SizeF(1 * s.UIScaleFactor, 1 * s.UIScaleFactor))
             End If
 
@@ -74,7 +36,7 @@ Namespace UI
             Dim w As Integer = -1
             Dim h As Integer = -1
             If DefaultWidthScale <> 0 Then
-                Dim fh As Integer = FontHeight 'NoScaling with this !!!???  Font.Height OK
+                Dim fh As Integer = 16 'FontHeight 'Was FontHeight if set to fixed 16 Scaling OK??? NoScaling with this !!!???  Font.Height OK
                 Dim defaultWidth = CInt(fh * DefaultWidthScale)
                 Dim defaultHeight = CInt(fh * DefaultHeightScale)
 
@@ -117,8 +79,6 @@ Namespace UI
                         End If
                     End If
                 End If
-                'Else
-                'Dim dddddddddd__ddd = DesignHelp.IsDesignMode 'Debug
             End If
 
             If pos.X >= 0 Then
@@ -176,7 +136,7 @@ Namespace UI
             'Next i
         End Sub
 
-        Sub RestoreClientSize(defaultWidthScale As Single, defaultHeightScale As Single)
+        Sub RestoreClientSize(defaultWidthScale As Single, defaultHeightScale As Single) 'Add CMDAudioEnc Here ???
             Me.DefaultWidthScale = defaultWidthScale
             Me.DefaultHeightScale = defaultHeightScale
         End Sub
@@ -206,6 +166,56 @@ Namespace UI
             args.Cancel = True
             OnHelpRequested(New HelpEventArgs(MousePosition))
         End Sub
+    End Class
+
+    <Serializable()>
+    Public Class WindowPositions
+        Private Positions As New Dictionary(Of String, Point)(37, StringComparer.Ordinal)
+        Sub Save(form As Form)
+            If form.WindowState = FormWindowState.Normal Then Positions(form.Name & form.GetType().FullName & GetText(form)) = form.Location
+            'SaveWindowState(form) 'Dead Code ???
+        End Sub
+
+        Function RestorePosition(form As Form) As Point
+            Dim txt As String = GetText(form)
+            Dim wpr As String() = s.WindowPositionsRemembered
+            For i = 0 To wpr.Length - 1
+                Dim r = wpr(i)
+                If txt.StartsWith(r, StringComparison.Ordinal) OrElse String.Equals(r, "all") Then
+                    'Dim pos As Point
+                    Dim pos As Point = If(Positions.TryGetValue(form.Name & form.GetType().FullName & txt, pos), pos, New Point(-100000, 0))
+                    Return pos
+                End If
+            Next i
+            Return New Point(-100000, 0)
+        End Function
+
+        Function GetText(form As Form) As String
+
+            If TypeOf form Is AudioConverterForm Then
+                Return "AudioConverter"
+            ElseIf TypeOf form Is MainForm Then
+                Return "StaxRip"
+            ElseIf TypeOf form Is AudioForm Then
+                Return "AudioSettings"
+            ElseIf TypeOf form Is CodeEditor Then
+                Return "CodeEditor"
+            ElseIf TypeOf form Is CustomMenuEditor Then
+                Return "MenuEditor"
+            ElseIf TypeOf form Is HelpForm Then
+                Return "Help"
+            ElseIf TypeOf form Is LogForm Then
+                Return "LogForm"
+            ElseIf TypeOf form Is PreviewForm Then
+                Return "Preview"
+            End If
+
+            Return form.Text
+        End Function
+        'Private WindowStates As New Dictionary(Of String, FormWindowState)(37, StringComparer.Ordinal) 'Dead Code ???
+        'Sub SaveWindowState(form As Form) 'Dead Code ???
+        '    WindowStates(GetKey(form)) = form.WindowState
+        'End Sub
     End Class
 
     Public Class ListBag(Of T)
@@ -249,81 +259,6 @@ Namespace UI
 
         Function CompareTo(other As ListBag(Of T)) As Integer Implements IComparable(Of ListBag(Of T)).CompareTo
             Return String.Compare(Text, other.Text, StringComparison.OrdinalIgnoreCase)
-        End Function
-    End Class
-
-    <Serializable()>
-    Public Class WindowPositions
-        Private Positions As New Dictionary(Of String, Point)(37, StringComparer.Ordinal)
-        Sub Save(form As Form)
-            If form.WindowState = FormWindowState.Normal Then Positions(form.Name & form.GetType().FullName & GetText(form)) = form.Location
-            'SavePosition(form)
-            'SaveWindowState(form) 'Dead Code ???
-        End Sub
-        'Private WindowStates As New Dictionary(Of String, FormWindowState)(37, StringComparer.Ordinal) 'Dead Code ???
-        'Sub SaveWindowState(form As Form) 'Dead Code ???
-        '    WindowStates(GetKey(form)) = form.WindowState
-        'End Sub
-        'Sub SavePosition(form As Form)
-        '    If form.WindowState = FormWindowState.Normal Then Positions(GetKey(form)) = form.Location
-        'End Sub
-        'Shared Sub CenterScreen(form As Form, screenSize As Size) ' Screen.FromControl(form).WorkingArea
-        '    form.StartPosition = FormStartPosition.Manual
-        '    form.Location = New Point((screenSize.Width - form.Width) \ 2, (screenSize.Height - form.Height) \ 2)
-        'End Sub
-        'Sub RestorePosition(form As Form, screenSz As Size) 'TODO make Function and SetBounds in one step
-        '    If Not s.WindowPositionsRemembered.NothingOrEmpty AndAlso TypeOf form IsNot UI.InputBoxForm Then
-        '        Dim text = GetText(form)
-        '        For Each i In s.WindowPositionsRemembered
-        '            If text.StartsWith(i, StringComparison.Ordinal) OrElse String.Equals(i, "all") Then
-        '                Dim pos As Point
-        '                If Positions.TryGetValue(GetKey(form), pos) Then
-        '                    form.StartPosition = FormStartPosition.Manual
-        '                    form.Location = If(pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + form.Width > screenSz.Width OrElse pos.Y + form.Height > screenSz.Height,
-        '                        New Point((screenSz.Width - form.Width) \ 2, (screenSz.Height - form.Height) \ 2), 'CenterScreen(form, screenSz)
-        '                        pos)
-        '                End If
-        '                Exit For
-        '            End If
-        '        Next
-        '    End If
-        'End Sub
-        'Function GetKey(form As Form) As String
-        '    Return form.Name & form.GetType().FullName & GetText(form)
-        'End Function
-        Function RestorePosition(form As Form) As Point
-            Dim txt As String = GetText(form)
-            Dim wpr As String() = s.WindowPositionsRemembered
-            For i = 0 To wpr.Length - 1
-                Dim r = wpr(i)
-                If txt.StartsWith(r, StringComparison.Ordinal) OrElse String.Equals(r, "all") Then
-                    'Dim pos As Point
-                    Dim pos As Point = If(Positions.TryGetValue(form.Name & form.GetType().FullName & txt, pos), pos, New Point(-100000, 0))
-                    Return pos
-                End If
-            Next i
-            Return New Point(-100000, 0)
-        End Function
-
-        Function GetText(form As Form) As String
-
-            If TypeOf form Is AudioConverterForm Then
-                Return "AudioConverter"
-            ElseIf TypeOf form Is MainForm Then
-                Return "StaxRip"
-            ElseIf TypeOf form Is AudioForm Then
-                Return "Audio Settings"
-            ElseIf TypeOf form Is CodeEditor Then
-                Return "Code Editor"
-            ElseIf TypeOf form Is CustomMenuEditor Then
-                Return "Menu Editor"
-            ElseIf TypeOf form Is HelpForm Then
-                Return "Help"
-            ElseIf TypeOf form Is PreviewForm Then
-                Return "Preview"
-            End If
-
-            Return form.Text
         End Function
     End Class
 

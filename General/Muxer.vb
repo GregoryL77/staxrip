@@ -48,7 +48,7 @@ Public MustInherit Class Muxer
 
     ReadOnly Property OutputExtFull As String
         Get
-            Return "." + OutputExt
+            Return "." & OutputExt
         End Get
     End Property
 
@@ -243,11 +243,11 @@ Public MustInherit Class Muxer
     End Function
 
     Shared Function GetDefaults() As List(Of Muxer)
-        Dim ret As New List(Of Muxer)(22)
+        Dim ret As New List(Of Muxer)(24)
 
         'ret.AddRange({New MkvMuxer(), New MP4Muxer(), New WebMMuxer()}) - Org, Test - No Edit MKV WorkAround
         ret.AddRange({New MkvMuxer("MKV (mkvmerge)"), New MP4Muxer(), New WebMMuxer()})
-        ret.AddRange(ffmpegMuxer.SupportedFormats.SelectF(Function(val) New ffmpegMuxer("ffmpeg | " + val) With {.OutputFormat = val}))
+        ret.AddRange(ffmpegMuxer.SupportedFormats.SelectF(Function(val) New ffmpegMuxer("ffmpeg | " & val) With {.OutputFormat = val}))
         ret.AddRange({New BatchMuxer("Command Line"), New NullMuxer("No Muxing")})
 
         Return ret
@@ -288,7 +288,7 @@ Public Class MP4Muxer
         Dim args As New StringBuilder(64)
 
         If MediaInfo.GetFrameRate(p.VideoEncoder.OutputPath, 0) = 0 Then
-            args.Append(" -fps ").Append(p.Script.GetFramerate.ToString("f6", CultureInfo.InvariantCulture))
+            args.Append(" -fps ").Append(p.Script.GetFramerate.ToString("f6", InvariantCult))
         End If
 
         Dim videoParams = ""
@@ -548,7 +548,7 @@ End Class
 Public Class MkvMuxer
     Inherits Muxer
 
-    Property VideoTrackLanguage As New Language(CultureInfo.InvariantCulture)
+    Property VideoTrackLanguage As New Language(InvariantCult)
     Property Title As String = ""
     Property DAR As String = ""
 
@@ -578,10 +578,9 @@ Public Class MkvMuxer
         For Each iDir In {p.TempDir, p.TempDir.Parent}
             For Each iBase In {"small_cover", "cover_land", "small_cover_land"}
                 For Each iExt In {".jpg", ".png"}
-                    Dim fp = iDir + iBase + iExt
-
+                    Dim fp = iDir & iBase & iExt
                     If File.Exists(fp) Then
-                        AdditionalSwitches += " --attach-file " + fp.Escape
+                        AdditionalSwitches &= " --attach-file " + fp.Escape
                     End If
                 Next
             Next
@@ -624,13 +623,13 @@ Public Class MkvMuxer
                       %>
                   </Tags>
 
-        Dim filepath = p.TempDir + p.TargetFile.Base + "_tags.xml"
+        Dim filepath = p.TempDir & p.TargetFile.Base & "_tags.xml"
         xml.Save(filepath)
         TagFile = filepath
     End Sub
 
     Overrides Function GetCommandLine() As String
-        Return Package.mkvmerge.Path.Escape + " " + GetArgs()
+        Return Package.mkvmerge.Path.Escape & " " & GetArgs()
     End Function
 
     Function Convert(val As String) As String
@@ -638,24 +637,23 @@ Public Class MkvMuxer
     End Function
 
     Function GetArgs() As String
-        Dim args = "-o " + p.TargetFile.LongPathPrefix.Escape
+        Dim args = "-o " & p.TargetFile.LongPathPrefix.Escape
 
-        Dim stdout = ProcessHelp.GetConsoleOutput(Package.mkvmerge.Path, "--identify " +
-            p.VideoEncoder.OutputPath.LongPathPrefix.Escape)
+        Dim stdout = ProcessHelp.GetConsoleOutput(Package.mkvmerge.Path, "--identify " & p.VideoEncoder.OutputPath.LongPathPrefix.Escape)
 
         Dim id = Regex.Match(stdout, "Track ID (\d+): video").Groups(1).Value.ToInt
 
         If Not FileTypes.VideoOnly.ContainsString(p.VideoEncoder.OutputPath.Ext) Then
-            args += " --no-audio --no-subs --no-chapters --no-attachments --no-track-tags --no-global-tags"
+            args &= " --no-audio --no-subs --no-chapters --no-attachments --no-track-tags --no-global-tags"
         End If
 
         'If Not String.Equals(VideoTrackLanguage.ThreeLetterCode, "und") Then
         If VideoTrackLanguage.LCID <> 127 Then
-            args += " --language " & id & ":" + VideoTrackLanguage.ThreeLetterCode
+            args &= " --language " & id & ":" & VideoTrackLanguage.ThreeLetterCode
         End If
 
         If VideoTrackName.NotNullOrEmptyS Then
-            args += " --track-name """ & id & ":" + Convert(VideoTrackName) + """"
+            args &= " --track-name """ & id & ":" & Convert(VideoTrackName) & """"
         End If
 
         Dim dar = Me.DAR.TrimEx
@@ -665,30 +663,30 @@ Public Class MkvMuxer
         End If
 
         If dar.NotNullOrEmptyS Then
-            args += " --aspect-ratio " & id & ":" + dar.TrimEx.Replace(",", ".").Replace(":", "/")
+            args &= " --aspect-ratio " & id & ":" & dar.TrimEx.Replace(",", ".").Replace(":", "/")
         ElseIf Calc.IsARSignalingRequired AndAlso TypeOf p.VideoEncoder Is NullEncoder Then
-            args += " --aspect-ratio " & id & ":" + Calc.GetTargetDAR.ToInvariantString.Shorten(11)
+            args &= " --aspect-ratio " & id & ":" & Calc.GetTargetDAR.ToInvariantString.Shorten(11)
         End If
 
         If MediaInfo.GetFrameRate(p.VideoEncoder.OutputPath, 0) = 0 Then
-            args += " --default-duration 0:" + p.Script.GetFramerate.ToString("f6", CultureInfo.InvariantCulture) + "fps"
+            args &= " --default-duration 0:" & p.Script.GetFramerate.ToString("f6", InvariantCult) & "fps"
         End If
 
         If TimestampsFile.NotNullOrEmptyS Then
-            If TimestampsFile.Ext = "txt" Then
-                args += " --timestamps 0:" + TimestampsFile.Escape
+            If String.Equals(TimestampsFile.Ext, "txt") Then
+                args &= " --timestamps 0:" & TimestampsFile.Escape
             ElseIf TimestampsFile.Ext = "mkv" Then
-                args += " --timestamps " + MediaInfo.GetVideo(TimestampsFile, "StreamOrder") + ":" + TimestampsFile.Escape
+                args &= " --timestamps " & MediaInfo.GetVideo(TimestampsFile, "StreamOrder") & ":" & TimestampsFile.Escape
             End If
         End If
 
-        args += " " + p.VideoEncoder.OutputPath.LongPathPrefix.Escape
+        args &= " " & p.VideoEncoder.OutputPath.LongPathPrefix.Escape
 
         For x = 2 To 99
-            Dim fp = p.VideoEncoder.OutputPath.DirAndBase + "_chunk" & x & p.VideoEncoder.OutputExtFull
+            Dim fp = p.VideoEncoder.OutputPath.DirAndBase & "_chunk" & x & p.VideoEncoder.OutputExtFull
 
             If fp.FileExists Then
-                args += " + " + fp.LongPathPrefix.Escape
+                args &= " & " & fp.LongPathPrefix.Escape
             Else
                 Exit For
             End If
@@ -708,32 +706,32 @@ Public Class MkvMuxer
                 id = If(FileTypes.SubtitleSingle.ContainsString(subtitle.Path.Ext), 0, subtitle.StreamOrder)
 
                 If Not FileTypes.SubtitleExludingContainers.ContainsString(subtitle.Path.Ext) Then
-                    args += " --no-audio --no-video --no-chapters --no-attachments --no-track-tags --no-global-tags"
+                    args &= " --no-audio --no-video --no-chapters --no-attachments --no-track-tags --no-global-tags"
                 End If
 
                 If Not FileTypes.SubtitleSingle.ContainsString(subtitle.Path.Ext) Then
-                    args += " --subtitle-tracks " & id
+                    args &= " --subtitle-tracks " & id
                 End If
 
                 Dim isContainer = FileTypes.VideoAudio.ContainsString(subtitle.Path.Ext)
 
-                args += " --forced-track " & id & ":" & If(subtitle.Forced, 1, 0)
-                args += " --default-track " & id & ":" & If(subtitle.Default, 1, 0)
-                args += " --language " & id & ":" + subtitle.Language.ThreeLetterCode
+                args &= " --forced-track " & id & ":" & If(subtitle.Forced, 1, 0)
+                args &= " --default-track " & id & ":" & If(subtitle.Default, 1, 0)
+                args &= " --language " & id & ":" & subtitle.Language.ThreeLetterCode
 
                 If Compression <> CompressionMode.zlib Then
-                    args += " --compression " & id & ":" + Compression.ToString
+                    args &= " --compression " & id & ":" & Compression.ToString
                 End If
 
                 If isContainer OrElse subtitle.Title.NotNullOrEmptyS Then
-                    args += " --track-name """ & id & ":" + Convert(subtitle.Title) + """"
+                    args &= " --track-name """ & id & ":" & Convert(subtitle.Title) & """"
                 End If
 
-                args += " " + subtitle.Path.LongPathPrefix.Escape
+                args &= " " & subtitle.Path.LongPathPrefix.Escape
             End If
         Next
 
-        If Not TypeOf Me Is WebMMuxer AndAlso File.Exists(ChapterFile) Then
+        If TypeOf Me IsNot WebMMuxer AndAlso File.Exists(ChapterFile) Then
             If p.Ranges.Count > 0 AndAlso ChapterFile.Ext.Equals("xml") Then
                 Dim xDoc = XDocument.Load(ChapterFile)
                 Dim lstTimeRanges As New List(Of (StartTime As TimeSpan, EndTime As TimeSpan, Offset As TimeSpan))
@@ -766,35 +764,35 @@ Public Class MkvMuxer
                 xDoc.Descendants("ChapterAtom").Where(Function(Atom) Not lstValidChapterAtoms.Contains(Atom)).Remove()
 
                 If xDoc.Descendants("ChapterAtom").Any Then
-                    Dim CutChapterFile = Path.Combine(Path.GetDirectoryName(ChapterFile), "cut_cpt" + ".xml")
+                    Dim CutChapterFile = Path.Combine(Path.GetDirectoryName(ChapterFile), "cut_cpt" & ".xml")
                     xDoc.Save(CutChapterFile)
-                    args += " --chapters " + CutChapterFile.Escape
+                    args &= " --chapters " & CutChapterFile.Escape
                 End If
             Else
-                args += " --chapters " + ChapterFile.Escape
+                args &= " --chapters " & ChapterFile.Escape
             End If
         End If
 
         If CoverFile.NotNullOrEmptyS AndAlso File.Exists(CoverFile) Then
-            args += " --attach-file " + CoverFile.Escape
+            args &= " --attach-file " & CoverFile.Escape
         End If
 
         If Title.NotNullOrEmptyS Then
-            args += " --title """ + Convert(Title) + """"
+            args &= " --title """ & Convert(Title) & """"
         End If
 
         If TypeOf p.VideoEncoder Is NullEncoder AndAlso p.Ranges.Count > 0 Then
-            args += " --split parts-frames:" + p.Ranges.SelectF(Function(v) v.Start & "-" & v.End).Join(",+")
+            args &= " --split parts-frames:" & String.Join(",+", p.Ranges.ToArray.SelectF(Function(v) v.Start.ToInvariantString & "-" & v.End.ToInvariantString))
         End If
 
         If File.Exists(TagFile) Then
-            args += " --global-tags " + TagFile.Escape
+            args &= " --global-tags " & TagFile.Escape
         End If
 
-        args += " --ui-language en"
+        args &= " --ui-language en"
 
         If AdditionalSwitches.NotNullOrEmptyS Then
-            args += " " + Macro.Expand(AdditionalSwitches)
+            args &= " " & Macro.Expand(AdditionalSwitches)
         End If
 
         For Each i In Attachments
@@ -804,7 +802,7 @@ Public Class MkvMuxer
                 name = i.Right("_attachment_")
             End If
 
-            args += $" --attachment-name {name.Escape} --attach-file {i.LongPathPrefix.Escape}"
+            args &= $" --attachment-name {name.Escape} --attach-file {i.LongPathPrefix.Escape}"
         Next
 
         Return args
@@ -849,7 +847,7 @@ Public Class MkvMuxer
                 args += " --aac-is-sbr " & tid
             End If
 
-            If TypeOf ap Is MuxAudioProfile AndAlso ap.DisplayName.ContainsAny("DTSMA", "DTSX", "DTSHRA") Then
+            If TypeOf ap Is MuxAudioProfile AndAlso ap.DisplayName.ContainsAny({"DTSMA", "DTSX", "DTSHRA"}) Then
                 Dim map = DirectCast(ap, MuxAudioProfile)
 
                 If map.ExtractDTSCore Then

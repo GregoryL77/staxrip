@@ -20,7 +20,7 @@ Public Class Macro
         If name.StartsWith("$", StringComparison.Ordinal) Then
             Me.Name = name
         Else
-            Me.Name = "%" + name + "%"
+            Me.Name = "%" & name & "%"
         End If
 
         Me.FriendlyName = friendlyName
@@ -219,11 +219,11 @@ Public Class Macro
 
         If includeApps Then
             For Each i In Package.Items.Values
-                ret.Add(New Macro("app:" + i.Name, "File path to " + i.Name, GetType(String), "File path to " + i.Name))
+                ret.Add(New Macro("app:" & i.Name, "File path to " & i.Name, GetType(String), "File path to " & i.Name))
             Next
 
             For Each i In Package.Items.Values
-                ret.Add(New Macro("app_dir:" + i.Name, "Folder path to " + i.Name, GetType(String), "Folder path to " + i.Name))
+                ret.Add(New Macro("app_dir:" & i.Name, "Folder path to " & i.Name, GetType(String), "Folder path to " & i.Name))
             Next
         End If
 
@@ -290,7 +290,7 @@ Public Class Macro
             Dim matches = Regex.Matches(ret.Value, "\$select:(.+?)\$")
 
             For Each iMatch As Match In matches
-                Dim items = iMatch.Groups(1).Value.SplitNoEmpty(";").ToList
+                Dim items = iMatch.Groups(1).Value.Split({";"c}, StringSplitOptions.RemoveEmptyEntries).ToCircularList
 
                 If items.Count > 0 Then
                     Using td As New TaskDialog(Of String)
@@ -338,13 +338,13 @@ Public Class Macro
         value = value.Replace("%temp_dir%", p.TempDir)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%temp_file%", p.TempDir + p.SourceFile.Base)
+        value = value.Replace("%temp_file%", p.TempDir & p.SourceFile.Base)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%source_temp_file%", (p.TempDir + g.GetSourceBase).ToShortFilePath)
+        value = value.Replace("%source_temp_file%", (p.TempDir & g.GetSourceBase).ToShortFilePath)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%target_temp_file%", p.TempDir + p.TargetFile.Base)
+        value = value.Replace("%target_temp_file%", p.TempDir & p.TargetFile.Base)
         If Not value.Contains("%") Then Return value
 
         value = value.Replace("%source_name%", p.SourceFile.Base)
@@ -368,7 +368,7 @@ Public Class Macro
         value = value.Replace("%source_frames%", p.SourceFrames.ToString)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%source_framerate%", p.SourceFrameRate.ToString("f6", CultureInfo.InvariantCulture))
+        value = value.Replace("%source_framerate%", p.SourceFrameRate.ToString("f6", InvariantCult))
         If Not value.Contains("%") Then Return value
 
         value = value.Replace("%source_dir%", p.SourceFile.Dir)
@@ -395,7 +395,7 @@ Public Class Macro
         value = value.Replace("%target_frames%", p.Script.Info.FrameCount.ToString)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%target_framerate%", p.Script.GetCachedFrameRate.ToString("f6", CultureInfo.InvariantCulture))
+        value = value.Replace("%target_framerate%", p.Script.GetCachedFrameRate.ToString("f6", InvariantCult))
         If Not value.Contains("%") Then Return value
 
         value = value.Replace("%target_size%", (p.TargetSize * 1024).ToString)
@@ -431,7 +431,7 @@ Public Class Macro
         value = value.Replace("%video_bitrate%", p.VideoBitrate.ToString)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%audio_bitrate%", (p.Audio0.Bitrate + p.Audio1.Bitrate).ToString)
+        value = value.Replace("%audio_bitrate%", (p.Audio0.Bitrate & p.Audio1.Bitrate).ToString)
         If Not value.Contains("%") Then Return value
 
         value = value.Replace("%audio_file1%", p.Audio0.File)
@@ -461,10 +461,10 @@ Public Class Macro
         value = value.Replace("%plugin_dir%", Folder.Plugins)
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%source_files_comma%", """" + String.Join(""",""", p.SourceFiles.ToArray) + """")
+        value = value.Replace("%source_files_comma%", """" & String.Join(""",""", p.SourceFiles.ToArray) & """")
         If Not value.Contains("%") Then Return value
 
-        value = value.Replace("%source_files%", """" + String.Join(""" """, p.SourceFiles.ToArray) + """")
+        value = value.Replace("%source_files%", """" & String.Join(""" """, p.SourceFiles.ToArray) & """")
         If Not value.Contains("%") Then Return value
 
         value = value.Replace("%compressibility%", Math.Round(p.Compressibility, 3).ToString.Replace(",", "."))
@@ -550,7 +550,7 @@ Public Class Macro
 
         If value.Contains("%source_dar%") Then
             Dim dar = Calc.GetSourceDAR
-            value = value.Replace("%source_dar%", dar.ToString("f9", CultureInfo.InvariantCulture))
+            value = value.Replace("%source_dar%", dar.ToString("f9", InvariantCult))
 
             If Not value.Contains("%") Then
                 Return value
@@ -559,7 +559,7 @@ Public Class Macro
 
         If value.Contains("%target_dar%") Then
             Dim dar = Calc.GetTargetDAR
-            value = value.Replace("%target_dar%", dar.ToString("f9", CultureInfo.InvariantCulture))
+            value = value.Replace("%target_dar%", dar.ToString("f9", InvariantCult))
 
             If Not value.Contains("%") Then
                 Return value
@@ -589,7 +589,7 @@ Public Class Macro
 
                 Dim path = package?.Path
 
-                If path.NotNullOrEmptyS Then
+                If path?.Length > 0 Then
                     value = value.Replace(match.Value, path)
 
                     If Not value.Contains("%") Then
@@ -606,7 +606,7 @@ Public Class Macro
 
                 Dim path = package?.Path
 
-                If path.NotNullOrEmptyS Then
+                If path?.Length > 0 Then
                     value = value.Replace(match.Value, path.Dir)
                     If Not value.Contains("%") Then
                         Return value
@@ -700,7 +700,7 @@ Public Class Macro
                 Continue For
             End If
 
-            If value.ToLowerInvariant.Contains("%" + var.ToLowerInvariant + "%") Then
+            If value.ToLowerInvariant.Contains("%" & var.ToLowerInvariant & "%") Then
                 value = Environment.ExpandEnvironmentVariables(value)
 
                 If Not value.Contains("%") Then

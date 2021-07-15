@@ -728,15 +728,15 @@ Public Class Audio
             Throw New AbortException
         End If
 
-        Dim aviPath = p.TempDir + ap.File.Base + "_cut_mm.avi"
-        Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", CultureInfo.InvariantCulture)
-        Dim r = p.CutFrameRate.ToString("f9", CultureInfo.InvariantCulture)
-        Dim args = $"-f lavfi -i color=c=black:s=16x16:d={d}:r={r} -y -hide_banner -c:v copy " + aviPath.Escape
+        Dim aviPath = p.TempDir & ap.File.Base & "_cut_mm.avi"
+        Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", InvariantCult)
+        Dim r = p.CutFrameRate.ToString("f9", InvariantCult)
+        Dim args = $"-f lavfi -i color=c=black:s=16x16:d={d}:r={r} -y -hide_banner -c:v copy {aviPath.Escape}"
 
         Using proc As New Proc
             proc.Header = "Create avi file for audio cutting"
             proc.SkipStrings = {"frame=", "size="}
-            proc.WriteLog("mkvmerge cannot cut audio without video so a avi file has to be created" + BR2)
+            proc.WriteLog("mkvmerge cannot cut audio without video so a avi file has to be created" & BR2)
             proc.Encoding = Encoding.UTF8
             proc.Package = Package.ffmpeg
             proc.Arguments = args
@@ -749,11 +749,11 @@ Public Class Audio
             Log.WriteLine(MediaInfo.GetSummary(aviPath, ap.FileKeyHashValue))
         End If
 
-        Dim mkvPath = p.TempDir + ap.File.Base + "_cut_.mkv"
+        Dim mkvPath = p.TempDir & ap.File.Base & "_cut_.mkv"
 
-        Dim args2 = "-o " + mkvPath.Escape + " " + aviPath.Escape + " " + ap.File.Escape
-        args2 += " --split parts-frames:" + p.Ranges.SelectF(Function(v) v.Start & "-" & (v.End + 1)).Join(",+")
-        args2 += " --ui-language en"
+        Dim args2 = "-o " & mkvPath.Escape & " " & aviPath.Escape & " " & ap.File.Escape
+        args2 &= " --split parts-frames:" & String.Join(",&", p.Ranges.ToArray.SelectF(Function(v) v.Start & "-" & (v.End + 1).ToInvariantString))
+        args2 &= " --ui-language en"
 
         Using proc As New Proc
             proc.Header = "Cut audio"

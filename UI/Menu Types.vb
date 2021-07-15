@@ -83,7 +83,7 @@ Namespace UI
                 symbol As Symbol,
                 params As Object())
 
-            Dim pathArray = path.SplitNoEmpty("|")
+            Dim pathArray = path.Split({"|"c}, StringSplitOptions.RemoveEmptyEntries)
             Dim l = SubItems
 
             For i = 0 To pathArray.Length - 1
@@ -639,7 +639,7 @@ Namespace UI
         End Function
 
         Shared Function Add(items As ToolStripItemCollection, path As String, action As Action, tip As String) As ActionMenuItem
-            Dim a = path.SplitNoEmpty(" | ")
+            Dim a = path.Split({" | "}, StringSplitOptions.RemoveEmptyEntries)
             Dim l = items
 
             For x = 0 To a.Length - 1
@@ -782,7 +782,7 @@ Namespace UI
             ret.SuspendLayout()
             ret.Items.ClearAndDispose
 
-            For Each i In definition.SplitKeepEmpty(BR)
+            For Each i In definition.Split({CChar(BR)}, StringSplitOptions.None)
                 Dim ir As String = i.Right("=")
                 If ir.Length > 0 Then
                     ActionMenuItem.Add(ret.Items, i.Left("=").Trim, action, ir.Trim, Nothing)

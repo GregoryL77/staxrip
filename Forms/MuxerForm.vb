@@ -623,30 +623,30 @@ Public Class MuxerForm
         Me.Margin = New System.Windows.Forms.Padding(11, 10, 11, 10)
         Me.Name = "MuxerForm"
         Me.Text = "Container"
-        Me.tcMain.ResumeLayout(False)
-        Me.tpSubtitles.ResumeLayout(False)
-        Me.tlpSubtitles.ResumeLayout(False)
-        Me.tlpSubtitles.PerformLayout()
-        CType(Me.dgvSubtitles, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.flpSubtitleButtons.ResumeLayout(False)
-        Me.tpAudio.ResumeLayout(False)
-        Me.tlpAudio.ResumeLayout(False)
-        Me.tlpAudio.PerformLayout()
-        Me.flpAudio.ResumeLayout(False)
-        CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.tpAttachments.ResumeLayout(False)
-        Me.tlpAttachments.ResumeLayout(False)
-        Me.tlpAttachments.PerformLayout()
-        Me.flpAttachments.ResumeLayout(False)
-        Me.tpTags.ResumeLayout(False)
-        CType(Me.dgvTags, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.tpOptions.ResumeLayout(False)
-        Me.tpCommandLine.ResumeLayout(False)
-        Me.TableLayoutPanel1.ResumeLayout(False)
-        Me.TableLayoutPanel1.PerformLayout()
-        Me.tlpMain.ResumeLayout(False)
-        Me.pnTab.ResumeLayout(False)
-        Me.ResumeLayout(False)
+        'Me.tcMain.ResumeLayout(False)
+        'Me.tpSubtitles.ResumeLayout(False)
+        'Me.tlpSubtitles.ResumeLayout(False)
+        'Me.tlpSubtitles.PerformLayout()
+        'CType(Me.dgvSubtitles, System.ComponentModel.ISupportInitialize).EndInit()
+        'Me.flpSubtitleButtons.ResumeLayout(False)
+        'Me.tpAudio.ResumeLayout(False)
+        'Me.tlpAudio.ResumeLayout(False)
+        'Me.tlpAudio.PerformLayout()
+        'Me.flpAudio.ResumeLayout(False)
+        'CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
+        'Me.tpAttachments.ResumeLayout(False)
+        'Me.tlpAttachments.ResumeLayout(False)
+        'Me.tlpAttachments.PerformLayout()
+        'Me.flpAttachments.ResumeLayout(False)
+        'Me.tpTags.ResumeLayout(False)
+        'CType(Me.dgvTags, System.ComponentModel.ISupportInitialize).EndInit()
+        'Me.tpOptions.ResumeLayout(False)
+        'Me.tpCommandLine.ResumeLayout(False)
+        'Me.TableLayoutPanel1.ResumeLayout(False)
+        'Me.TableLayoutPanel1.PerformLayout()
+        'Me.tlpMain.ResumeLayout(False)
+        'Me.pnTab.ResumeLayout(False)
+        'Me.ResumeLayout(False)
 
     End Sub
 
@@ -664,7 +664,7 @@ Public Class MuxerForm
         InitializeComponent()
         SetMinimumSize(30, 21)
         RestoreClientSize(45, 22)
-        Text += " - " + muxer.Name
+        Text &= " - " & muxer.Name
         Me.Muxer = muxer
         AddSubtitles(muxer.Subtitles)
         CommandLineControl.tb.Text = muxer.AdditionalSwitches
@@ -744,7 +744,7 @@ Public Class MuxerForm
         dgvSubtitles.ClipboardCopyMode = DataGridViewClipboardCopyMode.Disable
 
         Dim languageColumn As New DataGridViewComboBoxColumn With {.HeaderText = "Language", .DataPropertyName = "Language"}
-        languageColumn.Items.AddRange(Language.Languages.ToArray)
+        languageColumn.Items.AddRange(Language.Languages)
         dgvSubtitles.Columns.AddRange({New DataGridViewCheckBoxColumn With {.HeaderText = "Enabled", .DataPropertyName = "Enabled"},
                                       languageColumn,
                                       New DataGridViewTextBoxColumn With {.HeaderText = "Name", .DataPropertyName = "Title"},
@@ -759,14 +759,42 @@ Public Class MuxerForm
         dgvSubtitles.DataSource = SubFBL
 
         TipProvider.SetTip("Additional command line switches that may contain macros.", tpCommandLine)
+
+        ' **** Moved from InitComp !!!- test or Revert!
+        Me.tcMain.ResumeLayout(False)
+        Me.tpSubtitles.ResumeLayout(False)
+        Me.tlpSubtitles.ResumeLayout(False)
+        Me.tlpSubtitles.PerformLayout()
+        CType(Me.dgvSubtitles, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.flpSubtitleButtons.ResumeLayout(False)
+        Me.tpAudio.ResumeLayout(False)
+        Me.tlpAudio.ResumeLayout(False)
+        Me.tlpAudio.PerformLayout()
+        Me.flpAudio.ResumeLayout(False)
+        CType(Me.dgvAudio, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tpAttachments.ResumeLayout(False)
+        Me.tlpAttachments.ResumeLayout(False)
+        Me.tlpAttachments.PerformLayout()
+        Me.flpAttachments.ResumeLayout(False)
+        Me.tpTags.ResumeLayout(False)
+        CType(Me.dgvTags, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tpOptions.ResumeLayout(False)
+        Me.tpCommandLine.ResumeLayout(False)
+        Me.TableLayoutPanel1.ResumeLayout(False)
+        Me.TableLayoutPanel1.PerformLayout()
+        Me.tlpMain.ResumeLayout(False)
+        Me.pnTab.ResumeLayout(False)
+        Me.ResumeLayout(False)
     End Sub
 
     Public Class AttachmentContainer
         Property Filepath As String
 
         Public Overrides Function ToString() As String
-            If Filepath.Contains("_attachment_") Then
-                Return Filepath.Right("_attachment_")
+
+            Dim fpR As String = Filepath.Right("_attachment_")
+            If fpR.NotNullOrEmptyS Then
+                Return fpR
             End If
 
             Return Path.GetFileName(Filepath)
@@ -794,9 +822,9 @@ Public Class MuxerForm
         UI.BackColor = Color.Transparent
         Application.DoEvents()
 
-        Dim page = UI.CreateFlowPage("main page")
         UI.Host.SuspendLayout()
         UI.SuspendLayout()
+        Dim page = UI.CreateFlowPage("main page")
         page.SuspendLayout()
 
         Dim tb = UI.AddTextButton(page)
@@ -994,9 +1022,7 @@ Public Class MuxerForm
     End Sub
 
     Sub AddAudio(path As String)
-        Dim profileSelection As New SelectionBox(Of AudioProfile)
-        profileSelection.Title = "Audio Profile"
-        profileSelection.Text = "Please select a audio profile."
+        Dim profileSelection As New SelectionBox(Of AudioProfile) With {.Title = "Audio Profile", .Text = "Please select a audio profile."}
 
         For Each audioProfile In s.AudioProfiles
             profileSelection.AddItem(audioProfile)
@@ -1019,10 +1045,8 @@ Public Class MuxerForm
 
         ap.SetStreamOrLanguage()
 
-        If Not ap.Stream Is Nothing Then
-            Dim streamSelection As New SelectionBox(Of AudioStream)
-            streamSelection.Title = "Stream Selection"
-            streamSelection.Text = "Please select a audio stream."
+        If ap.Stream IsNot Nothing Then
+            Dim streamSelection As New SelectionBox(Of AudioStream) With {.Title = "Stream Selection", .Text = "Please select a audio stream."}
 
             For Each stream In ap.Streams
                 streamSelection.AddItem(stream)
@@ -1081,17 +1105,8 @@ Public Class MuxerForm
                     id = i.StreamOrder + 1
                 End If
 
-                Dim item As New SubtitleItem
-                item.Enabled = i.Enabled
-                item.Language = i.Language
-                item.Title = i.Title
-                item.Default = i.Default
-                item.Forced = i.Forced
-                item.ID = id
-                item.TypeName = i.TypeName
-                item.Size = size
-                item.Filename = i.Path.FileName
-                item.Subtitle = i
+                Dim item As New SubtitleItem With {.Enabled = i.Enabled, .Language = i.Language, .Title = i.Title, .Default = i.Default, .Forced = i.Forced,
+                                                   .ID = id, .TypeName = i.TypeName, .Size = size, .Filename = i.Path.FileName, .Subtitle = i}
 
                 SubFBL.Add(item)
             End If
@@ -1111,16 +1126,15 @@ Public Class MuxerForm
         Dim filepath = st.Path
 
         If st.Path.Ext = "idx" Then
-            filepath = p.TempDir + p.TargetFile.Base + "_play.idx"
-            Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " +
-                          st.IndexIDX.ToString).WriteFileDefault(filepath)
-            FileHelp.Copy(st.Path.DirAndBase + ".sub", filepath.DirAndBase + ".sub")
+            filepath = p.TempDir & p.TargetFile.Base & "_play.idx"
+            Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " & st.IndexIDX.ToInvStr).WriteFileDefault(filepath)
+            FileHelp.Copy(st.Path.DirAndBase & ".sub", filepath.DirAndBase & ".sub")
         End If
 
         If FileTypes.SubtitleExludingContainers.ContainsString(filepath.Ext) Then
-            g.ShellExecute(Package.mpvnet.Path, "--sub-files=" + filepath.Escape + " " + p.FirstOriginalSourceFile.Escape)
+            g.ShellExecute(Package.mpvnet.Path, "--sub-files=" & filepath.Escape & " " & p.FirstOriginalSourceFile.Escape)
         ElseIf p.FirstOriginalSourceFile = filepath Then
-            g.ShellExecute(Package.mpvnet.Path, "--sub=" & (st.Index + 1) & " " + filepath.Escape)
+            g.ShellExecute(Package.mpvnet.Path, "--sub=" & (st.Index + 1) & " " & filepath.Escape)
         End If
     End Sub
 
@@ -1319,8 +1333,8 @@ Public Class MuxerForm
             td.MainInstruction = "Set names for all streams."
             td.AddCommand("Set language in English", 1)
 
-            If Not CultureInfo.CurrentCulture.NeutralCulture.TwoLetterISOLanguageName.Equals("en") Then
-                td.AddCommand("Set language in " + CultureInfo.CurrentCulture.NeutralCulture.DisplayName, 2)
+            If Not CurrCultNeutral.TwoLetterISOLanguageName.Equals("en") Then
+                td.AddCommand("Set language in " & CurrCultNeutral.DisplayName, 2)
             End If
 
             Select Case td.Show
@@ -1329,7 +1343,7 @@ Public Class MuxerForm
                         i.Title = i.Language.CultureInfo.EnglishName
 
                         If i.Forced Then
-                            i.Title += " (forced)"
+                            i.Title &= " (forced)"
                         End If
                     Next
 
@@ -1339,7 +1353,7 @@ Public Class MuxerForm
                         i.Title = i.Language.CultureInfo.NeutralCulture.DisplayName
 
                         If i.Forced Then
-                            i.Title += " (forced)"
+                            i.Title &= " (forced)"
                         End If
                     Next
 
@@ -1354,12 +1368,12 @@ Public Class MuxerForm
             Dim fp = st.Path
 
             If fp.Ext.Equals("idx") Then
-                fp = p.TempDir + p.TargetFile.Base + "_temp.idx"
-                Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " + st.IndexIDX.ToString).WriteFileDefault(fp)
-                FileHelp.Copy(st.Path.DirAndBase + ".sub", fp.DirAndBase + ".sub")
+                fp = p.TempDir & p.TargetFile.Base & "_temp.idx"
+                Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " & st.IndexIDX.ToInvStr).WriteFileDefault(fp)
+                FileHelp.Copy(st.Path.DirAndBase & ".sub", fp.DirAndBase & ".sub")
             End If
 
-            g.ShellExecute(Package.BDSup2SubPP.Path, """" + fp + """")
+            g.ShellExecute(Package.BDSup2SubPP.Path, """" & fp & """")
         Catch ex As Exception
             g.ShowException(ex)
         End Try
@@ -1371,9 +1385,9 @@ Public Class MuxerForm
             Dim fp = st.Path
 
             If fp.ExtFull.Equals(".idx") Then
-                fp = p.TempDir + p.TargetFile.Base + "_temp.idx"
-                Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " + st.IndexIDX.ToString).WriteFileDefault(fp)
-                FileHelp.Copy(st.Path.DirAndBase + ".sub", fp.DirAndBase + ".sub")
+                fp = p.TempDir & p.TargetFile.Base & "_temp.idx"
+                Regex.Replace(st.Path.ReadAllText, "langidx: \d+", "langidx: " & st.IndexIDX.ToInvStr).WriteFileDefault(fp)
+                FileHelp.Copy(st.Path.DirAndBase & ".sub", fp.DirAndBase & ".sub")
             End If
 
             g.ShellExecute(Package.SubtitleEdit.Path, fp.Escape)
@@ -1403,17 +1417,9 @@ Public Class MuxerForm
         End If
     End Sub
 
-    Function CanMoveUp(dgv As DataGridView) As Boolean
-        Return dgv.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0 AndAlso dgv.CurrentCellAddress.Y > 0
-    End Function
-
-    Function CanMoveDown(dgv As DataGridView) As Boolean
-        Return dgv.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0 AndAlso dgv.CurrentCellAddress.Y < dgv.Rows.Count - 1
-    End Function
-
-    Sub MoveSelectionUp(Of T)(dgv As DataGridView, ByRef fbl As FastBindingList(Of T))
-        If CanMoveUp(dgv) Then
-            Dim pos = dgv.CurrentCellAddress.Y
+    Sub MoveSelectionUp(Of T)(dgv As DataGridView, fbl As FastBindingList(Of T))
+        Dim pos = dgv.CurrentCellAddress.Y
+        If pos > 0 AndAlso dgv.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0 Then 'If CanMoveUp(dgv) Then
             'fbl.RaiseListChangedEvents = False
             Dim current = fbl(pos)
             fbl.RemoveAt(pos)
@@ -1425,9 +1431,9 @@ Public Class MuxerForm
         End If
     End Sub
 
-    Sub MoveSelectionDown(Of T)(dgv As DataGridView, ByRef fbl As FastBindingList(Of T))
-        If CanMoveDown(dgv) Then
-            Dim pos = dgv.CurrentCellAddress.Y
+    Sub MoveSelectionDown(Of T)(dgv As DataGridView, fbl As FastBindingList(Of T))
+        Dim pos = dgv.CurrentCellAddress.Y
+        If pos < dgv.Rows.Count - 1 AndAlso dgv.Rows.GetRowCount(DataGridViewElementStates.Selected) > 0 Then 'If CanMoveDown(dgv) Then
             'fbl.RaiseListChangedEvents = False
             Dim current = fbl(pos)
             fbl.RemoveAt(pos)

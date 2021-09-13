@@ -13,6 +13,7 @@ Imports StaxRip.UI
 Imports VB6 = Microsoft.VisualBasic
 Imports Microsoft.Win32
 Imports KGySoft.Collections
+Imports KGySoft.CoreLibraries
 
 Public Class Folder
     Shared ReadOnly Property Desktop As String
@@ -95,7 +96,7 @@ Public Class Folder
 
     Shared ReadOnly Property Apps As String
         Get
-            Return Folder.Startup + "Apps\"
+            Return Folder.Startup & "Apps\"
         End Get
     End Property
 
@@ -103,9 +104,9 @@ Public Class Folder
         Get
             If FrameServerHelp.IsPortable Then
                 If p.Script.Engine = ScriptEngine.AviSynth Then
-                    Return Folder.Settings + "Plugins\AviSynth\"
+                    Return Folder.Settings & "Plugins\AviSynth\"
                 Else
-                    Return Folder.Settings + "Plugins\VapourSynth\"
+                    Return Folder.Settings & "Plugins\VapourSynth\"
                 End If
             Else
                 If p.Script.Engine = ScriptEngine.AviSynth Then
@@ -119,7 +120,7 @@ Public Class Folder
 
     Shared ReadOnly Property Scripts As String
         Get
-            Return Settings + "Scripts\"
+            Return Settings & "Scripts\"
         End Get
     End Property
 
@@ -281,31 +282,23 @@ End Class
 
 Public Class SafeSerialization
     Shared Sub Serialize(o As Object, path As String)
-        Dim list As New List(Of Object)
+        Dim fieldInfos As FieldInfo() = o.GetType.GetFields(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
+        Dim list As New List(Of Object)(fieldInfos.Length - 1) 'or w/o -1 ?
 
-        For Each i In o.GetType.GetFields(
-            BindingFlags.Public Or
-            BindingFlags.NonPublic Or
-            BindingFlags.Instance)
+        For n = 0 To fieldInfos.Length - 1
+            Dim i = fieldInfos(n)
 
             If Not i.IsNotSerialized Then
-                Dim mc As New FieldContainer
-                mc.Name = i.Name
-
                 Dim value = i.GetValue(o)
 
-                If Not value Is Nothing Then
-                    If IsSimpleType(i.FieldType) Then
-                        mc.Value = value
-                    Else
-                        mc.Value = GetObjectData(value)
-                    End If
-
+                If value IsNot Nothing Then
+                    Dim mc As New FieldContainer With {.Name = i.Name, .Value = If(IsSimpleType(i.FieldType), value, GetObjectData(value))}
                     list.Add(mc)
                 End If
             End If
-        Next
+        Next n
 
+        'list.Capacity = list.Count 'Needed?, seems not size diff in prof save
         Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
 
         Try
@@ -321,23 +314,29 @@ Public Class SafeSerialization
 
         If File.Exists(path) Then
             Dim list As List(Of Object)
-            Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-
             Using fs As New FileStream(path, FileMode.Open)
+                Dim bf As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
                 list = DirectCast(bf.Deserialize(fs), List(Of Object))
             End Using
 
-            For Each i As FieldContainer In list
-                For Each iFieldInfo In instance.GetType.GetFields(
-                    BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
+            Dim fiGF As FieldInfo() = instance.GetType.GetFields(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
+            For f = 0 To fiGF.Length - 1
+                Dim iFieldInfo = fiGF(f)
+                Dim iFiName As String = iFieldInfo.Name
+                Dim iFiNLn As Integer = iFiName.Length 'Is This Len Opt. really Needed, not meas.gain ???
+                Dim nEqWUpd As Boolean = iFiNLn <> 11 OrElse Not String.Equals(iFiName, "_WasUpdated")
+                Dim iFiNS As Boolean = Not iFieldInfo.IsNotSerialized
 
-                    If Not iFieldInfo.IsNotSerialized Then
-                        If i.Name.Equals(iFieldInfo.Name) Then
+                For n = 0 To list.Count - 1
+                    If iFiNS Then
+                        Dim i = DirectCast(list(n), FieldContainer)
+                        If iFiNLn = i.Name.Length AndAlso String.Equals(i.Name, iFiName) Then
                             Try
-                                If i.Value.GetType Is GetType(Byte()) Then
-                                    iFieldInfo.SetValue(instance, GetObjectInstance(DirectCast(i.Value, Byte())))
+                                Dim bt = TryCast(i.Value, Byte())
+                                If bt IsNot Nothing Then
+                                    iFieldInfo.SetValue(instance, GetObjectInstance(bt))
                                 Else
-                                    If Not iFieldInfo.Name.Equals("_WasUpdated") Then
+                                    If nEqWUpd Then
                                         iFieldInfo.SetValue(instance, i.Value)
                                     End If
                                 End If
@@ -346,8 +345,27 @@ Public Class SafeSerialization
                             End Try
                         End If
                     End If
-                Next
-            Next
+                Next n
+            Next f
+            'For Each i As FieldContainer In list 'Orginal !!! - Not much speed lost! ~5%,1ms
+            '    For Each iFieldInfo In instance.GetType.GetFields(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
+            '        If Not iFieldInfo.IsNotSerialized Then
+            '            If String.Equals(i.Name, iFieldInfo.Name) Then
+            '                Try
+            '                    If i.Value.GetType Is GetType(Byte()) Then
+            '                        iFieldInfo.SetValue(instance, GetObjectInstance(DirectCast(i.Value, Byte())))
+            '                    Else
+            '                        If Not String.Equals(iFieldInfo.Name, "_WasUpdated") Then
+            '                            iFieldInfo.SetValue(instance, i.Value)
+            '                        End If
+            '                    End If
+            '                Catch ex As Exception
+            '                    safeInstance.WasUpdated = True
+            '                End Try
+            '            End If
+            '        End If
+            '    Next iFieldInfo
+            'Next i
         End If
 
         safeInstance.Init()
@@ -396,9 +414,9 @@ Public Class SafeSerialization
     End Class
 
     Shared Function Check(iface As ISafeSerialization, obj As Object, key As String, version As Integer) As Boolean
-
-        If obj Is Nothing OrElse Not iface.Versions.ContainsKey(key) OrElse iface.Versions(key) <> version Then
-
+        'If obj Is Nothing OrElse Not iface.Versions.ContainsKey(key) OrElse iface.Versions(key) <> version Then
+        Dim ifv As Integer
+        If obj Is Nothing OrElse Not iface.Versions.TryGetValue(key, ifv) OrElse ifv <> version Then
             iface.Versions(key) = version
             iface.WasUpdated = True
             Return True
@@ -539,16 +557,14 @@ table {
 
     Shared Function ConvertChars(value As String) As String
         value = value.FixBreak
-        value = value.Replace("<", "&lt;")
-        value = value.Replace(">", "&gt;")
-        value = value.Replace(BR, "<br>")
+        value = value.Replace("<", "&lt;").Replace(">", "&gt;").Replace(BR, "<br>")
 
         Return value
     End Function
 
     Shared Function ConvertMarkup(value As String, stripOnly As Boolean) As String
         If stripOnly Then
-            If value.Contains("[") Then
+            If value.IndexOf("["c) >= 0 Then
                 Dim re As New Regex("\[(.+?) (.+?)\]")
 
                 If re.IsMatch(value) Then
@@ -564,7 +580,7 @@ table {
                 End If
             End If
         Else
-            If value.Contains("[") Then
+            If value.IndexOf("["c) >= 0 Then
                 Dim re As New Regex("\[(.+?) (.+?)\]")
                 Dim m = re.Match(value)
 
@@ -587,7 +603,7 @@ table {
     End Function
 
     Shared Function MustConvert(value As String) As Boolean
-        If value.NotNullOrEmptyS AndAlso (value.Contains("[") OrElse value.Contains("'''")) Then
+        If value.NotNullOrEmptyS AndAlso (value.IndexOf("["c) >= 0 OrElse value.Contains("'''")) Then '=value.Contains("[")
             Return True
         End If
     End Function
@@ -769,7 +785,7 @@ Public Class ReflectionSettingBag(Of T)
         Set(value As T)
             Dim f = Obj.GetType.GetField(Name)
 
-            If Not f Is Nothing Then
+            If f IsNot Nothing Then
                 f.SetValue(Obj, value)
             Else
                 Obj.GetType.GetProperty(Name).SetValue(Obj, value, Nothing)
@@ -827,51 +843,37 @@ Public Class SkipException
     Inherits ApplicationException
 End Class
 
-Public Class CLIArg
-    Sub New(value As String)
-        Me.Value = value
-    End Sub
-
-    Property Value As String
-
-    Shared Function GetArgs(a As String()) As List(Of CLIArg)
-        Dim ret As New List(Of CLIArg)
-        Dim args As New List(Of String)(a)
-        args.RemoveAt(0)
-
-        For Each i As String In args
-            ret.Add(New CLIArg(i))
-        Next
-
-        Return ret
-    End Function
-
-    Function IsMatch(ParamArray values As String()) As Boolean
-        For Each i As String In values
-            i = i.ToUpperInvariant
-            Dim val As String = Value.ToUpperInvariant
-
-            If "-" + i = val OrElse "/" + i = val OrElse
-                val.ToUpperInvariant.StartsWith("-" + i + ":", StringComparison.Ordinal) OrElse
-                val.ToUpperInvariant.StartsWith("/" + i + ":", StringComparison.Ordinal) Then
-
-                Return True
-            End If
-        Next
-    End Function
-
-    Function GetInt() As Integer
-        Return CInt(Value.Right(":"))
-    End Function
-
-    Function GetString() As String
-        Return Value.Right(":").Trim(""""c)
-    End Function
-
-    Function IsFile() As Boolean
-        Return File.Exists(Value)
-    End Function
-End Class
+'Public Class CLIArg
+'    Sub New(value As String)
+'        Me.Value = value
+'    End Sub
+'    Property Value As String
+'    'Shared Function GetArgs(args As String()) As CLIArg()
+'    '    Dim ret(args.Length - 2) As CLIArg
+'    '    For a = 1 To args.Length - 1
+'    '        ret(a) = New CLIArg(args(a))
+'    '    Next a
+'    '    Return ret
+'    'End Function
+'    'Function IsMatch(ParamArray values As String()) As Boolean
+'    '    For Each st As String In values
+'    '        Dim val As String = Value
+'    '        If String.Equals("-" & st, val, StringComparison.OrdinalIgnoreCase) OrElse String.Equals("/" & st, val, StringComparison.OrdinalIgnoreCase) OrElse
+'    '            val.StartsWith("-" & st & ":", StringComparison.OrdinalIgnoreCase) OrElse val.StartsWith("/" & st & ":", StringComparison.OrdinalIgnoreCase) Then
+'    '            Return True
+'    '        End If
+'    '    Next
+'    'End Function
+'    'Function GetInt() As Integer
+'    '    Return CInt(Value.Right(":"))
+'    'End Function
+'    'Function GetString() As String
+'    '    Return Value.Right(":").Trim(""""c)
+'    'End Function
+'    Function IsFile() As Boolean
+'        Return File.Exists(Value)
+'    End Function
+'End Class
 
 <Serializable()>
 Public Class StringPairList
@@ -880,8 +882,13 @@ Public Class StringPairList
     Sub New()
     End Sub
 
+    Sub New(capacity As Integer)
+        MyBase.New(capacity)
+    End Sub
+
     Sub New(list As IEnumerable(Of StringPair))
-        AddRange(list)
+        MyBase.New(list)
+        'AddRange(list)
     End Sub
 
     Overloads Sub Add(name As String, text As String)
@@ -891,34 +898,39 @@ End Class
 
 <Serializable()>
 Public Class CommandParameters
-    Sub New(methodName As String, ParamArray params As Object())
+    Sub New(methodName As String, params As List(Of Object))
         Me.MethodName = methodName
-        Parameters = New List(Of Object)(params)
+        Parameters = params 'New List(Of Object)(params)
     End Sub
 
     Property MethodName As String
     Property Parameters As List(Of Object)
+
 End Class
 
 Public Class Command
     Implements IComparable(Of Command)
 
     Property Attribute As CommandAttribute
+    Property CmdObject As Object
     Property MethodInfo As MethodInfo
 
+    Sub New(methodInf As MethodInfo, cAttribute As CommandAttribute, cObject As Object)
+        Attribute = cAttribute
+        CmdObject = cObject
+        MethodInfo = methodInf
+    End Sub
+
     Function FixParameters(params As List(Of Object)) As List(Of Object)
-        Dim checkedParams As New List(Of Object)(GetDefaultParameters)
-        If checkedParams.Count > 0 Then
+        Dim checkedParams = GetDefaultParameters() 'As New List(Of Object)(GetDefaultParameters)
 
+        If checkedParams.Count > 0 AndAlso params.Count > 0 Then
             Dim copiedParams As New CircularList(Of Object)(params)
-            For i = 0 To checkedParams.Count - 1
-                If copiedParams.Count > 0 Then
-                    If Not copiedParams(0) Is Nothing AndAlso
-                        checkedParams(i).GetType Is copiedParams(0).GetType Then
 
-                        checkedParams(i) = copiedParams(0)
-                        copiedParams.RemoveAt(0)
-                    End If
+            For i = 0 To checkedParams.Count - 1
+                If copiedParams.Count > 0 AndAlso copiedParams(0) IsNot Nothing AndAlso checkedParams(i).GetType Is copiedParams(0).GetType Then
+                    checkedParams(i) = copiedParams(0)
+                    copiedParams.RemoveFirst()
                 End If
             Next i
         End If
@@ -927,39 +939,41 @@ Public Class Command
     End Function
 
     Function GetDefaultParameters() As List(Of Object)
-        Dim l As New List(Of Object)
+        Dim gParIA As ParameterInfo() = MethodInfo.GetParameters
+        If gParIA.Length > 0 Then
+            Dim l As New List(Of Object)(gParIA.Length) 'ToDo: Check Lenght  !!!!
+            For Each iParameterInfo In gParIA
+                Dim parT As Type = iParameterInfo.ParameterType
+                Dim tStr As Boolean = parT Is GetType(String)
+                Dim tVal As Boolean = parT.IsValueType
 
-        For Each iParameterInfo In MethodInfo.GetParameters
-            If Not iParameterInfo.ParameterType.IsValueType AndAlso
-                Not iParameterInfo.ParameterType Is GetType(String) Then
-
-                Throw New Exception("Methods must have string or value type params.")
-            End If
-
-            Dim a = DirectCast(iParameterInfo.GetCustomAttributes(GetType(DefaultValueAttribute), False), DefaultValueAttribute())
-
-            If a.Length > 0 Then
-                l.Add(a(0).Value)
-            Else
-                If iParameterInfo.ParameterType Is GetType(String) Then
-                    l.Add("")
-                ElseIf iParameterInfo.ParameterType.IsValueType Then
-                    l.Add(Activator.CreateInstance(iParameterInfo.ParameterType))
+                If Not tVal AndAlso Not tStr Then
+                    Throw New Exception("Methods must have string or value type params!:" & MethodInfo.Name & iParameterInfo.Name & parT.ToString)
                 End If
-            End If
-        Next
 
-        Return l
+                Dim a = DirectCast(iParameterInfo.GetCustomAttributes(GetType(DefaultValueAttribute), False), DefaultValueAttribute())
+
+                If a.Length > 0 Then
+                    l.Add(a(0).Value)
+                Else
+                    If tStr Then
+                        l.Add(String.Empty)
+                    ElseIf tVal Then
+                        l.Add(Activator.CreateInstance(parT))
+                    End If
+                End If
+            Next
+
+            Return l
+        End If
+        Return New List(Of Object)
     End Function
 
     Overrides Function ToString() As String
         Return MethodInfo.Name
     End Function
 
-    Property [Object] As Object
-
     Function CompareTo(other As Command) As Integer Implements System.IComparable(Of Command).CompareTo
-        'Return MethodInfo.Name.CompareTo(other.MethodInfo.Name)
         Return String.CompareOrdinal(MethodInfo.Name, other.MethodInfo.Name)
     End Function
 
@@ -1017,13 +1031,13 @@ Public Class Command
         If parameters.Count > 0 Then
             Dim paramList As New List(Of String)
             Dim params = MethodInfo.GetParameters
+            Dim fixParL As List(Of Object) = FixParameters(parameters)
 
             For iParams = 0 To params.Length - 1
-                Dim paramInfo As ParameterInfo = params(iParams)
-                Dim attributs = paramInfo.GetCustomAttributes(GetType(DispNameAttribute), False)
+                Dim attributs = params(iParams).GetCustomAttributes(GetType(DispNameAttribute), False)
 
                 If attributs.Length > 0 Then
-                    paramList.Add("Parameter " + DirectCast(attributs(0), DispNameAttribute).DisplayName + ": " + FixParameters(parameters)(iParams).ToString)
+                    paramList.Add("Parameter " & DirectCast(attributs(0), DispNameAttribute).DisplayName & ": " & fixParL.Item(iParams).ToString)
                 End If
             Next
 
@@ -1053,18 +1067,21 @@ Public Class CommandManager
     '    Next
     'End Function
     Function GetCommand(name As String) As Command
-        If name.NotNullOrEmptyS Then
+        If name?.Length > 0 Then
             Dim ret As Command
             If Commands.TryGetValue(name, ret) Then
                 Return ret
             End If
+
+            MsgInfo("Command Not found in Dict !!!", $"{name} CmdsDicCnt:{Commands.Count}") 'Debug, IF hit try change Command Dict Comp to OrdinalIgnoreCase or Fix MethodName !!!
+
+            For Each i In Commands.Keys
+                If String.Equals(i, name, StringComparison.OrdinalIgnoreCase) Then
+                    Return Commands(i)
+                End If
+            Next i
         End If
 
-        For Each i In Commands.Keys
-            If i.IsEqualIgnoreCase(name) Then
-                Return Commands(i)
-            End If
-        Next
         Return Nothing
     End Function
 
@@ -1073,72 +1090,60 @@ Public Class CommandManager
             Dim attributes = DirectCast(i.GetCustomAttributes(GetType(CommandAttribute), False), CommandAttribute())
 
             If attributes.Length > 0 Then
-                Dim cmd As New Command
-                cmd.MethodInfo = i
-                cmd.Attribute = attributes(0)
-                cmd.Object = obj
-                AddCommand(cmd)
+                AddCommand(New Command(i, attributes(0), obj))
             End If
         Next
     End Sub
 
     Sub AddCommand(command As Command)
         If Commands.ContainsKey(command.MethodInfo.Name) Then
-            MsgWarn("Command '" + command.MethodInfo.Name + "' already exists.")
+            MsgWarn("Command '" & command.MethodInfo.Name & "' already exists.")
         Else
             Commands(command.MethodInfo.Name) = command
         End If
     End Sub
 
     Sub Process(cp As CommandParameters)
-        If Not cp Is Nothing Then
+        If cp IsNot Nothing Then
             Process(cp.MethodName, cp.Parameters)
         End If
     End Sub
 
     Sub Process(name As String, params As List(Of Object))
         Dim cmd As Command = GetCommand(name)
-        'If HasCommand(name) Then
         If cmd IsNot Nothing Then
             Process(cmd, params)
         End If
     End Sub
 
-    Sub Process(name As String, ParamArray params As Object())
-        Dim cmd As Command = GetCommand(name)
-        If cmd IsNot Nothing Then
-            Process(cmd, params.ToList)
-        End If
-    End Sub
-
     Sub Process(command As Command, params As List(Of Object))
         Try
-            command.MethodInfo.Invoke(command.Object, command.FixParameters(params).ToArray)
+            command.MethodInfo.Invoke(command.CmdObject, command.FixParameters(params).ToArray)
         Catch ex As TargetParameterCountException
-            MsgError("Parameter mismatch, for the command :" + command.MethodInfo.Name)
+            MsgError("Parameter mismatch, for the command :" & command.MethodInfo.Name)
         Catch ex As Exception
-            If Not TypeOf ex.InnerException Is AbortException Then
+            If TypeOf ex.InnerException IsNot AbortException Then
                 g.ShowException(ex)
             End If
         End Try
     End Sub
 
     Function ProcessCommandLineArgument(value As String) As Boolean
-        For Each i As Command In Commands.Values
-            Dim switch = i.MethodInfo.Name.Replace(" ", "")
-            switch = switch.ToUpperInvariant
-            Dim test = value.ToUpperInvariant
+        Dim valR As String = value.Right(":")
 
-            If test.Equals("-" & switch) Then
+        For Each i As Command In Commands.Values
+            Dim switch = "-" & i.MethodInfo.Name.Replace(" ", "")
+
+            If String.Equals(value, switch, StringComparison.OrdinalIgnoreCase) Then
                 Process(i.MethodInfo.Name, New List(Of Object))
                 Return True
             Else
-                If test.StartsWith("-" + switch + ":", StringComparison.Ordinal) Then
-                    Dim mc = Regex.Matches(value.Right(":"), """(?<a>.+?)""|(?<a>[^,]+)")
-                    Dim args As New List(Of Object)
+                If value.StartsWith(switch & ":", StringComparison.OrdinalIgnoreCase) Then
+                    Dim mc = Regex.Matches(valR, """(?<a>.+?)""|(?<a>[^,]+)")
+                    Dim args As New List(Of Object)(mc.Count)
 
                     For Each match As Match In mc
-                        args.Add(match.Groups("a").Value)
+                        args.Add(match.Groups.Item("a").Value)
                     Next
 
                     Dim params = i.MethodInfo.GetParameters
@@ -1146,6 +1151,8 @@ Public Class CommandManager
                     For x = 0 To params.Length - 1
                         If args.Count > x Then
                             args(x) = TypeDescriptor.GetConverter(params(x).ParameterType).ConvertFrom(args(x))
+                        Else
+                            Exit For
                         End If
                     Next
 
@@ -1160,7 +1167,7 @@ Public Class CommandManager
         Dim l As New StringPairList
 
         For Each i As Command In Commands.Values
-            If Not i.Attribute.Description Is Nothing Then
+            If i.Attribute.Description IsNot Nothing Then
                 l.Add(New StringPair(i.MethodInfo.Name, i.Attribute.Description))
             End If
         Next
@@ -1220,14 +1227,14 @@ Public Module MainModule
     Private ShownMessages As String
 
     Sub MsgWarn(text As String, Optional content As String = Nothing, Optional onlyOnce As Boolean = False, Optional dWidth As UInteger = 0)
-        If onlyOnce AndAlso ShownMessages?.Contains(text + content) Then
+        If onlyOnce AndAlso ShownMessages?.Contains(text & content) Then
             Exit Sub
         End If
 
         Msg(text, content, MsgIcon.Warning, TaskDialogButtons.Ok, dWidth:=dWidth)
 
         If onlyOnce Then
-            ShownMessages += text + content
+            ShownMessages &= text & content
         End If
     End Sub
 
@@ -1236,7 +1243,6 @@ Public Module MainModule
     End Function
 
     Function MsgQuestion(text As String, Optional buttons As TaskDialogButtons = TaskDialogButtons.OkCancel, Optional dWidth As UInteger = 0) As DialogResult
-
         Return Msg(text, Nothing, MsgIcon.Question, buttons, dWidth:=dWidth)
     End Function
 

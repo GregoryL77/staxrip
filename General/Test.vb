@@ -35,8 +35,7 @@ Public Class ConsolAppTester
         log &= "implemetation found in StaxRip code" & BR2
         log &= String.Join(BR, implemented) & BR2
         Dim missing = implemented.Where(Function(x) Not documented.Contains(x) AndAlso Not undocumented.Contains(x))
-        Dim unknown = documented.Where(Function(x) Not implemented.Contains(x) AndAlso Not ignore.Contains(x)).ToArray
-        Array.Sort(unknown)
+        Dim unknown = documented.Where(Function(x) Not implemented.Contains(x) AndAlso Not ignore.Contains(x))
         Dim unnecessaryIgnore = ignore.Where(Function(x) implemented.Contains(x))
         log &= "full documentation" & BR
         log &= "------------------" & BR
@@ -53,8 +52,9 @@ Public Class ConsolAppTester
             message &= BR3 & $"removed from {Package.Name}:" & BR2 & String.Join(" ", missing)
         End If
 
-        If unknown.Length > 0 Then
-            message &= BR3 & $"{Package.Name} todo:" & BR2 & String.Join(" ", unknown)
+        If unknown.Any Then
+            'Unk.toArr: Array.Sort(unknown)
+            message &= BR3 & $"{Package.Name} todo:" & BR2 & String.Join(" ", unknown.OrderBy(Function(us) us, StringComparer.OrdinalIgnoreCase))
         End If
 
         Return message

@@ -26,8 +26,7 @@ Namespace UI
         End Function
 
         Overloads Overrides Function GetStandardValues(context As ITypeDescriptorContext) As StandardValuesCollection
-            Return New StandardValuesCollection(CType(context.PropertyDescriptor,
-                GridPropertyDescriptor).GridProperty.DefaultValues)
+            Return New StandardValuesCollection(CType(context.PropertyDescriptor, GridPropertyDescriptor).GridProperty.DefaultValues)
         End Function
 
         Overloads Overrides Function CanConvertFrom(context As ITypeDescriptorContext, sourceType As Type) As Boolean
@@ -39,12 +38,12 @@ Namespace UI
         End Function
 
         Overloads Overrides Function ConvertFrom(context As ITypeDescriptorContext, culture As CultureInfo, value As Object) As Object
-            If TypeOf value Is String Then
+            Dim sourceValue As String = TryCast(value, String)
+            If sourceValue IsNot Nothing Then
                 Dim gp As GridProperty = CType(context.PropertyDescriptor, GridPropertyDescriptor).GridProperty
-                Dim sourceValue As String = DirectCast(value, String)
 
                 For Each i As Object In gp.DefaultValues
-                    If i.ToString = sourceValue Then
+                    If EqualsExS(i.ToString, sourceValue) Then
                         Return i
                     End If
                 Next
@@ -55,7 +54,7 @@ Namespace UI
 
                 Dim tc = TypeDescriptor.GetConverter(gp.Value)
 
-                If Not tc Is Nothing Then
+                If tc IsNot Nothing Then
                     If tc.CanConvertFrom(GetType(String)) Then
                         Return tc.ConvertFrom(sourceValue)
                     End If
@@ -194,11 +193,11 @@ Namespace UI
                     a.Add(New DescriptionAttribute(gp.Description))
                 End If
 
-                If Not gp.TypeEditor Is Nothing Then
+                If gp.TypeEditor IsNot Nothing Then
                     a.Add(New EditorAttribute(gp.TypeEditor, GetType(UITypeEditor)))
                 End If
 
-                If Not gp.TypeConverter Is Nothing Then
+                If gp.TypeConverter IsNot Nothing Then
                     a.Add(New TypeConverterAttribute(gp.TypeConverter))
                 Else
                     If gp.Value.GetType Is GetType(Boolean) Then
@@ -227,7 +226,7 @@ Namespace UI
 
         Function GetValue(name As String) As Object
             For Each i As DictionaryEntry In Items
-                If CStr(i.Key) = name Then
+                If EqualsExS(CStr(i.Key), name) Then
                     Return CType(i.Value, GridProperty).Value
                 End If
             Next
@@ -322,8 +321,9 @@ Namespace UI
         End Function
 
         Overloads Overrides Function ConvertFrom(context As ITypeDescriptorContext, culture As CultureInfo, value As Object) As Object
-            If TypeOf value Is String Then
-                If DirectCast(value, String) = Yes Then
+            Dim vStr As String = TryCast(value, String)
+            If vStr IsNot Nothing Then
+                If String.Equals(vStr, Yes) Then
                     Return True
                 Else
                     Return False
@@ -379,32 +379,40 @@ Namespace UI
             For Each i In value.GetType.GetFields
                 If i.GetValue(value).Equals(value) Then
                     For Each i2 In i.GetCustomAttributes(False)
-                        If i2.GetType Is GetType(DispNameAttribute) Then
-                            Return DirectCast(i2, DispNameAttribute).DisplayName
+                        Dim dna = TryCast(i2, DispNameAttribute) 'Test This
+                        'If i2.GetType Is GetType(DispNameAttribute) Then
+                        If dna IsNot Nothing Then
+                            Return dna.DisplayName
                         End If
-                    Next
+                    Next i2
 
                     Return i.Name
                 End If
-            Next
+            Next i
 
             Return "Unknown Type"
         End Function
 
         Shared Function GetNamesForEnum(Of T)() As String()
-            Dim l As New List(Of String)
+            'Dim l As New List(Of String)
+            Dim eGVA As Array = System.Enum.GetValues(GetType(T))
+            Dim retA(eGVA.Length - 1) As String
 
-            For Each i As T In System.Enum.GetValues(GetType(T))
-                l.Add(GetValueForEnum(i))
+            For Each i As T In eGVA
+                Dim inc As Integer
+                'l.Add(GetValueForEnum(i))
+                retA(inc) = GetValueForEnum(i)
+                inc += 1
             Next
 
-            Return l.ToArray
+            Return retA 'l.ToArray
         End Function
 
         Shared Function GetValue(attributes As Object()) As String
             For Each i In attributes
-                If TypeOf i Is DispNameAttribute Then
-                    Return DirectCast(i, DispNameAttribute).DisplayName
+                Dim dnAtt As DispNameAttribute = TryCast(i, DispNameAttribute)
+                If dnAtt IsNot Nothing Then
+                    Return dnAtt.DisplayName
                 End If
             Next
 
@@ -415,8 +423,9 @@ Namespace UI
     Public Class DescriptionAttributeHelp
         Shared Function GetDescription(attributes As Object()) As String
             For Each i In attributes
-                If TypeOf i Is DescriptionAttribute Then
-                    Return DirectCast(i, DescriptionAttribute).Description
+                Dim dsAtt As DescriptionAttribute = TryCast(i, DescriptionAttribute)
+                If dsAtt IsNot Nothing Then
+                    Return dsAtt.Description
                 End If
             Next
 
@@ -427,8 +436,9 @@ Namespace UI
     Public Class EditorAttributeHelp
         Shared Function GetEditor(attributes As Object()) As Type
             For Each i In attributes
-                If TypeOf i Is EditorAttribute Then
-                    Return Type.GetType(DirectCast(i, EditorAttribute).EditorTypeName)
+                Dim eAtt As EditorAttribute = TryCast(i, EditorAttribute)
+                If eAtt IsNot Nothing Then
+                    Return Type.GetType(eAtt.EditorTypeName)
                 End If
             Next
 

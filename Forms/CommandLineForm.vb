@@ -9,31 +9,31 @@ Imports StaxRip.UI
 
 Public Class CommandLineForm
     Private Const RTBFormatFlags As TextFormatFlags = TextFormatFlags.WordBreak Or TextFormatFlags.TextBoxControl Or TextFormatFlags.NoPrefix Or TextFormatFlags.NoPadding
-    Private Params As CommandLineParams
+    Private ReadOnly Params As CommandLineParams
     Private SearchIndex As Integer
     Private Items As List(Of Item)
     Private HighlightedControl As Control
     Private ComboBoxUpdated As Boolean
     Private IsHandleCr As Boolean
     Private RTBCmdFont As Font
-    Private RTBWidth As Integer
+    Private ReadOnly RTBWidth As Integer
     Private RTBLastH As Integer
     Private RTBLastTxt As String
-    Private SLock As New Object
-    Private NewRun As Integer
     Private ScrollOn As Boolean
+    Private ReadOnly SLock As New Object
+    Private NewRun As Integer
 
     Property HTMLHelp As String
 
     Event BeforeHelp()
 
-    Private sssw As Stopwatch = Stopwatch.StartNew 'debug
-    Private ttt As New StringBuilder(256) 'debug
+    Private Ssssw As Stopwatch = Stopwatch.StartNew 'debug
+    Private Tttt As New StringBuilder(288) 'debug
 
     Sub New(params As CommandLineParams)
 
-        WarmUpCpu() 'DEBUG
-        sssw.Restart()
+        'WarmUpCpu() 'DEBUG
+        Ssssw.Restart()
 
         Dim ckT = Task.Run(Function()
                                Dim parItm As List(Of CommandLineParam) = params.Items
@@ -55,15 +55,14 @@ Public Class CommandLineForm
         Me.PanelBn.SuspendLayout()
         Me.SuspendLayout()
         Dim sfh = If(s.UIScaleFactor = 1, 16, New Font("Segoe UI", 9 * s.UIScaleFactor).Height)
-        Me.SimpleUI.Size = New Size(sfh * 50, sfh * 30) '=800x480[fh16]Was: (44, 32) Org:(40, 26)
+        Me.SimpleUI.Size = New Size(sfh * 50, sfh * 30) '=800x480[fh16]Was: (44, 32) Org:(40, 26) 'ToDo: make it 52,32???
         RTBWidth = sfh * 50 'FW=828,RtbW=800
         RTBCmdFont = rtbCommandLine.Font 'New Font("Consolas", 10 * s.UIScaleFactor)
-        Me.Params = params
 
-        sssw.Stop()
+        Ssssw.Stop()
         MeTextOld = Text 'Debug
-        ttt.Append(ckT.IsCompleted).Append(sssw.ElapsedTicks / SWFreq).Append("msNew1| ")
-        sssw.Restart()
+        Tttt.Append(ckT.IsCompleted).Append(Ssssw.ElapsedTicks / SWFreq).Append("msNew1| ")
+        Ssssw.Restart()
 
         Dim rtbT = Task.Run(Sub()
                                 Dim rtbTxt As String = params.GetCommandLine(False, False)
@@ -72,19 +71,21 @@ Public Class CommandLineForm
                                     RTBLastH = TextRenderer.MeasureText(rtbTxt, RTBCmdFont, New Size(RTBWidth + 44, 100000), RTBFormatFlags).Height + 2
                                 End If
                             End Sub)
+        Me.Params = params
         InitUI()
         params.RaiseValueChanged(Nothing) 'Debug 'Not Thread Safe ???
         SelectLastPage()
         Try
             Dim pIc As Integer = ckT.Result
-            Me.Text = params.Title & " (" & pIc.ToInvariantString & " options)"
+            Me.Text = params.Title & " (" & pIc.ToInvStr & " options)"
         Catch ex As AggregateException
             Throw New Exception(ex.InnerException.ToString, ex.InnerException)
         End Try
 
-        sssw.Stop()
-        ttt.Append(sssw.ElapsedTicks / SWFreq).Append("msIUIRaiseValCHSelPg| RtbT:")
-        sssw.Restart()
+        Ssssw.Stop()
+        Tttt.Append(Ssssw.ElapsedTicks / SWFreq).Append("msIUIRaiseValCHSelPg| RtbT:")
+        Dim _unusedT = rtbT.ContinueWith(Sub() If rtbT.Exception IsNot Nothing Then g.ShowException(rtbT.Exception, "RTBTask error:")) 'Debug
+        Ssssw.Restart()
 
         Me.cbGoTo.Sorted = False 'true 
         Me.cbGoTo.Select()
@@ -101,37 +102,38 @@ Public Class CommandLineForm
           New ActionMenuItem("Help about " & params.GetPackage.Name, Sub() params.GetPackage.ShowHelp(), ImageHelp.GetImageC(Symbol.Help))})
         cms.ResumeLayout(False)
 
-        If RTBLastH < 16 Then Console.Beep(4000, 900) 'debug
         'rtbT.Wait()
 
         If RTBLastTxt?.Length > 0 Then
             rtbCommandLine.Text = RTBLastTxt
         Else
+            Console.Beep(7000, 900)
             RTBLastTxt = ""
         End If
 
-        sssw.Stop()
-        ttt.Append(rtbT.IsCompleted).Append(sssw.ElapsedTicks / SWFreq).Append("msEndNew| ")
-        sssw.Restart()
+        Ssssw.Stop()
+        Tttt.Append(rtbT.IsCompleted).Append(Ssssw.ElapsedTicks / SWFreq).Append("msEndNew| ")
+        If Not rtbT.IsCompleted Then Console.Beep(2000, 900) 'debug
+        Ssssw.Restart()
     End Sub
 
     Protected Overrides Sub OnLoad(args As EventArgs)
-        sssw.Stop()
-        ttt.Append(RTBLastH > 15).Append(sssw.ElapsedTicks / SWFreq).Append("msOnload1| ")
-        sssw.Restart()
+        Ssssw.Stop()
+        Tttt.Append(RTBLastH > 15).Append(Ssssw.ElapsedTicks / SWFreq).Append("msOnload1| ")
+        Ssssw.Restart()
 
         MyBase.OnLoad(args)
 
-        sssw.Stop()
-        ttt.Append(sssw.ElapsedTicks / SWFreq).Append("msOnLoadMyBase2| ")
-        sssw.Restart()
+        Ssssw.Stop()
+        Tttt.Append(Ssssw.ElapsedTicks / SWFreq).Append("msOnLoadMyBase2| ")
+        Ssssw.Restart()
 
         If RTBLastH = rtbCommandLine.Height Then RTBLastH += 1
         If RTBLastH > 7 Then '16-RTB fh
-            If RTBLastH > ScreenResPrim.Height * 0.4 Then
+            If RTBLastH > ScreenResWAPrim.Height * 0.4 Then
                 ScrollOn = True
                 rtbCommandLine.ScrollBars = RichTextBoxScrollBars.Vertical
-                RTBLastH = CInt(ScreenResPrim.Height * 0.4)
+                RTBLastH = CInt(ScreenResWAPrim.Height * 0.4)
             End If
             rtbCommandLine.Height = RTBLastH
         Else
@@ -143,18 +145,18 @@ Public Class CommandLineForm
         Me.tlpMain.ResumeLayout(False)
         Me.ResumeLayout()
 
-        sssw.Stop()
-        ttt.Append(sssw.ElapsedTicks / SWFreq).Append("msOnLoadResumeLay3| ")
-        sssw.Restart()
+        Ssssw.Stop()
+        Tttt.Append(Ssssw.ElapsedTicks / SWFreq).Append("msOnLoadResumeLay3| ")
+        Ssssw.Restart()
 
         Dim loadT = Task.Run(Sub()
                                  IsHandleCr = True
                                  Thread.Sleep(75) '61-80
                                  'Application.DoEvents()
                                  If IsHandleCr Then BeginInvoke(Sub()
-                                                                    sssw.Stop()
-                                                                    ttt.Append(RTBLastH > 15).Append(sssw.ElapsedTicks / SWFreq).Append("msOnloadBeginInvoke1| ")
-                                                                    sssw.Restart()
+                                                                    Ssssw.Stop()
+                                                                    Tttt.Append(RTBLastH > 15).Append(Ssssw.ElapsedTicks / SWFreq).Append("msOnloadBeginInvoke1| ")
+                                                                    Ssssw.Restart()
                                                                     'rtbCommandLine.Refresh()
                                                                     'Refresh()
                                                                     Application.DoEvents()
@@ -163,16 +165,19 @@ Public Class CommandLineForm
                                                                     UpdateSearchComboBox()
                                                                     AddHandler cbGoTo.Enter, AddressOf cbGoTo_DropDown
                                                                     AddHandler Params.ValueChanged, AddressOf ValueChanged
-                                                                    sssw.Stop()
-                                                                    ttt.Append(sssw.ElapsedTicks / SWFreq).Append("msOnloadBeginInvoke2SendCueUpdSerCombo| ")
+                                                                    Ssssw.Stop()
+                                                                    Tttt.Append(Ssssw.ElapsedTicks / SWFreq).Append("msOnloadBeginInvoke2SendCueUpdSerCombo| ")
                                                                     ' MsgInfo("cmdNewTimes:", ttt.ToString, 400)
-                                                                    Log.Write("cmdNewTimes:", ttt.ToString)
-                                                                    ttt.Clear()
-                                                                    ttt = Nothing
-                                                                    sssw = Nothing
+                                                                    Log.Write("cmdNewTimes:", Tttt.ToString)
+                                                                    Tttt.Clear()
+                                                                    Tttt = Nothing
+                                                                    Ssssw = Nothing
+                                                                    Runtime.GCSettings.LargeObjectHeapCompactionMode = Runtime.GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
+                                                                    GC.Collect(2, GCCollectionMode.Forced, True, True)
+                                                                    Runtime.GCSettings.LargeObjectHeapCompactionMode = Runtime.GCLargeObjectHeapCompactionMode.CompactOnce
                                                                 End Sub)
                              End Sub)
-        ' Dim loadTW = loadT.ContinueWith(Sub() If loadT.Exception IsNot Nothing Then g.ShowException(loadT.Exception)) 'Debug
+        Dim _unusedT = loadT.ContinueWith(Sub() If loadT.Exception IsNot Nothing Then g.ShowException(loadT.Exception, "LoadT error:")) 'Debug
     End Sub
 
     Private MeTextOld As String 'Debug
@@ -231,10 +236,10 @@ Public Class CommandLineForm
                                        Dim lt = RTBLastTxt
                                        If rtbTxt.Length <> lt.Length Then
                                            rtbHeightT = Task.Run(Function() TextRenderer.MeasureText(rtbTxt, RTBCmdFont, New Size(RTBWidth + 44, 100000), RTBFormatFlags).Height + 2)
-                                           selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt, lt))
+                                           selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt.ToCharArray, lt.ToCharArray))
                                            RTBLastTxt = rtbTxt
                                        ElseIf Not String.Equals(lt, rtbTxt) Then
-                                           selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt, lt))
+                                           selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt.ToCharArray, lt.ToCharArray))
                                            RTBLastTxt = rtbTxt
                                        End If
                                    End If
@@ -244,7 +249,7 @@ Public Class CommandLineForm
                                    rtbHeightT?.Wait() 'Or Not Wait Here to UI be more up to date ???
 
                                    Ssw11.Stop()
-                                   Dim Tttt1 As String = selsT?.IsCompleted.ToString & Ssw11.ElapsedTicks / SWFreq
+                                   Dim Tttt1 As String = rtbTxt.Length & selsT?.IsCompleted.ToString & Ssw11.ElapsedTicks / SWFreq
                                    'Console.Beep(7000, 14) 'Debug
 
                                    If NewRun <= 0 AndAlso IsHandleCr Then
@@ -262,7 +267,7 @@ Public Class CommandLineForm
 
                                                                If diff > 8 OrElse diff < -28 Then 'diff > Font.height /2,*1.6
 
-                                                                   If rtbH <= ScreenResPrim.Height * 0.4 Then
+                                                                   If rtbH <= ScreenResWAPrim.Height * 0.4 Then
                                                                        rtbCommandLine.Height = rtbH 'ToDO ADD Scroll ON/OFF ???
                                                                        'Height += rtbH - RTBLastH '???
                                                                        If ScrollOn Then
@@ -272,7 +277,7 @@ Public Class CommandLineForm
                                                                    Else
                                                                        If Not ScrollOn Then
                                                                            ScrollOn = True
-                                                                           rtbCommandLine.Height = CInt(ScreenResPrim.Height * 0.4)
+                                                                           rtbCommandLine.Height = CInt(ScreenResWAPrim.Height * 0.4)
                                                                            rtbCommandLine.ScrollBars = RichTextBoxScrollBars.Vertical 'WordWrap to HorizontalScroll Enable!
                                                                        End If
                                                                    End If
@@ -293,7 +298,7 @@ Public Class CommandLineForm
                                    End If
                                End SyncLock
                            End Sub)
-        'Dim _unusedT = vcT.ContinueWith(Sub() If vcT.Exception IsNot Nothing Then g.ShowException(vcT.Exception)) 'Debug
+        Dim _unusedT = vcT.ContinueWith(Sub() If vcT.Exception IsNot Nothing Then g.ShowException(vcT.Exception)) 'Debug
         'UpdateSearchComboBox()
     End Sub
 
@@ -365,7 +370,7 @@ Public Class CommandLineForm
             End If
 
             If param.Label?.Length > 0 Then
-                SimpleUI.AddLabel(parent, param.Label).MarginTop = FontHeight \ 2
+                SimpleUI.AddLabel(parent, param.Label).MarginTop = 8 'FontHeight \ 2
             End If
 
             If TypeOf param Is BoolParam Then
@@ -531,7 +536,7 @@ Public Class CommandLineForm
         End If
 
         Dim cbGText As String = cbGoTo.Text
-        Dim find = cbGText.ToLowerInvariant
+        Dim find = cbGText.ToLower(InvCult)
 
         If find.Length > 1 Then
             Dim findNoSpace = find.Replace(" ", "")
@@ -540,7 +545,6 @@ Public Class CommandLineForm
             For Each item In Items
                 If item.Param.Visible Then
                     If String.Equals(item.Param.Switch, cbGText) OrElse String.Equals(item.Param.NoSwitch, cbGText) OrElse String.Equals(item.Param.HelpSwitch, cbGText) Then
-
                         matchedItems.Add(item)
                     End If
 
@@ -556,18 +560,15 @@ Public Class CommandLineForm
 
             For Each item In Items
                 If item.Param.Visible Then
-                    If item.Param.Switch.ToLowerEx.Contains(find) OrElse
-                    item.Param.NoSwitch.ToLowerEx.Contains(find) OrElse
-                    item.Param.HelpSwitch.ToLowerEx.Contains(find) OrElse
-                    item.Param.Help.ToLowerEx.Contains(find) OrElse
-                    item.Param.Text.ToLowerEx.Contains(find) Then
+                    If item.Param.Switch.ToLowerEx.Contains(find) OrElse item.Param.NoSwitch.ToLowerEx.Contains(find) OrElse
+                        item.Param.HelpSwitch.ToLowerEx.Contains(find) OrElse item.Param.Help.ToLowerEx.Contains(find) OrElse item.Param.Text.ToLowerEx.Contains(find) Then
 
                         matchedItems.Add(item)
                     End If
 
                     If item.Param.Switches IsNot Nothing Then
                         For Each switch In item.Param.Switches
-                            If switch.ToLowerInvariant.Contains(find) Then
+                            If switch.ToLower(InvCult).Contains(find) Then
                                 matchedItems.Add(item)
                             End If
                         Next
@@ -578,12 +579,12 @@ Public Class CommandLineForm
 
                         If param.Options IsNot Nothing Then
                             For Each value In param.Options
-                                Dim valToL As String = value.ToLowerInvariant
+                                Dim valToL As String = value.ToLower(InvCult)
                                 If valToL.Contains(find) Then
                                     matchedItems.Add(item)
                                 End If
 
-                                Dim valNoSpaceToLow As String = value.Replace(" ", "").ToLowerInvariant
+                                Dim valNoSpaceToLow As String = value.Replace(" ", "").ToLower(InvCult)
                                 If valNoSpaceToLow.Contains(findNoSpace) Then
                                     matchedItems.Add(item)
                                 End If
@@ -600,12 +601,12 @@ Public Class CommandLineForm
 
                         If param.Values IsNot Nothing Then
                             For Each value In param.Values
-                                Dim valToLow As String = value.ToLowerInvariant
+                                Dim valToLow As String = value.ToLower(InvCult)
                                 If valToLow.Contains(find) Then
                                     matchedItems.Add(item)
                                 End If
 
-                                Dim valNoSpaceToLow As String = value.Replace(" ", "").ToLowerInvariant
+                                Dim valNoSpaceToLow As String = value.Replace(" ", "").ToLower(InvCult)
                                 If valNoSpaceToLow.Contains(findNoSpace) Then
                                     matchedItems.Add(item)
                                 End If

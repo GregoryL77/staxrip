@@ -10,7 +10,7 @@ Imports StaxRip.UI
 Public Class CodeEditor
     Public RTBTxtCHeightA As Integer()
     Public RTBTxtMaxCWidth As Integer
-    Public FilterTabSLock As New Object
+    Public ReadOnly FilterTabSLock As New Object
     Public RTBFontHeight As Integer ' = 16
     Property ActiveTable As FilterTable
     Property Engine As ScriptEngine
@@ -28,13 +28,12 @@ Public Class CodeEditor
 
     Sub New(doc As VideoScript)
         InitializeComponent()
-
         Me.SuspendLayout()
         Me.MainFlowLayoutPanel.SuspendLayout()
 
         Engine = doc.Engine
-        MaximumSize = New Size((ScreenResPrim.Width - 18), (ScreenResPrim.Height - 46))
-        MainFlowLayoutPanel.MaximumSize = New Size((ScreenResPrim.Width - 38), (ScreenResPrim.Height - 48 - 68))
+        MaximumSize = New Size((ScreenResWAPrim.Width - 18), (ScreenResWAPrim.Height - 46))
+        MainFlowLayoutPanel.MaximumSize = New Size((ScreenResWAPrim.Width - 38), (ScreenResWAPrim.Height - 48 - 68))
 
         Dim rtbScrFont As New Font("Consolas", 10 * s.UIScaleFactor)
         RTBFontHeight = rtbScrFont.Height
@@ -44,23 +43,27 @@ Public Class CodeEditor
         Dim filters As List(Of VideoFilter) = doc.Filters
         Dim rtHA(filters.Count - 1) As Integer
         For f = 0 To rtHA.Length - 1
-            Dim mts As Size = TextRenderer.MeasureText(If(filters(f).Script Is Nothing, "", filters(f).Script & BR), rtbScrFont, s100k)
-            rtHA(f) = mts.Height
-            If mts.Width > maxTW Then maxTW = mts.Width
+            If filters(f).Script?.Length > 0 Then
+                Dim mts As Size = TextRenderer.MeasureText(filters(f).Script & BR, rtbScrFont, s100k)
+                rtHA(f) = mts.Height
+
+                If mts.Width > maxTW Then maxTW = mts.Width
+            End If
         Next f
 
         maxTW = GetRTBTextWidth(maxTW)
         RTBTxtMaxCWidth = maxTW
         Dim totH As Integer
-        ReDim RTBTxtCHeightA(rtHA.Length - 1)
+        Dim rtbTxtHA(rtHA.Length - 1) As Integer
         For f = 0 To rtHA.Length - 1
             Dim th As Integer = GetRTBTextHeight(rtHA(f))
-            RTBTxtCHeightA(f) = th
+            rtbTxtHA(f) = th
             th += If(rtHA(f) < MaxRTBTextHeight, RTBFontHeight, 0)
             MainFlowLayoutPanel.Controls.Add(New FilterTable(filters(f), Me, rtbScrFont, New Size(maxTW, th)))
 
             totH += Math.Max(th, CInt(RTBFontHeight * 1.05))
         Next f
+        RTBTxtCHeightA = rtbTxtHA
 
         Dim fPSz As New Size(RTBFontHeight * 7 + 6 + maxTW, totH + 4)
         MainFlowLayoutPanel.Size = fPSz
@@ -68,7 +71,6 @@ Public Class CodeEditor
 
         'bnCancel.Location = New Point(112, fPSz.Height + 2) 'OnResize
         'bnOK.Location = New Point(112 + 83 + 16, fPSz.Height + 2)
-
     End Sub
 
     Protected Overrides Sub OnLoad(args As EventArgs)
@@ -83,7 +85,7 @@ Public Class CodeEditor
         End Get
     End Property
     Function GetRTBTextWidth(rtbWidth As Integer) As Integer
-        Dim max = CInt(ScreenResPrim.Width * 0.91) ' Or RTBFontHeight * 108 or MaxPrevSizeMult As Integer = s.PreviewSize \ 100
+        Dim max = CInt(ScreenResWAPrim.Width * 0.91) ' Or RTBFontHeight * 108 or MaxPrevSizeMult As Integer = s.PreviewSize \ 100
         Select Case rtbWidth
             Case Is < 194
                 rtbWidth = 194
@@ -164,7 +166,7 @@ Public Class CodeEditor
         Static sPadW As Integer 'Testings
         Static ScrollON As Boolean
         Dim fpH = MainFlowLayoutPanel.Height
-        If fpH > (ScreenResPrim.Height - 48 - 88) Then '69-Threshold?? 
+        If fpH > (ScreenResWAPrim.Height - 48 - 88) Then '69-Threshold?? 
             If Not ScrollON Then
                 sPadW = 14
                 ScrollON = True
@@ -178,9 +180,9 @@ Public Class CodeEditor
             End If
         End If
 
-        If totH > ScreenResPrim.Height - 48 - 72 Then totH = ScreenResPrim.Height - 48 - 72 '70??
+        If totH > ScreenResWAPrim.Height - 48 - 72 Then totH = ScreenResWAPrim.Height - 48 - 72 '70??
         'Dim fPSz As Size = New Size(RTBFontHeight * 7 + 6 + maxTW + sPadW, totH + 4) 'H+4() 'MainFlowLayoutPanel.PreferredSize 'No FlowP max Implementation
-        Dim fPSz As New Size(Math.Min(ScreenResPrim.Width - 39, RTBFontHeight * 7 + 6 + maxTW + sPadW), Math.Min(ScreenResPrim.Height - 48 - 70, totH + 4)) '  -1W & 2H than ScrRes less than min!!!
+        Dim fPSz As New Size(Math.Min(ScreenResWAPrim.Width - 39, RTBFontHeight * 7 + 6 + maxTW + sPadW), Math.Min(ScreenResWAPrim.Height - 48 - 70, totH + 4)) '  -1W & 2H than ScrRes less than min!!!
         MainFlowLayoutPanel.Size = fPSz
         fpH = fPSz.Height
 
@@ -323,7 +325,8 @@ Public Class CodeEditor
         MainFlowLayoutPanel.SuspendLayout()
         Dim firstTable = DirectCast(MainFlowLayoutPanel.Controls(0), FilterTable)
         firstTable.tbName.Text = "merged"
-        firstTable.rtbScript.Text = String.Join(BR, MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray.SelectF(Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" & arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " & BR)))) & BR2 & BR2
+        firstTable.rtbScript.Text = String.Join(BR, MainFlowLayoutPanel.Controls.OfType(Of FilterTable).ToArray.SelectF(
+                                                Function(arg) If(arg.cbActive.Checked, arg.rtbScript.Text.Trim, "#" & arg.rtbScript.Text.Trim.FixBreak.Replace(BR, "# " & BR)))) & BR2 & BR2
         For x = MainFlowLayoutPanel.Controls.Count - 1 To 1 Step -1
             Dim del = MainFlowLayoutPanel.Controls.Item(x)
             MainFlowLayoutPanel.Controls.RemoveAt(x)
@@ -493,10 +496,10 @@ Public Class CodeEditor
 
             For Each argument In args
                 Dim skip = False
-                Dim arg As String = argument.ToLowerInvariant.Replace(" ", "")
+                Dim arg As String = argument.Replace(" ", "").ToLower(InvCult)
 
                 For Each parameter In parameters.Parameters
-                    If arg.Contains(parameter.Name.ToLowerInvariant.Replace(" ", "") & "=") Then
+                    If arg.Contains(parameter.Name.Replace(" ", "").ToLower(InvCult) & "=") Then
                         skip = True
                     End If
                 Next
@@ -510,13 +513,13 @@ Public Class CodeEditor
                 Dim value = parameter.Value
 
                 If Editor.Engine = ScriptEngine.VapourSynth Then
-                    value = value.Replace("""", "'")
+                    value = value.Replace(""""c, "'"c)
                 End If
 
                 newParameters.Add(parameter.Name & "=" & value)
             Next
 
-            rtbScript.Text = Regex.Replace(code, parameters.FunctionName + "\((.+)\)",
+            rtbScript.Text = Regex.Replace(code, parameters.FunctionName & "\((.+)\)",
                                            parameters.FunctionName & "(" & String.Join(", ", newParameters.ToArray) & ")")
         End Sub
 
@@ -525,26 +528,30 @@ Public Class CodeEditor
 
             Menu.SuspendLayout()
             ActionMenuItem.LayoutSuspendCreate(48)
-            Menu.Items.ClearAndDispose
+            Dim mItms As ToolStripItemCollection = Menu.Items
+            mItms.ClearAndDispose()
             Dim code = rtbScript.Text.FixBreak
 
-            For Each fDef In FilterParameters.Definitions
+            Dim fDefAr As FilterParameters() = FilterParameters.Definitions
+            For i = 0 To fDefAr.Length - 1
+                Dim fDef = fDefAr(i)
                 Dim fFunName As String = fDef.FunctionName
                 If code.Contains(fFunName & "(") Then
                     If Regex.Match(code, fFunName & "\((.+)\)").Success Then
-                        ActionMenuItem.Add(Menu.Items, fDef.Text, Sub() SetParameters(fDef))
+                        ActionMenuItem.Add(mItms, fDef.Text, Sub() SetParameters(fDef))
                     End If
                 End If
-            Next fDef
+            Next i
 
             Dim cbATxt As String = cbActive.Text
             Dim filterProfiles = If(p.Script.Engine = ScriptEngine.AviSynth, s.AviSynthProfiles, s.VapourSynthProfiles)
             For Each cat In filterProfiles
                 If String.Equals(cat.Name, cbATxt) Then
-                    Menu.Items.Add(New ToolStripMenuItemEx(cat.Name))
+                    mItms.Add(New ToolStripMenuItemEx(cat.Name))
                     Dim filtL As List(Of VideoFilter) = cat.Filters
+                    Dim fc1 As Boolean = filtL.Count > 1
                     For Each iFilter In filtL
-                        ActionMenuItem.Add(Menu.Items, If(filtL.Count > 1, iFilter.Category & " | ", "") & iFilter.Path, Sub() ReplaceClick(iFilter.GetCopy), iFilter.Script)
+                        ActionMenuItem.Add(mItms, If(fc1, iFilter.Category & " | ", "") & iFilter.Path, Sub() ReplaceClick(iFilter.GetCopy), iFilter.Script)
                     Next iFilter
                 End If
             Next cat
@@ -555,7 +562,7 @@ Public Class CodeEditor
             Dim helpMenuItem = New ToolStripMenuItemEx("Help", ImageHelp.GetImageC(Symbol.Help))
             helpMenuItem.DropDownItems.Add(New ToolStripMenuItem("t"))
 
-            Menu.Items.AddRange({filterMenuItem,
+            mItms.AddRange({filterMenuItem,
                 New ActionMenuItem("Remove", AddressOf RemoveClick, ImageHelp.GetImageC(Symbol.Remove)) With {.KeyDisplayString = "Ctrl+Delete"},
                 New ActionMenuItem("Preview Video...", AddressOf Editor.VideoPreview, ImageHelp.GetImageC(Symbol.Photo), "Previews the script with solved macros.") With {.Enabled = isPrSrcF, .KeyDisplayString = "F5"},
                 New ActionMenuItem("Play with mpv.net", AddressOf Editor.PlayScriptWithMPV, ImageHelp.GetImageC(Symbol.Play), "Plays the current script with mpv.net.") With {.Enabled = isPrSrcF, .KeyDisplayString = "F9"},
@@ -638,6 +645,7 @@ Public Class CodeEditor
             End If
 
             helpMenuIList.Add(New ToolStripSeparator)
+            Dim invCultTI As Globalization.TextInfo = InvCultTxtInf
             Dim hc As Integer = helpMenuIList.Count
             Dim mL2LL As New List(Of List(Of ActionMenuItem))(28)
 
@@ -646,7 +654,7 @@ Public Class CodeEditor
                 If If(avsEn, pp.AvsFilterNames IsNot Nothing, pp.VSFilterNames IsNot Nothing) Then
                     Dim nML2 As List(Of ActionMenuItem)
                     Dim lastCH As Char
-                    Dim c1 As Char = CChar(pp.Name.Substring(0, 1).ToUpperInvariant)
+                    Dim c1 As Char = invCultTI.ToUpper(pp.Name(0))
                     If c1 <> lastCH Then 'source is sorted, if not: HashSet
                         lastCH = c1
                         helpMenuIList.Add(New ToolStripMenuItemEx(c1))
@@ -718,6 +726,7 @@ Public Class CodeEditor
                 td.AddCommand("Replace selection", "Replace")
                 td.AddCommand("Insert at selection", "Insert")
                 td.AddCommand("Add to end", "Add")
+                Dim fScriptStr0 As Boolean = filter.Script.Length > 0 AndAlso filter.Script(0) = "$"
 
                 Select Case td.Show
                     Case "Replace"
@@ -731,7 +740,7 @@ Public Class CodeEditor
                         cbActive.Text = filter.Category
 
                         If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
-                            If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
+                            If fScriptStr0 Then
                                 tbName.Text = tup.Caption
                             Else
                                 tbName.Text = filter.Name.Replace("...", "") + " " + tup.Caption
@@ -752,7 +761,7 @@ Public Class CodeEditor
                         End If
 
                         If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
-                            If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
+                            If fScriptStr0 Then
                                 filter.Path = tup.Caption
                             Else
                                 filter.Path = filter.Path.Replace("...", "") + " " + tup.Caption
@@ -782,10 +791,10 @@ Public Class CodeEditor
                         End If
 
                         If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
-                            If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
+                            If fScriptStr0 Then
                                 filter.Path = tup.Caption
                             Else
-                                filter.Path = filter.Path.Replace("...", "") + " " + tup.Caption
+                                filter.Path = filter.Path.Replace("...", "") & " " & tup.Caption
                             End If
                         End If
 
@@ -805,7 +814,8 @@ Public Class CodeEditor
         End Sub
 
         Sub ReplaceClick(filter As VideoFilter)
-            Dim tup = Macro.ExpandGUI(filter.Script)
+            Dim fScrpt As String = filter.Script
+            Dim tup = Macro.ExpandGUI(fScrpt)
 
             If tup.Cancel Then
                 Exit Sub
@@ -814,8 +824,8 @@ Public Class CodeEditor
             cbActive.Checked = filter.Active
             cbActive.Text = filter.Category
 
-            If Not tup.Value.Equals(filter.Script) AndAlso tup.Caption.NotNullOrEmptyS Then
-                If filter.Script.StartsWith("$", StringComparison.Ordinal) Then
+            If Not tup.Value.Equals(fScrpt) AndAlso tup.Caption.NotNullOrEmptyS Then
+                If fScrpt.Length > 0 AndAlso fScrpt(0) = "$" Then
                     tbName.Text = tup.Caption
                 Else
                     tbName.Text = filter.Name.Replace("...", "") + " " + tup.Caption

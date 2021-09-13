@@ -1,6 +1,7 @@
 ﻿
 Imports System.Net.Http
 Imports System.Text.RegularExpressions
+Imports JM.LinqFaster
 Imports Microsoft.VisualBasic
 Imports StaxRip.UI
 
@@ -132,17 +133,15 @@ Public Class ToolUpdate
     End Sub
 
     Sub DeleteOldFiles()
-        Dim entries = Directory.GetFileSystemEntries(TargetDir)
-        entries = entries.Where(Function(item) Not item.FileName.EqualsAny(Package.Keep)).ToArray
-        Dim names = entries.Select(Function(item) item.FileName)
-        Dim list = String.Join(BR, names)
+        Dim list = String.Join(BR, Directory.GetFileSystemEntries(TargetDir).WhereSelectF(
+                               Function(item) Not item.FileName.EqualsAny(StringComparison.OrdinalIgnoreCase, Package.Keep), Function(item) item.FileName))
         UpdatePackageDialog()
 
         If MsgQuestion("Delete current files?",
-            "Delete current files in:" + BR2 + TargetDir + BR2 + list) = DialogResult.OK Then
+            "Delete current files in:" & BR2 & TargetDir & BR2 & list) = DialogResult.OK Then
 
             For Each file In Directory.GetFiles(TargetDir)
-                If file.FileName.EqualsAny(Package.Keep) Then
+                If file.FileName.EqualsAny(StringComparison.OrdinalIgnoreCase, Package.Keep) Then
                     Continue For
                 End If
 
@@ -150,7 +149,7 @@ Public Class ToolUpdate
             Next
 
             For Each folder In Directory.GetDirectories(TargetDir)
-                If folder.FileName.EqualsAny(Package.Keep) Then
+                If folder.FileName.EqualsAny(StringComparison.OrdinalIgnoreCase, Package.Keep) Then
                     Continue For
                 End If
 
@@ -222,7 +221,7 @@ Public Class ToolUpdate
             Return True
         End If
 
-        If value.ContainsAny({"_Win32", "\x86", "-x86", "32-bit"}) Then 'g.Is64Bit AndAlso' Assume 64 bit only!!! 
+        If value.ContainsAny("_Win32", "\x86", "-x86", "32-bit") Then 'g.Is64Bit AndAlso' Assume 64 bit only!!! 
             Return True
         End If
     End Function

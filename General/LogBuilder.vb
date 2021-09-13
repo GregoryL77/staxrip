@@ -29,7 +29,7 @@ Public Class LogBuilder
         End If
     End Function
 
-    Private Shared WriteLock As New Object
+    Private Shared ReadOnly WriteLock As New Object
 
     Sub Write(title As String, content As String)
         SyncLock WriteLock
@@ -83,7 +83,9 @@ Public Class LogBuilder
 
     Function FormatHeader(value As String) As String
         Dim len = (65 - value.Length) \ 2
-        Return "--" & "-".Multiply(len) & " " & value & " " & "-".Multiply(len) & "--" & BR2
+        If len < 3 Then len = 3
+        Dim _m As String = "-"c.Multiply(len)
+        Return _m & " " & value & " " & _m & BR2
     End Function
 
     Shared EnvironmentString As String 'cached due to bug report
@@ -98,13 +100,13 @@ Public Class LogBuilder
         If EnvironmentString.NullOrEmptyS Then EnvironmentString =
             "StaxRip:" & Application.ProductVersion & BR &
             "Windows:" & Registry.LocalMachine.GetString("SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName") & " " & Registry.LocalMachine.GetString("SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ReleaseId") & BR &
-            "Language:" & CultureInfo.CurrentCulture.EnglishName & BR &
+            "Language:" & CurrCult.EnglishName & BR &
             "CPU:" & Registry.LocalMachine.GetString("HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString") & BR &
             "GPU:" & String.Join(", ", OS.VideoControllers) & BR & 'OS.VideoControllers.Item2) & BR &
-            "Resolution:" & ScreenResPrim.Width & " x " & ScreenResPrim.Height & BR &
+            "Resolution:" & ScreenResPrim.Width.ToInvStr & " x " & ScreenResPrim.Height.ToInvStr & BR & 'Screen.PrimaryScreen.Bounds.Size
             "DPI:" & g.DPI
 
-        WriteLine(EnvironmentString.FormatColumn(":"))
+        WriteLine(EnvironmentString.FormatColumn(":"c))
     End Sub
 
     Shared ConfigurationString As String 'cached due to bug report
@@ -121,7 +123,7 @@ Public Class LogBuilder
             $"Video Encoder Profile: {p.VideoEncoder.Name}{BR}" &
             $"Container/Muxer Profile: {p.VideoEncoder.Muxer.Name}{BR}"
 
-        WriteLine(ConfigurationString.FormatColumn(":"))
+        WriteLine(ConfigurationString.FormatColumn(":"c))
     End Sub
 
     Sub WriteStats()

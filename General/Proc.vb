@@ -4,6 +4,7 @@ Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading
+Imports JM.LinqFaster
 Imports JM.LinqFaster.SIMD
 
 Public Class Proc
@@ -95,38 +96,39 @@ Public Class Proc
 
     ReadOnly Property Title As String
         Get
-            If Not Package Is Nothing Then
+            If Package IsNot Nothing Then
                 Return Package.Name
             End If
 
-            Dim header = ""
+            Dim header As String
+            If Me.Header?.Length > 0 Then header = Me.Header.ToLower(InvCult)
+            Dim args As String
+            If Arguments?.Length > 0 Then args = Arguments
+            Dim ret As String
 
-            If Me.Header.NotNullOrEmptyS Then
-                header = Me.Header.ToLowerInvariant
+            If header IsNot Nothing OrElse args IsNot Nothing Then
+                For Each i In Package.Items.Values
+                    If header?.IndexOf(i.Name, StringComparison.OrdinalIgnoreCase) >= 0 OrElse args?.IndexOf(i.Filename, StringComparison.Ordinal) >= 0 Then
+                        ret &= " | " & i.Name
+                        'Exit For 'Add This ???
+                    End If
+                Next i
             End If
-
-            Dim ret = ""
-
-            For Each i In Package.Items.Values
-                If header?.Contains(i.Name.ToLowerInvariant) OrElse Arguments?.Contains(i.Filename) Then
-                    ret += " | " + i.Name
-                End If
-            Next
 
             If ret.NullOrEmptyS Then
                 ret = File.Base
             End If
 
-            Return ret.TrimStart(" |".ToCharArray)
+            Return ret.TrimStart(" "c, "|"c)
         End Get
     End Property
 
     Shared Function GetSkipStrings(commands As String) As String()
-        commands = commands.ToLowerInvariant
+        commands = commands.ToLower(InvCult)
 
         'If commands.Contains("xvid_encraw") Then
         'Return {"key=", "frames("}
-        If commands.Contains("x264") OrElse commands.Contains("x265") Then
+        If commands.Contains("x265") OrElse commands.Contains("x264") Then
             Return {"%]"}
         ElseIf commands.Contains("nvenc") Then
             Return {"frames: "}
@@ -160,13 +162,13 @@ Public Class Proc
         'End If
 
         If content.IsDosCompatible Then  'TODO: Tests!!! or merge with Stax
-            content = "@echo off" + BR + content
+            content = "@echo off" & BR & content
             IO.File.WriteAllText(path, content, Encoding.GetEncoding(ConsoleHelp.DosCodePage))
         ElseIf content.IsANSICompatible Then
-            content = "@echo off" + BR + "CHCP " & Encoding.Default.CodePage & BR + content
+            content = "@echo off" & BR & "CHCP " & Encoding.Default.CodePage & BR & content
             IO.File.WriteAllText(path, content, Encoding.Default)
         Else
-            content = "@echo off" + BR + "CHCP 65001" + BR + content
+            content = "@echo off" & BR & "CHCP 65001" & BR & content
             IO.File.WriteAllText(path, content, New UTF8Encoding(False))
         End If
 
@@ -178,7 +180,7 @@ Public Class Proc
             Return Process.StartInfo.FileName
         End Get
         Set(Value As String)
-            If Value?.Contains("%") Then
+            If Value?.IndexOf("%"c) >= 0 Then
                 Process.StartInfo.FileName = Environment.ExpandEnvironmentVariables(Value)
             Else
                 Process.StartInfo.FileName = Value
@@ -188,7 +190,7 @@ Public Class Proc
 
     Property CommandLine() As String
         Get
-            Return File.Escape + " " + Arguments
+            Return File.Escape & " " & Arguments
         End Get
         Set(Value As String)
             Try
@@ -196,7 +198,7 @@ Public Class Proc
                 File = match.Groups("file").Value
                 Arguments = match.Groups("args").Value
             Catch
-                Throw New Exception("Failed to parse command line: " + Value)
+                Throw New Exception("Failed to parse command line: " & Value)
             End Try
         End Set
     End Property
@@ -205,13 +207,14 @@ Public Class Proc
         Get
             Return Process.StartInfo.Arguments
         End Get
-        Set(Value As String)
-            Process.StartInfo.Arguments = Value
-            Process.StartInfo.Arguments = Process.StartInfo.Arguments.Replace("\""", "\\""")
+        Set(value As String)
+            value = value.Replace("\""", "\\""")
 
-            If Process.StartInfo.Arguments.Contains("%") Then
-                Process.StartInfo.Arguments = Environment.ExpandEnvironmentVariables(Process.StartInfo.Arguments)
+            If value.IndexOf("%"c) >= 0 Then
+                value = Environment.ExpandEnvironmentVariables(value)
             End If
+
+            Process.StartInfo.Arguments = value
         End Set
     End Property
 
@@ -288,8 +291,8 @@ Public Class Proc
             If Header.NotNullOrEmptyS Then
                 Log.WriteHeader(Header)
 
-                If Not Package Is Nothing Then
-                    Log.WriteLine(Package.Name + " " + Package.Version + BR2)
+                If Package IsNot Nothing Then
+                    Log.WriteLine(Package.Name & " " & Package.Version & BR2)
                 End If
             End If
 
@@ -298,16 +301,16 @@ Public Class Proc
             End If
 
             If ReadOutput Then
-                If String.Equals(File, "cmd.exe") AndAlso Arguments.StartsWithEx("/S /C """) AndAlso Arguments.EndsWithEx("""") Then
-                    Log.WriteLine(Arguments.Substring(7, Arguments.Length - 8) + BR2)
+                If String.Equals(File, "cmd.exe") AndAlso Arguments.StartsWith("/S /C """, StringComparison.Ordinal) AndAlso Arguments.EndsWith("""", StringComparison.Ordinal) Then
+                    Log.WriteLine(Arguments.Substring(7, Arguments.Length - 8) & BR2)
                 Else
-                    Log.WriteLine(CommandLine + BR2)
+                    Log.WriteLine(CommandLine & BR2)
                 End If
 
                 ProcController.Start(Me)
             End If
 
-            If Not LogItems Is Nothing Then
+            If LogItems IsNot Nothing Then
                 For Each line In LogItems
                     Log.WriteLine(line)
                 Next
@@ -317,16 +320,8 @@ Public Class Proc
             Process.Start()
 
             If ReadOutput Then
-                OutputReader = New AsyncStreamReader(
-                    Process.StandardOutput.BaseStream,
-                    AddressOf OutputReadNotifyUser,
-                    Process.StandardOutput.CurrentEncoding)
-
-                ErrorReader = New AsyncStreamReader(
-                    Process.StandardError.BaseStream,
-                    AddressOf ErrorReadNotifyUser,
-                    Process.StandardError.CurrentEncoding)
-
+                OutputReader = New AsyncStreamReader(Process.StandardOutput.BaseStream, AddressOf OutputReadNotifyUser, Process.StandardOutput.CurrentEncoding)
+                ErrorReader = New AsyncStreamReader(Process.StandardError.BaseStream, AddressOf ErrorReadNotifyUser, Process.StandardError.CurrentEncoding)
                 OutputReader.BeginReadLine()
                 ErrorReader.BeginReadLine()
             End If
@@ -338,11 +333,11 @@ Public Class Proc
             Dim msg = ex.Message
 
             If File.NotNullOrEmptyS Then
-                msg += BR2 + "File: " + File
+                msg &= BR2 & "File: " & File
             End If
 
             If Arguments.NotNullOrEmptyS Then
-                msg += BR2 + "Arguments: " + Arguments
+                msg &= BR2 & "Arguments: " & Arguments
             End If
 
             MsgError(msg)
@@ -373,26 +368,26 @@ Public Class Proc
                     Dim systemError = New Win32Exception(ExitCode).Message
 
                     If systemError.NotNullOrEmptyS AndAlso Not systemError?.StartsWith("Unknown error", StringComparison.Ordinal) Then
-                        interpretation = "It's unclear what the exit code means, in case it's a Windows system error then it possibly means:" + BR2 + systemError
+                        interpretation = "It's unclear what the exit code means, in case it's a Windows system error then it possibly means:" & BR2 & systemError
                     Else
                         Try
                             Marshal.ThrowExceptionForHR(ExitCode)
                         Catch ex As Exception
                             If ex.Message.NotNullOrEmptyS AndAlso Not ex.Message?.StartsWith("Exception from HRESULT: 0x", StringComparison.Ordinal) Then
-                                interpretation = "It's unclear what the exit code means, in case it's a COM error then it possibly means:" + BR2 + ex.Message
+                                interpretation = "It's unclear what the exit code means, in case it's a COM error then it possibly means:" & BR2 & ex.Message
                             End If
                         End Try
                     End If
 
-                    Dim errorMessage = Header + " returned error exit code: " & ExitCode &
-                        " (" + "0x" + ExitCode.ToString("X") + ")"
+                    Dim errorMessage = Header & " returned error exit code: " & ExitCode &
+                        " (" & "0x" & ExitCode.ToString("X") & ")"
 
                     If interpretation.NotNullOrEmptyS Then
-                        errorMessage += BR2 + interpretation
+                        errorMessage &= BR2 & interpretation
                     End If
 
-                    errorMessage += BR2 + Log.ToString() + BR
-                    Throw New ErrorAbortException("Error " + Header, errorMessage, Project)
+                    errorMessage &= BR2 & Log.ToString() & BR
+                    Throw New ErrorAbortException("Error " & Header, errorMessage, Project)
                 End If
 
                 Succeeded = True
@@ -451,12 +446,13 @@ Public Class Proc
         Dim dic = process.StartInfo.EnvironmentVariables
         dic("AviSynthDLL") = Package.AviSynth.Path
 
-        Dim keys = dic.Keys.OfType(Of String).Select(Function(key) key.ToLowerInvariant)
+        Dim keys = dic.Keys.OfType(Of String).ToArray
+        keys.SelectInPlaceF(Function(key) key.ToLower(InvCult))
 
         For Each mac In Macro.GetMacros(False, False, False)
             Dim name = mac.Name.Trim("%"c)
 
-            If Not keys.Contains(name) Then
+            If Not keys.ContainsString(name) Then
                 dic(name) = Macro.Expand(mac.Name)
             End If
         Next
@@ -464,17 +460,15 @@ Public Class Proc
         Dim path = dic("Path")
 
         For Each pack In Package.Items.Values
-            If pack.Path.Ext.Equals("exe") AndAlso pack.HelpSwitch IsNot Nothing AndAlso
-                pack.Path.FileExists AndAlso Not path.Contains(pack.Directory + ";") Then
-
-                path = pack.Directory + ";" + path
+            If pack.Path.Ext.Equals("exe") AndAlso pack.HelpSwitch IsNot Nothing AndAlso pack.Path.FileExists AndAlso Not path.Contains(pack.Directory & ";") Then
+                path = pack.Directory & ";" & path
             End If
         Next
 
         Dim cppDir = Package.VisualCpp2019.Directory
 
-        If Not cppDir.PathStartsWith(Folder.System) AndAlso Not path.Contains(cppDir + ";") Then
-            path = cppDir + ";" + path
+        If Not cppDir.PathStartsWith(Folder.System) AndAlso Not path.Contains(cppDir & ";") Then
+            path = cppDir & ";" & path
         End If
 
         dic("path") = path

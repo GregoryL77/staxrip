@@ -507,7 +507,7 @@ Public Class CommandLineAudioEncoderForm
         Dim gap = TempProfile.GetDeepClone
         Dim name = InputBox.Show("Enter the profile name.", "Save Profile", gap.Name)
 
-        If name.NotNullOrEmptyS Then
+        If name?.Length > 0 Then
             gap.Name = name
             s.AudioProfiles.Add(gap)
             MsgInfo("The profile was saved.")

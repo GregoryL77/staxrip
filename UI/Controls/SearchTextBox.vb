@@ -55,7 +55,7 @@ Public Class SearchTextBox
         InitializeComponent()
         Edit.TextBox.SendMessageCue("Search", False)
         AddHandler Edit.TextChanged, Sub() OnTextChanged(New EventArgs)
-        AddHandler Button.Click, Sub() Edit.Text = ""
+        AddHandler Button.Click, Sub() Edit.Text = String.Empty
     End Sub
 
     Protected Overrides Sub OnTextChanged(e As EventArgs)
@@ -65,17 +65,18 @@ Public Class SearchTextBox
 
     Protected Overrides Sub OnLayout(e As LayoutEventArgs)
         MyBase.OnLayout(e)
+        'Button.Top = 2
+        Dim h As Integer = Height
+        'Button.Height = h - 4 ' bh=Height-4
+        'Button.Width = h - 4 ' bw=Button.Height
+        Dim w As Integer = Width
+        'Button.Left = w - h - 4 - 2 ' bl=Width - Button.Width - Button.Top
+        Button.SetBounds(w - h - 4 - 2, 2, h - 4, h - 4)
 
-        Button.Top = 2
-        Button.Height = Height - 4
-        Button.Width = Button.Height
-        Button.Left = Width - Button.Width - Button.Top
+        Dim eh As Integer = Edit.Height
+        If h <> eh Then Height = eh
 
-        If Height <> Edit.Height Then
-            Height = Edit.Height
-        End If
-
-        Edit.Width = Width
+        Edit.Width = w
     End Sub
 
     Overrides Property Text As String
@@ -117,7 +118,7 @@ Public Class SearchTextBox
             e.Graphics.SmoothingMode = SmoothingMode.HighQuality
 
             If MouseIsOver Then
-                Dim rect = New Rectangle(Point.Empty, Size)
+                ' Dim rect = New Rectangle(Point.Empty, Size)'DeadCode ???
 
                 'If VisualStyleInformation.IsEnabledByUser Then 'Windows 10 Assume Visual stryles ON
                 Dim Renderer = New VisualStyleRenderer(VisualStyleElement.Button.PushButton.Hot)

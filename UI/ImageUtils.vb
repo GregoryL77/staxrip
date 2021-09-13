@@ -5,21 +5,29 @@ Imports System.Globalization
 Imports System.Threading.Tasks
 
 Public Class ImageHelp
-    Private Shared FontFilesExist As Boolean = File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") 'AndAlso File.Exists(Folder.Apps & "Fonts\Segoe-MDL2-Assets.ttf")
-    Private Shared CollFontPrv As New PrivateFontCollection
-    Private Shared FontSagoe As New Font("Segoe MDL2 Assets", 12)
+    Private Shared FontFilesExist As Boolean '= File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf") 'AndAlso File.Exists(Folder.Apps & "Fonts\Segoe-MDL2-Assets.ttf")
+    Private Shared CollFontPrv As PrivateFontCollection 'New PrivateFontCollection
+    Private Shared FontSagoe As Font 'New Font("Segoe MDL2 Assets", 12)
     Private Shared FontAwesome As Font
-    Public Shared ImageCacheD As New Dictionary(Of Integer, Image)(59) 'prm:47-53-59  46 Max As for 202106
+    Public Shared ImageCacheD As Dictionary(Of Integer, Image) 'New Dictionary(Of Integer, Image)(59)   46 Max As for 202106
 
     Public Shared Sub CreateFonts()
-        If FontSagoe Is Nothing Then FontSagoe = New Font("Segoe MDL2 Assets", 12)
+        If FontSagoe Is Nothing Then
+            FontSagoe = New Font("Segoe MDL2 Assets", 12)
+            FontFilesExist = File.Exists(Folder.Apps & "Fonts\FontAwesome.ttf")
+        End If
         If FontFilesExist Then
             If CollFontPrv Is Nothing Then CollFontPrv = New PrivateFontCollection
             If CollFontPrv.Families.Length = 0 Then CollFontPrv.AddFontFile(Folder.Apps & "Fonts\FontAwesome.ttf")
             If FontAwesome Is Nothing Then FontAwesome = New Font(CollFontPrv.Families(0), 12)
         End If
+        If ImageCacheD Is Nothing Then ImageCacheD = New Dictionary(Of Integer, Image)(59)
     End Sub
     Public Shared Sub DisposeFonts()
+        If ImageCacheD IsNot Nothing Then
+            ImageCacheD.Clear()
+            ImageCacheD = Nothing
+        End If
         If FontSagoe IsNot Nothing Then
             FontSagoe.Dispose()
             FontSagoe = Nothing
@@ -29,6 +37,7 @@ Public Class ImageHelp
             FontAwesome = Nothing
         End If
         If CollFontPrv IsNot Nothing Then
+            'Parallel.ForEach(ImageCacheD.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(i) i.Dispose()) ' Destroys existings menus! :(
             CollFontPrv.Dispose()
             CollFontPrv = Nothing
         End If
@@ -37,26 +46,26 @@ Public Class ImageHelp
     '    Return Await Task.Run(Of Image)(Function() GetSymbolImage(symbol))
     'End Function
     Shared Function GetSymbolImage(symbol As Symbol) As Image
-        If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
+        If symbol > 61400 AndAlso Not FontFilesExist OrElse symbol = 0 Then Return Nothing
         'dim fHeight = 16 font.Height 'New Bitmap(CInt(fHeight * 1.1), CInt(fHeight * 1.1))
 
-        Dim bitmap As New Bitmap(CInt(16.0 * 1.1), CInt(16.0 * 1.1))
+        Dim bitmap As New Bitmap(CInt(16 * 1.1), CInt(16 * 1.1))
         Using graphics = Drawing.Graphics.FromImage(bitmap)
             graphics.TextRenderingHint = TextRenderingHint.AntiAlias
-            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 16.0F * 0.07F)
+            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16 * 0.1F, 16 * 0.07F)
         End Using
 
         Return bitmap
     End Function
 
     Shared Function GetSymbolImageSmall(symbol As Symbol) As Image
-        If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing
+        If symbol > 61400 AndAlso Not FontFilesExist Then Return Nothing 'symbol = 0 OrElse
         'Using fontS As New Font("Segoe MDL2 Assets", 11) FH15
-        Dim bitmap As Bitmap = New Bitmap(16, 16) '=SystemInformation.SmallIconSize
 
+        Dim bitmap As New Bitmap(16, 16) '=SystemInformation.SmallIconSize
         Using graphics = Drawing.Graphics.FromImage(bitmap)
             graphics.TextRenderingHint = TextRenderingHint.AntiAlias
-            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16.0F * 0.1F, 0F)
+            graphics.DrawString(Convert.ToChar(symbol), If(symbol > 61400, FontAwesome, FontSagoe), Brushes.Black, -16 * 0.1F, 0F)
         End Using
 
         Return bitmap
@@ -71,9 +80,10 @@ Public Class ImageHelp
     End Function
 
     Shared Sub ClearCache()
-        'Parallel.ForEach(ImageCacheD.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(i) i.Dispose()) ' Destroys existings menus! :(
-        ImageCacheD.Clear()
-        ImageCacheD = New Dictionary(Of Integer, Image)(59)
+        If ImageCacheD IsNot Nothing Then
+            ImageCacheD.Clear()
+            ImageCacheD = New Dictionary(Of Integer, Image)(59)
+        End If
     End Sub
 End Class
 
@@ -93,25 +103,24 @@ Public Class Thumbnails
             proj.SourceFile = inputFile
         End If
 
-        Dim fontname = "DejaVu Serif"
-        Dim fontOptions = "Mikadan"
+        Const fontname = "DejaVu Serif"
+        Const fontOptions = "Mikadan"
 
         Dim width = s.Storage.GetInt("Thumbnail Width", 500)
         Dim columnCount = s.Storage.GetInt("Thumbnail Columns", 4)
         Dim rowCount = s.Storage.GetInt("Thumbnail Rows", 6)
         Dim dar = MediaInfo.GetVideo(inputFile, "DisplayAspectRatio")
-        Dim height = CInt(width / Convert.ToSingle(dar, InvariantCult))
+        Dim height = CInt(width / Convert.ToSingle(dar, InvCult))
         Dim gap = CInt((width * columnCount) * (s.Storage.GetInt("Thumbnail Margin", 5) / 1000))
         Dim font = New Font(fontname, (width * columnCount) \ 80, FontStyle.Bold, GraphicsUnit.Pixel)
         Dim foreColor = Color.Black
 
-        width = width - width Mod 16
-        height = height - height Mod 16
+        width -= width Mod 16
+        height -= height Mod 16
 
-        Dim script As New VideoScript
-        script.Path = Path.Combine(Folder.Temp + "Thumbnails.avs")
+        Dim script As New VideoScript With {.Path = Path.Combine(Folder.Temp & "Thumbnails.avs")}
 
-        If inputFile.Ext = "mp4" Then
+        If String.Equals(inputFile.Ext, "mp4") Then
             script.Filters.Add(New VideoFilter($"LSMASHVideoSource(""{inputFile}"")"))
         Else
             script.Filters.Add(New VideoFilter($"FFVideoSource(""{inputFile}"")"))
@@ -129,7 +138,7 @@ Public Class Thumbnails
         Dim errorMsg = script.GetError
 
         If errorMsg.NotNullOrEmptyS Then
-            MsgError("Failed to open file" + BR2 + inputFile, errorMsg)
+            MsgError("Failed to open file" & BR2 & inputFile, errorMsg)
             Exit Sub
         End If
 
@@ -187,14 +196,14 @@ Public Class Thumbnails
                 bitmaps.Add(bitmap)
             Next
 
-            width = width + gap
-            height = height + gap
+            width += gap
+            height += gap
         End Using
 
         If inputFile.Ext = "mp4" Then
-            FileHelp.Delete(inputFile + ".lwi")
+            FileHelp.Delete(inputFile & ".lwi")
         Else
-            FileHelp.Delete(inputFile + ".ffindex")
+            FileHelp.Delete(inputFile & ".ffindex")
         End If
 
         Dim infoSize As String
@@ -218,22 +227,30 @@ Public Class Thumbnails
         Dim scanType = MediaInfo.GetVideo(inputFile, "ScanType")
 
         Dim audioSound As String
-
-        If channels = 2 Then audioSound = "Stereo"
-        If channels = 1 Then audioSound = "Mono"
-        If channels = 6 Then audioSound = "Surround Sound"
-        If channels = 8 Then audioSound = "Surround Sound"
-        If channels = 0 Then audioSound = ""
+        Select Case channels
+            Case 2
+                audioSound = "Stereo"
+            Case 1
+                audioSound = "Mono"
+            Case 6
+                audioSound = "Surround Sound"
+            Case 8
+                audioSound = "Surround Sound"
+            Case 0
+                audioSound = String.Empty
+        End Select
 
         If infoLength / 1024 ^ 3 > 1 Then
-            infoSize = (infoLength / 1024 ^ 3).ToInvariantString("f2") + "GB"
+            infoSize = (infoLength / 1024 ^ 3).ToInvStr("f2") & "GB"
         Else
-            infoSize = CInt(infoLength / 1024 ^ 2).ToInvariantString + "MB"
+            infoSize = CInt(infoLength / 1024 ^ 2).ToInvStr & "MB"
         End If
 
-        Dim caption = "File: " + inputFile.FileName + BR & "Size: " + MediaInfo.GetGeneral(inputFile, "FileSize") + " bytes" + " (" + infoSize + ")" & ", " + "Duration: " + StaxRip.g.GetTimeString(infoDuration / 1000) + ", avg.bitrate: " + MediaInfo.GetGeneral(inputFile, "OverallBitRate_String") + BR +
-            "Audio: " + audioCodecs + ", " + MediaInfo.GetAudio(inputFile, "SamplingRate_String") + ", " + audioSound + ", " + MediaInfo.GetAudio(inputFile, "BitRate_String") + BR +
-            "Video: " + MediaInfo.GetVideo(inputFile, "Format") + " (" + profile + ")" + ", " + colorSpace + subSampling + scanType.Shorten(1).ToLower() + ", " + MediaInfo.GetVideo(inputFile, "Width") & "x" & MediaInfo.GetVideo(inputFile, "Height") & ", " + MediaInfo.GetVideo(inputFile, "BitRate_String") + ", " & MediaInfo.GetVideo(inputFile, "FrameRate").ToSingle.ToInvariantString + "fps".Replace(", ", "")
+        Dim caption = "File: " & inputFile.FileName & BR & "Size: " & MediaInfo.GetGeneral(inputFile, "FileSize") & " bytes" & " (" & infoSize & ")" & ", " &
+            "Duration: " & StaxRip.g.GetTimeString(infoDuration / 1000) & ", avg.bitrate: " & MediaInfo.GetGeneral(inputFile, "OverallBitRate_String") & BR &
+            "Audio: " & audioCodecs & ", " & MediaInfo.GetAudio(inputFile, "SamplingRate_String") & ", " & audioSound & ", " & MediaInfo.GetAudio(inputFile, "BitRate_String") & BR &
+            "Video: " & MediaInfo.GetVideo(inputFile, "Format") & " (" & profile & ")" & ", " & colorSpace & subSampling & scanType.Shorten(1).ToLower() & ", " & MediaInfo.GetVideo(inputFile, "Width") & "x" &
+            MediaInfo.GetVideo(inputFile, "Height") & ", " & MediaInfo.GetVideo(inputFile, "BitRate_String") & ", " & MediaInfo.GetVideo(inputFile, "FrameRate").ToSingle.ToInvStr & "fps".Replace(", ", "")
 
         caption = caption.Replace(" ,", "")
 

@@ -6,29 +6,34 @@ Public Class FiltersListView
     Inherits ListViewEx
 
     Private BlockItemCheck As Boolean
-    WithEvents Menu As New ContextMenuStripEx
+    WithEvents Menu As ContextMenuStripEx
     Property IsLoading As Boolean
 
     Event Changed()
 
-    Sub New()
+    Sub New(components As System.ComponentModel.IContainer)
         BeginUpdate()
         AllowDrop = True
-        Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        'Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right ' InInitMainForm
         CheckBoxes = True
-        View = View.Details
-        HideSelection = False
         FullRowSelect = True
+        HideSelection = False
         MultiSelect = False
-        HeaderStyle = ColumnHeaderStyle.None
-        Columns.Add("")
-        Columns.Add("Type")
-        Columns.Add("Name")
+        View = View.Details
+        AutoCheckMode = StaxRip.UI.AutoCheckMode.None
+        'Columns.Add("",0) 'defWidth is 60
+        'Columns.Add("Type", 0)
+        'Columns.Add("Name", 0)
+        Columns.AddRange({New ColumnHeader With {.Width = 0}, New ColumnHeader With {.Width = 0}})
+        Menu = New ContextMenuStripEx(components)
         If s.UIScaleFactor <> 1 Then Menu.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
         ContextMenuStrip = Menu
-        HideFocusRectange()
+
+        'HideFocusRectange() 'test This Rem !!!!!!
+
+
         AddHandler VideoScript.Changed, Sub(script As VideoScript)
-                                            If Not p.Script Is Nothing AndAlso script Is p.Script Then
+                                            If p.Script IsNot Nothing AndAlso script Is p.Script Then
                                                 OnChanged()
                                             End If
                                         End Sub
@@ -36,36 +41,57 @@ Public Class FiltersListView
     End Sub
 
     Sub Load()
-        If p.Script.Engine = ScriptEngine.AviSynth Then
-            g.MainForm.lgbFilters.Text = "AVS Filters"
-        Else
-            g.MainForm.lgbFilters.Text = "VS Filters"
-        End If
-
+        g.MainForm.lgbFilters.Text = If(p.Script.Engine = ScriptEngine.AviSynth, "AVS Filters", "VS Filters")
         BlockItemCheck = True
         BeginUpdate()
         Items.Clear()
+        Dim pSFL As List(Of VideoFilter) = p.Script.Filters
+        Dim lvItmA(pSFL.Count - 1) As ListViewItem
 
-        For Each filter In p.Script.Filters
-            Dim item As New ListViewItem
-            item.Tag = filter
-            item.Checked = filter.Active
-            item.SubItems.Add(filter.Category)
+        For i = 0 To lvItmA.Length - 1
+            Dim fltr = pSFL(i)
+            Dim fN As String = fltr.Name
+            lvItmA(i) = New ListViewItem({fltr.Category, If(fN.NullOrEmptyS, fltr.Script, fN)}) With {.Tag = fltr, .Checked = fltr.Active} ', fltr.Script ???
+            'lvItmA(i) = New ListViewItem({"", fltr.Category, If(fN.NullOrEmptyS, fltr.Script, fN), filter.Script}) With {.Tag = fltr, .Checked = fltr.Active}
+        Next i
 
-            If filter.Name.NullOrEmptyS Then
-                item.SubItems.Add(filter.Script)
-            Else
-                item.SubItems.Add(filter.Name)
-            End If
+        Items.AddRange(lvItmA)
 
-            item.SubItems.Add(filter.Script)
-            Items.Add(item)
-        Next
-
-        AutoResizeColumns(True)
+        AutoResizeColumns()
         EndUpdate()
         BlockItemCheck = False
     End Sub
+    'Protected Overrides Sub OnCreateControl() 'Test This Needed ? !!!!!!!!!!
+    '    MyBase.OnCreateControl()
+    '    AutoResizeColumns()
+    'End Sub
+    'Protected Overrides Sub OnLayout(e As LayoutEventArgs)
+    '    MyBase.OnLayout(e)
+    '    If e.AffectedProperty.Length = 6 Then AutoResizeColumns()
+    'End Sub
+    Protected Overrides Sub OnSizeChanged(e As EventArgs)
+        'MyBase.OnSizeChanged(e)
+        'Static Oldsize As Size  'Debug
+        'Static OldCliSize As Size  'Debug
+        'Oldsize = Me.Size
+        'OldCliSize = Me.ClientSize
+
+        If Items IsNot Nothing Then 'Try Use isloading,  Fist chech if when ChangedEvent
+            BeginUpdate()
+            AutoResizeColumns()
+            EndUpdate()
+        End If
+    End Sub
+    Protected Overrides ReadOnly Property DefaultMargin As Padding
+        Get
+            Return New Padding(1)
+        End Get
+    End Property
+    'Protected Overrides ReadOnly Property DefaultSize As Size
+    '    Get
+    '        Return New Size(218, 163) ' As in MainForm InitComp!!!
+    '    End Get
+    'End Property
 
     Sub RebuildMenu()
         Menu.SuspendLayout()
@@ -84,7 +110,7 @@ Public Class FiltersListView
         replaceMenuItem.DropDown.SuspendLayout()
         For Each i In filterProfiles
             For Each i2 In i.Filters
-                ActionMenuItem.Add(replaceMenuItem.DropDownItems, i.Name + " | " + i2.Path, Sub() ReplaceClick(i2), i2.Script)
+                ActionMenuItem.Add(replaceMenuItem.DropDownItems, i.Name & " | " & i2.Path, Sub() ReplaceClick(i2), i2.Script)
             Next
         Next
         replaceMenuItem.DropDown.ResumeLayout(False)
@@ -95,7 +121,7 @@ Public Class FiltersListView
         insertMenuItem.DropDown.SuspendLayout()
         For Each i In filterProfiles
             For Each i2 In i.Filters
-                ActionMenuItem.Add(insertMenuItem.DropDownItems, i.Name + " | " + i2.Path, Sub() InsertClick(i2), i2.Script)
+                ActionMenuItem.Add(insertMenuItem.DropDownItems, i.Name & " | " & i2.Path, Sub() InsertClick(i2), i2.Script)
             Next
         Next
         insertMenuItem.DropDown.ResumeLayout(False)
@@ -104,7 +130,7 @@ Public Class FiltersListView
         add.DropDown.SuspendLayout()
         For Each i In filterProfiles
             For Each i2 In i.Filters
-                ActionMenuItem.Add(add.DropDownItems, i.Name + " | " + i2.Path, Sub() AddClick(i2), i2.Script)
+                ActionMenuItem.Add(add.DropDownItems, i.Name & " | " & i2.Path, Sub() AddClick(i2), i2.Script)
             Next
         Next
         add.DropDown.ResumeLayout(False)
@@ -144,30 +170,30 @@ Public Class FiltersListView
         Menu.ResumeLayout()
 
         Dim mop As CancelEventHandler = Sub()
-                                            Dim active = DirectCast(Menu.Items(0), ActionMenuItem)
+                                            'Dim active = DirectCast(Menu.Items(0), ActionMenuItem)
                                             Menu.SuspendLayout()
-                                            active.DropDown.SuspendLayout()
-                                            active.DropDownItems.ClearAndDispose()
+                                            m0.DropDown.SuspendLayout()
+                                            m0.DropDownItems.ClearAndDispose()
                                             ActionMenuItem.LayoutSuspendCreate()
                                             Dim selC As Boolean = SelectedItems.Count > 0
-                                            sep0.Visible = selC
+                                            sep0.Visible = selC 'Menu.Items(1)
 
                                             If selC Then
                                                 Dim selectedFilter = DirectCast(SelectedItems(0).Tag, VideoFilter)
-                                                active.Text = selectedFilter.Category
+                                                m0.Text = selectedFilter.Category
 
                                                 For Each i In filterProfiles
-                                                    If i.Name.EqualsEx(selectedFilter.Category) Then
+                                                    If EqualsExS(i.Name, selectedFilter.Category) Then
                                                         For Each i2 In i.Filters
-                                                            ActionMenuItem.Add(active.DropDownItems, i2.Path, Sub() ReplaceClick(i2.GetCopy), i2.Script)
+                                                            ActionMenuItem.Add(m0.DropDownItems, i2.Path, Sub() ReplaceClick(i2.GetCopy), i2.Script)
                                                         Next i2
                                                     End If
                                                 Next i
                                             End If
 
                                             ActionMenuItem.LayoutResume(False)
-                                            active.DropDown.ResumeLayout()
-                                            Menu.ResumeLayout(False)
+                                            m0.DropDown.ResumeLayout()
+                                            Menu.ResumeLayout()
                                         End Sub
         RemoveHandler Menu.Opening, mop
         AddHandler Menu.Opening, mop
@@ -277,7 +303,7 @@ Public Class FiltersListView
             If val.Caption.EndsWith(path, StringComparison.Ordinal) Then
                 filter.Path = val.Caption
             Else
-                filter.Path = path + " " + val.Caption
+                filter.Path = path & " " & val.Caption
             End If
         End If
 
@@ -311,16 +337,6 @@ Public Class FiltersListView
         OnChanged()
     End Sub
 
-    Protected Overrides Sub OnCreateControl()
-        MyBase.OnCreateControl()
-        AutoResizeColumns(True)
-    End Sub
-
-    Protected Overrides Sub OnLayout(e As LayoutEventArgs)
-        MyBase.OnLayout(e)
-        AutoResizeColumns(True)
-    End Sub
-
     Protected Overrides Sub OnDragDrop(e As DragEventArgs)
         BlockItemCheck = True
         MyBase.OnDragDrop(e)
@@ -331,7 +347,7 @@ Public Class FiltersListView
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         MyBase.OnKeyDown(e)
 
-        If e.KeyData = Keys.Delete Then
+        If e.KeyData = Keys.Delete AndAlso SelectedIndices.Count > 0 Then
             RemoveClick()
         End If
     End Sub
@@ -342,16 +358,16 @@ Public Class FiltersListView
         If Not BlockItemCheck AndAlso Focused Then
             Dim filter = DirectCast(Items(e.Index).Tag, VideoFilter)
 
-            If e.NewValue = CheckState.Checked AndAlso filter.Category = "Resize" Then
-                Dim form = FindForm()
-
-                If Not form Is Nothing AndAlso TypeOf form Is MainForm Then
-                    g.MainForm.SetTargetImageSize(p.TargetWidth, 0)
-                End If
+            Dim form = g.MainForm 'FindForm()
+            If e.NewValue = CheckState.Checked AndAlso String.Equals(filter.Category, "Resize") Then
+                'Dim form = FindForm()
+                'If form IsNot Nothing AndAlso TypeOf form Is MainForm Then
+                form.SetTargetImageSize(p.TargetWidth, 0)
+                'End If
             End If
 
             filter.Active = e.NewValue = CheckState.Checked
-            g.MainForm.BeginInvoke(Sub() OnChanged())
+            Form.BeginInvoke(Sub() OnChanged())
         End If
     End Sub
 End Class

@@ -51,38 +51,31 @@ Public Class StreamDemuxForm
         gbSubtitles.Enabled = Subtitles.Count > 0
         gbAttachments.Enabled = Not attachments.NothingOrEmpty
 
-        Dim langName As String = CultureInfo.CurrentCulture.NeutralCulture.EnglishName
-        Dim notEng As Boolean = Not CultureInfo.CurrentCulture.TwoLetterISOLanguageName.Equals("en")
+        Dim langName As String = CurrCultNeutral.EnglishName
+        Dim notEng As Boolean = Not CurrCult.TwoLetterISOLanguageName.Equals("en")
         bnAudioEnglish.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals("en"))
         bnAudioNative.Visible = notEng
         bnAudioNative.Text = langName
-        bnAudioNative.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
+        bnAudioNative.Enabled = AudioStreams.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CurrCult.TwoLetterISOLanguageName))
 
         bnSubtitleEnglish.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals("en"))
         bnSubtitleNative.Visible = notEng
         bnSubtitleNative.Text = langName
-        bnSubtitleNative.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
+        bnSubtitleNative.Enabled = Subtitles.AnyF(Function(stream) stream.Language.TwoLetterCode.Equals(CurrCult.TwoLetterISOLanguageName))
 
-        For Each audioStream In AudioStreams
-            Dim item = lvAudio.Items.Add(audioStream.Name)
-            item.Tag = audioStream
-            item.Checked = audioStream.Enabled
-        Next
-
-        For Each subtitle In Subtitles
-            Dim text = subtitle.Language.ToString + " (" + subtitle.TypeName + ")" + If(subtitle.Title.NotNullOrEmptyS, " - " + subtitle.Title, "")
-            Dim item = lvSubtitles.Items.Add(text)
-            item.Tag = subtitle
-            item.Checked = subtitle.Enabled
-        Next
-
-        If Not attachments Is Nothing Then
-            For Each attachment In attachments
-                Dim item = lvAttachments.Items.Add(attachment.Name)
-                item.Tag = attachment
-                item.Checked = attachment.Enabled
-            Next
+        If AudioStreams.Count > 0 Then
+            lvAudio.Items.AddRange(AudioStreams.ToArray.SelectF(Function(a) New ListViewItem(a.Name) With {.Tag = a, .Checked = a.Enabled}))
         End If
+
+        If Subtitles.Count > 0 Then
+            lvSubtitles.Items.AddRange(Subtitles.ToArray.SelectF(Function(s) New ListViewItem(
+                      s.Language.ToString & " (" & s.TypeName & ")" & If(s.Title.NotNullOrEmptyS, " - " & s.Title, "")) With {.Tag = s, .Checked = s.Enabled}))
+        End If
+
+        If attachments IsNot Nothing AndAlso attachments.Count > 0 Then
+            lvAttachments.Items.AddRange(attachments.ToArray.SelectF(Function(a) New ListViewItem(a.Name) With {.Tag = a, .Checked = a.Enabled}))
+        End If
+
         lvAudio.EndUpdate()
         lvSubtitles.EndUpdate()
         lvAttachments.EndUpdate()
@@ -132,7 +125,7 @@ Public Class StreamDemuxForm
         For Each item As ListViewItem In lvAudio.Items
             Dim stream = DirectCast(item.Tag, AudioStream)
 
-            If stream.Language.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName Then
+            If stream.Language.TwoLetterCode = CurrCult.TwoLetterISOLanguageName Then
                 item.Checked = True
             End If
         Next
@@ -164,7 +157,7 @@ Public Class StreamDemuxForm
         For Each item As ListViewItem In lvSubtitles.Items
             Dim stream = DirectCast(item.Tag, Subtitle)
 
-            If stream.Language.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName Then
+            If stream.Language.TwoLetterCode = CurrCult.TwoLetterISOLanguageName Then
                 item.Checked = True
             End If
         Next

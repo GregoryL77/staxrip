@@ -12,7 +12,7 @@ Public Class NVEnc
 
     Public Overrides ReadOnly Property DefaultName As String
         Get
-            Return "Nvidia | " & Params.Codec.OptionText.Replace("Nvidia ", "")
+            Return "Nvidia | " & Params.Codec.OptionText.Replace("Nvidia ", String.Empty)
         End Get
     End Property
 
@@ -76,14 +76,12 @@ Public Class NVEnc
     End Property
 
     Overrides Sub Encode()
-        If OutputExt = "h265" Then
-            Dim codecs = ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-hw").Right("Codec(s)")
-
-            If Not codecs.ToLowerInvariant.Contains("hevc") Then
-                Throw New ErrorAbortException("NVEnc Error", "H.265/HEVC isn't supported by the graphics card.")
-            End If
-        End If
-
+        'If OutputExt = "h265" Then
+        '    Dim codecs = ProcessHelp.GetConsoleOutput(Package.NVEnc.Path, "--check-hw").Right("Codec(s)")
+        '    If Not codecs.ToLower(InvCult).Contains("hevc") Then
+        '        Throw New ErrorAbortException("NVEnc Error", "H.265/HEVC isn't supported by the graphics card.")
+        '    End If
+        'End If
         p.Script.Synchronize()
 
         Using proc As New Proc
@@ -103,6 +101,10 @@ Public Class NVEnc
         r.Add("Encoder Options", AddressOf ShowConfigDialog)
         r.Add("Container Configuration", AddressOf OpenMuxerConfigDialog)
         Return r
+    End Function
+
+    Overrides Function GetFixedBitrate() As Integer
+        Return CInt(Params.Bitrate.Value)
     End Function
 
     Overrides Property QualityMode() As Boolean
@@ -145,6 +147,7 @@ Public Class NVEnc
     Public Class EncoderParams
         Inherits CommandLineParams
 
+        Public Const VColorSpaceS As String = "--vpp-colorspace"
         Public NVForm As CommandLineForm
 
         Sub New()
@@ -160,8 +163,7 @@ Public Class NVEnc
             .Text = "Mode",            '.Expand = True,
             .Switches = {"--cqp", "--cbr", "--vbr"},
             .Options = {"CQP - Constant QP", "CBR - Constant Bitrate", "VBR - Variable Bitrate"},
-            .VisibleFunc = Function() Not Lossless.Value,
-            .ArgsFunc = AddressOf GetModeArgs,
+            .VisibleFunc = Function() Not Lossless.Value, ' .ArgsFunc = AddressOf GetModeArgs,
             .ImportAction = Sub(param, arg)
                                 'If Mode.Switches.Contains(param) Then Mode.Value = Array.IndexOf(Mode.Switches.ToArray, param)
                                 Dim find = Array.IndexOf(Mode.Switches.ToArray(), param)
@@ -171,10 +173,16 @@ Public Class NVEnc
                                 End If
                             End Sub}
 
+        Property Bitrate As New NumParam With {
+            .HelpSwitch = "--vbr",
+            .Text = "Bitrate",
+            .Config = {0, 999999, 100},
+            .VisibleFunc = Function() Mode.Value > 0 AndAlso Not ConstantQualityMode.Value}
+
         Property Multipass As New OptionParam With {
             .Text = "Multipass",
             .Switch = "--multipass",
-            .VisibleFunc = Function() Mode.Value >= 1,
+            .VisibleFunc = Function() Mode.Value > 0,
             .Options = {"2pass-full", "2pass-quarter", "none"},
             .Init = 2}
 
@@ -265,7 +273,7 @@ Public Class NVEnc
             .Text = "Maximum CLL",
             .VisibleFunc = Function() Codec.Value = 1,
             .Config = {0, Integer.MaxValue, 50},
-            .ArgsFunc = Function() If(MaxCLL.Value <> 0 OrElse MaxFALL.Value <> 0, "--max-cll """ & MaxCLL.Value & "," & MaxFALL.Value & """", ""),
+            .ArgsFunc = Function() If(MaxCLL.Value <> 0 OrElse MaxFALL.Value <> 0, "--max-cll """ & MaxCLL.Value & "," & MaxFALL.Value & """", String.Empty),
             .ImportAction = Sub(param, arg)
                                 If arg.NullOrEmptyS Then
                                     Exit Sub
@@ -286,7 +294,7 @@ Public Class NVEnc
             .Text = "Interlace",
             .Switch = "--interlace",
             .Options = {"Disabled", "Top Field First", "Bottom Field First"},
-            .Values = {"", "tff", "bff"}}
+            .Values = {String.Empty, "tff", "bff"}}
 
         Property Custom As New StringParam With {
             .Text = "Custom",
@@ -294,23 +302,23 @@ Public Class NVEnc
             .AlwaysOn = True}
 
         Property Tweak As New BoolParam With {.Switch = "--vpp-tweak", .Text = "Tweaking", .ArgsFunc = AddressOf GetTweakArgs}
-        Property TweakContrast As New NumParam With {.Text = "      Contrast", .HelpSwitch = "--vpp-tweak", .Init = 1.0, .Config = {-2.0, 2.0, 0.1, 1}}
+        Property TweakContrast As New NumParam With {.Text = "      Contrast", .HelpSwitch = "--vpp-tweak", .Init = 1.0, .Config = {-2.0, 2.0, 0.1, 2}}
         Property TweakGamma As New NumParam With {.Text = "      Gamma", .HelpSwitch = "--vpp-tweak", .Init = 1.0, .Config = {0.1, 10.0, 0.1, 1}}
-        Property TweakSaturation As New NumParam With {.Text = "      Saturation", .HelpSwitch = "--vpp-tweak", .Init = 1.0, .Config = {0.0, 3.0, 0.1, 1}}
-        Property TweakHue As New NumParam With {.Text = "      Hue", .HelpSwitch = "--vpp-tweak", .Config = {-180.0, 180.0, 0.1, 1}}
-        Property TweakBrightness As New NumParam With {.Text = "      Brightness", .HelpSwitch = "--vpp-tweak", .Config = {-1.0, 1.0, 0.1, 1}}
+        Property TweakSaturation As New NumParam With {.Text = "      Saturation", .HelpSwitch = "--vpp-tweak", .Init = 1.0, .Config = {0.0, 3.0, 0.1, 2}}
+        Property TweakHue As New NumParam With {.Text = "      Hue", .HelpSwitch = "--vpp-tweak", .Config = {-180.0, 180.0, 1, 1}}
+        Property TweakBrightness As New NumParam With {.Text = "      Brightness", .HelpSwitch = "--vpp-tweak", .Config = {-1.0, 1.0, 0.1, 2}}
         Property TweakSwapUV As New BoolParam With {.Text = "Swap UV", .HelpSwitch = "--vpp-tweak", .LeftMargin = g.MainForm.FontHeight * 1.3}
 
         Property Pmd As New BoolParam With {.Switch = "--vpp-pmd", .Text = "Denoise using PMD", .ArgsFunc = AddressOf GetPmdArgs}
-        Property PmdApplyCount As New NumParam With {.Text = "      Apply Count", .Init = 2}
+        Property PmdApplyCount As New NumParam With {.Text = "      Apply Count", .Init = 2, .Config = {1, 30}}
         Property PmdStrength As New NumParam With {.Text = "      Strength", .Name = "PmdStrength", .Init = 100.0, .Config = {0, 100, 1, 1}}
         Property PmdThreshold As New NumParam With {.Text = "      Threshold", .Init = 100.0, .Config = {0, 255, 1, 1}}
 
         Property Knn As New BoolParam With {.Switch = "--vpp-knn", .Text = "Denoise using K-nearest neighbor", .ArgsFunc = AddressOf GetKnnArgs}
-        Property KnnRadius As New NumParam With {.Text = "      Radius", .Init = 3}
+        Property KnnRadius As New NumParam With {.Text = "      Radius", .Init = 3, .Config = {1, 5}}
         Property KnnStrength As New NumParam With {.Text = "      Strength", .Init = 0.08, .Config = {0, 1, 0.02, 2}}
-        Property KnnLerp As New NumParam With {.Text = "      Lerp", .Init = 0.2, .Config = {0, Integer.MaxValue, 0.1, 1}}
-        Property KnnThLerp As New NumParam With {.Text = "      TH Lerp", .Init = 0.8, .Config = {0, 1, 0.1, 1}}
+        Property KnnLerp As New NumParam With {.Text = "      Lerp", .Init = 0.2, .Config = {0, 1, 0.1, 2}}
+        Property KnnThLerp As New NumParam With {.Text = "      TH Lerp", .Init = 0.8, .Config = {0, 1, 0.1, 2}}
 
         Property Pad As New BoolParam With {.Switch = "--vpp-pad", .Text = "Padding", .ArgsFunc = AddressOf GetPaddingArgs}
         Property PadLeft As New NumParam With {.Text = "      Left"}
@@ -356,14 +364,14 @@ Public Class NVEnc
         Property AfsLog As New BoolParam With {.Text = "Log", .HelpSwitch = "--vpp-afs", .LeftMargin = g.MainForm.FontHeight * 1.3}
 
         Property Edgelevel As New BoolParam With {.Text = "Edgelevel filter to enhance edge", .Switches = {"--vpp-edgelevel"}, .ArgsFunc = AddressOf GetEdge}
-        Property EdgelevelStrength As New NumParam With {.Text = "     Strength", .HelpSwitch = "--vpp-edgelevel", .Config = {0, 31, 1, 1}}
+        Property EdgelevelStrength As New NumParam With {.Text = "     Strength", .HelpSwitch = "--vpp-edgelevel", .Config = {-31, 31, 1, 1}}
         Property EdgelevelThreshold As New NumParam With {.Text = "     Threshold", .HelpSwitch = "--vpp-edgelevel", .Init = 20, .Config = {0, 255, 1, 1}}
         Property EdgelevelBlack As New NumParam With {.Text = "     Black", .HelpSwitch = "--vpp-edgelevel", .Config = {0, 31, 1, 1}}
         Property EdgelevelWhite As New NumParam With {.Text = "     White", .HelpSwitch = "--vpp-edgelevel", .Config = {0, 31, 1, 1}}
 
         Property Unsharp As New BoolParam With {.Text = "Unsharp Filter", .Switches = {"--vpp-unsharp"}, .ArgsFunc = AddressOf GetUnsharp}
         Property UnsharpRadius As New NumParam With {.Text = "     Radius", .HelpSwitch = "--vpp-unsharp", .Init = 3, .Config = {1, 9}}
-        Property UnsharpWeight As New NumParam With {.Text = "     Weight", .HelpSwitch = "--vpp-unsharp", .Init = 0.5, .Config = {0, 10, 0.5, 1}}
+        Property UnsharpWeight As New NumParam With {.Text = "     Weight", .HelpSwitch = "--vpp-unsharp", .Init = 0.5, .Config = {0, 10, 0.1, 1}}
         Property UnsharpThreshold As New NumParam With {.Text = "     Threshold", .HelpSwitch = "--vpp-unsharp", .Init = 10, .Config = {0, 255, 1, 1}}
 
         Property Nnedi As New BoolParam With {.Text = "nnedi Deinterlacer", .Switches = {"--vpp-nnedi"}, .ArgsFunc = AddressOf GetNnedi}
@@ -377,8 +385,8 @@ Public Class NVEnc
         Property NnediWeightfile As New StringParam With {.Text = "     Weight File", .HelpSwitch = "--vpp-nnedi", .BrowseFile = True}
 
         Property SelectEvery As New BoolParam With {.Text = "Select Every", .Switches = {"--vpp-select-every"}, .ArgsFunc = AddressOf GetSelectEvery}
-        Property SelectEveryValue As New NumParam With {.Text = "     Value", .HelpSwitch = "--vpp-select-every", .Init = 2}
-        Property SelectEveryOffsets As New StringParam With {.Text = "     Offsets", .HelpSwitch = "--vpp-select-every", .Expand = False}
+        Property SelectEveryStep As New NumParam With {.Text = "     Step", .HelpSwitch = "--vpp-select-every", .Init = 2}
+        Property SelectEveryOffsets As New NumParam With {.Text = "     Offsets", .HelpSwitch = "--vpp-select-every"}
 
         Property TransformFlipX As New BoolParam With {.Switch = "--vpp-transform", .Text = "Flip X", .Label = "Transform", .LeftMargin = g.MainForm.FontHeight * 1.5, .ArgsFunc = AddressOf GetTransform}
         Property TransformFlipY As New BoolParam With {.Text = "Flip Y", .LeftMargin = g.MainForm.FontHeight * 1.5, .HelpSwitch = "--vpp-transform"}
@@ -389,34 +397,34 @@ Public Class NVEnc
         Property SmoothQP As New NumParam With {.Text = "      QP", .HelpSwitch = "--vpp-smooth", .Config = {0, 100, 10, 1}}
         Property SmoothPrec As New OptionParam With {.Text = "      Precision", .HelpSwitch = "--vpp-smooth", .Options = {"Auto", "FP16", "FP32"}}
 
-        Property ColorSpace As New BoolParam With {.Text = "Color Space", .Switch = "--vpp-colorspace", .ArgsFunc = AddressOf GetColorSpace}
-        Property ColorSpaceMatrixIn As New OptionParam With {.Text = "      Matrix In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470bg", "smpte240m", "YCgCo", "fcc", "GBR", "bt2020nc", "bt2020c", "auto"}}
-        Property ColorSpaceMatrixOut As New OptionParam With {.Text = "      Matrix Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470bg", "smpte240m", "YCgCo", "fcc", "GBR", "bt2020nc", "bt2020c", "auto"}}
-        Property ColorSpaceColorPrimIn As New OptionParam With {.Text = "      ColorPrim In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "film", "bt2020", "auto"}}
-        Property ColorSpaceColorPrimOut As New OptionParam With {.Text = "      ColorPrim Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "film", "bt2020", "auto"}}
-        Property ColorSpaceTransferIn As New OptionParam With {.Text = "      Transfer In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "linear", "log100", "log316", "iec61966-2-4", "iec61966-2-1", "bt2020-10", "bt2020-12", "smpte2084", "arib-srd-b67", "auto"}}
-        Property ColorSpaceTransferOut As New OptionParam With {.Text = "      Transfer Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "linear", "log100", "log316", "iec61966-2-4", "iec61966-2-1", "bt2020-10", "bt2020-12", "smpte2084", "arib-srd-b67", "auto"}}
-        Property ColorSpaceRangeIn As New OptionParam With {.Text = "      Range In", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "limited", "full", "auto"}}
-        Property ColorSpaceRangeOut As New OptionParam With {.Text = "      Range Out", .HelpSwitch = "--vpp-colorspace", .Options = {"disabled", "limited", "full", "auto"}}
-        Property ColorSpaceHDR2SDR As New OptionParam With {.Text = "      HDR2SDR", .HelpSwitch = "--vpp-colorspace", .Options = {"none", "hable", "mobius", "reinhard"}}
-        Property ColorSpaceSourcePeak As New NumParam With {.Text = "      Source_Peak", .HelpSwitch = "--vpp-colorspace", .Init = 1000, .Config = {1, 100000, 50, 1}}
-        Property ColorSpaceLDRNits As New NumParam With {.Text = "      LDR_Nits", .HelpSwitch = "--vpp-colorspace", .Init = 100, .Config = {1, 20000, 10, 1}}
+        Property ColorSpace As New BoolParam With {.Text = "Color Space", .Switch = VColorSpaceS, .ArgsFunc = AddressOf GetColorSpace}
+        Property ColorSpaceMatrixIn As New OptionParam With {.Text = "      Matrix In", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "bt709", "smpte170m", "bt470bg", "smpte240m", "YCgCo", "fcc", "GBR", "bt2020nc", "bt2020c", "auto"}}
+        Property ColorSpaceMatrixOut As New OptionParam With {.Text = "      Matrix Out", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "bt709", "smpte170m", "bt470bg", "smpte240m", "YCgCo", "fcc", "GBR", "bt2020nc", "bt2020c", "auto"}}
+        Property ColorSpaceColorPrimIn As New OptionParam With {.Text = "      ColorPrim In", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "film", "bt2020", "auto"}}
+        Property ColorSpaceColorPrimOut As New OptionParam With {.Text = "      ColorPrim Out", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "film", "bt2020", "auto"}}
+        Property ColorSpaceTransferIn As New OptionParam With {.Text = "      Transfer In", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "linear", "log100", "log316", "iec61966-2-4", "iec61966-2-1", "bt2020-10", "bt2020-12", "smpte2084", "arib-srd-b67", "auto"}}
+        Property ColorSpaceTransferOut As New OptionParam With {.Text = "      Transfer Out", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "bt709", "smpte170m", "bt470m", "bt470bg", "smpte240m", "linear", "log100", "log316", "iec61966-2-4", "iec61966-2-1", "bt2020-10", "bt2020-12", "smpte2084", "arib-srd-b67", "auto"}}
+        Property ColorSpaceRangeIn As New OptionParam With {.Text = "      Range In", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "limited", "full", "auto"}}
+        Property ColorSpaceRangeOut As New OptionParam With {.Text = "      Range Out", .HelpSwitch = VColorSpaceS, .Options = {"disabled", "limited", "full", "auto"}}
+        Property ColorSpaceHDR2SDR As New OptionParam With {.Text = "      HDR2SDR", .HelpSwitch = VColorSpaceS, .Options = {"none", "hable", "mobius", "reinhard"}}
+        Property ColorSpaceSourcePeak As New NumParam With {.Text = "      Source_Peak", .HelpSwitch = VColorSpaceS, .Init = 1000, .Config = {1, 100000, 50, 1}}
+        Property ColorSpaceLDRNits As New NumParam With {.Text = "      LDR_Nits", .HelpSwitch = VColorSpaceS, .Init = 100, .Config = {1, 20000, 10, 1}}
 
-        Property ColorSpaceHDRpA As New NumParam With {.Text = "      Hable A par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.22, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRpB As New NumParam With {.Text = "      Hable B par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.3, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRpC As New NumParam With {.Text = "      Hable C par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.1, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRpD As New NumParam With {.Text = "      Hable D par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.2, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRpE As New NumParam With {.Text = "      Hable E par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.01, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRpF As New NumParam With {.Text = "      Hable F par", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.3, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRTransition As New NumParam With {.Text = "      Mobius Transition", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 2, .Init = 0.3, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRPeak As New NumParam With {.Text = "      Mobius/Reinhard Peak", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function()
-                                                                                                                                                    Dim csHDRVal As Integer = ColorSpaceHDR2SDR.Value
-                                                                                                                                                    Return csHDRVal = 2 OrElse csHDRVal = 3
-                                                                                                                                                End Function, .Init = 1, .Config = {0, 10, 0.02, 2}}
-        Property ColorSpaceHDRContrast As New NumParam With {.Text = "      Reinhard Contrast", .HelpSwitch = "--vpp-colorspace", .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 3, .Init = 0.5, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpA As New NumParam With {.Text = "      Hable A par", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.22, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpB As New NumParam With {.Text = "      Hable B par", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.3, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpC As New NumParam With {.Text = "      Hable C par", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.1, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpD As New NumParam With {.Text = "      Hable D par", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.2, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpE As New NumParam With {.Text = "      Hable E par", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.01, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRpF As New NumParam With {.Text = "      Hable F par", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 1, .Init = 0.3, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRTransition As New NumParam With {.Text = "      Mobius Transition", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 2, .Init = 0.3, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRPeak As New NumParam With {.Text = "      Mobius/Reinhard Peak", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function()
+                                                                                                                                              Dim csHDRVal As Integer = ColorSpaceHDR2SDR.Value
+                                                                                                                                              Return csHDRVal = 2 OrElse csHDRVal = 3
+                                                                                                                                          End Function, .Init = 1, .Config = {0, 10, 0.02, 2}}
+        Property ColorSpaceHDRContrast As New NumParam With {.Text = "      Reinhard Contrast", .HelpSwitch = VColorSpaceS, .VisibleFunc = Function() ColorSpaceHDR2SDR.Value = 3, .Init = 0.5, .Config = {0, 10, 0.02, 2}}
 
 
-        'TO DO: Add: --atc-sei, --repeat-headers(check this),  Decimate,  MpDecimate and VFR
+        'TODO: Add: --atc-sei, --repeat-headers(check this),  Decimate,  MpDecimate and VFR , Vma, --vmaf ; desat_base=<float> (default: 0.18), desat_strength=<float> (default 0.75),fo desat_exp=<float> (default: 1.50)
 
         Overrides ReadOnly Property Items As List(Of CommandLineParam)
             Get
@@ -430,7 +438,7 @@ Public Class NVEnc
                         New OptionParam With {.Name = "LevelH264", .Switch = "--level", .Text = "Level", .VisibleFunc = Function() Codec.Value = 0, .Options = {"Unrestricted", "1", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3", "3.1", "3.2", "4", "4.1", "4.2", "5", "5.1", "5.2"}},
                         New OptionParam With {.Name = "LevelH265", .Switch = "--level", .Text = "Level", .VisibleFunc = Function() Codec.Value = 1, .Options = {"Unrestricted", "1", "2", "2.1", "3", "3.1", "4", "4.1", "5", "5.1", "5.2", "6", "6.1", "6.2"}},
                         New OptionParam With {.Switch = "--output-depth", .Text = "Depth", .VisibleFunc = Function() Codec.Value = 1, .Options = {"Default", "8-Bit", "10-Bit"}, .Values = {"8", "8", "10"}},
-                        QPAdvanced, QP, QPI, QPP, QPB)
+                        QPAdvanced, QP, QPI, QPP, QPB, Bitrate)
                     Add("Rate Control",
                         New StringParam With {.Switch = "--dynamic-rc", .Text = "Dynamic RC"},
                         New NumParam With {.Switch = "--qp-init", .Text = "Initial QP", .Config = {0, Integer.MaxValue, 1}},
@@ -459,7 +467,7 @@ Public Class NVEnc
                         New BoolParam With {.NoSwitch = "--no-i-adapt", .Text = "I-Adapt", .Init = True},
                         New BoolParam With {.Switch = "--nonrefp", .Text = "Enable adapt. non-reference P frame insertion"})
                     Add("Analysis",
-                        New OptionParam With {.Switch = "--adapt-transform", .Text = "Adaptive Transform", .Options = {"Automatic", "Enabled", "Disabled"}, .Values = {"", "--adapt-transform", "--no-adapt-transform"}, .VisibleFunc = Function() Codec.Value = 0},
+                        New OptionParam With {.Switch = "--adapt-transform", .Text = "Adaptive Transform", .Options = {"Automatic", "Enabled", "Disabled"}, .Values = {String.Empty, "--adapt-transform", "--no-adapt-transform"}, .VisibleFunc = Function() Codec.Value = 0},
                         New NumParam With {.Switch = "--cu-min", .VisibleFunc = Function() Codec.Value = 1, .Text = "Minimum CU Size", .Config = {0, 32, 16}},
                         New NumParam With {.Switch = "--cu-max", .VisibleFunc = Function() Codec.Value = 1, .Text = "Maximum CU Size", .Config = {0, 64, 16}},
                         New BoolParam With {.Switch = "--weightp", .Text = "Enable weighted prediction in P slices"})
@@ -509,7 +517,7 @@ Public Class NVEnc
                         UnsharpWeight,
                         UnsharpThreshold,
                         SelectEvery,
-                        SelectEveryValue,
+                        SelectEveryStep,
                         SelectEveryOffsets)
                     Add("VPP | Misc 2",
                         Tweak,
@@ -583,7 +591,7 @@ Public Class NVEnc
                         NnediErrortype,
                         NnediPrec,
                         NnediWeightfile,
-                        New OptionParam With {.Switch = "--vpp-yadif", .Text = "Yadif", .Options = {"Disabled", "Auto", "TFF", "BFF", "Bob", "Bob TFF", "Bob BFF"}, .Values = {"", "", "mode=tff", "mode=bff", "mode=bob", "mode=bob_tff", "mode=bob_bff"}})
+                        New OptionParam With {.Switch = "--vpp-yadif", .Text = "Yadif", .Options = {"Disabled", "Auto", "TFF", "BFF", "Bob", "Bob TFF", "Bob BFF"}, .Values = {String.Empty, String.Empty, "mode=tff", "mode=bff", "mode=bob", "mode=bob_tff", "mode=bob_bff"}})
                     Add("VPP | AFS 1",
                         Afs,
                         AfsINI,
@@ -620,7 +628,7 @@ Public Class NVEnc
                         New StringParam With {.Switch = "--data-copy", .Text = "Data Copy"},
                         New StringParam With {.Switch = "--input-option", .Text = "Input Option"},
                         New OptionParam With {.Switch = "--mv-precision", .Text = "MV Precision", .Options = {"Automatic", "Q-pel", "Half-pel", "Full-pel"}},
-                        New OptionParam With {.Switches = {"--cabac", "--cavlc"}, .VisibleFunc = Function() Codec.Value = 0, .Text = "Cabac/Cavlc", .Options = {"Disabled", "Cabac", "Cavlc"}, .Values = {"", "--cabac", "--cavlc"}},
+                        New OptionParam With {.Switches = {"--cabac", "--cavlc"}, .VisibleFunc = Function() Codec.Value = 0, .Text = "Cabac/Cavlc", .Options = {"Disabled", "Cabac", "Cavlc"}, .Values = {String.Empty, "--cabac", "--cavlc"}},
                         Interlace,
                         New NumParam With {.Switch = "--device", .HelpSwitch = "-d", .Text = "Device", .Config = {0, 4}},
                         New BoolParam With {.Switch = "--deblock", .NoSwitch = "--no-deblock", .Text = "Deblock", .Init = True},
@@ -680,8 +688,8 @@ Public Class NVEnc
                 UnsharpThreshold.NumEdit.Enabled = usVal
 
                 Dim seVal As Boolean = SelectEvery.Value
-                SelectEveryValue.NumEdit.Enabled = seVal
-                SelectEveryOffsets.TextEdit.Enabled = seVal
+                SelectEveryStep.NumEdit.Enabled = seVal
+                SelectEveryOffsets.NumEdit.Enabled = seVal
 
                 Dim knnVal As Boolean = Knn.Value
                 KnnRadius.NumEdit.Enabled = knnVal
@@ -771,31 +779,29 @@ Public Class NVEnc
 
         Function GetSmooth() As String
             If Smooth.Value Then
-                Dim ret = ""
+                Dim ret As String
 
-                If SmoothQuality.Value <> SmoothQuality.DefaultValue Then
-                    ret &= ",quality=" & SmoothQuality.Value
+                Dim sq As Double = SmoothQuality.Value
+                If sq <> SmoothQuality.DefaultValue Then
+                    ret = ",quality=" & sq.ToIntInvStr
                 End If
 
-                If SmoothQP.Value <> SmoothQP.DefaultValue Then
-                    ret &= ",qp=" & SmoothQP.Value.ToInvariantString
+                Dim sqp As Double = SmoothQP.Value
+                If sqp <> SmoothQP.DefaultValue Then
+                    ret &= ",qp=" & sqp.ToInvStr
                 End If
 
                 If SmoothPrec.Value <> SmoothPrec.DefaultValue Then
                     ret &= ",prec=" & SmoothPrec.ValueText
                 End If
 
-                If ret.Length > 0 Then
-                    Return "--vpp-smooth " & ret.TrimStart(","c)
-                Else
-                    Return "--vpp-smooth"
-                End If
+                Return If(ret IsNot Nothing, "--vpp-smooth" & " " & ret.Substring(1, ret.Length - 1), "--vpp-smooth")
             End If
         End Function
 
         Function GetColorSpace() As String
             If ColorSpace.Value Then
-                Dim sb As New StringBuilder(208)
+                Dim sb As New StringBuilder(VColorSpaceS, 224)
 
                 If ColorSpaceMatrixIn.Value <> ColorSpaceMatrixIn.DefaultValue AndAlso ColorSpaceMatrixOut.Value <> ColorSpaceMatrixOut.DefaultValue Then
                     sb.Append(",matrix=").Append(ColorSpaceMatrixIn.ValueText).Append(":").Append(ColorSpaceMatrixOut.ValueText)
@@ -813,119 +819,135 @@ Public Class NVEnc
                     sb.Append(",range=").Append(ColorSpaceRangeIn.ValueText).Append(":").Append(ColorSpaceRangeOut.ValueText)
                 End If
 
-                If ColorSpaceHDR2SDR.Value <> ColorSpaceHDR2SDR.DefaultValue Then
+                Dim csV As Integer = ColorSpaceHDR2SDR.Value
+                If csV <> ColorSpaceHDR2SDR.DefaultValue Then
                     sb.Append(",hdr2sdr=").Append(ColorSpaceHDR2SDR.ValueText)
-                    Select Case ColorSpaceHDR2SDR.Value
+
+                    Select Case csV
                         Case = 1 '"hable"
-                            If ColorSpaceHDRpA.Value <> ColorSpaceHDRpA.DefaultValue Then
-                                sb.Append(",a=").Append(ColorSpaceHDRpA.Value.ToInvariantString)
+                            Dim chaV As Double = ColorSpaceHDRpA.Value
+                            If chaV <> ColorSpaceHDRpA.DefaultValue Then
+                                sb.Append(",a=").Append(chaV.ToInvStr)
                             End If
-                            If ColorSpaceHDRpB.Value <> ColorSpaceHDRpB.DefaultValue Then
-                                sb.Append(",b=").Append(ColorSpaceHDRpB.Value.ToInvariantString)
+                            Dim chbV As Double = ColorSpaceHDRpB.Value
+                            If chbV <> ColorSpaceHDRpB.DefaultValue Then
+                                sb.Append(",b=").Append(chbV.ToInvStr)
                             End If
-                            If ColorSpaceHDRpC.Value <> ColorSpaceHDRpC.DefaultValue Then
-                                sb.Append(",c=").Append(ColorSpaceHDRpC.Value.ToInvariantString)
+                            Dim chcV As Double = ColorSpaceHDRpC.Value
+                            If chcV <> ColorSpaceHDRpC.DefaultValue Then
+                                sb.Append(",c=").Append(chcV.ToInvStr)
                             End If
-                            If ColorSpaceHDRpD.Value <> ColorSpaceHDRpD.DefaultValue Then
-                                sb.Append(",d=").Append(ColorSpaceHDRpD.Value.ToInvariantString)
+                            Dim chdV As Double = ColorSpaceHDRpD.Value
+                            If chdV <> ColorSpaceHDRpD.DefaultValue Then
+                                sb.Append(",d=").Append(chdV.ToInvStr)
                             End If
-                            If ColorSpaceHDRpE.Value <> ColorSpaceHDRpE.DefaultValue Then
-                                sb.Append(",e=").Append(ColorSpaceHDRpE.Value.ToInvariantString)
+                            Dim cheV As Double = ColorSpaceHDRpE.Value
+                            If cheV <> ColorSpaceHDRpE.DefaultValue Then
+                                sb.Append(",e=").Append(cheV.ToInvStr)
                             End If
-                            If ColorSpaceHDRpF.Value <> ColorSpaceHDRpF.DefaultValue Then
-                                sb.Append(",f=").Append(ColorSpaceHDRpF.Value.ToInvariantString)
+                            Dim chfV As Double = ColorSpaceHDRpF.Value
+                            If chfV <> ColorSpaceHDRpF.DefaultValue Then
+                                sb.Append(",f=").Append(chfV.ToInvStr)
                             End If
                         Case = 2 ' "mobius"
-                            If ColorSpaceHDRTransition.Value <> ColorSpaceHDRTransition.DefaultValue Then
-                                sb.Append(",transition=").Append(ColorSpaceHDRTransition.Value.ToInvariantString)
+                            Dim cmV As NumParam = ColorSpaceHDRTransition
+                            If cmV.Value <> cmV.DefaultValue Then
+                                sb.Append(",transition=").Append(cmV.Value.ToInvStr)
                             End If
-                            If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
-                                sb.Append(",peak=").Append(ColorSpaceHDRPeak.Value.ToInvariantString)
+                            Dim cpV As Double = ColorSpaceHDRPeak.Value
+                            If cpV <> ColorSpaceHDRPeak.DefaultValue Then
+                                sb.Append(",peak=").Append(cpV.ToInvStr)
                             End If
                         Case = 3 '"reinhard"
-                            If ColorSpaceHDRContrast.Value <> ColorSpaceHDRContrast.DefaultValue Then
-                                sb.Append(",contrast=").Append(ColorSpaceHDRContrast.Value.ToInvariantString)
+                            Dim ccV As Double = ColorSpaceHDRContrast.Value
+                            If ccV <> ColorSpaceHDRContrast.DefaultValue Then
+                                sb.Append(",contrast=").Append(ccV.ToInvStr)
                             End If
-                            If ColorSpaceHDRPeak.Value <> ColorSpaceHDRPeak.DefaultValue Then
-                                sb.Append(",peak=").Append(ColorSpaceHDRPeak.Value.ToInvariantString)
+                            Dim cpV As Double = ColorSpaceHDRPeak.Value
+                            If cpV <> ColorSpaceHDRPeak.DefaultValue Then
+                                sb.Append(",peak=").Append(cpV.ToInvStr)
                             End If
                     End Select
                 End If
 
-                If ColorSpaceSourcePeak.Value <> ColorSpaceSourcePeak.DefaultValue Then
-                    sb.Append(",source_peak=").Append(ColorSpaceSourcePeak.Value.ToInvariantString)
+                Dim cspV As Double = ColorSpaceSourcePeak.Value
+                If cspV <> ColorSpaceSourcePeak.DefaultValue Then
+                    sb.Append(",source_peak=").Append(cspV.ToInvStr)
                 End If
 
-                If ColorSpaceLDRNits.Value <> ColorSpaceLDRNits.DefaultValue Then
-                    sb.Append(",ldr_nits=").Append(ColorSpaceLDRNits.Value.ToInvariantString)
+                Dim csnV As Double = ColorSpaceLDRNits.Value
+                If csnV <> ColorSpaceLDRNits.DefaultValue Then
+                    sb.Append(",ldr_nits=").Append(csnV.ToInvStr)
                 End If
 
-                Dim sbL = sb.Length
-                If sbL > 0 Then
-                    'Return "--vpp-colorspace " & ret.TrimStart(","c).TrimEnd
-                    Return "--vpp-colorspace " & If(sb.Chars(0) = ","c, sb.ToString(1, sbL - 1), sb.ToString).TrimEnd
+                If sb.Length > 16 Then
+                    sb.Chars(16) = " "c
+                    Return sb.ToString
                 Else
-                    Return "--vpp-colorspace"
+                    Return VColorSpaceS
                 End If
-
             End If
         End Function
 
-
         Function GetPmdArgs() As String
             If Pmd.Value Then
-                Dim ret = ""
+                Dim ret As String
 
-                If PmdApplyCount.Value <> PmdApplyCount.DefaultValue Then
-                    ret &= ",apply_count=" & PmdApplyCount.Value
+                Dim pcV As Double = PmdApplyCount.Value
+                If pcV <> PmdApplyCount.DefaultValue Then
+                    ret = ",apply_count=" & pcV.ToIntInvStr
                 End If
 
-                If PmdStrength.Value <> PmdStrength.DefaultValue Then
-                    ret &= ",strength=" & PmdStrength.Value
+                Dim psV As Double = PmdStrength.Value
+                If psV <> PmdStrength.DefaultValue Then
+                    ret &= ",strength=" & psV.ToInvStr
                 End If
 
-                If PmdThreshold.Value <> PmdThreshold.DefaultValue Then
-                    ret &= ",threshold=" & PmdThreshold.Value
+                Dim ptV As Double = PmdThreshold.Value
+                If ptV <> PmdThreshold.DefaultValue Then
+                    ret &= ",threshold=" & ptV.ToInvStr
                 End If
 
-                If ret.Length > 0 Then
-                    Return "--vpp-pmd " & ret.TrimStart(","c)
-                Else
-                    Return "--vpp-pmd"
-                End If
+                Return If(ret IsNot Nothing, "--vpp-pmd" & " " & ret.Substring(1, ret.Length - 1), "--vpp-pmd")
             End If
         End Function
 
         Function GetTweakArgs() As String
             If Tweak.Value Then
-                Dim ret = ""
+                Dim sb As New StringBuilder("--vpp-tweak", 92)
 
-                If TweakBrightness.Value <> TweakBrightness.DefaultValue Then
-                    ret &= "brightness=" & TweakBrightness.Value.ToInvariantString
+                Dim tbV As Double = TweakBrightness.Value
+                If tbV <> TweakBrightness.DefaultValue Then
+                    sb.Append(",brightness=").Append(tbV.ToInvStr)
                 End If
 
-                If TweakContrast.Value <> TweakContrast.DefaultValue Then
-                    ret &= ",contrast=" & TweakContrast.Value.ToInvariantString
+                Dim tcV As Double = TweakContrast.Value
+                If tcV <> TweakContrast.DefaultValue Then
+                    sb.Append(",contrast=").Append(tcV.ToInvStr)
                 End If
 
-                If TweakSaturation.Value <> TweakSaturation.DefaultValue Then
-                    ret &= ",saturation=" & TweakSaturation.Value.ToInvariantString
+                Dim tsV As Double = TweakSaturation.Value
+                If tsV <> TweakSaturation.DefaultValue Then
+                    sb.Append(",saturation=").Append(tsV.ToInvStr)
                 End If
 
-                If TweakGamma.Value <> TweakGamma.DefaultValue Then
-                    ret &= ",gamma=" & TweakGamma.Value.ToInvariantString
+                Dim tgV As Double = TweakGamma.Value
+                If tgV <> TweakGamma.DefaultValue Then
+                    sb.Append(",gamma=").Append(tgV.ToInvStr)
                 End If
 
-                If TweakHue.Value <> TweakHue.DefaultValue Then
-                    ret &= ",hue=" & TweakHue.Value.ToInvariantString
+                Dim thV As Double = TweakHue.Value
+                If thV <> TweakHue.DefaultValue Then
+                    sb.Append(",hue=").Append(thV.ToInvStr)
                 End If
 
                 If TweakSwapUV.Value Then
-                    ret &= ",swapuv=true"
+                    sb.Append(",swapuv=true")
                 End If
 
-                If ret.Length > 0 Then
-                    Return "--vpp-tweak " & ret.TrimStart(","c)
+                If sb.Length > 11 Then
+                    sb(11) = " "c
+                    Return sb.ToString
                 Else
                     Return "--vpp-tweak"
                 End If
@@ -934,54 +956,39 @@ Public Class NVEnc
 
         Function GetPaddingArgs() As String
             If Pad.Value Then
-                Dim ret = ""
-
-                If PadLeft.Value <> PadLeft.DefaultValue Then
-                    ret &= "" & PadLeft.Value
-                End If
-
-                If PadTop.Value <> PadTop.DefaultValue Then
-                    ret &= "," & PadTop.Value
-                End If
-
-                If PadRight.Value <> PadRight.DefaultValue Then
-                    ret &= "," & PadRight.Value
-                End If
-
-                If PadBottom.Value <> PadBottom.DefaultValue Then
-                    ret &= "," & PadBottom.Value
-                End If
-
-                If ret.Length > 0 Then
-                    Return "--vpp-pad " & ret.TrimStart(","c)
-                Else
-                    Return "--vpp-pad "
-                End If
+                Dim sb As New StringBuilder("--vpp-pad" & " ", 30)
+                sb.Append(PadLeft.Value.ToIntInvStr).Append(",").Append(PadTop.Value.ToIntInvStr).Append(",").Append(PadRight.Value.ToIntInvStr).Append(",").Append(PadBottom.Value.ToIntInvStr)
+                Return sb.ToString
             End If
         End Function
 
         Function GetKnnArgs() As String
             If Knn.Value Then
-                Dim ret = ""
+                Dim sb As New StringBuilder("--vpp-knn", 56)
 
-                If KnnRadius.Value <> KnnRadius.DefaultValue Then
-                    ret &= ",radius=" & KnnRadius.Value
+                Dim krV As Double = KnnRadius.Value
+                If krV <> KnnRadius.DefaultValue Then
+                    sb.Append(",radius=").Append(krV.ToIntInvStr)
                 End If
 
-                If KnnStrength.Value <> KnnStrength.DefaultValue Then
-                    ret &= ",strength=" & KnnStrength.Value.ToInvariantString
+                Dim ksV As Double = KnnStrength.Value
+                If ksV <> KnnStrength.DefaultValue Then
+                    sb.Append(",strength=").Append(ksV.ToInvStr)
                 End If
 
-                If KnnLerp.Value <> KnnLerp.DefaultValue Then
-                    ret &= ",lerp=" & KnnLerp.Value.ToInvariantString
+                Dim klV As Double = KnnLerp.Value
+                If klV <> KnnLerp.DefaultValue Then
+                    sb.Append(",lerp=").Append(klV.ToInvStr)
                 End If
 
-                If KnnThLerp.Value <> KnnThLerp.DefaultValue Then
-                    ret &= ",th_lerp=" & KnnThLerp.Value.ToInvariantString
+                Dim ktV As Double = KnnThLerp.Value
+                If ktV <> KnnThLerp.DefaultValue Then
+                    sb.Append(",th_lerp=").Append(ktV.ToInvStr)
                 End If
 
-                If ret.Length > 0 Then
-                    Return "--vpp-knn " & ret.TrimStart(","c)
+                If sb.Length > 9 Then
+                    sb(9) = " "c
+                    Return sb.ToString
                 Else
                     Return "--vpp-knn"
                 End If
@@ -989,297 +996,298 @@ Public Class NVEnc
         End Function
 
         Function GetDebandArgs() As String
-            Dim ret = ""
-
-            If DebandRange.Value <> DebandRange.DefaultValue Then
-                ret &= ",range=" & DebandRange.Value
-            End If
-
-            If DebandSample.Value <> DebandSample.DefaultValue Then
-                ret &= ",sample=" & DebandSample.Value
-            End If
-
-            If DebandThre.Value <> DebandThre.DefaultValue Then
-                ret &= ",thre=" & DebandThre.Value
-            End If
-
-            If DebandThreY.Value <> DebandThreY.DefaultValue Then
-                ret &= ",thre_y=" & DebandThreY.Value
-            End If
-
-            If DebandThreCB.Value <> DebandThreCB.DefaultValue Then
-                ret &= ",thre_cb=" & DebandThreCB.Value
-            End If
-
-            If DebandThreCR.Value <> DebandThreCR.DefaultValue Then
-                ret &= ",thre_cr=" & DebandThreCR.Value
-            End If
-
-            If DebandDither.Value <> DebandDither.DefaultValue Then
-                ret &= ",dither=" & DebandDither.Value
-            End If
-
-            If DebandDitherY.Value <> DebandDitherY.DefaultValue Then
-                ret &= ",dither_y=" & DebandDitherY.Value
-            End If
-
-            If DebandDitherC.Value <> DebandDitherC.DefaultValue Then
-                ret &= ",dither_c=" & DebandDitherC.Value
-            End If
-
-            If DebandSeed.Value <> DebandSeed.DefaultValue Then
-                ret &= ",seed=" & DebandSeed.Value
-            End If
-
-            If DebandBlurfirst.Value Then
-                ret &= "," & "blurfirst"
-            End If
-
-            If DebandRandEachFrame.Value Then
-                ret &= "," & "rand_each_frame"
-            End If
-
             If Deband.Value Then
-                Return ("--vpp-deband " & ret.TrimStart(","c)).TrimEnd
+                Dim sb As New StringBuilder("--vpp-deband", 144)
+
+                Dim drV As Double = DebandRange.Value
+                If drV <> DebandRange.DefaultValue Then
+                    sb.Append(",range=").Append(drV.ToIntInvStr)
+                End If
+
+                Dim dsV As Double = DebandSample.Value
+                If dsV <> DebandSample.DefaultValue Then
+                    sb.Append(",sample=").Append(dsV.ToIntInvStr)
+                End If
+
+                Dim dtV As Double = DebandThre.Value
+                If dtV <> DebandThre.DefaultValue Then
+                    sb.Append(",thre=").Append(dtV.ToIntInvStr)
+                End If
+
+                Dim dyV As Double = DebandThreY.Value
+                If dyV <> DebandThreY.DefaultValue Then
+                    sb.Append(",thre_y=").Append(dyV.ToIntInvStr)
+                End If
+
+                Dim dbV As Double = DebandThreCB.Value
+                If dbV <> DebandThreCB.DefaultValue Then
+                    sb.Append(",thre_cb=").Append(dbV.ToIntInvStr)
+                End If
+
+                Dim dcV As Double = DebandThreCR.Value
+                If dcV <> DebandThreCR.DefaultValue Then
+                    sb.Append(",thre_cr=").Append(dcV.ToIntInvStr)
+                End If
+
+                Dim ddV As Double = DebandDither.Value
+                If ddV <> DebandDither.DefaultValue Then
+                    sb.Append(",dither=").Append(ddV.ToIntInvStr)
+                End If
+
+                Dim dy As Double = DebandDitherY.Value
+                If dy <> DebandDitherY.DefaultValue Then
+                    sb.Append(",dither_y=").Append(dy.ToIntInvStr)
+                End If
+
+                Dim dc As Double = DebandDitherC.Value
+                If dc <> DebandDitherC.DefaultValue Then
+                    sb.Append(",dither_c=").Append(dc.ToIntInvStr)
+                End If
+
+                Dim ds As Double = DebandSeed.Value
+                If ds <> DebandSeed.DefaultValue Then
+                    sb.Append(",seed=").Append(ds.ToIntInvStr)
+                End If
+
+                If DebandBlurfirst.Value Then
+                    sb.Append(",blurfirst")
+                End If
+
+                If DebandRandEachFrame.Value Then
+                    sb.Append(",rand_each_frame")
+                End If
+
+                If sb.Length > 12 Then
+                    sb(12) = " "c
+                    Return sb.ToString
+                Else
+                    Return "--vpp-deband"
+                End If
             End If
         End Function
 
         Function GetUnsharp() As String
-            Dim ret = ""
-
-            If UnsharpRadius.Value <> UnsharpRadius.DefaultValue Then
-                ret &= "radius=" & UnsharpRadius.Value
-            End If
-
-            If UnsharpWeight.Value <> UnsharpWeight.DefaultValue Then
-                ret &= ",weight=" & UnsharpWeight.Value.ToInvariantString
-            End If
-
-            If UnsharpThreshold.Value <> UnsharpThreshold.DefaultValue Then
-                ret &= ",threshold=" & UnsharpThreshold.Value
-            End If
-
             If Unsharp.Value Then
-                Return ("--vpp-unsharp " & ret.TrimStart(","c)).TrimEnd
+                Dim ret As String
+
+                Dim urV As Double = UnsharpRadius.Value
+                If urV <> UnsharpRadius.DefaultValue Then
+                    ret = ",radius=" & urV
+                End If
+
+                Dim uwV As Double = UnsharpWeight.Value
+                If uwV <> UnsharpWeight.DefaultValue Then
+                    ret &= ",weight=" & uwV.ToInvStr
+                End If
+
+                Dim utV As Double = UnsharpThreshold.Value
+                If utV <> UnsharpThreshold.DefaultValue Then
+                    ret &= ",threshold=" & utV.ToInvStr
+                End If
+
+                Return If(ret?.Length > 0, "--vpp-unsharp" & " " & ret.Substring(1, ret.Length - 1), "--vpp-unsharp")
             End If
         End Function
 
         Function GetEdge() As String
-            Dim ret = ""
-
-            If EdgelevelStrength.Value <> EdgelevelStrength.DefaultValue Then
-                ret &= "strength=" & EdgelevelStrength.Value
-            End If
-
-            If EdgelevelThreshold.Value <> EdgelevelThreshold.DefaultValue Then
-                ret &= ",threshold=" & EdgelevelThreshold.Value
-            End If
-
-            If EdgelevelBlack.Value <> EdgelevelBlack.DefaultValue Then
-                ret &= ",black=" & EdgelevelBlack.Value
-            End If
-
-            If EdgelevelWhite.Value <> EdgelevelWhite.DefaultValue Then
-                ret &= ",white=" & EdgelevelWhite.Value
-            End If
-
             If Edgelevel.Value Then
-                Return ("--vpp-edgelevel " & ret.TrimStart(","c)).TrimEnd
+                Dim sb As New StringBuilder("--vpp-edgelevel", 68)
+
+                Dim esV As Double = EdgelevelStrength.Value
+                If esV <> EdgelevelStrength.DefaultValue Then
+                    sb.Append(",strength=").Append(esV.ToInvStr)
+                End If
+
+                Dim etV As Double = EdgelevelThreshold.Value
+                If etV <> EdgelevelThreshold.DefaultValue Then
+                    sb.Append(",threshold=").Append(etV.ToInvStr)
+                End If
+
+                Dim ebV As Double = EdgelevelBlack.Value
+                If ebV <> EdgelevelBlack.DefaultValue Then
+                    sb.Append(",black=").Append(ebV.ToInvStr)
+                End If
+
+                Dim ewV As Double = EdgelevelWhite.Value
+                If ewV <> EdgelevelWhite.DefaultValue Then
+                    sb.Append(",white=").Append(ewV.ToInvStr)
+                End If
+
+                If sb.Length > 15 Then
+                    sb(15) = " "c
+                    Return sb.ToString
+                Else
+                    Return "--vpp-edgelevel"
+                End If
             End If
         End Function
 
         Function GetTransform() As String
-            Dim ret = ""
+            Dim ret As String
 
-            If TransformFlipX.Value Then
-                ret &= "flip_x=true"
-            End If
+            If TransformFlipX.Value Then ret = "flip_x=true"
 
-            If TransformFlipY.Value Then
-                ret &= ",flip_y=true"
-            End If
+            If TransformFlipY.Value Then ret &= ",flip_y=true"
 
-            If TransformTranspose.Value Then
-                ret &= ",transpose=true"
-            End If
+            If TransformTranspose.Value Then ret &= ",transpose=true"
 
-            If ret.Length > 0 Then
-                Return ("--vpp-transform " & ret.TrimStart(","c)).TrimEnd
+            If ret?.Length > 0 Then
+                Return ("--vpp-transform" & " " & ret.TrimStart(","c))
             End If
         End Function
 
         Function GetSelectEvery() As String
-            Dim ret = ""
-
-            ret &= SelectEveryValue.Value.ToString
-            ret &= "," & String.Join(","c, SelectEveryOffsets.Value.Split(({" "c, ","c, ";"c}), StringSplitOptions.RemoveEmptyEntries).SelectF(Function(item) "offset=" & item))
-
             If SelectEvery.Value Then
-                Return ("--vpp-select-every " & ret.TrimStart(","c)).TrimEnd(","c)
+                Dim ret = "--vpp-select-every" & " " & CInt(SelectEveryStep.Value).ToInvStr
+
+                Dim soV As Integer = CInt(SelectEveryOffsets.Value)
+                If soV <> 0 Then ret &= ",offset=" & soV.ToInvStr
+                'ret &= "," & String.Join(","c, SelectEveryOffsets.Value.Split(({" "c, ","c, ";"c}), StringSplitOptions.RemoveEmptyEntries).SelectF(Function(item) "offset=" & item))
+                Return ret
             End If
         End Function
 
         Function GetNnedi() As String
-            Dim ret = ""
-
-            If NnediField.Value <> NnediField.DefaultValue Then
-                ret &= "field=" & NnediField.ValueText
-            End If
-
-            If NnediNns.Value <> NnediNns.DefaultValue Then
-                ret &= ",nns=" & NnediNns.ValueText
-            End If
-
-            If NnediNsize.Value <> NnediNsize.DefaultValue Then
-                ret &= ",nsize=" & NnediNsize.ValueText
-            End If
-
-            If NnediQuality.Value <> NnediQuality.DefaultValue Then
-                ret &= ",quality=" & NnediQuality.ValueText
-            End If
-
-            If NnediPrescreen.Value <> NnediPrescreen.DefaultValue Then
-                ret &= ",prescreen=" & NnediPrescreen.ValueText
-            End If
-
-            If NnediErrortype.Value <> NnediErrortype.DefaultValue Then
-                ret &= ",errortype=" & NnediErrortype.ValueText
-            End If
-
-            If NnediPrec.Value <> NnediPrec.DefaultValue Then
-                ret &= ",prec=" & NnediPrec.ValueText
-            End If
-
-            If NnediWeightfile.Value?.Length > 0 Then
-                ret &= ",weightfile=" & NnediWeightfile.Value.Escape
-            End If
-
             If Nnedi.Value Then
+                Dim ret = "" 'As New StringBuilder("--vpp-nnedi", 64)
+
+                If NnediField.Value <> NnediField.DefaultValue Then
+                    ret &= "field=" & NnediField.ValueText
+                End If
+
+                If NnediNns.Value <> NnediNns.DefaultValue Then
+                    ret &= ",nns=" & NnediNns.ValueText
+                End If
+
+                If NnediNsize.Value <> NnediNsize.DefaultValue Then
+                    ret &= ",nsize=" & NnediNsize.ValueText
+                End If
+
+                If NnediQuality.Value <> NnediQuality.DefaultValue Then
+                    ret &= ",quality=" & NnediQuality.ValueText
+                End If
+
+                If NnediPrescreen.Value <> NnediPrescreen.DefaultValue Then
+                    ret &= ",prescreen=" & NnediPrescreen.ValueText
+                End If
+
+                If NnediErrortype.Value <> NnediErrortype.DefaultValue Then
+                    ret &= ",errortype=" & NnediErrortype.ValueText
+                End If
+
+                If NnediPrec.Value <> NnediPrec.DefaultValue Then
+                    ret &= ",prec=" & NnediPrec.ValueText
+                End If
+
+                If NnediWeightfile.Value?.Length > 0 Then
+                    ret &= ",weightfile=" & NnediWeightfile.Value.Escape
+                End If
+
                 Return ("--vpp-nnedi " & ret.TrimStart(","c)).TrimEnd
             End If
         End Function
 
         Function GetAFS() As String
-            Dim ret = ""
-
-            If AfsPreset.Value <> AfsPreset.DefaultValue Then
-                ret &= "preset=" & AfsPreset.ValueText
-            End If
-
-            If AfsINI.Value?.Length > 0 Then
-                ret &= ",ini=" & AfsINI.Value.Escape
-            End If
-
-            If AfsLeft.Value <> AfsLeft.DefaultValue Then
-                ret &= ",left=" & AfsLeft.Value
-            End If
-
-            If AfsRight.Value <> AfsRight.DefaultValue Then
-                ret &= ",right=" & AfsRight.Value
-            End If
-
-            If AfsTop.Value <> AfsTop.DefaultValue Then
-                ret &= ",top=" & AfsTop.Value
-            End If
-
-            If AfsBottom.Value <> AfsBottom.DefaultValue Then
-                ret &= ",bottom=" & AfsBottom.Value
-            End If
-
-            If AfsMethodSwitch.Value <> AfsMethodSwitch.DefaultValue Then
-                ret &= ",method_switch=" & AfsMethodSwitch.Value
-            End If
-
-            If AfsCoeffShift.Value <> AfsCoeffShift.DefaultValue Then
-                ret &= ",coeff_shift=" & AfsCoeffShift.Value
-            End If
-
-            If AfsThreShift.Value <> AfsThreShift.DefaultValue Then
-                ret &= ",thre_shift=" & AfsThreShift.Value
-            End If
-
-            If AfsThreDeint.Value <> AfsThreDeint.DefaultValue Then
-                ret &= ",thre_deint=" & AfsThreDeint.Value
-            End If
-
-            If AfsThreMotionY.Value <> AfsThreMotionY.DefaultValue Then
-                ret &= ",thre_motion_y=" & AfsThreMotionY.Value
-            End If
-
-            If AfsThreMotionC.Value <> AfsThreMotionC.DefaultValue Then
-                ret &= ",thre_motion_c=" & AfsThreMotionC.Value
-            End If
-
-            If AfsLevel.Value <> AfsLevel.DefaultValue Then
-                ret &= ",level=" & AfsLevel.Value
-            End If
-
-            If AfsShift.Value <> AfsShift.DefaultValue Then
-                ret &= ",shift=" & If(AfsShift.Value, "on", "off")
-            End If
-
-            If AfsDrop.Value <> AfsDrop.DefaultValue Then
-                ret &= ",drop=" & If(AfsDrop.Value, "on", "off")
-            End If
-
-            If AfsSmooth.Value <> AfsSmooth.DefaultValue Then
-                ret &= ",smooth=" & If(AfsSmooth.Value, "on", "off")
-            End If
-
-            If Afs24fps.Value <> Afs24fps.DefaultValue Then
-                ret &= ",24fps=" & If(Afs24fps.Value, "on", "off")
-            End If
-
-            If AfsTune.Value <> AfsTune.DefaultValue Then
-                ret &= ",tune=" & If(AfsTune.Value, "on", "off")
-            End If
-
-            If AfsRFF.Value <> AfsRFF.DefaultValue Then
-                ret &= ",rff=" & If(AfsRFF.Value, "on", "off")
-            End If
-
-            If AfsTimecode.Value <> AfsTimecode.DefaultValue Then
-                ret &= ",timecode=" & If(AfsTimecode.Value, "on", "off")
-            End If
-
-            If AfsLog.Value <> AfsLog.DefaultValue Then
-                ret &= ",log=" & If(AfsLog.Value, "on", "off")
-            End If
-
             If Afs.Value Then
+                Dim ret = "" 'As New StringBuilder("--vpp-afs", 128)
+
+                If AfsPreset.Value <> AfsPreset.DefaultValue Then
+                    ret &= "preset=" & AfsPreset.ValueText
+                End If
+
+                If AfsINI.Value?.Length > 0 Then
+                    ret &= ",ini=" & AfsINI.Value.Escape
+                End If
+
+                If AfsLeft.Value <> AfsLeft.DefaultValue Then
+                    ret &= ",left=" & AfsLeft.Value
+                End If
+
+                If AfsRight.Value <> AfsRight.DefaultValue Then
+                    ret &= ",right=" & AfsRight.Value
+                End If
+
+                If AfsTop.Value <> AfsTop.DefaultValue Then
+                    ret &= ",top=" & AfsTop.Value
+                End If
+
+                If AfsBottom.Value <> AfsBottom.DefaultValue Then
+                    ret &= ",bottom=" & AfsBottom.Value
+                End If
+
+                If AfsMethodSwitch.Value <> AfsMethodSwitch.DefaultValue Then
+                    ret &= ",method_switch=" & AfsMethodSwitch.Value
+                End If
+
+                If AfsCoeffShift.Value <> AfsCoeffShift.DefaultValue Then
+                    ret &= ",coeff_shift=" & AfsCoeffShift.Value
+                End If
+
+                If AfsThreShift.Value <> AfsThreShift.DefaultValue Then
+                    ret &= ",thre_shift=" & AfsThreShift.Value
+                End If
+
+                If AfsThreDeint.Value <> AfsThreDeint.DefaultValue Then
+                    ret &= ",thre_deint=" & AfsThreDeint.Value
+                End If
+
+                If AfsThreMotionY.Value <> AfsThreMotionY.DefaultValue Then
+                    ret &= ",thre_motion_y=" & AfsThreMotionY.Value
+                End If
+
+                If AfsThreMotionC.Value <> AfsThreMotionC.DefaultValue Then
+                    ret &= ",thre_motion_c=" & AfsThreMotionC.Value
+                End If
+
+                If AfsLevel.Value <> AfsLevel.DefaultValue Then
+                    ret &= ",level=" & AfsLevel.Value
+                End If
+
+                If AfsShift.Value <> AfsShift.DefaultValue Then
+                    ret &= ",shift=" & If(AfsShift.Value, "on", "off")
+                End If
+
+                If AfsDrop.Value <> AfsDrop.DefaultValue Then
+                    ret &= ",drop=" & If(AfsDrop.Value, "on", "off")
+                End If
+
+                If AfsSmooth.Value <> AfsSmooth.DefaultValue Then
+                    ret &= ",smooth=" & If(AfsSmooth.Value, "on", "off")
+                End If
+
+                If Afs24fps.Value <> Afs24fps.DefaultValue Then
+                    ret &= ",24fps=" & If(Afs24fps.Value, "on", "off")
+                End If
+
+                If AfsTune.Value <> AfsTune.DefaultValue Then
+                    ret &= ",tune=" & If(AfsTune.Value, "on", "off")
+                End If
+
+                If AfsRFF.Value <> AfsRFF.DefaultValue Then
+                    ret &= ",rff=" & If(AfsRFF.Value, "on", "off")
+                End If
+
+                If AfsTimecode.Value <> AfsTimecode.DefaultValue Then
+                    ret &= ",timecode=" & If(AfsTimecode.Value, "on", "off")
+                End If
+
+                If AfsLog.Value <> AfsLog.DefaultValue Then
+                    ret &= ",log=" & If(AfsLog.Value, "on", "off")
+                End If
+
                 Return ("--vpp-afs " & ret.TrimStart(","c)).TrimEnd
             End If
-        End Function
-
-        Function GetModeArgs() As String
-
-            Select Case Mode.Value
-                Case 0
-                    If QPAdvanced.Value Then
-                        Return "--cqp " & QPI.Value & ":" & QPP.Value & ":" & QPB.Value
-                    Else
-                        Return "--cqp " & QP.Value
-                    End If
-                Case 1
-                    Return "--cbr " & p.VideoBitrate
-                Case 2
-                    Dim bitrate = If(ConstantQualityMode.Value, 0, p.VideoBitrate)
-                    Return "--vbr " & bitrate
-
-            End Select
         End Function
 
         Overrides Function GetCommandLine(includePaths As Boolean, includeExe As Boolean, Optional pass As Integer = 1) As String
             Dim sb As New StringBuilder(512)
             Dim sourcePath As String
-            Dim targetPath = p.VideoEncoder.OutputPath.ChangeExt(p.VideoEncoder.OutputExt)
 
             If includePaths AndAlso includeExe Then
                 sb.Append(Package.NVEnc.Path.Escape)
             End If
 
             Dim decVal As Integer = Decoder.Value
-
             Select Case decVal
                 Case 0 '"avs"
                     sourcePath = p.Script.Path
@@ -1320,11 +1328,34 @@ Public Class NVEnc
                     '-1, auto Chooses between 1 And 2 depending on muxer capabilities. This Is the default method.
                     'p.ExtractTimestamps seems like death switch, nvidia paper uses vsync 0
 
-                    Dim pix_fmt = If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")
-                    sb.Append(If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg")).Append(If(p.ExtractTimestamps, " -vsync 0", " -vsync 1")).Append("-hwaccel cuda -i ").Append(If(includePaths, p.SourceFile.Escape, "path")).
-                            Append(" -f yuv4mpegpipe -pix_fmt ").Append(pix_fmt).Append(" -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ").Append(If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64"))
+                    sb.Append(If(includePaths, Package.ffmpeg.Path.Escape, "ffmpeg")).Append(If(p.ExtractTimestamps, " -vsync 0", " -vsync 1")).Append("-hwaccel cuda -i ").
+                        Append(If(includePaths, p.SourceFile.Escape, "path")).Append(" -f yuv4mpegpipe -pix_fmt ").Append(If(p.SourceVideoBitDepth = 10, "yuv420p10le", "yuv420p")).
+                        Append(" -strict -1").Append(s.GetFFLogLevel(FfLogLevel.fatal)).Append(" -hide_banner - | ").Append(If(includePaths, Package.NVEnc.Path.Escape, "NVEncC64"))
                     'End If
             End Select
+
+            If Not Lossless.Value Then
+                Select Case Mode.Value
+                    Case 0
+                        If QPAdvanced.Value Then
+                            sb.Append("--cqp ").Append(QPI.Value).Append(":").Append(QPP.Value).Append(":").Append(QPB.Value)
+                        Else
+                            sb.Append("--cqp ").Append(QP.Value)
+                        End If
+                    Case 1
+                        Dim bv = CInt(Bitrate.Value)
+                        sb.Append("--cbr ").Append(If(bv = 0, p.VideoBitrate.ToInvStr, bv.ToInvStr))
+                    Case 2
+                        Dim br As Integer
+                        If ConstantQualityMode.Value Then
+                            br = 0
+                        Else
+                            Dim bv = CInt(Bitrate.Value)
+                            br = If(bv = 0, p.VideoBitrate, bv)
+                        End If
+                        sb.Append("--vbr ").Append(br.ToInvStr)
+                End Select
+            End If
 
             For i = 0 To Items.Count - 1
                 Dim prm = Items(i)
@@ -1343,7 +1374,7 @@ Public Class NVEnc
             End If
 
             Dim pr = p.Ranges
-            If pr.Count > 0 AndAlso Not decVal = 0 Then
+            If Not decVal = 0 AndAlso pr.Count > 0 Then
                 sb.Append(" --trim ").Append(String.Join(",", pr.ToArray.SelectF(Function(range) range.Start & ":" & range.End), 0, pr.Count))
             End If
 
@@ -1352,6 +1383,7 @@ Public Class NVEnc
             End If
 
             If includePaths Then
+                Dim targetPath = p.VideoEncoder.OutputPath.ChangeExt(p.VideoEncoder.OutputExt) 'moved from begining !
                 sb.Append(" -i ").Append(sourcePath.Escape).Append(" -o ").Append(targetPath.Escape)
             End If
 

@@ -136,8 +136,7 @@ Namespace UI
         End Function
 
         Shared Function GetIcon(identifier As StockIconIdentifier, flags As StockIconOptions) As IntPtr
-            Dim info As New StockIconInfo()
-            info.StuctureSize = CType(Marshal.SizeOf(GetType(StockIconInfo)), UInt32)
+            Dim info As New StockIconInfo With {.StuctureSize = CUInt(Marshal.SizeOf(GetType(StockIconInfo)))} ' CType(Marshal.SizeOf(GetType(StockIconInfo)), UInt32)}
             Marshal.ThrowExceptionForHR(SHGetStockIconInfo(identifier, flags, info))
             Return info.Handle
         End Function

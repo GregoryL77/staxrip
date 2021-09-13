@@ -22,6 +22,7 @@ Namespace CommandLine
 
         Protected ItemsValue As List(Of CommandLineParam)
 
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)>
         Protected Sub Add(path As String, ParamArray items As CommandLineParam())
             For n = 0 To items.Length - 1
                 Dim i = items(n)
@@ -31,15 +32,15 @@ Namespace CommandLine
         End Sub
 
         Function GetStringParam(switch As String) As StringParam
-            Return Items.OfType(Of StringParam).FirstOrDefault(Function(item) item.Switch.EqualsEx(switch))
+            Return Items.OfType(Of StringParam).FirstOrDefault(Function(item) item.Switch.EqualsExS(switch))
         End Function
 
         Function GetOptionParam(switch As String) As OptionParam
-            Return Items.OfType(Of OptionParam).FirstOrDefault(Function(item) item.Switch.EqualsEx(switch))
+            Return Items.OfType(Of OptionParam).FirstOrDefault(Function(item) item.Switch.EqualsExS(switch))
         End Function
 
         Function GetNumParamByName(name As String) As NumParam
-            Return Items.OfType(Of NumParam).FirstOrDefault(Function(item) item.Name.EqualsEx(name))
+            Return Items.OfType(Of NumParam).FirstOrDefault(Function(item) item.Name.EqualsExS(name))
         End Function
 
         Sub RaiseValueChanged(item As CommandLineParam)
@@ -63,7 +64,7 @@ Namespace CommandLine
         Function GetSAR() As String
             Dim param = GetStringParam("--sar")
 
-            If param IsNot Nothing AndAlso param.Value?.Length > 0 Then
+            If param?.Value?.Length > 0 Then
                 Dim targetPAR = Calc.GetTargetPAR
                 Dim val = Calc.ParseCustomAR(param.Value, targetPAR.X, targetPAR.Y)
                 Dim isInTolerance = val = targetPAR AndAlso Not Calc.IsARSignalingRequired
@@ -138,14 +139,14 @@ Namespace CommandLine
         Property VisibleValue As Boolean = True
 
         Property Visible As Boolean
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 If VisibleFunc IsNot Nothing Then
                     Return VisibleFunc.Invoke
                 End If
 
                 Return VisibleValue
             End Get
-            Set(value As Boolean)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Boolean)
                 If value <> VisibleValue Then
                     VisibleValue = value
 
@@ -162,7 +163,7 @@ Namespace CommandLine
             End Set
         End Property
 
-        Function GetKey() As String
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)> Function GetKey() As String
             If Name?.Length > 0 Then
                 Return Name
             End If
@@ -245,10 +246,10 @@ Namespace CommandLine
         Private ValueValue As Boolean
 
         Property Value As Boolean
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 Return Store.Bool(GetKey)
             End Get
-            Set(value As Boolean)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Boolean)
                 ValueValue = value
 
                 If Store IsNot Nothing Then
@@ -262,7 +263,7 @@ Namespace CommandLine
         End Property
 
         WriteOnly Property Init As Boolean
-            Set(value As Boolean)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Boolean)
                 Me.Value = value
                 DefaultValue = value
             End Set
@@ -282,14 +283,14 @@ Namespace CommandLine
         Private ConfigValue As Double()
 
         Property Config As Double() 'min, max, step, decimal places
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 If ConfigValue Is Nothing Then
                     Return {Double.MinValue, Double.MaxValue, 1, 0}
                 End If
 
                 Return ConfigValue
             End Get
-            Set(value As Double())
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Double())
                 ConfigValue = {value(0), value(1), 1, 0}
 
                 If value.Length > 2 Then ConfigValue(2) = value(2)
@@ -337,10 +338,10 @@ Namespace CommandLine
         Private ValueValue As Double
 
         Property Value As Double
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 Return Store.Double(GetKey)
             End Get
-            Set(value As Double)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Double)
                 ValueValue = value
                 If Store IsNot Nothing Then Store.Double(GetKey) = value
                 If NumEdit IsNot Nothing Then NumEdit.Value = value
@@ -348,7 +349,7 @@ Namespace CommandLine
         End Property
 
         WriteOnly Property Init As Double
-            Set(value As Double)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Double)
                 Me.Value = value
                 DefaultValue = value
             End Set
@@ -361,7 +362,7 @@ Namespace CommandLine
             If ArgsFunc Is Nothing Then
                 Dim val As Double = Value
                 If val <> DefaultValue OrElse AlwaysOn Then
-                    Return Switch & Params.Separator & val.ToInvariantString
+                    Return Switch & Params.Separator & val.ToInvStr
                 End If
             Else
                 Return ArgsFunc.Invoke()
@@ -414,15 +415,15 @@ Namespace CommandLine
         End Sub
 
         ReadOnly Property OptionText As String
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 Return Options(Value)
             End Get
         End Property
 
         ReadOnly Property ValueText As String
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 If Values Is Nothing Then
-                    Return Options(Value).ToLowerInvariant
+                    Return Options(Value).ToLower(InvCult)
                 Else
                     Return Values(Value)
                 End If
@@ -437,12 +438,13 @@ Namespace CommandLine
         Private ValueValue As Integer
 
         Property Value As Integer
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 Dim ret = Store.Int(GetKey)
-                If ret > Options.Length - 1 Then ret = Options.Length - 1
+                Dim oL As Integer = Options.Length - 1
+                If ret > oL Then ret = oL
                 Return ret
             End Get
-            Set(value As Integer)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Integer)
                 ValueValue = value
                 If Store IsNot Nothing Then
                     Store.Int(GetKey) = value
@@ -455,7 +457,7 @@ Namespace CommandLine
         End Property
 
         WriteOnly Property Init As Integer
-            Set(value As Integer)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Integer)
                 Me.Value = value
                 DefaultValue = value
             End Set
@@ -477,7 +479,7 @@ Namespace CommandLine
                         If IntegerValue Then
                             Return Switch & Params.Separator & val
                         Else
-                            Return Switch & Params.Separator & Options(val).ToLowerInvariant.Replace(" ", "")
+                            Return Switch & Params.Separator & Options(val).ToLower(InvCult).Replace(" ", "")
                         End If
                     End If
                 End If
@@ -505,7 +507,7 @@ Namespace CommandLine
         Property Expand As Boolean = True
 
         WriteOnly Property BrowseFile As Boolean
-            Set(value As Boolean)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Boolean)
                 BrowseFileFilter = "*.*|*.*"
             End Set
         End Property
@@ -583,10 +585,10 @@ Namespace CommandLine
         Private ValueValue As String
 
         Property Value As String
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 Return Store.String(GetKey)
             End Get
-            Set(value As String)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As String)
                 ValueValue = value
 
                 If Store IsNot Nothing Then
@@ -600,7 +602,7 @@ Namespace CommandLine
         End Property
 
         WriteOnly Property Init As String
-            Set(value As String)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As String)
                 Me.Value = value
                 DefaultValue = value
             End Set

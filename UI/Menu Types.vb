@@ -77,11 +77,7 @@ Namespace UI
             Add(path, methodName, Keys.None, params)
         End Sub
 
-        Sub Add(path As String,
-                methodName As String,
-                keyData As Keys,
-                symbol As Symbol,
-                params As Object())
+        Sub Add(path As String, methodName As String, keyData As Keys, symbol As Symbol, params As Object())
 
             Dim pathArray = path.Split({"|"c}, StringSplitOptions.RemoveEmptyEntries)
             Dim l = SubItems
@@ -91,13 +87,14 @@ Namespace UI
                 Dim paTxt As String = pathArray(i)
 
                 If i < pathArray.Length - 1 Then
-                    For Each iItem In l
-                        If EqualsEx(iItem.Text, paTxt) Then
+                    For n = l.Count - 1 To 0 'Added Backward walk
+                        Dim iItem = l(n)
+                        If String.Equals(iItem.Text, paTxt) Then
                             found = True
                             l = iItem.SubItems
                             Exit For
                         End If
-                    Next iItem
+                    Next n
                 End If
 
                 If Not found Then
@@ -163,11 +160,7 @@ Namespace UI
 
         Event Command(e As CustomMenuItemEventArgs)
 
-        Sub New(defaultMenu As Func(Of CustomMenuItem),
-                menuItem As CustomMenuItem,
-                commandManager As CommandManager,
-                toolStrip As ToolStrip)
-
+        Sub New(defaultMenu As Func(Of CustomMenuItem), menuItem As CustomMenuItem, commandManager As CommandManager, toolStrip As ToolStrip)
             Me.CommandManager = commandManager
             Me.DefaultMenu = defaultMenu
             Me.MenuItem = menuItem
@@ -182,7 +175,7 @@ Namespace UI
             Dim ret As New StringPairList
 
             For Each i As ToolStripMenuItemEx In MenuItems
-                If i.ShortcutKeyDisplayString.NotNullOrEmptyS Then
+                If i.ShortcutKeyDisplayString?.Length > 0 Then
                     Dim sp As New StringPair
 
                     If i.Text.EndsWith("...", StringComparison.Ordinal) Then
@@ -238,18 +231,21 @@ Namespace UI
         End Sub
 
         Sub MenuClick(sender As Object, e As EventArgs)
-            If TypeOf sender Is ToolStripMenuItemEx Then
-                OnCommand(DirectCast(sender, ToolStripMenuItemEx).CustomMenuItem)
+            Dim tsmi = TryCast(sender, ToolStripMenuItemEx)
+            If tsmi IsNot Nothing Then
+                OnCommand(tsmi.CustomMenuItem)
             End If
         End Sub
 
         Sub OnCommand(item As CustomMenuItem)
-            If item.MethodName.NotNullOrEmptyS Then
+            If item.MethodName Is Nothing Then Exit Sub
+            Dim iMNLen As Integer = item.MethodName.Length
+            If iMNLen > 0 Then
                 Dim e As New CustomMenuItemEventArgs(item)
                 RaiseEvent Command(e)
 
                 If Not e.Handled Then
-                    If item.Symbol = Symbol.MusicInfo Then ' OrElse item.MethodName.Equals("ShowAudioConverter") Then
+                    If iMNLen = 18 AndAlso item.Symbol = Symbol.MusicInfo Then '.GetValueOrDefault=18[faster???] ' Then  OrElse item.MethodName.Equals("ShowAudioConverter")
                         g.MainForm.ShowAudioConverter()
                         Exit Sub ' Debug ??? Test This
                     Else
@@ -258,8 +254,7 @@ Namespace UI
                 End If
 
                 Dim form = ToolStrip.FindForm
-
-                If Not form Is Nothing Then
+                If form IsNot Nothing Then
                     form.Invalidate()
                     'form.Refresh()
                 End If
@@ -271,10 +266,12 @@ Namespace UI
         End Sub
 
         Sub BuildMenu()
+            ToolStrip.SuspendLayout()
             ToolStrip.Items.ClearAndDispose
             Items.Clear()
             MenuItems.Clear()
             Application.DoEvents()
+            ToolStrip.ResumeLayout(False)
             BuildMenu(ToolStrip, MenuItem)
         End Sub
 
@@ -308,20 +305,16 @@ Namespace UI
 
                     Dim keys = KeysHelp.GetKeyString(cmi.KeyData)
 
-                    If keys.NotNullOrEmptyS Then
+                    If keys?.Length > 0 Then
                         mi.ShortcutKeyDisplayString = keys
                     End If
 
-                    If mi.ShortcutKeyDisplayString Is Nothing Then
-                        mi.ShortcutKeyDisplayString += ""
-                    End If
+                    'If mi.ShortcutKeyDisplayString Is Nothing Then 'Test This  - Removed !!!! 202107
+                    '    mi.ShortcutKeyDisplayString &= ""
+                    'End If
 
                     'If Not mi.ShortcutKeyDisplayString.EndsWith(" ", StringComparison.Ordinal) Then ' Opt.: No MenuSpace Test This!!!  "Edit Menu..." & g.MenuSpace
                     '    mi.ShortcutKeyDisplayString += g.MenuSpace
-                    'End If
-                    'If cmi.Symbol <> Symbol.None Then
-                    '    mi.ImageScaling = ToolStripItemImageScaling.None
-                    '    mi.SetImage(cmi.Symbol)
                     'End If
                     AddHandler tsi.Click, AddressOf MenuClick
                 End If
@@ -358,27 +351,25 @@ Namespace UI
         Inherits ToolStripMenuItem
 
         Shared Property UseTooltips As Boolean
-        Sub New()
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New()
         End Sub
 
-        Sub New(text As String)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String)
             MyBase.New(text)
         End Sub
 
-        Sub New(image As Image)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(image As Image)
             Me.ImageScaling = ToolStripItemImageScaling.None
             Me.Image = image
         End Sub
-        Sub New(text As String, image As Image)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, image As Image)
+            Me.Text = text
             Me.ImageScaling = ToolStripItemImageScaling.None
             Me.Image = image
-            Me.Text = text
         End Sub
 
         Overrides Function GetPreferredSize(constrainingSize As Size) As Size
-            'Dim ret = MyBase.GetPreferredSize(constrainingSize)
-            'ret.Height = CInt(If(s.UIScaleFactor = 1.0F, 16, Font.Height) * 1.4) 'Font.Height * 'Debug Experimental - NoScaling!!!!
-            'Return ret
+            'Dim ret = MyBase.GetPreferredSize(constrainingSize) 'ret.Height = CInt(If(s.UIScaleFactor = 1.0F, 16, Font.Height) * 1.4) 'Font.Height * 'Debug Experimental - NoScaling!!!!
             Return New Size(MyBase.GetPreferredSize(constrainingSize).Width, CInt(If(s.UIScaleFactor = 1.0F, 16, Font.Height) * 1.4))
         End Function
         'Sub SetImage(symbol As Symbol)
@@ -411,11 +402,11 @@ Namespace UI
             'If CustomMenuItem IsNot Nothing AndAlso CustomMenuItem.CustomMenu IsNot Nothing AndAlso CustomMenuItem.CustomMenu.CommandManager.HasCommand(CustomMenuItem.MethodName) Then
             Dim command = CustomMenuItem?.CustomMenu?.CommandManager.GetCommand(CustomMenuItem.MethodName)
 
-            If command?.Attribute.Description.NotNullOrEmptyS Then
+            If command?.Attribute.Description?.Length > 0 Then
 
                 Dim ret As New StringPair With {.Name = If(Text.EndsWith("...", StringComparison.Ordinal), Text.TrimEnd("."c), Text), .Value = command.Attribute.Description}
                 Dim paramHelp = command.GetParameterHelp(CustomMenuItem.Parameters)
-                If paramHelp.NotNullOrEmptyS Then ret.Value += " (" + paramHelp + ")"
+                If paramHelp?.Length > 0 Then ret.Value += " (" + paramHelp + ")"
 
                 Return ret
             End If
@@ -445,7 +436,7 @@ Namespace UI
         End Property
 
         'Private Function ShouldSerializeHelpText() As Boolean
-        '    Return HelpValue.NotNullOrEmptyS
+        '    Return HelpValue?.Length > 0
         'End Function
 
         Private HelpValue As String
@@ -458,7 +449,7 @@ Namespace UI
             End Get
             Set(Value As String)
                 HelpValue = Value
-                If UseTooltips AndAlso HelpValue.NotNullOrEmptyS Then 'Test this Mod. Was: UseToolsTips Check after assigment to value
+                If UseTooltips AndAlso HelpValue?.Length > 0 Then 'Test this Mod. Was: UseToolsTips Check after assigment to value
                     If HelpValue.Length < 240 Then 'org:80 Mod.
                         ToolTipText = HelpValue '.TrimEnd("."c)
                     Else
@@ -470,7 +461,7 @@ Namespace UI
         End Property
 
         Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
-            If e.Button = MouseButtons.Right AndAlso Help.NotNullOrEmptyS Then
+            If e.Button = MouseButtons.Right AndAlso Help?.Length > 0 Then
                 CloseAll(Me)
                 g.ShowHelp(Text, Help)
             End If
@@ -507,48 +498,48 @@ Namespace UI
 
         Property Form As Form
 
-        Sub New()
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New()
         End Sub
-
-        Sub New(txt As String)
+        'ToDo: Add Overload with DropDownCollection ???
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(txt As String)
             MyBase.New(txt)
         End Sub
 
-        Sub New(text As String, actn As Action)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, actn As Action)
             MyBase.New(text)
             Me.Action = actn
         End Sub
 
-        Sub New(text As String, action As Action, tag As Object)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, action As Action, tag As Object)
             MyBase.New(text)
             Me.Action = action
             Me.Tag = tag
         End Sub
 
-        Sub New(text As String, action As Action, tooltip As String)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, action As Action, tooltip As String)
             MyBase.New(text)
             Me.Action = action
             Me.Help = tooltip
         End Sub
 
-        Sub New(text As String, image As Image, Optional tooltip As String = Nothing)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, image As Image, Optional tooltip As String = Nothing)
+            Me.Text = text
             Me.ImageScaling = ToolStripItemImageScaling.None
             Me.Image = image
-            Me.Text = text
             If tooltip IsNot Nothing Then Me.Help = tooltip
         End Sub
 
-        Sub New(text As String, action As Action, image As Image)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, action As Action, image As Image)
+            Me.Text = text
             Me.ImageScaling = ToolStripItemImageScaling.None
             Me.Image = image
-            Me.Text = text
             Me.Action = action
         End Sub
 
-        Sub New(text As String, action As Action, image As Image, tooltip As String)
+        <CompilerServices.MethodImpl(AggrInlin)> Sub New(text As String, action As Action, image As Image, tooltip As String)
+            Me.Text = text
             Me.ImageScaling = ToolStripItemImageScaling.None
             Me.Image = image
-            Me.Text = text
             Me.Action = action
             Me.Help = tooltip
         End Sub
@@ -575,10 +566,7 @@ Namespace UI
         End Property
 
         Sub KeyDown(sender As Object, e As KeyEventArgs)
-            If Enabled AndAlso e.KeyData = Shortcut AndAlso
-                If(EnabledFunc Is Nothing, True, EnabledFunc.Invoke) AndAlso
-                If(VisibleFunc Is Nothing, True, VisibleFunc.Invoke) Then
-
+            If Enabled AndAlso e.KeyData = Shortcut AndAlso (EnabledFunc Is Nothing OrElse EnabledFunc.Invoke) AndAlso (VisibleFunc Is Nothing OrElse VisibleFunc.Invoke) Then
                 PerformClick()
                 e.Handled = True
             End If
@@ -625,103 +613,65 @@ Namespace UI
             Action = Nothing
             MyBase.Dispose(disposing)
         End Sub
-
+        <CompilerServices.MethodImpl(AggrInlin)>
         Shared Function Add(Of T)(items As ToolStripItemCollection, path As String, action As Action(Of T), value As T, Optional help As String = Nothing) As ActionMenuItem
             Return Add(items, path, Sub() action(value), help)
         End Function
-
+        <CompilerServices.MethodImpl(AggrInlin)>
         Shared Function Add(items As ToolStripItemCollection, path As String) As ActionMenuItem
             Return Add(items, path, Nothing)
         End Function
-
+        <CompilerServices.MethodImpl(AggrInlin)>
         Shared Function Add(items As ToolStripItemCollection, path As String, action As Action) As ActionMenuItem
             Return Add(items, path, action, Nothing)
         End Function
 
         Shared Function Add(items As ToolStripItemCollection, path As String, action As Action, tip As String) As ActionMenuItem
             Dim a = path.Split({" | "}, StringSplitOptions.RemoveEmptyEntries)
-            Dim l = items
 
             For x = 0 To a.Length - 1
                 Dim found = False
-                Dim textMS As String = a(x)
+                Dim txtP As String = a(x)
 
                 If x < a.Length - 1 Then
-                    For Each i In l.OfType(Of ToolStripMenuItem)()
-                        If textMS.Equals(i.Text) Then
+
+                    For n = items.Count - 1 To 0 Step -1 'Seems Faster if backward, except EventCmd
+                        Dim i = items.Item(n)
+                        If String.Equals(i.Text, txtP) Then
                             found = True
-                            l = i.DropDownItems
+                            items = DirectCast(i, ToolStripMenuItem).DropDownItems
                             Exit For
                         End If
-                    Next i
+                    Next n
                 End If
 
                 If Not found Then
                     If x = a.Length - 1 Then
-                        If textMS.Length = 1 AndAlso String.Equals(textMS, "-") Then
-                            l.Add(New ToolStripSeparator)
+                        If txtP.Length = 1 AndAlso txtP(0) = "-"c Then
+                            items.Add(New ToolStripSeparator)
                         Else
-                            Dim item = If(tip Is Nothing, New ActionMenuItem(textMS, action), New ActionMenuItem(textMS, action, tip))
-                            l.Add(item)
+                            Dim item = If(tip Is Nothing, New ActionMenuItem(txtP, action), New ActionMenuItem(txtP, action, tip))
+                            items.Add(item)
                             Return item
                         End If
                     Else
-                        Dim item As New ToolStripMenuItemEx(textMS)
+                        Dim itm As New ToolStripMenuItemEx(txtP)
 
                         If LayoutSuspendList IsNot Nothing Then  'ToDo: Testing!!! or use par laySuspL
-                            Dim dd As ToolStripDropDown = item.DropDown
+                            Dim dd As ToolStripDropDown = itm.DropDown
                             LayoutSuspendList.Add(dd)
                             dd.SuspendLayout()
                         End If
 
-                        l.Add(item)
-                        l = item.DropDownItems
+                        items.Add(itm)
+                        items = itm.DropDownItems
                     End If
                 End If
             Next x
         End Function
-        'Shared Sub Add2AlphRange(toolStripItmCol As ToolStripItemCollection)
-        '    Dim mL1AlphL As New List(Of ActionMenuItem)(32)
-        '    Dim mL2LL As New List(Of List(Of ActionMenuItem))(32) '~0.640ms
-        '    'Dim chHS As New HashSet(Of Char)(29)
-        '    Dim lastCH As Char
-        '    Dim packAr(Package.Items.Count - 1) As Package
-        '    Package.Items.Values.CopyTo(packAr, 0)
-        '    Dim nMI As ActionMenuItem
-        '    'Dim nTSICol As ToolStripItemCollection ''~0.740ms
-        '    Dim nML2 As List(Of ActionMenuItem)
 
-        '    For i = 0 To packAr.Length - 1
-        '        Dim pack = packAr(i)
-        '        Dim c1 = CChar(pack.Name.Substring(0, 1).ToUpperInvariant)
-        '        'If chHS.Add(c1) Then
-        '        If lastCH <> c1 Then
-        '            lastCH = c1
-        '            'If i > 0 Then nMI.DropDown.ResumeLayout(False)
-        '            'nMI = New ActionMenuItem(c1)
-        '            'nMI.DropDown.SuspendLayout()
-        '            'mL1AlphL.Add(nMI)
-        '            mL1AlphL.Add(New ActionMenuItem(c1))
-        '            nML2 = New List(Of ActionMenuItem)(8)
-        '            mL2LL.Add(nML2)
-        '            'nTSICol = nMI.DropDownItems
-        '        End If
-        '        nML2.Add(New ActionMenuItem(pack.Name, Sub() pack.ShowHelp()))
-        '        'nTSICol.Add(New ActionMenuItem(pack.Name, Sub() pack.ShowHelp()))
-        '    Next i
-        '    'nMI.DropDown.ResumeLayout(False)
-
-        '    For i = 0 To mL1AlphL.Count - 1
-        '        nMI = mL1AlphL(i)
-        '        nMI.DropDown.SuspendLayout()
-        '        nMI.DropDownItems.AddRange(mL2LL(i).ToArray)
-        '        nMI.DropDown.ResumeLayout(False)
-        '    Next i
-
-        '    toolStripItmCol.AddRange(mL1AlphL.ToArray)
-        'End Sub
         Private Shared LayoutSuspendList As List(Of ToolStripDropDown) 'ToDO Testing
-        Public Shared Sub LayoutResume()
+        <CompilerServices.MethodImpl(AggrInlin)> Public Shared Sub LayoutResume()
             If LayoutSuspendList IsNot Nothing Then
                 For Each tsdd In LayoutSuspendList
                     tsdd.ResumeLayout()
@@ -729,7 +679,7 @@ Namespace UI
                 LayoutSuspendList = Nothing
             End If
         End Sub
-        Public Shared Sub LayoutResume(performLayout As Boolean)
+        <CompilerServices.MethodImpl(AggrInlin)> Public Shared Sub LayoutResume(performLayout As Boolean)
             If LayoutSuspendList IsNot Nothing Then
                 For ls = 0 To LayoutSuspendList.Count - 1
                     LayoutSuspendList(ls).ResumeLayout(performLayout)
@@ -737,12 +687,12 @@ Namespace UI
                 LayoutSuspendList = Nothing
             End If
         End Sub
-        Public Shared Function LayoutSuspendCreate(Optional capacity As Integer = 0) As List(Of ToolStripDropDown)
+        <CompilerServices.MethodImpl(AggrInlin)> Public Shared Function LayoutSuspendCreate(Optional capacity As Integer = 0) As List(Of ToolStripDropDown)
             'If LayoutSuspendList IsNot Nothing Then Console.Beep(4100, 500) 'Debug
             LayoutSuspendList = If(capacity = 0, New List(Of ToolStripDropDown), New List(Of ToolStripDropDown)(capacity))
             Return LayoutSuspendList
         End Function
-        Shared Sub ClearAdd2RangeList()
+        <CompilerServices.MethodImpl(AggrInlin)> Shared Sub ClearAdd2RangeList()
             If LayoutSuspendList IsNot Nothing Then
                 LayoutSuspendList.Clear()
                 LayoutSuspendList = Nothing
@@ -759,7 +709,7 @@ Namespace UI
                 dialog.MacroEditorControl.rtbDefaults.Text = defaults
                 dialog.Text = "Menu Editor"
 
-                If defaults.NotNullOrEmptyS Then
+                If defaults?.Length > 0 Then
                     dialog.bnContext.Text = " Restore Defaults... "
                     dialog.bnContext.Visible = True
                     dialog.bnContext.AddClickAction(Sub() If MsgOK("Restore defaults?") Then dialog.MacroEditorControl.Value = defaults)
@@ -774,24 +724,25 @@ Namespace UI
         End Function
 
         Shared Function GetMenu(definition As String, owner As Control, components As IContainer, action As Action(Of String)) As ContextMenuStripEx
-            If owner.ContextMenuStrip Is Nothing Then
-                owner.ContextMenuStrip = New ContextMenuStripEx(components)
-            End If
+            If owner.ContextMenuStrip Is Nothing Then owner.ContextMenuStrip = New ContextMenuStripEx(components)
 
             Dim ret = DirectCast(owner.ContextMenuStrip, ContextMenuStripEx)
             ret.SuspendLayout()
             ret.Items.ClearAndDispose
 
-            For Each i In definition.Split({CChar(BR)}, StringSplitOptions.None)
-                Dim ir As String = i.Right("=")
-                If ir.Length > 0 Then
-                    ActionMenuItem.Add(ret.Items, i.Left("=").Trim, action, ir.Trim, Nothing)
-                ElseIf i.EndsWith("-", StringComparison.Ordinal) Then
-                    ActionMenuItem.Add(ret.Items, i)
-                Else
-                    ret.Items.Add(New ToolStripSeparator)
+            For Each i In definition.Split({BR}, StringSplitOptions.None)
+                Dim iLen As Integer = i.Length
+                If iLen > 2 Then 'Or >1 ? ToDO: Test This NoSense when >0 ,Empty TxtMenus/Actions
+                    Dim idx As Integer = i.IndexOf("="c)
+                    If idx > 0 AndAlso idx < iLen - 1 Then
+                        ActionMenuItem.Add(ret.Items, i.Substring(0, idx).Trim, action, i.Substring(idx + 1).Trim, Nothing)
+                    ElseIf idx < 0 AndAlso i(iLen - 1) = "-"c Then
+                        ActionMenuItem.Add(ret.Items, i)
+                    End If
+                ElseIf iLen = 0 OrElse i(iLen - 1) = "-"c Then
+                    ret.Items.Add(New ToolStripSeparator) 'ActionMenuItem.Add(ret.Items, i)
                 End If
-            Next
+            Next i
             ret.ResumeLayout(False)
             Return ret
         End Function
@@ -820,8 +771,8 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean) 'Added by me !!! EXperim!!! Needed?
-            MyBase.Dispose(disposing)
             FormValue = Nothing
+            MyBase.Dispose(disposing)
             'Events.Dispose() 'Needed???
         End Sub
 
@@ -871,13 +822,11 @@ Namespace UI
             End If
             Return ret
         End Function
-
-        Function Add2(path As String, action As Action) As ActionMenuItem
-            Dim ret = New ActionMenuItem(path, action)
-            Items.Add(ret)
-            Return ret
-        End Function
-
+        'Function Add2(path As String, action As Action) As ActionMenuItem
+        '    Dim ret = New ActionMenuItem(path, action)
+        '    Items.Add(ret)
+        '    Return ret
+        'End Function
         Private Shared AddMenuList As List(Of ToolStripItem)
 
         Shared Function CreateAdd2RangeList(Optional capacity As Integer = 0) As List(Of ToolStripItem)
@@ -885,6 +834,8 @@ Namespace UI
             Return AddMenuList
         End Function
         Shared Sub ClearAdd2RangeList()
+            If AddMenuList Is Nothing Then Exit Sub
+            AddMenuList.Clear()
             AddMenuList = Nothing
         End Sub
         Shared Sub AddRangeList2Menu(itemsCol As ToolStripItemCollection)
@@ -927,7 +878,7 @@ Namespace UI
             Dim ret As New StringPairList
 
             For Each i In GetItems.OfType(Of ActionMenuItem)()
-                If i.Help.NotNullOrEmptyS Then
+                If i.Help?.Length > 0 Then
                     Dim pair As New StringPair
 
                     If i.Text.EndsWith("...", StringComparison.Ordinal) Then
@@ -948,7 +899,7 @@ Namespace UI
             Dim ret As New StringPairList
 
             For Each mi In GetItems.OfType(Of ActionMenuItem)()
-                If mi.ShortcutKeyDisplayString.NotNullOrEmptyS Then
+                If mi.ShortcutKeyDisplayString?.Length > 0 Then
                     Dim sp As New StringPair
 
                     If mi.Text.EndsWith("...", StringComparison.Ordinal) Then

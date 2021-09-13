@@ -35,11 +35,7 @@ Public Class DirectFrameServer
         End Get
     End Property
 
-    Function GetFrame(
-        position As Integer,
-        ByRef data As IntPtr,
-        ByRef pitch As Integer) As Integer Implements IFrameServer.GetFrame
-
+    Function GetFrame(position As Integer, ByRef data As IntPtr, ByRef pitch As Integer) As Integer Implements IFrameServer.GetFrame
         Return NativeServer.GetFrame(position, data, pitch)
     End Function
 
@@ -90,7 +86,7 @@ Public Structure ServerInfo
 
         Dim lengthtDate = Date.Today.AddSeconds(FrameCount / rate)
         Dim dateFormat = If(lengthtDate.Hour = 0, "mm:ss.fff", "HH:mm:ss.fff")
-        Dim frames = FrameCount.ToInvariantString
+        Dim frames = FrameCount.ToInvStr
         Dim len = lengthtDate.ToString(dateFormat)
 
         If position > -1 Then
@@ -103,7 +99,7 @@ Public Structure ServerInfo
                "Height    : " & Height & BR &
                "Frames    : " + frames + BR +
                "Time      : " + len + BR +
-               "Framerate : " + rate.ToInvariantString.Shorten(9) + " (" & FrameRateNum & "/" & FrameRateDen & ")" + BR +
+               "Framerate : " + rate.ToInvStr.Shorten(9) + " (" & FrameRateNum & "/" & FrameRateDen & ")" + BR +
                "Format    : " + ColorSpace.ToString.Replace("_", "")
     End Function
 End Structure
@@ -234,10 +230,7 @@ Public Class VfwFrameServer
         End Get
     End Property
 
-    Function GetFrame(
-        position As Integer,
-        ByRef data As IntPtr,
-        ByRef pitch As Integer) As Integer Implements IFrameServer.GetFrame
+    Function GetFrame(position As Integer, ByRef data As IntPtr, ByRef pitch As Integer) As Integer Implements IFrameServer.GetFrame
 
         If FrameObject = IntPtr.Zero Then
             FrameObject = AVIStreamGetFrameOpen(AviStream, 1)

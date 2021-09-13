@@ -48,7 +48,7 @@ Namespace UI
             End Get
             Set(value As String)
                 For Each i As TCondition In System.Enum.GetValues(GetType(TCondition))
-                    If DispNameAttribute.GetValueForEnum(i).EqualsEx(value) Then Condition = i
+                    If DispNameAttribute.GetValueForEnum(i).EqualsExS(value) Then Condition = i
                 Next
             End Set
         End Property
@@ -97,13 +97,13 @@ Namespace UI
         Overrides Function Eval() As Boolean
             Select Case Condition
                 Case StringCondition.Contains
-                    Return PropertyValue.Lower.Contains(Value.Lower)
+                    Return PropertyValue.IndexOf(Value, StringComparison.OrdinalIgnoreCase) >= 0
                 Case StringCondition.DoesntContain
-                    Return Not PropertyValue.Lower.Contains(Value.Lower)
+                    Return PropertyValue.IndexOf(Value, StringComparison.OrdinalIgnoreCase) < 0
                 Case StringCondition.Is
-                    Return PropertyValue.Lower.Equals(Value.Lower)
+                    Return EqualsExS(PropertyValue, Value, StringComparison.OrdinalIgnoreCase)
                 Case StringCondition.IsNot
-                    Return Not PropertyValue.Lower.Equals(Value.Lower)
+                    Return Not EqualsExS(PropertyValue, Value, StringComparison.OrdinalIgnoreCase)
             End Select
         End Function
 
@@ -148,7 +148,7 @@ Namespace UI
                 Return Value.ToString
             End Get
             Set(value As String)
-                If Not value Is Nothing AndAlso value.ToUpperInvariant.Equals("TRUE") Then
+                If value IsNot Nothing AndAlso value.Equals("TRUE", StringComparison.OrdinalIgnoreCase) Then
                     Me.Value = True
                 Else
                     Me.Value = False
@@ -161,7 +161,7 @@ Namespace UI
                 Return Value.ToString
             End Get
             Set(value As String)
-                If Not value Is Nothing AndAlso value.ToUpperInvariant.Equals("TRUE") Then
+                If value IsNot Nothing AndAlso value.Equals("TRUE", StringComparison.OrdinalIgnoreCase) Then
                     PropertyValue = True
                 Else
                     PropertyValue = False

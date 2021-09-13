@@ -1937,11 +1937,10 @@ Public Class Package
 
     ReadOnly Property ID As String
         Get
-            If TypeOf Me Is PluginPackage Then
-                Dim plugin = DirectCast(Me, PluginPackage)
+            Dim plugin = TryCast(Me, PluginPackage)
 
+            If plugin IsNot Nothing Then
                 If Not plugin.AvsFilterNames.NothingOrEmpty AndAlso Not plugin.VSFilterNames.NothingOrEmpty Then
-
                     Return Name & " avs&vs"
                 ElseIf Not plugin.AvsFilterNames.NothingOrEmpty Then
                     Return Name & " avs"
@@ -1957,14 +1956,11 @@ Public Class Package
     Private FilenameValue As String
 
     Property Filename As String
-        Get
-            'If g.Is32Bit AndAlso Filename32?.Length > 0 Then ' Assume 64 bit only!!!
-            '    Return Filename32
-            'End If
-
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
+            'If g.Is32Bit AndAlso Filename32?.Length > 0 Then ' Assume 64 bit only!!! '    Return Filename32
             Return FilenameValue
         End Get
-        Set(value As String)
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As String)
             FilenameValue = value
         End Set
     End Property
@@ -1976,9 +1972,8 @@ Public Class Package
             If LaunchActionValue Is Nothing Then
                 If Description.ContainsEx("GUI app") Then
                     LaunchActionValue = Sub() g.ShellExecute(Path)
-                ElseIf Not HelpSwitch Is Nothing Then
-                    LaunchActionValue = Sub() g.DefaultCommands.ExecutePowerShellScript(
-                        $"& '{Path}' {HelpSwitch.Replace("stderr", "")}", True)
+                ElseIf HelpSwitch IsNot Nothing Then
+                    LaunchActionValue = Sub() g.DefaultCommands.ExecutePowerShellScript("& '" & Path & "' " & HelpSwitch.Replace("stderr", ""), True)
                 ElseIf Filename.Ext.EqualsAny("avsi", "py") Then
                     LaunchActionValue = Sub() g.ShellExecute(g.GetTextEditorPath, Path.Escape)
                 End If
@@ -2067,9 +2062,9 @@ Public Class Package
         End If
         dic("Online") = HelpURL
         dic("VapourSynth") = HelpUrlVapourSynth
-        dic("Wiki") = "https://github.com/staxrip/staxrip/wiki/" & Name.Replace(" ", "-")
+        dic("Wiki") = "https://github.com/staxrip/staxrip/wiki/" & Name.Replace(" "c, "-"c)
 
-        'Dim count = dic.Values.Where(Function(val) val?.Length > 0).Count
+        'Dim count = dic.Values.Where(Function(val) val.NotNullOrEmptyS).Count
         Dim cn As Integer
         For Each val In dic.Values
             If val?.Length > 0 Then cn += 1
@@ -2134,7 +2129,7 @@ Public Class Package
             ElseIf DownloadURL?.Length > 0 Then
                 Return DownloadURL
             Else
-                Return "https://github.com/staxrip/staxrip/wiki/" & Name.Replace(" ", "-")
+                Return "https://github.com/staxrip/staxrip/wiki/" & Name.Replace(" "c, "-"c)
             End If
         End Get
     End Property
@@ -2180,15 +2175,10 @@ Public Class Package
     End Function
 
     Overridable Function GetStatus() As String
-        Dim gsl As String
         Dim filepath As String = Path
 
         If filepath.NullOrEmptyS Then
-            gsl = "App not found, use the Path menu to locate the App."
-        End If
-
-        If gsl IsNot Nothing Then
-            Return gsl
+            Return "App not found, use the Path menu to locate the App."
         End If
 
         If Not s.AllowToolsWithWrongVersion Then
@@ -2395,7 +2385,7 @@ Public Class Package
                 End If
             End If
 
-            If Not HintDirFunc Is Nothing Then
+            If HintDirFunc IsNot Nothing Then
                 ret = HintDirFunc.Invoke & Filename
 
                 If File.Exists(ret) Then
@@ -2405,8 +2395,8 @@ Public Class Package
 
             Dim plugin = TryCast(Me, PluginPackage)
 
-            If Not plugin Is Nothing Then
-                If Not plugin.VSFilterNames Is Nothing AndAlso Not plugin.AvsFilterNames Is Nothing Then
+            If plugin IsNot Nothing Then
+                If plugin.VSFilterNames IsNot Nothing AndAlso plugin.AvsFilterNames IsNot Nothing Then
                     ret = Folder.Apps & "Plugins\Dual\" & Name & "\" & Filename
 
                     If File.Exists(ret) Then
@@ -2449,7 +2439,7 @@ Public Class Package
         End If
 
         'If Not dir.Contains(":\") AndAlso Not dir.StartsWith("\\", StringComparison.Ordinal) Then
-        If Not dir.StartsWith("\\", StringComparison.Ordinal) AndAlso Not dir.Contains(":\") Then
+        If Not (dir(0) = "\"c AndAlso dir.Length > 1 AndAlso dir(1) = "\"c) AndAlso Not dir.Contains(":\") Then
             dir = Folder.Apps & dir
         End If
 
@@ -2587,26 +2577,26 @@ Public Class Package
     End Function
 
     Sub LoadConf()
-        For Each line In GetConf.SplitLinesNoEmpty
-            If Not line.Contains("=") Then
+        For Each line In GetConf.Split({BR}, StringSplitOptions.RemoveEmptyEntries)
+            Dim si = line.IndexOf("="c)
+            If si < 0 Then
                 Continue For
             End If
 
-            Dim name = line.Left("=").Trim
-            Dim value = line.Right("=").Trim
+            Dim name = If(si > 0, line.Substring(0, si).Trim, String.Empty) 'line.Left("=").Trim
 
             Select Case name
                 Case "Version"
-                    Version = value
+                    Version = If(si >= 0, line.Substring(si + 1).Trim, String.Empty) 'line.Right("=").Trim
                 Case "Date"
-                    SetVersionDate(value)
+                    SetVersionDate(If(si >= 0, line.Substring(si + 1).Trim, String.Empty)) 'line.Right("=").Trim
             End Select
         Next
     End Sub
 
     Sub SaveConf()
         Dim sb As New StringBuilder(48)
-        sb.Append("Version = ").Append(Version).Append(BR).Append("Date = ").Append(VersionDate.ToInvariantString("yyyy-MM-dd"))
+        sb.Append("Version = ").Append(Version).Append(BR).Append("Date = ").Append(VersionDate.ToInvStr("yyyy-MM-dd"))
         sb.ToString.WriteFileUTF8BOM(ConfPath)
     End Sub
 
@@ -2637,38 +2627,31 @@ Public Class PluginPackage
     End Property
 
     Shared Function IsPluginPackageRequired(package As PluginPackage) As Boolean
-        If p Is Nothing Then
-            Return False
-        End If
+        If p Is Nothing Then Return False
 
-        If p.Script.Engine = ScriptEngine.AviSynth AndAlso
-            Not package.AvsFilterNames.NothingOrEmpty Then
+        If p.Script.Engine = ScriptEngine.AviSynth AndAlso Not package.AvsFilterNames.NothingOrEmpty Then
+            Dim pScript = p.Script.GetScript() ' was: ToLow
+            Dim isMF As Boolean
+            Dim matchS As Match
 
-            Dim scriptLower = p.Script.GetScript().ToLowerInvariant
+            If pScript.IndexOf("import", StringComparison.OrdinalIgnoreCase) >= 0 Then ' was: Contains ToLow
+                matchS = Regex.Match(pScript, "\bimport\s*\(\s*""\s*(.+\.avsi*)\s*""\s*\)", RegexOptions.IgnoreCase)
+                isMF = matchS.Success AndAlso File.Exists(matchS.Groups(1).Value)
+            End If
 
             For Each filterName In package.AvsFilterNames
-                If scriptLower.Contains(filterName.ToLowerInvariant & "(") Then Return True
+                If pScript.IndexOf(filterName & "(", StringComparison.OrdinalIgnoreCase) >= 0 Then Return True ' was: Contains ToLow
 
-                If scriptLower.Contains("import") Then
-                    Dim match = Regex.Match(scriptLower, "\bimport\s*\(\s*""\s*(.+\.avsi*)\s*""\s*\)",
-                                            RegexOptions.IgnoreCase)
-
-                    If match.Success AndAlso File.Exists(match.Groups(1).Value) Then
-                        If match.Groups(1).Value.ReadAllText.ToLowerInvariant.Contains(
-                                filterName.ToLowerInvariant) Then
-
-                            Return True
-                        End If
-                    End If
+                If isMF AndAlso matchS.Groups(1).Value.ReadAllText.IndexOf(filterName, StringComparison.OrdinalIgnoreCase) >= 0 Then ' was: Contains ToLow
+                    Return True
                 End If
             Next
-        ElseIf p.Script.Engine = ScriptEngine.VapourSynth AndAlso
-            Not package.VSFilterNames.NothingOrEmpty Then
+        ElseIf p.Script.Engine = ScriptEngine.VapourSynth AndAlso Not package.VSFilterNames.NothingOrEmpty Then
 
             For Each filter In p.Script.Filters
                 If filter.Active Then
                     For Each filterName In package.VSFilterNames
-                        If filter.Script.Contains(filterName) Then Return True
+                        If filter.Script.IndexOf(filterName, StringComparison.OrdinalIgnoreCase) >= 0 Then Return True 'Was:Contains, Added IgnoreCase Comp ??? 
                     Next
                 End If
             Next

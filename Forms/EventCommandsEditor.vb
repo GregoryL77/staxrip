@@ -235,7 +235,8 @@ Public Class EventCommandsEditor
         lv.CheckBoxes = True
         lv.MultiSelect = False
         lv.ItemCheckProperty = NameOf(EventCommand.Enabled)
-        lv.AddItems(ObjectHelp.GetCopy(eventCommands))
+        'lv.AddItems(ObjectHelp.GetCopy(eventCommands))
+        lv.AddItems(eventCommands.GetDeepClone)
         lv.SelectFirst()
         lv.EndUpdate()
 

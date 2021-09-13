@@ -182,7 +182,7 @@ Friend Class JobsForm
 
     Private FileWatcher As New FileSystemWatcher
     Private IsLoading As Boolean
-    Private Tip As String = "The job list can be processed by multiple StaxRip instances in parallel."
+    Private ReadOnly Tip As String = "The job list can be processed by multiple StaxRip instances in parallel."
     Private BlockSave As Boolean
 
     Sub New()
@@ -199,7 +199,6 @@ Friend Class JobsForm
         lv.DownButton = bnDown
         lv.RemoveButton = bnRemove
         lv.RightClickOnlyForMenu = True
-
         lv.SingleSelectionButtons = {bnLoad}
         lv.CheckBoxes = True
         lv.EnableListBoxMode()
@@ -214,7 +213,7 @@ Friend Class JobsForm
         Dim lreh As ListViewEx.ItemRemovedEventHandler = Sub(item)
                                                              Dim fp = DirectCast(item.Tag, Job).Path
 
-                                                             If fp.StartsWith(Folder.Settings + "Batch Projects\", StringComparison.Ordinal) Then
+                                                             If fp.StartsWith(Folder.Settings & "Batch Projects\", StringComparison.Ordinal) Then
                                                                  FileHelp.Delete(fp)
                                                              End If
                                                          End Sub
@@ -232,10 +231,10 @@ Friend Class JobsForm
         cms.Add2RangeList("Select All", Sub() SelectAll(), Keys.Control Or Keys.A, Function() lv.Items.Count > lv.SelectedItems.Count)
         cms.Add2RangeList("Select None", Sub() SelectNone(), Keys.Shift Or Keys.A, Function() lv.SelectedItems.Count > 0)
         cms.AddSeparator2RangeList()
-        cms.Add2RangeList("Check Selection", Sub() CheckSelection(), Keys.None, Function() lv.SelectedItems.Count > lv.CheckedItems.OfType(Of ListViewItem).Where(Function(item) item.Checked).Count)
+        cms.Add2RangeList("Check Selection", Sub() CheckSelection(), Keys.None, Function() lv.SelectedItems.OfType(Of ListViewItem).Where(Function(item) Not item.Checked).Any)
         cms.Add2RangeList("Check All", Sub() CheckAll(), Keys.Control Or Keys.Space, Function() lv.Items.Count > lv.CheckedItems.Count)
         cms.AddSeparator2RangeList()
-        cms.Add2RangeList("Uncheck Selection", Sub() UncheckSelection(), Keys.None, Function() lv.SelectedItems.OfType(Of ListViewItem).Where(Function(item) item.Checked).Count > 0)
+        cms.Add2RangeList("Uncheck Selection", Sub() UncheckSelection(), Keys.None, Function() lv.SelectedItems.OfType(Of ListViewItem).Where(Function(item) item.Checked).Any)
         cms.Add2RangeList("Uncheck All", Sub() UncheckAll(), Keys.Shift Or Keys.Space, Function() lv.CheckedItems.Count > 0)
         cms.AddSeparator2RangeList()
         cms.Add2RangeList("Move Selection Up", Sub() bnUp.PerformClick(), ImageHelp.GetImageC(Symbol.Up), Keys.Control Or Keys.Up, Function() lv.CanMoveUp)
@@ -254,66 +253,66 @@ Friend Class JobsForm
 
     Sub UncheckAll()
         BlockSave = True
-
+        lv.BeginUpdate()
         For Each item As ListViewItem In lv.Items
             item.Checked = False
         Next
-
+        lv.EndUpdate()
         BlockSave = False
         HandleItemsChanged()
     End Sub
 
     Sub UncheckSelection()
         BlockSave = True
-
+        lv.BeginUpdate()
         For Each item As ListViewItem In lv.SelectedItems
             item.Checked = False
         Next
-
+        lv.EndUpdate()
         BlockSave = False
         HandleItemsChanged()
     End Sub
 
     Sub CheckAll()
         BlockSave = True
-
+        lv.BeginUpdate()
         For Each item As ListViewItem In lv.Items
             item.Checked = True
         Next
-
+        lv.EndUpdate()
         BlockSave = False
         HandleItemsChanged()
     End Sub
 
     Sub CheckSelection()
         BlockSave = True
-
+        lv.BeginUpdate()
         For Each item As ListViewItem In lv.SelectedItems
             item.Checked = True
         Next
-
+        lv.EndUpdate()
         BlockSave = False
         HandleItemsChanged()
     End Sub
 
     Sub SelectNone()
         BlockSave = True
-
+        lv.BeginUpdate()
         For Each item As ListViewItem In lv.Items
             item.Selected = False
         Next
-
+        lv.EndUpdate()
         BlockSave = False
         HandleItemsChanged()
     End Sub
 
     Sub SelectAll()
         BlockSave = True
-
+        lv.BeginUpdate()
         For Each item As ListViewItem In lv.Items
             item.Selected = True
         Next
-
+        lv.EndUpdate()
         BlockSave = False
         HandleItemsChanged()
     End Sub
@@ -341,25 +340,23 @@ Friend Class JobsForm
     End Sub
 
     Sub UpdateControls()
-        Dim activeJobs = From item In lv.Items.OfType(Of ListViewItem)
-                         Where DirectCast(item.Tag, Job).Active
-
-        bnStart.Enabled = activeJobs.Count > 0
+        bnStart.Enabled = lv.Items.OfType(Of ListViewItem).Where(Function(lvi) DirectCast(lvi.Tag, Job).Active).Any
     End Sub
 
-    Sub SaveJobs(sender As Object, e As EventArgs)
-        SaveJobs()
-    End Sub
+    'Sub SaveJobs(sender As Object, e As EventArgs) 'Dead Code ???
+    '    SaveJobs()
+    'End Sub
 
     Sub SaveJobs()
         If IsLoading Then
             Exit Sub
         End If
 
-        Dim jobs As New CircularList(Of Job)
+        Dim lvItms As ListView.ListViewItemCollection = lv.Items
+        Dim jobs As New List(Of Job)(lvItms.Count)
 
-        For Each item As ListViewItem In lv.Items
-            If Not item Is Nothing Then
+        For Each item As ListViewItem In lvItms
+            If item IsNot Nothing Then
                 jobs.Add(DirectCast(item.Tag, Job))
             End If
         Next

@@ -61,22 +61,24 @@ Namespace UI
             If tipText.NullOrEmptyS Then
                 Exit Sub
             End If
+            'Dim title As String
+            'For i = 0 To controls.Length - 1 'TODO: Test This : in One loop
+            '    Dim ctrl = controls(i)
+            '    If TypeOf ctrl Is Label OrElse TypeOf ctrl Is CheckBox Then
+            '        title = FormatName(ctrl.Text)
+            '    End If
+            'Next i
+            For i = 0 To controls.Length - 1
+                Dim ctrl = controls(i)
 
-            Dim title As String
-
-            For Each ctrl In controls
                 If TypeOf ctrl Is Label OrElse TypeOf ctrl Is CheckBox Then
-                    title = FormatName(ctrl.Text)
+                    Dim title = FormatName(ctrl.Text)
+                    If title.Length > 0 Then
+                        TipTitles(ctrl) = title
+                    End If
                 End If
-            Next
 
-            For Each ctrl In controls
                 TipTexts(ctrl) = tipText
-
-                If title.NotNullOrEmptyS Then
-                    TipTitles(ctrl) = title
-                End If
-
                 Init(tipText, ctrl)
             Next
         End Sub
@@ -96,7 +98,7 @@ Namespace UI
                     tipText = HelpDocument.ConvertMarkup(tipText, True)
                 End If
 
-                If tipText.NotNullOrEmptyS Then
+                If tipText?.Length > 0 Then
                     Dim ehc As EventHandler = Sub()
                                                   ToolTip.SetToolTip(control, tipText)
                                                   RemoveHandler control.HandleCreated, ehc 'ToDO TEst This Experiment !!!! Needed?
@@ -107,8 +109,7 @@ Namespace UI
         End Sub
 
         Sub TipMouseDown(sender As Object, e As MouseEventArgs)
-            If e.Button = MouseButtons.Right AndAlso
-                Not HasContextMenu(DirectCast(sender, Control)) Then
+            If e.Button = MouseButtons.Right AndAlso Not HasContextMenu(DirectCast(sender, Control)) Then
 
                 ShowHelp(DirectCast(sender, Control))
             End If
@@ -149,33 +150,34 @@ Namespace UI
         End Function
 
         Function FormatName(value As String) As String
-            value = value.Trim
+            If value.Length > 0 Then
+                value = value.Trim
 
-            If value.Contains("&") AndAlso Not value.Contains(" & ") Then
-                value = value.Replace("&", "")
+                'If Not value.Contains(" & ") Then 'Remove These ???? Test This !!!!!!!!!!!!!!!!!!!!!! REMOVED 202107 !!!!!!!!
+                '    'If value.Contains("&") AndAlso Not value.Contains(" & ")
+                '    value = value.Replace("&", "")
+                'End If
+                If value.EndsWith("...", StringComparison.Ordinal) Then 'Remove These ????
+                    value = value.TrimEnd("."c) 'Remove These ????
+                End If
+
+                value = value.TrimEnd(":"c) 'Remove These ????
             End If
-
-            If value.EndsWith("...", StringComparison.Ordinal) Then
-                value = value.TrimEnd("."c)
-            End If
-
-            value = value.TrimEnd(":"c)
 
             Return value
         End Function
 
         Function GetTips() As StringPairList
             Dim ret As New StringPairList
-            Dim temp As New HashSet(Of String)(7, StringComparer.Ordinal)
+            'Dim temp As New HashSet(Of String)(7, StringComparer.Ordinal)
 
             For Each ctrl In TipTexts.Keys
                 If Not ctrl.IsDisposed AndAlso ctrl.Visible Then
                     Dim valD As String
-                    Dim pair As New StringPair With {.Value = TipTexts(ctrl), .Name = If(TipTitles.TryGetValue(ctrl, valD), FormatName(valD), FormatName(ctrl.Text))}
-
-                    If temp.Add(pair.Name) Then
-                        pair.Name = FormatName(pair.Name)
-                        ret.Add(pair)
+                    Dim n As String = If(TipTitles.TryGetValue(ctrl, valD), valD, ctrl.Text)
+                    Dim temp As New HashSet(Of String)(7, StringComparer.Ordinal) 'Test This Moved inside loop !!!!!!
+                    If temp.Add(n) Then
+                        ret.Add(New StringPair(FormatName(n), TipTexts(ctrl)))
                     End If
                 End If
             Next ctrl

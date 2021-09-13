@@ -22,77 +22,82 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub OnLoad(args As EventArgs)
-            KeyPreview = True
-            SetTabIndexes(Me)
+            If FontHeight >= -1 OrElse FontHeight = -3 Then  'Experiment, Supress FormBase.OnLoad Test This !!! Debug
 
-            If s.UIScaleFactor <> 1 Then
-                Dim fn As New Font("Segoe UI", 9 * s.UIScaleFactor)
-                FontHeight = fn.Height 'Added ??? Experimental ?
-                Font = fn
-                Scale(New SizeF(1 * s.UIScaleFactor, 1 * s.UIScaleFactor))
-            End If
+                KeyPreview = True
+                SetTabIndexes(Me)
 
-            Dim workAr As Size
-            Dim w As Integer = -1
-            Dim h As Integer = -1
-            If DefaultWidthScale <> 0 Then
-                Dim fh As Integer = 16 'FontHeight 'Was FontHeight if set to fixed 16 Scaling OK??? NoScaling with this !!!???  Font.Height OK
-                Dim defaultWidth = CInt(fh * DefaultWidthScale)
-                Dim defaultHeight = CInt(fh * DefaultHeightScale)
-
-                Dim fName As String = Me.GetType().Name
-                w = s.Storage.GetInt(fName + "width")
-                h = s.Storage.GetInt(fName + "height")
-
-                If w < 0 OrElse w < (defaultWidth \ 2) OrElse h < 0 OrElse h < (defaultHeight \ 2) Then 'was:w=0,h=0
-                    w = defaultWidth
-                    h = defaultHeight
+                If s.UIScaleFactor <> 1 Then
+                    Dim fn As New Font("Segoe UI", 9 * s.UIScaleFactor)
+                    FontHeight = fn.Height 'Added ??? Experimental ?
+                    Font = fn
+                    Scale(New SizeF(1 * s.UIScaleFactor, 1 * s.UIScaleFactor))
                 End If
 
-                workAr = Screen.FromControl(Me).WorkingArea.Size
-                If w > workAr.Width OrElse h > workAr.Height Then
-                    w = workAr.Width
-                    h = workAr.Height
+                Dim workAr As Size = ScreenResWAPrim
+                Dim w As Integer = -1
+                Dim h As Integer = -1
+                If DefaultWidthScale <> 0 Then
+                    Dim fh As Integer = 16 'FontHeight 'Was FontHeight if set to fixed 16 Scaling OK??? NoScaling with this !!!???  Font.Height OK
+                    Dim defaultWidth = CInt(fh * DefaultWidthScale)
+                    Dim defaultHeight = CInt(fh * DefaultHeightScale)
+
+                    Dim fName As String = Me.GetType().Name
+                    w = s.Storage.GetInt(fName & "width")
+                    h = s.Storage.GetInt(fName & "height")
+
+                    If w < 0 OrElse w < (defaultWidth \ 2) OrElse h < 0 OrElse h < (defaultHeight \ 2) Then 'was:w=0,h=0
+                        w = defaultWidth
+                        h = defaultHeight
+                    End If
+
+                    'workAr = ScreenResWAPrim 'Screen.FromControl(Me).WorkingArea.Size
+                    If w > workAr.Width OrElse h > workAr.Height Then
+                        w = workAr.Width
+                        h = workAr.Height
+                    End If
+                    'Size = New Size(w, h)
                 End If
-                'Size = New Size(w, h)
-            End If
 
-            If StartPosition = FormStartPosition.CenterScreen Then
-                If w < 0 Then w = Width
-                If h < 0 Then h = Height
-                If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
-                StartPosition = FormStartPosition.Manual 'WindowPositions.CenterScreen(Me, workAr)
-                Location = New Point((workAr.Width - w) \ 2, (workAr.Height - h) \ 2)
-            End If
+                If StartPosition = FormStartPosition.CenterScreen Then
+                    If w < 0 Then w = Width
+                    If h < 0 Then h = Height
+                    'If workAr.IsEmpty Then workAr = ScreenResWAPrim
+                    StartPosition = FormStartPosition.Manual 'WindowPositions.CenterScreen(Me, workAr)
+                    Location = New Point((workAr.Width - w) \ 2, (workAr.Height - h) \ 2)
+                End If
 
-            Dim pos As New Point(-100000, 0)
-            If Not DesignHelp.IsDesignMode Then 'Needed????
-                If TypeOf Me IsNot UI.InputBoxForm AndAlso s.WindowPositionsRemembered?.Length > 0 AndAlso s.WindowPositions IsNot Nothing Then
-                    pos = s.WindowPositions.RestorePosition(Me)
-                    If pos.X <> -100000 Then
-                        If w < 0 Then w = Width
-                        If h < 0 Then h = Height
-                        If workAr.IsEmpty Then workAr = Screen.FromControl(Me).WorkingArea.Size
+                Dim pos As New Point(-100000, 0)
+                If Not DesignHelp.IsDesignMode Then 'Needed????
+                    If TypeOf Me IsNot UI.InputBoxForm AndAlso s.WindowPositions IsNot Nothing AndAlso s.WindowPositionsRemembered?.Length > 0 Then
+                        pos = s.WindowPositions.RestorePosition(Me)
+                        If pos.X <> -100000 Then
+                            If w < 0 Then w = Width
+                            If h < 0 Then h = Height
+                            ' If workAr.IsEmpty Then workAr = ScreenResWAPrim
 
-                        If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + w > workAr.Width OrElse pos.Y + h > workAr.Height Then
-                            pos = New Point((workAr.Width - w) \ 2, (workAr.Height - h) \ 2) 'CenterScreen(form, screenSz)
+                            If pos.X < 0 OrElse pos.Y < 0 OrElse pos.X + w > workAr.Width OrElse pos.Y + h > workAr.Height Then
+                                pos = New Point((workAr.Width - w) \ 2, (workAr.Height - h) \ 2) 'CenterScreen(form, screenSz)
+                            End If
                         End If
                     End If
                 End If
-            End If
 
-            If pos.X >= 0 Then
-                Me.StartPosition = FormStartPosition.Manual
-                If DefaultWidthScale <> 0 Then
-                    SetBounds(pos.X, pos.Y, w, h)
-                Else
-                    SetBounds(pos.X, pos.Y, 0, 0, BoundsSpecified.Location)
+                If pos.X >= 0 Then
+                    Me.StartPosition = FormStartPosition.Manual
+                    If DefaultWidthScale <> 0 Then
+                        SetBounds(pos.X, pos.Y, w, h)
+                    Else
+                        SetBounds(pos.X, pos.Y, 0, 0, BoundsSpecified.Location)
+                    End If
+                ElseIf DefaultWidthScale <> 0 Then
+                    SetBounds(0, 0, w, h, BoundsSpecified.Size)
                 End If
-            ElseIf DefaultWidthScale <> 0 Then
-                SetBounds(0, 0, w, h, BoundsSpecified.Size)
             End If
 
-            MyBase.OnLoad(args)
+            If FontHeight >= -2 Then 'Experiment, Supress FormBase.OnLoad Test This !!! Debug
+                MyBase.OnLoad(args)
+            End If
         End Sub
 
         Protected Overrides Sub OnFormClosing(args As FormClosingEventArgs)
@@ -107,26 +112,36 @@ Namespace UI
             End If
         End Sub
 
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)>
         Sub SetTabIndexes(c As Control)
-            Dim ccn As Integer = c.Controls.Count - 1
-            If ccn < 0 Then Exit Sub
-
-            Dim ca(ccn) As Control
-            c.Controls.CopyTo(ca, 0)
-            Dim ka(ccn) As Double
-            Dim no0 As Boolean
-            For i = 0 To ccn
-                Dim ci = ca(i)
-                Dim ovc As Double = Math.Sqrt(ci.Top ^ 2 + ci.Left ^ 2) 'Test This
-                If ovc > 0 Then no0 = True
-                ka(i) = If(ovc > 0, ovc, i)
-            Next i
-            If no0 Then Array.Sort(ka, ca)
-            For i = 0 To ccn
-                Dim ctrl As Control = ca(i)
-                ctrl.TabIndex = i
-                SetTabIndexes(ctrl)
-            Next i
+            Dim ctrls As Control.ControlCollection = c.Controls
+            Dim ccn As Integer = ctrls.Count - 1
+            Select Case ccn
+                Case Is < 0
+                    Exit Sub
+                Case 0
+                    SetTabIndexes(ctrls.Item(0))
+                Case Else
+                    Dim ca(ccn) As Control
+                    ctrls.CopyTo(ca, 0)
+                    Dim ka(ccn) As Double
+                    Dim no0 As Boolean
+                    For i = 0 To ccn
+                        Dim loc = ca(i).Location
+                        If loc.IsEmpty Then
+                            ka(i) = i
+                        Else
+                            no0 = True
+                            ka(i) = Math.Sqrt(loc.X ^ 2 + loc.Y ^ 2) 'Test This (ca(i).Top ^ 2 + ca(i).Left ^ 2)
+                        End If
+                    Next i
+                    If no0 Then Array.Sort(ka, ca)
+                    For i = 0 To ccn
+                        Dim ci As Control = ca(i)
+                        ci.TabIndex = i
+                        SetTabIndexes(ci)
+                    Next i
+            End Select
             'Dim ctrls = From i In c.Controls.OfType(Of Control)() Order By Math.Sqrt(i.Top ^ 2 + i.Left ^ 2)
             'For Each i In ctrls
             '    Dim index As Integer
@@ -136,6 +151,7 @@ Namespace UI
             'Next i
         End Sub
 
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)>
         Sub RestoreClientSize(defaultWidthScale As Single, defaultHeightScale As Single) 'Add CMDAudioEnc Here ???
             Me.DefaultWidthScale = defaultWidthScale
             Me.DefaultHeightScale = defaultHeightScale
@@ -233,24 +249,32 @@ Namespace UI
             Dim selectItem As Object = Nothing
 
             For Each i As ListBag(Of T) In cb.Items
-                If i.Value.Equals(value) Then selectItem = i
+                If i.Value.Equals(value) Then
+                    selectItem = i
+                    Exit For 'Added 202108 !!!
+                End If
             Next
-
             If selectItem IsNot Nothing Then cb.SelectedItem = selectItem
         End Sub
 
         Shared Function GetValue(cb As ComboBox) As T
-            Return DirectCast(DirectCast(cb.SelectedItem, ListBag(Of T)).Value, T)
+            Return DirectCast(cb.SelectedItem, ListBag(Of T)).Value
         End Function
 
         Shared Function GetBagsForEnumType() As ListBag(Of T)()
-            Dim ret As New List(Of ListBag(Of T))
-
-            For Each i As T In System.Enum.GetValues(GetType(T))
-                ret.Add(New ListBag(Of T)(UI.DispNameAttribute.GetValueForEnum(i), i))
-            Next
-
-            Return ret.ToArray
+            'Dim ret As New List(Of ListBag(Of T))(12)
+            'For Each i As T In System.Enum.GetValues(GetType(T))
+            '    ret.Add(New ListBag(Of T)(UI.DispNameAttribute.GetValueForEnum(i), i))
+            'Next
+            'Return ret.ToArray
+            Dim enumGVA = System.Enum.GetValues(GetType(T))
+            Dim ret(enumGVA.Length - 1) As ListBag(Of T)
+            For Each i As T In enumGVA
+                Dim inc As Integer
+                ret(inc) = New ListBag(Of T)(UI.DispNameAttribute.GetValueForEnum(i), i)
+                inc += 1
+            Next i
+            Return ret
         End Function
 
         Overrides Function ToString() As String

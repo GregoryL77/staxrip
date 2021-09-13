@@ -122,21 +122,21 @@ Public Class Project
         If Ranges Is Nothing Then Ranges = New List(Of Range)
         If SourceFile Is Nothing Then SourceFile = ""
         If TargetFile Is Nothing Then TargetFile = ""
-        Dim currCult As Language = Language.CurrentCulture
+        Dim curCul As New Language(CurrCultNeutral, True)
 
         If Check(PreferredSubtitles, "Automatically Included Subtitles", 2) Then
-            If currCult.TwoLetterCode.Equals("en") Then
+            If curCul.LCID = 9 Then '.TwoLetterCode.Equals("en") Then
                 PreferredSubtitles = "eng und"
             Else
-                PreferredSubtitles = currCult.ThreeLetterCode + " eng und"
+                PreferredSubtitles = curCul.ThreeLetterCode & " eng und"
             End If
         End If
 
         If Check(PreferredAudio, "Preferred Audio Languages", 1) Then
-            If currCult.TwoLetterCode.Equals("en") Then
+            If curCul.LCID = 9 Then '.TwoLetterCode.Equals("en") Then
                 PreferredAudio = "eng und"
             Else
-                PreferredAudio = currCult.ThreeLetterCode + " eng und"
+                PreferredAudio = curCul.ThreeLetterCode & " eng und"
             End If
         End If
 
@@ -149,12 +149,12 @@ Public Class Project
 
         If Check(Audio0, "Audio Track 1", 36) Then
             Audio0 = New GUIAudioProfile(AudioCodec.Opus, 1) With {.Bitrate = 256}
-            Audio0.Language = currCult
+            Audio0.Language = curCul
         End If
 
         If Check(Audio1, "Audio Track 2", 36) Then
             Audio1 = New GUIAudioProfile(AudioCodec.AAC, 1) With {.Bitrate = 256}
-            Audio1.Language = New Language(9, True) ' "en"
+            Audio1.Language = New Language(9, "en", True)
         End If
 
         If Check(Script, "Filter Setup", 50) Then Script = StaxRip.VideoScript.GetDefaults()(0)
@@ -227,7 +227,7 @@ Public Class Project
             Return TargetFileValue
         End Get
         Set(ByVal value As String)
-            If Not EqualsEx(value, TargetFileValue) Then
+            If Not EqualsExS(value, TargetFileValue) Then
                 If value.NotNullOrEmptyS AndAlso Not value.FileName.IsValidFileName Then
                     MsgWarn("Filename contains invalid characters.")
                     Exit Property

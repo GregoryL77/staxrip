@@ -993,8 +993,8 @@ Public Class mkvDemuxer
     Function GetAttachments(stdout As String) As List(Of Attachment)
         Dim ret = New List(Of Attachment)
 
-        For Each i In stdout.SplitLinesNoEmpty
-            If i.StartsWith("Attachment ID ") Then
+        For Each i In stdout.Split({BR}, StringSplitOptions.RemoveEmptyEntries)
+            If i.StartsWith("Attachment ID ", StringComparison.Ordinal) Then
                 Dim match = Regex.Match(i, "Attachment ID (\d+):.+, file name '(.+)'")
 
                 If match.Success Then ret.Add(New Attachment With {.ID = match.Groups(1).Value.ToInt, .Name = match.Groups(2).Value})

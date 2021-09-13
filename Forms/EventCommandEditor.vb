@@ -396,8 +396,8 @@ Public Class EventCommandEditor
         CriteriaControl.AllCrieria = allCriteria
         CriteriaControl.CriteriaList = EventCommandValue.CriteriaList
 
-        If Not EventCommandValue.CommandParameters Is Nothing Then
-            CommandParameters = DirectCast(ObjectHelp.GetCopy(EventCommandValue.CommandParameters), CommandParameters)
+        If EventCommandValue.CommandParameters IsNot Nothing Then
+            CommandParameters = EventCommandValue.CommandParameters.GetDeepClone
         End If
 
         SetCommandParameters(CommandParameters)
@@ -419,7 +419,7 @@ Public Class EventCommandEditor
     End Sub
 
     Sub MenuClick(c As Command)
-        CommandParameters = New CommandParameters(c.MethodInfo.Name, c.GetDefaultParameters.ToArray)
+        CommandParameters = New CommandParameters(c.MethodInfo.Name, c.GetDefaultParameters)
         SetCommandParameters(CommandParameters)
     End Sub
 
@@ -431,7 +431,6 @@ Public Class EventCommandEditor
         End If
 
         Dim c = g.MainForm.CustomMainMenu.CommandManager.GetCommand(cp.MethodName)
-        'If Not g.MainForm.CustomMainMenu.CommandManager.HasCommand(cp.MethodName) Then
         If c Is Nothing Then
             pgParameters.Visible = False
             lParameters.Visible = False
@@ -459,22 +458,17 @@ Public Class EventCommandEditor
 
         GridTypeDescriptor.Items.Clear()
 
+        Dim cFixPar As List(Of Object) = c.FixParameters(cp.Parameters)
         Dim params = mi.GetParameters
 
         For i = 0 To params.Length - 1
-            Dim gp As New GridProperty
-            gp.Name = DispNameAttribute.GetValue(params(i).GetCustomAttributes(False))
-
-            If gp.Name Is Nothing Then
-                gp.Name = params(i).Name.ToTitleCase
-            End If
-
-            gp.Value = c.FixParameters(cp.Parameters)(i)
-            gp.Description = DescriptionAttributeHelp.GetDescription(params(i).GetCustomAttributes(False))
-            gp.TypeEditor = EditorAttributeHelp.GetEditor(params(i).GetCustomAttributes(False))
-
-            GridTypeDescriptor.Add(gp)
-        Next
+            Dim rpi As Reflection.ParameterInfo = params(i)
+            Dim cAttr As Object() = rpi.GetCustomAttributes(False)
+            GridTypeDescriptor.Add(New GridProperty With {.Name = If(DispNameAttribute.GetValue(cAttr), rpi.Name.ToTitleCase),
+                                                          .Value = cFixPar.Item(i),
+                                                          .Description = DescriptionAttributeHelp.GetDescription(cAttr),
+                                                          .TypeEditor = EditorAttributeHelp.GetEditor(cAttr)})
+        Next i
 
         pgParameters.SelectedObject = GridTypeDescriptor
         SetSplitter()

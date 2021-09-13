@@ -678,7 +678,6 @@ Public Class AudioForm
 
     Sub New()
         MyBase.New()
-        Task.Run(Sub() If Language.Languages IsNot Nothing Then ) 'Populate Lang first???
         InitializeComponent()
         'rtbCommandLine.ScrollBars = RichTextBoxScrollBars.None'InDesigner
         rtbCommandLine.InitMenu()
@@ -803,7 +802,7 @@ Public Class AudioForm
         Interlocked.Increment(NewRun)
         'Static RtbCmdFont As Font = rtbCommandLine.Font
         Dim sTask = Task.Run(Sub() 'Run only last Event, ignore earlier
-                                 'TT222 = NewRun.ToInvariantString & "nR|"
+                                 'TT222 = NewRun.ToInvStr & "nR|"
                                  SyncLock SLock
                                      Interlocked.Decrement(NewRun)
 
@@ -821,7 +820,7 @@ Public Class AudioForm
 
                                      SSW222.Stop()
                                      UpdRunsCount += 1
-                                     TT222 = UpdRunsCount.ToInvariantString & "uc|" & SSW222.ElapsedTicks / SWFreq & "msST|NR1:" & NewRun.ToInvariantString
+                                     TT222 = UpdRunsCount.ToInvStr & "uc|" & SSW222.ElapsedTicks / SWFreq & "msST|NR1:" & NewRun.ToInvStr
 
                                      If rtbTxt?.Length > 0 Then
                                          Dim lt = RTBLastTxt
@@ -834,14 +833,14 @@ Public Class AudioForm
                                                                        Dim ret As Integer = TextRenderer.MeasureText(rtbTxt, RtbCmdFont, New Size(Width + 20, 100000), tfFlags).Height + 2
 
                                                                        SSW222.Stop()
-                                                                       TT222 &= CStr(SSW222.ElapsedTicks / SWFreq) & "msMT|NR2:" & NewRun.ToInvariantString
+                                                                       TT222 &= CStr(SSW222.ElapsedTicks / SWFreq) & "msMT|NR2:" & NewRun.ToInvStr
 
                                                                        Return ret
                                                                    End Function)
-                                             selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt, lt))
+                                             selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt.ToCharArray, lt.ToCharArray))
                                              RTBLastTxt = rtbTxt
                                          ElseIf Not String.Equals(lt, rtbTxt) Then
-                                             selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt, lt))
+                                             selsT = Task.Run(Function() rtbCommandLine.GetSelections(rtbTxt.ToCharArray, lt.ToCharArray))
                                              RTBLastTxt = rtbTxt
                                          End If
                                      End If
@@ -923,7 +922,7 @@ Public Class AudioForm
                     rtbCommandLine.Height = rtbH
                 End If
 
-                TT111 &= rtbH.ToInvariantString & "MH|MeH:" & Height.ToInvariantString  '/myH:{rtbSHeightRes}/{my_sh}|"
+                TT111 &= rtbH.ToInvStr & "MH|MeH:" & Height.ToInvStr  '/myH:{rtbSHeightRes}/{my_sh}|"
             End If
         Else
             rtbCommandLine.Clear()

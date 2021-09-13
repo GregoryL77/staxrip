@@ -58,11 +58,11 @@ Public Class PowerShell
         Dim lines As New List(Of String)
 
         For Each obj In objects
-            If Not obj Is Nothing Then
+            If obj IsNot Nothing Then
                 lines.Add(obj.ToString)
             End If
         Next
 
-        Return String.Join(Environment.NewLine, lines)
+        Return String.Join(BR, lines) 'Environment.NewLine = BR = vbCrLf
     End Function
 End Class

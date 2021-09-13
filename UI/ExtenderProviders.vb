@@ -38,7 +38,7 @@ Namespace UI
             Dim c = CType(sender, Control)
 
             If Not Regex.IsMatch(c.Text, Patterns(c)) Then
-                MsgWarn("""" + c.Text + """ is no valid input.")
+                MsgWarn("""" & c.Text & """ is no valid input.")
                 c.Text = Defaults(c)
             End If
         End Sub

@@ -233,7 +233,7 @@ Public Class CropForm
         MyBase.OnLoad(args)
 
         Dim zoom = 0.0
-        Dim workingArea = Screen.FromControl(Me).WorkingArea
+        Dim workingArea = ScreenResWAPrim 'Screen.FromControl(Me).WorkingArea
 
         While p.SourceWidth * zoom < 0.9 * workingArea.Width AndAlso p.SourceHeight * zoom < 0.9 * workingArea.Height
             zoom += 0.01
@@ -243,7 +243,7 @@ Public Class CropForm
 
         Dim script As New VideoScript
         script.Engine = p.Script.Engine
-        script.Path = (p.TempDir + p.TargetFile.Base + "_crop." + script.FileType).ToShortFilePath
+        script.Path = (p.TempDir & p.TargetFile.Base & "_crop." & script.FileType).ToShortFilePath
         script.Filters.Add(p.Script.GetFilter("Source").GetCopy)
         script.Synchronize(True, True, True)
 
@@ -462,15 +462,15 @@ Public Class CropForm
 
         Dim isResized = p.Script.IsFilterActive("Resize")
         Dim isValidAnamorphicSize = (p.TargetWidth = 1440 AndAlso p.TargetHeight = 1080) OrElse (p.TargetWidth = 960 AndAlso p.TargetHeight = 720)
-        Dim err = If(isResized AndAlso Not isValidAnamorphicSize, Calc.GetAspectRatioError.ToString("f2") + "%", "n/a")
+        Dim err = If(isResized AndAlso Not isValidAnamorphicSize, Calc.GetAspectRatioError.ToString("f2") & "%", "n/a")
 
         laStatus.Text =
             "  Size: " & cropw & "/" & croph &
             "  X: " & p.CropLeft & "/" & p.CropRight &
             "  Y: " & p.CropTop & "/" & p.CropBottom &
-            "  Mod: " + Calc.GetMod(cropw, croph, False) +
-            "  Error: " + err +
-            "  DAR: " + Calc.GetTargetDAR().ToString("f6")
+            "  Mod: " & Calc.GetMod(cropw, croph, False) &
+            "  Error: " & err &
+            "  DAR: " & Calc.GetTargetDAR().ToString("f6")
     End Sub
 
     Sub pVideo_MouseMove(sender As Object, e As MouseEventArgs) Handles pnVideo.MouseMove

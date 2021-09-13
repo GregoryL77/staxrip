@@ -8,13 +8,13 @@ Imports StaxRip.UI
 
 Public Class ProcController
     Property Proc As Proc
-    Property LogTextBox As New TextBox
-    Property ProgressBar As New LabelProgressBar
+    Property LogTextBox As TextBox
+    Property ProgressBar As LabelProgressBar
     Property ProcForm As ProcessingForm
-    Property CheckBox As New CheckBoxEx
+    Property CheckBox As CheckBoxEx
 
-    Private LogAction As Action = New Action(AddressOf LogHandler)
-    Private StatusAction As Action(Of String) = New Action(Of String)(AddressOf StatusHandler)
+    Private LogAction As Action
+    Private StatusAction As Action(Of String)
 
     Shared Property Procs As New List(Of ProcController)
     Shared Property Aborted As Boolean
@@ -23,38 +23,35 @@ Public Class ProcController
     Shared Property BlockActivation As Boolean
 
     Sub New(proc As Proc)
+        Dim fnCon As New Font("Consolas", 9 * s.UIScaleFactor)
+        Dim mszW = Task.Run(Function()
+                                Dim cbTxt As String = " " & proc.Title & " "
+                                Return (TextRenderer.MeasureText(cbTxt, fnCon).Width, cbTxt)
+                            End Function) 'Or Inline This !!??
+        LogAction = New Action(AddressOf LogHandler)
+        StatusAction = New Action(Of String)(AddressOf StatusHandler)
         Me.Proc = proc
+
+        ProgressBar = New LabelProgressBar With {.Dock = DockStyle.Fill, .Font = fnCon}
+        LogTextBox = New TextBox With {.Dock = DockStyle.Fill, .ScrollBars = ScrollBars.Both, .Font = fnCon, .Multiline = True, .ReadOnly = True, .WordWrap = True}
         ProcForm = g.ProcForm
-
-        Dim pad = g.ProcForm.FontHeight \ 6
-        CheckBox.Margin = New Padding(pad, pad, 0, pad)
-        CheckBox.Appearance = Appearance.Button
-        CheckBox.TextAlign = ContentAlignment.MiddleCenter
-        CheckBox.Font = New Font("Consolas", 9 * s.UIScaleFactor)
-        CheckBox.Text = " " + proc.Title + " "
-        Dim sz = TextRenderer.MeasureText(CheckBox.Text, CheckBox.Font)
-        Dim cbFH As Integer = CheckBox.Font.Height
-        CheckBox.Width = sz.Width + cbFH
-        CheckBox.Height = CInt(cbFH * 1.5)
-        AddHandler CheckBox.Click, AddressOf Click
-
-        ProgressBar.Dock = DockStyle.Fill
-        ProgressBar.Font = New Font("Consolas", 9 * s.UIScaleFactor)
-
-        LogTextBox.ScrollBars = ScrollBars.Both
-        LogTextBox.Multiline = True
-        LogTextBox.Dock = DockStyle.Fill
-        LogTextBox.ReadOnly = True
-        LogTextBox.WordWrap = True
-        LogTextBox.Font = New Font("Consolas", 9 * s.UIScaleFactor)
-
         ProcForm.pnLogHost.Controls.Add(LogTextBox)
         ProcForm.pnStatusHost.Controls.Add(ProgressBar)
-        ProcForm.flpNav.Controls.Add(CheckBox)
 
         AddHandler proc.ProcDisposed, AddressOf ProcDisposed
         AddHandler proc.OutputDataReceived, AddressOf DataReceived
         AddHandler proc.ErrorDataReceived, AddressOf DataReceived
+
+        Dim cbFH As Integer = If(s.UIScaleFactor <> 1, fnCon.Height, 15)  'fh=15
+        Dim pad = ProcForm.FontHeight \ 6
+        CheckBox = New CheckBoxEx With {.Appearance = Appearance.Button, .Margin = New Padding(pad, pad, 0, pad), .Font = fnCon,
+             .TextAlign = ContentAlignment.MiddleCenter}
+        AddHandler CheckBox.Click, AddressOf Click
+        'If Not  mszW.IsCompleted Then  ProcForm.BeginInvoke(Sub() ...) else 'Add This maybe, if TitleTask not Compl ????
+        CheckBox.Size = New Size(mszW.Result.Width + cbFH, CInt(cbFH * 1.5)) 'Or Like That ??? - check Assembler!!! ???
+        CheckBox.Text = mszW.Result.cbTxt
+        'CheckBox.Size = New Size(mszW.Result + cbFH, CInt(cbFH * 1.5)) 'CheckBox.Width = sz.Width + cbFH 'CheckBox.Height = CInt(cbFH * 1.5)
+        ProcForm.flpNav.Controls.Add(CheckBox)
     End Sub
 
     Sub DataReceived(value As String)
@@ -80,13 +77,13 @@ Public Class ProcController
                 ret.Data = "Progress: " & ret.Data & "%"
             End If
 
-            ProcForm.BeginInvoke(StatusAction, {ret.Data})
+            ProcForm.BeginInvoke(StatusAction, ret.Data) 'removed paramAr [ret.Data]
         Else
-            If ret.Data.Trim.NotNullOrEmptyS Then
+            If ret.Data.Trim?.Length > 0 Then
                 Proc.Log.WriteLine(ret.Data)
             End If
 
-            ProcForm.BeginInvoke(LogAction, Nothing)
+            ProcForm.BeginInvoke(LogAction)
         End If
     End Sub
 
@@ -106,15 +103,20 @@ Public Class ProcController
             Exit Sub
         End If
 
-        If value.Contains("%") Then
-            value = value.Left("%")
+        Dim idx As Integer = value.IndexOf("%"c) 'left
+        If idx = 0 Then Exit Sub
+        If idx > 0 Then
+            value = value.Substring(0, idx)
+            idx = value.IndexOf("["c)
 
-            If value.Contains("[") Then
-                value = value.Right("[")
+            If idx >= 0 Then
+                value = value.Substring(idx + 1)
             End If
 
-            If value.Contains(" ") Then
-                value = value.RightLast(" ")
+            idx = value.LastIndexOf(" "c)
+
+            If idx >= 0 Then
+                value = value.Substring(idx + 1)
             End If
 
             'If value.IsDouble Then  'Opt
@@ -239,7 +241,7 @@ Public Class ProcController
     Sub Click(sender As Object, e As EventArgs)
         SyncLock Procs
             For Each i In Procs
-                If Not i.CheckBox Is sender Then i.Deactivate()
+                If i.CheckBox IsNot sender Then i.Deactivate()
             Next
 
             For Each i In Procs
@@ -254,7 +256,7 @@ Public Class ProcController
 
     Shared Sub Abort()
         Aborted = True
-        Registry.CurrentUser.Write("Software\" + Application.ProductName, "ShutdownMode", 0)
+        Registry.CurrentUser.Write("Software\" & Application.ProductName, "ShutdownMode", 0)
 
         For Each i In Procs.ToArray
             i.Proc.Abort = True
@@ -293,7 +295,7 @@ Public Class ProcController
         Dim ret As New List(Of Process)
 
         For Each procButton In Procs.ToArray
-            If procButton.Proc.Process.ProcessName = "cmd" Then
+            If String.Equals(procButton.Proc.Process.ProcessName, "cmd") Then
                 For Each process In ProcessHelp.GetChilds(procButton.Proc.Process)
                     If {"conhost", "vspipe"}.ContainsString(process.ProcessName) Then
                         Continue For
@@ -351,7 +353,7 @@ Public Class ProcController
     End Sub
 
     Shared Sub Finished()
-        If Not g.ProcForm Is Nothing Then
+        If g.ProcForm IsNot Nothing Then
             If g.ProcForm.tlpMain.InvokeRequired Then
                 g.ProcForm.BeginInvoke(Sub() g.ProcForm.HideForm())
             Else
@@ -401,23 +403,29 @@ Public Class ProcController
         ProgressBar.Visible = False
     End Sub
 
-    Shared Sub AddProc(proc As Proc)
-        SyncLock Procs
-            Dim pc As New ProcController(proc)
-            Procs.Add(pc)
+    'Shared Sub AddProc(proc As Proc)
+    '    SyncLock Procs
+    '        Dim pc As New ProcController(proc)
+    '        Procs.Add(pc)
 
-            If Procs.Count = 1 Then
-                pc.Activate()
-            Else
-                pc.Deactivate()
-            End If
-        End SyncLock
-    End Sub
+    '        If Procs.Count = 1 Then
+    '            pc.Activate()
+    '        Else
+    '            pc.Deactivate()
+    '        End If
+    '    End SyncLock
+    'End Sub
 
     Shared Sub Start(proc As Proc)
         If Aborted Then
             Throw New AbortException
         End If
+
+        Dim fnCon As New Font("Consolas", 9 * s.UIScaleFactor)
+        Dim mszW = Task.Run(Function()
+                                Dim cbTxt As String = " " & proc.Title & " "
+                                Return (TextRenderer.MeasureText(cbTxt, fnCon).Width, cbTxt)
+                            End Function) 'Or Inline This !!??
 
         If g.MainForm.Visible Then
             g.MainForm.Hide()
@@ -449,8 +457,19 @@ Public Class ProcController
                                       BlockActivation = True
                                   End If
                               End If
+                              'AddProc(proc) 'Inlined:
+                              ' Dim pptt = proc.Title 'ToDO: Add par to new ProContr with as Task Title ???
+                              SyncLock Procs
+                                  Dim pc As New ProcController(proc)
+                                  Procs.Add(pc)
 
-                                  AddProc(proc)
+                                  If Procs.Count = 1 Then
+                                      pc.Activate()
+                                  Else
+                                      pc.Deactivate()
+                                  End If
+                              End SyncLock
+
                               g.ProcForm.UpdateControls()
                           End Sub)
 

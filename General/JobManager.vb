@@ -1,6 +1,4 @@
-﻿
-Imports System.Runtime.Serialization.Formatters.Binary
-Imports System.Threading
+﻿Imports System.Threading
 Imports KGySoft.Collections
 
 <Serializable>
@@ -23,7 +21,7 @@ End Class
 Public Class JobManager
     Shared ReadOnly Property ActiveJobs As IEnumerable(Of Job)
         Get
-            Return From i In GetJobs() Where i.Active = True
+            Return GetJobs().Where(Function(j) j.Active = True)
         End Get
     End Property
 
@@ -41,14 +39,13 @@ Public Class JobManager
         Return p.TempDir + name + ".srip"
     End Function
 
-    Shared Sub SaveJobs(jobs As CircularList(Of Job))
+    Shared Sub SaveJobs(jobs As List(Of Job))
         Dim formatter As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
         Dim counter As Integer
 
         While True
             Try
-                Using stream As New FileStream(Folder.Settings + "Jobs.dat",
-                    FileMode.Create, FileAccess.ReadWrite, FileShare.None)
+                Using stream As New FileStream(Folder.Settings + "Jobs.dat", FileMode.Create, FileAccess.ReadWrite, FileShare.None)
 
                     formatter.Serialize(stream, jobs)
                 End Using
@@ -116,7 +113,7 @@ Public Class JobManager
         SaveJobs(jobs)
     End Sub
 
-    Shared Function GetJobs() As CircularList(Of Job)
+    Shared Function GetJobs() As List(Of Job)
         Dim formatter As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
         Dim jobsPath = Folder.Settings + "Jobs.dat"
         Dim counter As Integer
@@ -124,13 +121,12 @@ Public Class JobManager
         If File.Exists(jobsPath) Then
             While True
                 Try
-                    Using stream As New FileStream(
-                        jobsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+                    Using stream As New FileStream(jobsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
 
                         Try
-                            Return DirectCast(formatter.Deserialize(stream), CircularList(Of Job))
+                            Return DirectCast(formatter.Deserialize(stream), List(Of Job))
                         Catch ex As Exception
-                            Return New CircularList(Of Job)
+                            Return New List(Of Job)
                         End Try
                     End Using
 
@@ -148,6 +144,6 @@ Public Class JobManager
             End While
         End If
 
-        Return New CircularList(Of Job)
+        Return New List(Of Job)
     End Function
 End Class

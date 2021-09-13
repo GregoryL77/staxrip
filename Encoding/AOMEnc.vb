@@ -123,20 +123,17 @@ Public Class AV1Params
 
     Property Mode As New OptionParam With {
         .Name = "Mode",
-        .Text = "Mode",
-        .Path = "Basic",
+        .Text = "Mode", ' .Path = "Basic",
         .Switches = {"--passes", "--pass", "--target-bitrate"},
         .Options = {"One Pass", "Two Pass"}}
 
-    Property RateMode As New OptionParam With {
-        .Path = "Basic",
+    Property RateMode As New OptionParam With { ' .Path = "Basic",
         .Switch = "--end-usage",
         .Text = "Rate Mode",
         .Options = {"VBR", "CBR", "CQ", "Q"}}
 
     Property Custom As New StringParam With {
-        .Text = "Custom",
-        .Path = "Misc 1",
+        .Text = "Custom", ' .Path = "Misc 1",
         .AlwaysOn = True}
 
     Overrides ReadOnly Property Items As List(Of CommandLineParam)

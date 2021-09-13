@@ -335,7 +335,7 @@ Public Class ffmpegEnc
                 sb.Append(" -an -i ").Append(sourcePath.LongPathPrefix.Escape)
             End If
 
-            'Dim q = From i In Items Where i.GetArgs?.Length > 0 AndAlso Not IsCustom(i.Switch)
+            'Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS AndAlso Not IsCustom(i.Switch)
             'If q.Any Then ret &= " " & q.Select(Function(item) item.GetArgs).Join(" ")
             For i = 0 To Me.Items.Count - 1
                 Dim prm = Items(i)
@@ -346,7 +346,7 @@ Public Class ffmpegEnc
             Next i
 
             If Calc.IsARSignalingRequired Then
-                sb.Append(" -aspect ").Append(Calc.GetTargetDAR.ToInvariantString.Shorten(8))
+                sb.Append(" -aspect ").Append(Calc.GetTargetDAR.ToInvStr.Shorten(8))
             End If
 
             Select Case Mode.Value

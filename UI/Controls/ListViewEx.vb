@@ -51,8 +51,16 @@ Namespace UI
         <DefaultValue(GetType(AutoCheckMode), "DoubleClick")>
         Property AutoCheckMode As AutoCheckMode = AutoCheckMode.DoubleClick
 
+        Protected Overrides Property DoubleBuffered As Boolean
+            Get
+                Return True 'Overrrided
+            End Get
+            Set(value As Boolean)
+                MyBase.DoubleBuffered = value
+            End Set
+        End Property
         Sub New()
-            DoubleBuffered = True
+            ' DoubleBuffered = True 'Overrrided
         End Sub
 
         Sub SelectFirst()
@@ -76,25 +84,48 @@ Namespace UI
         End Function
 
         Function AddItem(item As Object) As ListViewItem
-            Dim listItem = Items.Add("")
-            listItem.Tag = item
-            RefreshItem(listItem.Index)
+            'Dim lvI = Items.Add("")
+            'lvI.Tag = item
+            Dim lvI = Items.Add(New ListViewItem(item.ToString) With {.Tag = item})
+
+            'RefreshItem(lvI.Index)
+            If ItemCheckProperty.NotNullOrEmptyS Then
+                lvI.Checked = CBool(item.GetType.GetProperty(ItemCheckProperty).GetValue(item))
+            End If
+
+            'lvI.Text = item.ToString
+
             OnItemsChanged()
-            Return listItem
+            Return lvI
         End Function
 
-        Sub AddItems(items As IEnumerable)
-            For Each item In items
-                AddItem(item)
-            Next
+        Sub AddItems(Of T)(itemsL As List(Of T))
+            Dim icpNN As Boolean = ItemCheckProperty.NotNullOrEmptyS
+
+            Dim itmAr(Items.Count - 1) As ListViewItem
+            For i = 0 To itemsL.Count - 1
+                Dim itm = itemsL(i)
+                Dim lvI = New ListViewItem(itm.ToString) With {.Tag = itm}
+                'RefreshItem(lvI.Index)
+
+                If icpNN Then
+                    lvI.Checked = CBool(itm.GetType.GetProperty(ItemCheckProperty).GetValue(itm))
+                End If
+                itmAr(i) = lvI
+                'lvI.Text = item .ToString
+            Next i
+            Items.AddRange(itmAr)
+
+            OnItemsChanged()
         End Sub
 
         Sub RefreshItem(index As Integer)
+            Dim lvI As ListViewItem = Items(index)
             If ItemCheckProperty.NotNullOrEmptyS Then
-                Items(index).Checked = CBool(Items(index).Tag.GetType.GetProperty(ItemCheckProperty).GetValue(Items(index).Tag))
+                lvI.Checked = CBool(lvI.Tag.GetType.GetProperty(ItemCheckProperty).GetValue(lvI.Tag))
             End If
 
-            Items(index).Text = Items(index).Tag.ToString
+            lvI.Text = lvI.Tag.ToString
         End Sub
 
         Sub RefreshSelection()
@@ -108,23 +139,24 @@ Namespace UI
             FullRowSelect = True
             Columns.Add("")
             HeaderStyle = ColumnHeaderStyle.None
-            AddHandler Layout, Sub() Columns(0).Width = Width - 4 - SystemInformation.VerticalScrollBarWidth
+            AddHandler Layout, Sub() Columns(0).Width = Width - 4 - 17 'SystemInformation.VerticalScrollBarWidth ' Default is=17 - NoWindows Scalling !!!!
             AddHandler HandleCreated, Sub() Columns(0).Width = Width - 4
         End Sub
 
         Sub UpdateControls()
+            Dim siC As Integer = SelectedItems.Count
+
             If UpButton IsNot Nothing Then
-                UpButton.Enabled = CanMoveUp()
+                UpButton.Enabled = siC > 0 AndAlso SelectedIndices(0) > 0
             End If
 
             If DownButton IsNot Nothing Then
-                DownButton.Enabled = CanMoveDown()
+                DownButton.Enabled = siC > 0 AndAlso SelectedIndices(siC - 1) < Items.Count - 1
             End If
 
-            Dim siC As Integer = SelectedItems.Count
             If RemoveButton IsNot Nothing Then
                 'RemoveButton.Enabled = SelectedItem() IsNot Nothing
-                RemoveButton.Enabled = If(siC > 0, SelectedItems(0).Tag, Nothing) IsNot Nothing
+                RemoveButton.Enabled = siC > 0 AndAlso SelectedItems(0).Tag IsNot Nothing
             End If
 
             If SingleSelectionButtons IsNot Nothing Then
@@ -268,7 +300,7 @@ Namespace UI
 
         Sub SortItems()
             BeginUpdate()
-            Dim sortedItems = Items.OfType(Of ListViewItem).OrderBy(Function(item) item.Text).ToArray
+            Dim sortedItems = Items.OfType(Of ListViewItem).ToArray.OrderByF(Function(item) item.Text, StringComparer.OrdinalIgnoreCase) 'Added OrdinaComp !!!
             Items.Clear()
             Items.AddRange(sortedItems)
             EndUpdate()
@@ -293,16 +325,16 @@ Namespace UI
         Protected Overrides Sub WndProc(ByRef m As Message)
             Select Case m.Msg
                 Case &H203 'WM_LBUTTONDBLCLK
-                    If CheckBoxes AndAlso AutoCheckMode <> AutoCheckMode.DoubleClick Then
+                    If AutoCheckMode <> AutoCheckMode.DoubleClick AndAlso CheckBoxes Then
                         OnDoubleClick(Nothing)
                         Exit Sub
                     End If
                 Case &H201 'WM_LBUTTONDOWN
-                    If CheckBoxes AndAlso AutoCheckMode = AutoCheckMode.SingleClick Then
+                    If AutoCheckMode = AutoCheckMode.SingleClick AndAlso CheckBoxes Then
                         Dim pos = ClientMousePos
                         Dim item = GetItemAt(pos.X, pos.Y)
 
-                        If Not item Is Nothing Then
+                        If item IsNot Nothing Then
                             Dim itemBounds = item.GetBounds(ItemBoundsPortion.Entire)
 
                             If pos.X > itemBounds.Left + itemBounds.Height Then
@@ -341,9 +373,11 @@ Namespace UI
 
         Function GetBounds(mousePos As Point) As Rectangle
             Dim x, y, w, h, columnLeft, checkLength As Integer
+            Dim cb As Boolean = CheckBoxes
 
             For Each header As ColumnHeader In Columns
-                If header.Index = 0 AndAlso CheckBoxes Then
+
+                If header.Index = 0 AndAlso cb Then
                     checkLength = 20
                 Else
                     checkLength = 0
@@ -378,9 +412,11 @@ Namespace UI
 
         Function GetPos(mousePos As Point) As Point
             Dim x, y, checkLength, columnLeft As Integer
+            Dim cb As Boolean = CheckBoxes
 
             For Each header As ColumnHeader In Columns
-                If header.Index = 0 AndAlso CheckBoxes Then
+
+                If header.Index = 0 AndAlso cb Then
                     checkLength = 20
                 Else
                     checkLength = 0
@@ -393,7 +429,7 @@ Namespace UI
                 End If
 
                 columnLeft += header.Width
-            Next
+            Next header
 
             For Each item As ListViewItem In Items
                 Dim bounds = item.GetBounds(ItemBoundsPortion.Entire)
@@ -401,7 +437,7 @@ Namespace UI
                 If mousePos.Y >= bounds.Top AndAlso mousePos.Y <= bounds.Bottom Then
                     y = item.Index
                 End If
-            Next
+            Next item
 
             Return New Point(x, y)
         End Function
@@ -478,8 +514,7 @@ Namespace UI
                 Dim form = FindForm()
 
                 If form.AllowDrop Then
-                    form.GetType.GetMethod("OnDragDrop",
-                        BindingFlags.Instance Or BindingFlags.NonPublic).Invoke(form, {e})
+                    form.GetType.GetMethod("OnDragDrop", BindingFlags.Instance Or BindingFlags.NonPublic).Invoke(form, {e})
                 End If
 
                 Exit Sub
@@ -584,39 +619,26 @@ Namespace UI
             End Function
         End Class
 
-        Shadows Sub AutoResizeColumns(lastAtListViewWidth As Boolean)
-            If Columns.Count = 0 Then
-                Exit Sub
-            End If
+        Shadows Sub AutoResizeColumns()
+            Dim isItms As Boolean = Items.Count > 0
 
-            BeginUpdate()
-            Dim wFH As Integer = CInt(FontHeight * 1.25)
             For Each header As ColumnHeader In Columns
-                Select Case header.Text
-                    Case "Hidden"
-                        header.Width = 0
-                        Continue For
-                    Case ""
-                        Columns(0).Width = wFH 'font.height Test This Experiment!!! NoScaling
-                        Continue For
-                End Select
-
-                header.AutoResize(ColumnHeaderAutoResizeStyle.HeaderSize)
-
-                Dim headerWidth = header.Width
-                header.AutoResize(ColumnHeaderAutoResizeStyle.ColumnContent)
-
-                If header.Width < headerWidth Then
-                    header.Width = headerWidth
+                If isItms Then
+                    Dim inc As Integer
+                    Dim hW As Integer
+                    Select Case inc
+                        Case 0
+                            header.AutoResize(ColumnHeaderAutoResizeStyle.ColumnContent)
+                            hW = header.Width
+                        Case Else
+                            header.Width = ClientSize.Width - hW
+                    End Select
+                    inc += 1
+                Else
+                    header.Width = 0 'If(inc = 0, 0, ClientSize.Width)  'DefaultColWidth = 60
                 End If
-            Next
+            Next header
 
-            If lastAtListViewWidth Then
-                Dim widthAll = Columns.OfType(Of ColumnHeader).ToArray.SumF(Function(i) i.Width)
-                Columns(Columns.Count - 1).Width -= widthAll - ClientSize.Width
-            End If
-
-            EndUpdate()
         End Sub
     End Class
 End Namespace

@@ -15,10 +15,11 @@ Public Class Documentation
     End Sub
 
     Shared Function GetCommands(cli As Boolean) As String
-        Dim sb As New StringBuilder
-
-        Dim commands As New List(Of Command)(g.MainForm.CommandManager.Commands.Values)
-        commands.Sort()
+        Dim cv As Dictionary(Of String, Command).ValueCollection = g.MainForm.CommandManager.Commands.Values
+        Dim commands(cv.Count - 1) As Command
+        cv.CopyTo(commands, 0)
+        Array.Sort(commands)
+        Dim sb As New StringBuilder(128)
 
         For Each command In commands
             If command.Attribute.Description.StartsWith("This command is obsolete", StringComparison.Ordinal) Then
@@ -35,7 +36,7 @@ Public Class Documentation
                     title &= param.Name & ","
                 Next
 
-                title = title.TrimEnd({","c, ":"c})
+                title = title.TrimEnd(","c, ":"c)
             End If
 
             sb.Append(".. option:: ").Append(title).Append(BR2)
@@ -56,23 +57,22 @@ Public Class Documentation
 
                     Dim nameAttrib = param.GetCustomAttribute(Of DispNameAttribute)
 
-                    If nameAttrib IsNot Nothing AndAlso
-                        Not nameAttrib.DisplayName.IsEqualIgnoreCase(param.Name) Then
-
+                    If nameAttrib IsNot Nothing AndAlso Not nameAttrib.DisplayName.IsEqualIgnoreCase(param.Name) Then
                         hasDescription = True
                     End If
-                Next
+                Next param
 
                 For Each param In params
-                    sb.Append("    * - ").Append(param.Name).Append(" <").Append(param.ParameterType.Name.ToLower.Replace("int32", "integer")).Append(">").Append({BR})
+                    Dim pType As Type = param.ParameterType
+                    sb.Append("    * - ").Append(param.Name).Append(" <").Append(pType.Name.ToLower.Replace("int32", "integer")).Append(">").Append({BR})
 
-                    If hasDescription OrElse param.ParameterType.IsEnum Then
+                    If hasDescription OrElse pType.IsEnum Then
                         sb.Append("      - ")
 
                         Dim nameAttrib = param.GetCustomAttribute(Of DispNameAttribute)
                         Dim hasName = False
 
-                        If Not nameAttrib Is Nothing AndAlso
+                        If nameAttrib IsNot Nothing AndAlso
                             Not nameAttrib.DisplayName.IsEqualIgnoreCase(param.Name) Then
                             sb.Append(nameAttrib.DisplayName)
                             hasName = True
@@ -80,7 +80,7 @@ Public Class Documentation
 
                         Dim descAttrib = param.GetCustomAttribute(Of DescriptionAttribute)
 
-                        If Not descAttrib Is Nothing Then
+                        If descAttrib IsNot Nothing Then
                             If hasName Then
                                 sb.Append(": ")
                             End If
@@ -89,17 +89,17 @@ Public Class Documentation
                             descAttrib.Description.ThrowIfContainsNewLine
                         End If
 
-                        If param.ParameterType.IsEnum Then
-                            sb.Append(" ").Append(String.Join(", ", System.Enum.GetNames(param.ParameterType)))
+                        If pType.IsEnum Then
+                            sb.Append(" ").Append(String.Join(", ", System.Enum.GetNames(pType)))
                         End If
 
                         sb.Append(BR)
                     End If
-                Next
+                Next param
 
                 sb.Append(BR)
             End If
-        Next
+        Next command
 
         Return sb.ToString
     End Function
@@ -150,7 +150,7 @@ Public Class Documentation
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "Console App" Then
-                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Name).Append(BR).Append("~"c.Multiply(pack.Name.Length)).Append(BR2)
                 sb.Append(pack.Description).Append(BR2)
                 sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
@@ -160,7 +160,7 @@ Public Class Documentation
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "GUI App" Then
-                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Name).Append(BR).Append("~"c.Multiply(pack.Name.Length)).Append(BR2)
                 sb.Append(pack.Description).Append(BR2)
                 sb.Append(pack.WebURL).Append(BR2 & BR)
             End If
@@ -170,7 +170,7 @@ Public Class Documentation
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "AviSynth Plugin" Then
-                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Name).Append(BR).Append("~"c.Multiply(pack.Name.Length)).Append(BR2)
                 sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
@@ -187,7 +187,7 @@ Public Class Documentation
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "AviSynth Script" Then
-                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Name).Append(BR).Append("~"c.Multiply(pack.Name.Length)).Append(BR2)
                 sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
@@ -204,7 +204,7 @@ Public Class Documentation
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "VapourSynth Plugin" Then
-                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Name).Append(BR).Append("~"c.Multiply(pack.Name.Length)).Append(BR2)
                 sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
@@ -221,7 +221,7 @@ Public Class Documentation
 
         For Each pack In Package.Items.Values
             If pack.GetTypeName = "VapourSynth Script" Then
-                sb.Append(pack.Name).Append(BR).Append("~".Multiply(pack.Name.Length)).Append(BR2)
+                sb.Append(pack.Name).Append(BR).Append("~"c.Multiply(pack.Name.Length)).Append(BR2)
                 sb.Append(pack.Description).Append(BR2)
 
                 Dim plugin = DirectCast(pack, PluginPackage)
@@ -244,7 +244,7 @@ Public Class Documentation
 
         For Each i In screenshotFiles
             Dim name = i.Base.Replace("_", " ").Trim
-            screenshots &= name & BR & "-".Multiply(name.Length) & BR2 & ".. image:: ../screenshots/" & i.FileName & BR2
+            screenshots &= name & BR & "-"c.Multiply(name.Length) & BR2 & ".. image:: ../screenshots/" & i.FileName & BR2
         Next
 
         UpdateFile(Folder.Startup & "..\docs\generated\screenshots.rst", screenshots)

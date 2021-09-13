@@ -72,9 +72,8 @@ Public Class SimpleUI
     End Sub
 
     Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-        Tree.BeginUpdate() 'ToDo Test this, Seems double Susp + in New contructor!!!
+        Tree.BeginUpdate() 'ToDo Test this, Seems double Susp + in New contructor!!! = only SimpleUI OK??
         Host.SuspendLayout()
-        SuspendLayout()
 
         Tree.Location = Point.Empty
         Dim fh As Integer = FontHeight
@@ -90,7 +89,6 @@ Public Class SimpleUI
 
         MyBase.OnLayout(levent)
         Host.ResumeLayout(False) 'ToDo Test this!!!
-        ResumeLayout()
         Tree.EndUpdate()
     End Sub
 
@@ -161,7 +159,7 @@ Public Class SimpleUI
     Sub SelectLast(id As String)
         Dim last = s.Storage.GetString(id)
 
-        If last.NotNullOrEmptyS Then
+        If last?.Length > 0 Then
             ShowPage(last)
         ElseIf Pages.Count > 0 Then
             ShowPage(Pages(0))
@@ -393,6 +391,7 @@ Public Class SimpleUI
         Public Property FormSizeScaleFactor As SizeF Implements IPage.FormSizeScaleFactor
 
         Sub New()
+            DirectCast(Me, ISupportInitialize).BeginInit()
             TipProvider = New TipProvider(Nothing)
             Dim deh As EventHandler = Sub()
                                           RemoveHandler Me.Disposed, deh
@@ -421,10 +420,6 @@ Public Class SimpleUI
                                       End Sub
             AddHandler Disposed, deh
             FlowDirection = FlowDirection.TopDown
-        End Sub
-
-        Protected Overrides Sub OnLayout(e As LayoutEventArgs)
-            MyBase.OnLayout(e)
         End Sub
 
         Protected Overrides Sub OnCreateControl()
@@ -456,7 +451,7 @@ Public Class SimpleUI
         Property SaveAction As Action(Of Boolean)
         Property HelpAction As Action
 
-        Private SimpleUI As SimpleUI
+        Private ReadOnly SimpleUI As SimpleUI
 
         Sub New(ui As SimpleUI)
             AutoSize = True
@@ -485,9 +480,9 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Checked)
 
-            If Field.NotNullOrEmptyS Then
+            If Field?.Length > 0 Then
                 SimpleUI.Store.GetType.GetField(Field).SetValue(SimpleUI.Store, Checked)
-            ElseIf [Property].NotNullOrEmptyS Then
+            ElseIf [Property]?.Length > 0 Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Checked)
             End If
         End Sub
@@ -534,7 +529,7 @@ Public Class SimpleUI
 
         Private OffsetValue As Integer
 
-        Property Offset As Integer
+        Property Offset As Integer 'not used ????
             Get
                 Return OffsetValue
             End Get
@@ -563,7 +558,7 @@ Public Class SimpleUI
     Public Class SimpleUINumEdit
         Inherits NumEdit
 
-        Private SimpleUI As SimpleUI
+        Private ReadOnly SimpleUI As SimpleUI
 
         Property SaveAction As Action(Of Double)
 
@@ -581,10 +576,10 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Value)
 
-            If Field.NotNullOrEmptyS Then
+            If Field?.Length > 0 Then
                 Dim field = SimpleUI.Store.GetType.GetField(Me.Field)
                 field.SetValue(SimpleUI.Store, Convert.ChangeType(Value, field.FieldType))
-            ElseIf [Property].NotNullOrEmptyS Then
+            ElseIf [Property]?.Length > 0 Then
                 Dim prop = SimpleUI.Store.GetType.GetProperty([Property])
                 prop.SetValue(SimpleUI.Store, Convert.ChangeType(Value, prop.PropertyType))
             End If
@@ -680,9 +675,9 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Text)
 
-            If Field.NotNullOrEmptyS Then
+            If Field?.Length > 0 Then
                 SimpleUI.Store.GetType.GetField(Field).SetValue(SimpleUI.Store, Text)
-            ElseIf [Property].NotNullOrEmptyS Then
+            ElseIf [Property]?.Length > 0 Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Text)
             End If
 
@@ -759,7 +754,7 @@ Public Class SimpleUI
         Property SaveAction As Action(Of T)
         Property HelpAction As Action
 
-        Private SimpleUI As SimpleUI
+        Private ReadOnly SimpleUI As SimpleUI
 
         Sub New(ui As SimpleUI)
             SimpleUI = ui
@@ -790,10 +785,10 @@ Public Class SimpleUI
         Sub Save()
             SaveAction?.Invoke(Value)
 
-            If Field.NotNullOrEmptyS Then
+            If Field?.Length > 0 Then
                 Dim field = SimpleUI.Store.GetType.GetField(Me.Field)
                 field.SetValue(SimpleUI.Store, Convert.ChangeType(Value, field.FieldType))
-            ElseIf [Property].NotNullOrEmptyS Then
+            ElseIf [Property]?.Length > 0 Then
                 Dim prop = SimpleUI.Store.GetType.GetProperty([Property])
                 prop.SetValue(SimpleUI.Store, Convert.ChangeType(Value, prop.PropertyType))
             End If
@@ -856,7 +851,7 @@ Public Class SimpleUI
 
                 Dim parent = Me.Parent
 
-                While Not TypeOf parent Is IPage
+                While TypeOf parent IsNot IPage
                     parent = parent.Parent
                 End While
 
@@ -867,15 +862,16 @@ Public Class SimpleUI
         Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
             MyBase.OnMouseDown(e)
 
-            If e.Button = MouseButtons.Right AndAlso Not HelpAction Is Nothing Then
+            If e.Button = MouseButtons.Right AndAlso HelpAction IsNot Nothing Then
                 HelpAction.Invoke
             End If
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            If Margin.Top <> MarginTop Then
-                Dim m = Margin
-                m.Top = MarginTop
+            Dim m = Margin
+            Dim mt As Integer = MarginTop
+            If m.Top <> mt Then
+                m.Top = mt
                 Margin = m
             End If
 
@@ -907,19 +903,14 @@ Public Class SimpleUI
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             ' Dim fh15 As Integer = 1 'if(s.UIScaleFactor <> 1,FontHeight \ 15,1)
+            Dim p1 As New Padding(1) '(fh15)
             For Each ctrl As Control In Controls
-                ctrl.Margin = New Padding(1) '(fh15)
+                ctrl.Margin = p1
             Next
 
             MyBase.OnLayout(levent)
         End Sub
 
-        Protected Overrides ReadOnly Property DefaultMargin As Padding 'Added Test This! Todo !!!!!!!
-            Get
-                'Dim dddddd = MyBase.DefaultMargin
-                Return New Padding(1) '(fh15) ' Dim fh15 As Integer = 1 'if(s.UIScaleFactor <> 1, FontHeight \ 15, 1)
-            End Get
-        End Property
     End Class
 
     MustInherit Class LabelBlock
@@ -939,7 +930,7 @@ Public Class SimpleUI
                 If value.EndsWith(":", StringComparison.Ordinal) Then
                     Label.Text = value
                 Else
-                    Label.Text = value + ":"
+                    Label.Text = value & ":"
                 End If
             End Set
         End Property
@@ -1054,15 +1045,12 @@ Public Class SimpleUI
     Public Class TextMenuBlock
         Inherits TextBlock
 
-        Property Button As New ButtonEx
+        Property Button As ButtonEx
 
         Sub New(ui As SimpleUI)
             MyBase.New(ui)
             Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
-            Button.Width = fh * 2
-            Button.Height = CInt(fh * 1.5)
-            Button.ShowMenuSymbol = True
-            Button.ContextMenuStrip = New ContextMenuStripEx
+            Button = New ButtonEx With {.Size = New Size(fh * 2, CInt(fh * 1.5)), .ShowMenuSymbol = True, .ContextMenuStrip = New ContextMenuStripEx}
             Controls.Add(Button)
             'AddHandler Edit.EnabledChanged, Sub() Button.Enabled = Edit.Enabled
             AddHandler Edit.EnabledChanged, AddressOf ButtonEnChangedEH 'Test This 
@@ -1098,10 +1086,7 @@ Public Class SimpleUI
         Sub AddMenu(menuText As String, menuFunc As Func(Of String))
             Dim action = Sub()
                              Dim v = menuFunc.Invoke
-
-                             If v.NotNullOrEmptyS Then
-                                 Edit.Text = v
-                             End If
+                             If v?.Length > 0 Then Edit.Text = v
                          End Sub
 
             AddMenu(menuText, action)
@@ -1116,7 +1101,7 @@ Public Class SimpleUI
         Inherits TextButtonBlock
 
         Private _Color As Color
-        Private SimpleUI As SimpleUI
+        Private ReadOnly SimpleUI As SimpleUI
 
         Property Color As Color
             Get
@@ -1146,9 +1131,9 @@ Public Class SimpleUI
         End Sub
 
         Sub Save()
-            If Field.NotNullOrEmptyS Then
+            If Field?.Length > 0 Then
                 SimpleUI.Store.GetType.GetField(Field).SetValue(SimpleUI.Store, Color)
-            ElseIf [Property].NotNullOrEmptyS Then
+            ElseIf [Property]?.Length > 0 Then
                 SimpleUI.Store.GetType.GetProperty([Property]).SetValue(SimpleUI.Store, Color)
             End If
         End Sub
@@ -1181,16 +1166,12 @@ Public Class SimpleUI
     Public Class TextButtonBlock
         Inherits TextBlock
 
-        Property Button As New ButtonEx
+        Property Button As ButtonEx
 
         Sub New(ui As SimpleUI)
             MyBase.New(ui)
             Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
-            Button.Width = fh * 2
-            Button.Height = CInt(fh * 1.45)
-            Button.AutoSizeMode = AutoSizeMode.GrowOnly
-            Button.AutoSize = True
-            Button.Text = "..."
+            Button = New ButtonEx With {.Size = New Size(fh * 2, CInt(fh * 1.45)), .AutoSizeMode = AutoSizeMode.GrowOnly, .AutoSize = True, .Text = "..."}
             Controls.Add(Button)
             AddHandler Edit.EnabledChanged, Sub() Button.Enabled = Edit.Enabled
         End Sub
@@ -1244,7 +1225,7 @@ Public Class SimpleUI
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
             If Button IsNot Nothing Then
                 Dim fh As Integer = If(s.UIScaleFactor <> 1, FontHeight, 16) 'FontHeight
-                Button.Size = New Size(fh * 10, CInt(fh * 1.5))
+                Button.Size = New Size(fh * 15, CInt(fh * 1.5)) 'New Size(fh * 10, CInt(fh * 1.5))
             End If
 
             MyBase.OnLayout(levent)

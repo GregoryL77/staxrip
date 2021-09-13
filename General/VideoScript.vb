@@ -65,7 +65,8 @@ Public Class VideoScript
     End Sub
 
     Sub RemoveFilterAt(index As Integer)
-        If Filters.Count > 0 AndAlso index < Filters.Count Then
+        Dim fCn As Integer = Filters.Count
+        If fCn > 0 AndAlso index < fCn Then
             Filters.RemoveAt(index)
             RaiseChanged()
         End If
@@ -120,7 +121,7 @@ Public Class VideoScript
         If category.NullOrEmptyS OrElse search.NullOrEmptyS Then Return False
         Dim filter = GetFilter(category)
 
-        If filter?.Script?.ToLowerInvariant.Contains(search.ToLowerInvariant) AndAlso filter?.Active Then
+        If filter?.Script?.ToLower(InvCult).Contains(search.ToLower(InvCult)) AndAlso filter?.Active Then
             Return True
         End If
     End Function
@@ -154,10 +155,7 @@ Public Class VideoScript
     End Function
 
     Function GetNewScript() As VideoScript
-        Dim returnValue As New VideoScript
-        returnValue.Engine = Engine
-        returnValue.Filters = GetFiltersCopy()
-        Return returnValue
+        Return New VideoScript With {.Engine = Engine, .Filters = GetFiltersCopy()}
     End Function
 
     Function GetFilter(category As String) As VideoFilter
@@ -423,7 +421,7 @@ clipname.set_output()
     End Function
 
     Shared Function GetAVSLoadCode(script As String, scriptAlready As String) As String
-        Dim scriptLower = script.ToLowerInvariant
+        Dim scriptLower = script.ToLower(InvCult)
         Dim loadCode = ""
         Dim plugins = Package.Items.Values.OfType(Of PluginPackage)()
 
@@ -435,14 +433,14 @@ clipname.set_output()
                     For Each filterName In plugin.AvsFilterNames
                         If s.LoadAviSynthPlugins AndAlso
                             Not IsAvsPluginInAutoLoadFolder(plugin.Filename) AndAlso
-                            scriptLower.Contains(filterName.ToLowerInvariant) Then
+                            scriptLower.Contains(filterName.ToLower(InvCult)) Then
 
                             If plugin.Filename.Ext.Equals("dll") Then
                                 Dim load = "LoadPlugin(""" & fp & """)" & BR
 
-                                If Not scriptLower.Contains(load.ToLowerInvariant) AndAlso
-                                    Not loadCode.ToLowerInvariant.Contains(load.ToLowerInvariant) AndAlso
-                                    Not scriptAlready.ToLowerInvariant.Contains(load.ToLowerInvariant) Then
+                                If Not scriptLower.Contains(load.ToLower(InvCult)) AndAlso
+                                    Not loadCode.ToLower(InvCult).Contains(load.ToLower(InvCult)) AndAlso
+                                    Not scriptAlready.ToLower(InvCult).Contains(load.ToLower(InvCult)) Then
 
                                     loadCode &= load
                                 End If
@@ -450,9 +448,9 @@ clipname.set_output()
                             ElseIf plugin.Filename.Ext.Equals("avsi") Then
                                 Dim avsiImport = "Import(""" & fp & """)" & BR
 
-                                If Not scriptLower.Contains(avsiImport.ToLowerInvariant) AndAlso
+                                If Not scriptLower.Contains(avsiImport.ToLower(InvCult)) AndAlso
                                     Not loadCode.Contains(avsiImport) AndAlso
-                                    Not scriptAlready.Contains(avsiImport.ToLowerInvariant) Then
+                                    Not scriptAlready.Contains(avsiImport.ToLower(InvCult)) Then
 
                                     loadCode &= avsiImport
                                 End If
@@ -467,10 +465,10 @@ clipname.set_output()
     End Function
 
     Shared Function GetAVSLoadCodeFromImports(code As String) As String
-        code = code.ToLowerInvariant
+        code = code.ToLower(InvCult)
         Dim ret = ""
 
-        For Each line In code.SplitLinesNoEmpty
+        For Each line In code.Split({BR}, StringSplitOptions.RemoveEmptyEntries)
             If line.Contains("import") Then
                 Dim match = Regex.Match(line, "\bimport\s*\(\s*""\s*(.+\.avsi*)\s*""\s*\)", RegexOptions.IgnoreCase)
 
@@ -542,8 +540,7 @@ clipname.set_output()
     Shared Function GetDefaults() As List(Of TargetVideoScript)
         Dim ret As New List(Of TargetVideoScript)(2)
 
-        Dim script = New TargetVideoScript("AviSynth")
-        script.Engine = ScriptEngine.AviSynth
+        Dim script = New TargetVideoScript("AviSynth") With {.Engine = ScriptEngine.AviSynth}
         script.Filters.Add(New VideoFilter("Source", "Automatic", "# can be configured at: Tools > Settings > Source Filters"))
         script.Filters.Add(New VideoFilter("Crop", "Crop", "Crop(%crop_left%, %crop_top%, -%crop_right%, -%crop_bottom%)", False))
         script.Filters.Add(New VideoFilter("Field", "QTGMC Medium", "QTGMC(preset=""Medium"")", False))
@@ -551,8 +548,7 @@ clipname.set_output()
         script.Filters.Add(New VideoFilter("Resize", "BicubicResize", "BicubicResize(%target_width%, %target_height%)", False))
         ret.Add(script)
 
-        script = New TargetVideoScript("VapourSynth")
-        script.Engine = ScriptEngine.VapourSynth
+        script = New TargetVideoScript("VapourSynth") With {.Engine = ScriptEngine.VapourSynth}
         script.Filters.Add(New VideoFilter("Source", "Automatic", "# can be configured at: Tools > Settings > Source Filters"))
         script.Filters.Add(New VideoFilter("Crop", "Crop", "clip = core.std.Crop(clip, %crop_left%, %crop_right%, %crop_top%, %crop_bottom%)", False))
         script.Filters.Add(New VideoFilter("Noise", "DFTTest", "clip = core.dfttest.DFTTest(clip, sigma=6, tbsize=3, opt=3)", False))
@@ -664,14 +660,11 @@ Public Class VideoFilter
 
     ReadOnly Property Name As String
         Get
-            If Path.Contains("|") Then
-                'im prl = Path.RightLast("|") 'rare use
-                'If prl.Length > 0 Then
-                'Return prl.Trim
-                Return Path.RightLast("|").Trim
-            End If
+            'If Path.IndexOf("|"c) >= 0 Then 'Return Path.RightLast("|").Trim
+            'Return Path
+            Dim idx As Integer = Path.LastIndexOf("|"c) 'What if | is at end of string ???
+            Return If(idx >= 0, Path.Substring(idx + 1).Trim, Path)
 
-            Return Path
         End Get
     End Property
 
@@ -689,7 +682,7 @@ Public Class VideoFilter
     End Function
 
     Shared Function GetDefault(category As String, name As String) As VideoFilter
-        Return FilterCategory.GetAviSynthDefaults.FirstF(Function(val) val.Name = category).Filters.FirstF(Function(val) val.Name = name)
+        Return FilterCategory.GetAviSynthDefaults.FirstF(Function(val) EqualsExS(val.Name, category)).Filters.FirstF(Function(val) EqualsExS(val.Name, name))
     End Function
 End Class
 
@@ -701,11 +694,11 @@ Public Class FilterCategory
 
     Property Name As String
 
-    Private FitersValue As New List(Of VideoFilter)
+    Private FitersValue As New List(Of VideoFilter) ' Was New
 
     ReadOnly Property Filters() As List(Of VideoFilter)
         Get
-            If FitersValue Is Nothing Then FitersValue = New List(Of VideoFilter)
+            'If FitersValue Is Nothing Then FitersValue = New List(Of VideoFilter)(4) ' Test This Removed !!
             Return FitersValue
         End Get
     End Property
@@ -715,7 +708,7 @@ Public Class FilterCategory
     End Function
 
     Shared Sub AddFilter(filter As VideoFilter, list As List(Of FilterCategory))
-        Dim matchingCategory = list.FirstOrDefaultF(Function(category) EqualsEx(category.Name, filter.Category))
+        Dim matchingCategory = list.FirstOrDefaultF(Function(category) EqualsExS(category.Name, filter.Category))
 
         If matchingCategory Is Nothing Then
             Dim newCategory As New FilterCategory(filter.Category)
@@ -738,7 +731,7 @@ Public Class FilterCategory
 
             If filters IsNot Nothing Then
                 For Each iFilter In filters
-                    Dim matchingCategory = list.FirstOrDefaultF(Function(category) category.Name.EqualsEx(iFilter.Category))
+                    Dim matchingCategory = list.FirstOrDefaultF(Function(category) EqualsExS(category.Name, iFilter.Category))
 
                     If matchingCategory Is Nothing Then
                         Dim newCategory As New FilterCategory(iFilter.Category)
@@ -961,40 +954,33 @@ Public Class FilterParameters
     Property FunctionName As String
     Property Text As String
 
-    Property Parameters As New List(Of FilterParameter)
+    Property Parameters As New List(Of FilterParameter)(4)
 
-    Shared DefinitionsValue As List(Of FilterParameters)
+    Shared DefinitionsValue As FilterParameters() 'Use Array !!!
 
-    Shared ReadOnly Property Definitions As List(Of FilterParameters)
+    Shared ReadOnly Property Definitions As FilterParameters() 'Use Array !!!
         Get
-            If DefinitionsValue Is Nothing Then
-                DefinitionsValue = New List(Of FilterParameters)(256)
+            If DefinitionsValue IsNot Nothing Then
+                Return DefinitionsValue
+            Else
+                Dim defsL = New List(Of FilterParameters)(256)
 
-                Dim add = Sub(func As String(),
-                              path As String,
-                              params As FilterParameter())
-
-                              For Each i In func
-                                  Dim ret As New FilterParameters
-                                  ret.FunctionName = i
-                                  ret.Text = path
-                                  DefinitionsValue.Add(ret)
+                Dim add = Sub(func As String(), path As String, params As FilterParameter())
+                              For n = 0 To func.Length - 1
+                                  Dim i = func(n)
+                                  Dim ret As New FilterParameters With {.FunctionName = i, .Text = path}
+                                  defsL.Add(ret)
                                   ret.Parameters.AddRange(params)
-                              Next
+                              Next n
                           End Sub
 
-                Dim add2 = Sub(func As String(),
-                               param As String,
-                               value As String,
-                               path As String)
-
-                               For Each i In func
-                                   Dim ret As New FilterParameters
-                                   ret.FunctionName = i
-                                   ret.Text = path
-                                   DefinitionsValue.Add(ret)
+                Dim add2 = Sub(func As String(), param As String, value As String, path As String)
+                               For n = 0 To func.Length - 1
+                                   Dim i = func(n)
+                                   Dim ret As New FilterParameters With {.FunctionName = i, .Text = path}
+                                   defsL.Add(ret)
                                    ret.Parameters.Add(New FilterParameter(param, value))
-                               Next
+                               Next n
                            End Sub
 
                 'DGIndexNV Back
@@ -1219,24 +1205,28 @@ Public Class FilterParameters
                 add2({"LSMASHVideoSource", "LWLibavVideoSource", "LibavSMASHSource", "LWLibavSource"}, "format", """YUY2""", "format | YUY2")
                 add2({"LSMASHVideoSource", "LWLibavVideoSource", "LibavSMASHSource", "LWLibavSource"}, "format", """RGB24""", "format | RGB24")
                 add2({"LSMASHVideoSource", "LWLibavVideoSource", "LibavSMASHSource", "LWLibavSource"}, "format", """RGB32""", "format | RGB32")
-            End If
 
-            Return DefinitionsValue
+                DefinitionsValue = defsL.ToArray
+                Return DefinitionsValue
+            End If
         End Get
     End Property
 
     Shared Function SplitCSV(input As String) As String()
+        If input.Length = 1 Then Return If(Char.IsWhiteSpace(input(0)), {}, {input})  'Test This !!!!!!!!!!!!!
+
         Dim chars = input.ToCharArray()
-        Dim values As New List(Of String)()
-        Dim tempString As String
-        Dim isString As Boolean
-        Dim characterCount As Integer
-        Dim level As Integer
+        Dim values As New List(Of String)(4)
+        Dim cLen As Integer = chars.Length
+        Dim sb As New StringBuilder(cLen \ 2 + 2) 'Change to StringBuilder !!!
 
-        For Each i In chars
-            characterCount += 1
+        For i = 0 To cLen - 1
+            'Dim tempString As String
+            Dim isString As Boolean
+            Dim level As Integer
+            Dim ch = chars(i)
 
-            If i = """"c Then
+            If ch = """"c Then
                 If isString Then
                     isString = False
                 Else
@@ -1245,24 +1235,28 @@ Public Class FilterParameters
             End If
 
             If Not isString Then
-                If i = "("c Then level += 1
-                If i = ")"c Then level -= 1
+                If ch = "("c Then level += 1
+                If ch = ")"c Then level -= 1
             End If
 
-            If i <> ","c Then
-                tempString = tempString & i
-            ElseIf i = ","c AndAlso (isString OrElse level > 0) Then
-                tempString = tempString & i
+            If ch <> ","c Then
+                'tempString &= i
+                sb.Append(ch)
+            ElseIf ch = ","c AndAlso (isString OrElse level > 0) Then
+                'tempString &= i
+                sb.Append(ch)
             Else
-                values.Add(tempString.Trim)
-                tempString = ""
+                'values.Add(tempString.Trim)
+                values.Add(sb.ToString.Trim)
+                'tempString = ""
+                sb.Length = 0
             End If
 
-            If characterCount = chars.Length Then
-                values.Add(tempString.Trim)
-                tempString = ""
+            If i = cLen - 1 Then
+                'values.Add(tempString.Trim)
+                values.Add(sb.ToString.Trim)
             End If
-        Next
+        Next i
 
         Return values.ToArray()
     End Function

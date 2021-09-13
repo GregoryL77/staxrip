@@ -299,7 +299,8 @@ Public Class MacrosForm
         If lv.Items.Count > 0 Then
             lv.Items(0).Selected = True
             lv.Items(0).EnsureVisible()
-            lv.TileSize = New Size(lv.Width - SystemInformation.VerticalScrollBarWidth - 5, CInt(If(s.UIScaleFactor = 1, 16, Font.Height) * 1.5)) 'Test This Experiment!!! NoScaling
+            'lv.TileSize = New Size(lv.Width - SystemInformation.VerticalScrollBarWidth - 5, CInt(If(s.UIScaleFactor = 1, 16, FontHeight) * 1.5))
+            lv.TileSize = New Size(lv.Width - 17 - 5, CInt(If(s.UIScaleFactor = 1, 16, FontHeight) * 1.5)) 'VSBW=17 Test This Experiment!!! Widows-NoScaling font.height
             lv.Scrollable = True
             Native.SetWindowTheme(lv.Handle, "explorer", Nothing)
         End If

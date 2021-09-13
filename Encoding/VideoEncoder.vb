@@ -36,7 +36,7 @@ Public MustInherit Class VideoEncoder
             If TypeOf Muxer Is NullMuxer Then
                 Return p.TargetFile
             Else
-                Return p.TempDir & p.TargetFile.Base + "_out." & OutputExt
+                Return p.TempDir & p.TargetFile.Base & "_out." & OutputExt
             End If
         End Get
     End Property
@@ -70,11 +70,11 @@ Public MustInherit Class VideoEncoder
         Select Case colour_primaries
             Case "BT.2020"
                 If colour_primaries.Contains("BT.2020") Then
-                    cl += " --colorprim bt2020"
+                    cl &= " --colorprim bt2020"
                 End If
             Case "BT.709"
                 If colour_primaries.Contains("BT.709") Then
-                    cl += " --colorprim bt709"
+                    cl &= " --colorprim bt709"
                 End If
         End Select
 
@@ -83,14 +83,14 @@ Public MustInherit Class VideoEncoder
         Select Case transfer_characteristics
             Case "PQ", "SMPTE ST 2084"
                 If transfer_characteristics.Contains("SMPTE ST 2084") Or transfer_characteristics.Contains("PQ") Then
-                    cl += " --transfer smpte2084"
+                    cl &= " --transfer smpte2084"
                 End If
             Case "BT.709"
                 If transfer_characteristics.Contains("BT.709") Then
-                    cl += " --transfer bt709"
+                    cl &= " --transfer bt709"
                 End If
             Case "HLG"
-                cl += " --transfer arib-std-b67"
+                cl &= " --transfer arib-std-b67"
         End Select
 
         Dim matrix_coefficients = MediaInfo.GetVideo(sourceFile, "matrix_coefficients")
@@ -98,32 +98,32 @@ Public MustInherit Class VideoEncoder
         Select Case matrix_coefficients
             Case "BT.2020 non-constant"
                 If matrix_coefficients.Contains("BT.2020 non-constant") Then
-                    cl += " --colormatrix bt2020nc"
+                    cl &= " --colormatrix bt2020nc"
                 End If
             Case "BT.709"
-                cl += " --colormatrix bt709"
+                cl &= " --colormatrix bt709"
         End Select
 
         Dim color_range = MediaInfo.GetVideo(sourceFile, "colour_range")
 
         Select Case color_range
             Case "Limited"
-                cl += " --colorrange limited"
-                cl += " --range tv"
-                cl += " --input-range tv"
-                cl += " --range limited"
+                cl &= " --colorrange limited"
+                cl &= " --range tv"
+                cl &= " --input-range tv"
+                cl &= " --range limited"
             Case "Full"
-                cl += " --colorrange full"
-                cl += " --range pc"
-                cl += " --input-range pc"
-                cl += " --range full"
+                cl &= " --colorrange full"
+                cl &= " --range pc"
+                cl &= " --input-range pc"
+                cl &= " --range full"
 
         End Select
 
         Dim MasteringDisplay_ColorPrimaries = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_ColorPrimaries")
         Dim MasteringDisplay_Luminance = MediaInfo.GetVideo(sourceFile, "MasteringDisplay_Luminance")
 
-        If MasteringDisplay_ColorPrimaries?.Length > 0 AndAlso MasteringDisplay_Luminance?.Length > 0 Then
+        If MasteringDisplay_ColorPrimaries.NotNullOrEmptyS AndAlso MasteringDisplay_Luminance.NotNullOrEmptyS Then
             Dim luminanceMatch = Regex.Match(MasteringDisplay_Luminance, "min: ([\d\.]+) cd/m2, max: ([\d\.]+) cd/m2")
 
             If luminanceMatch.Success Then
@@ -131,33 +131,33 @@ Public MustInherit Class VideoEncoder
                 Dim luminanceMax = luminanceMatch.Groups(2).Value.ToDouble * 10000
 
                 If MasteringDisplay_ColorPrimaries.Contains("Display P3") Then
-                    cl += " --output-depth 10"
-                    cl += $" --master-display ""G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L({luminanceMax},{luminanceMin})"""
-                    cl += " --hdr"
-                    cl += " --repeat-headers"
-                    cl += " --range limited"
-                    cl += " --hrd"
-                    cl += " --aud"
+                    cl &= " --output-depth 10"
+                    cl &= $" --master-display ""G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L({luminanceMax},{luminanceMin})"""
+                    cl &= " --hdr"
+                    cl &= " --repeat-headers"
+                    cl &= " --range limited"
+                    cl &= " --hrd"
+                    cl &= " --aud"
                 End If
 
                 If MasteringDisplay_ColorPrimaries.Contains("DCI P3") Then
-                    cl += " --output-depth 10"
-                    cl += $" --master-display ""G(13250,34500)B(7500,3000)R(34000,16000)WP(15700,17550)L({luminanceMax},{luminanceMin})"""
-                    cl += " --hdr"
-                    cl += " --repeat-headers"
-                    cl += " --range limited"
-                    cl += " --hrd"
-                    cl += " --aud"
+                    cl &= " --output-depth 10"
+                    cl &= $" --master-display ""G(13250,34500)B(7500,3000)R(34000,16000)WP(15700,17550)L({luminanceMax},{luminanceMin})"""
+                    cl &= " --hdr"
+                    cl &= " --repeat-headers"
+                    cl &= " --range limited"
+                    cl &= " --hrd"
+                    cl &= " --aud"
                 End If
 
                 If MasteringDisplay_ColorPrimaries.Contains("BT.2020") Then
-                    cl += " --output-depth 10"
-                    cl += $" --master-display ""G(8500,39850)B(6550,2300)R(35400,14600)WP(15635,16450)L({luminanceMax},{luminanceMin})"""
-                    cl += " --hdr"
-                    cl += " --repeat-headers"
-                    cl += " --range limited"
-                    cl += " --hrd"
-                    cl += " --aud"
+                    cl &= " --output-depth 10"
+                    cl &= $" --master-display ""G(8500,39850)B(6550,2300)R(35400,14600)WP(15635,16450)L({luminanceMax},{luminanceMin})"""
+                    cl &= " --hdr"
+                    cl &= " --repeat-headers"
+                    cl &= " --range limited"
+                    cl &= " --hrd"
+                    cl &= " --aud"
                 End If
             End If
         End If
@@ -166,7 +166,7 @@ Public MustInherit Class VideoEncoder
         Dim MaxFALL = MediaInfo.GetVideo(sourceFile, "MaxFALL").Trim.Left(" ").ToInt
 
         If MaxCLL <> 0 OrElse MaxFALL <> 0 Then
-            cl += $" --max-cll ""{MaxCLL},{MaxFALL}"""
+            cl &= " --max-cll """ & MaxCLL & "," & MaxFALL & """"
         End If
 
         ImportCommandLine(cl)
@@ -181,38 +181,25 @@ Public MustInherit Class VideoEncoder
     End Sub
 
     Overrides Function CreateEditControl() As Control
-        Dim ret As New ToolStripEx
+        Dim pad As New Padding(1) '(fh \ 9) ''1=16/9=Segoe9,Test this Experiment Noscaling, ret.Font.Height
+        Dim marg As New Padding(2, 2, 0, 0)
+        Dim gmL As MenuList = GetMenu()
+        Dim tsiBnA(gmL.Count - 1) As ToolStripItem
+        For i = 0 To gmL.Count - 1
+            Dim pair = gmL(i)
+            Dim bn As New ToolStripButton With {.Margin = marg, .Padding = pad, .Text = pair.Key, .TextAlign = ContentAlignment.MiddleLeft}
+            AddHandler bn.Click, Sub() pair.Value.Invoke()
+            tsiBnA(i) = bn
+        Next i
 
-        ret.Renderer = New ToolStripRendererEx(ToolStripRenderModeEx.SystemDefault)
-        Dim fh As Integer = 16 'Segoe 9
-        If s.UIScaleFactor <> 1 Then  'Test this Experiment Noscaling, ret.Font.Height
-            ret.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
-            fh = ret.Font.Height
-            ToolStripRendererEx.FontHeight = fh
+        Dim ret As New ToolStripEx(tsiBnA) With {.Renderer = New ToolStripRendererEx(ToolStripRenderModeEx.SystemDefault), .ShowControlBorder = True, .BackColor = SystemColors.Window,
+            .ShowItemToolTips = False, .LayoutStyle = ToolStripLayoutStyle.VerticalStackWithOverflow, .GripStyle = ToolStripGripStyle.Hidden, .Dock = DockStyle.Fill}
+
+        If s.UIScaleFactor <> 1 Then
+            Dim fn As New Font("Segoe UI", 9 * s.UIScaleFactor)
+            ToolStripRendererEx.FontHeight = fn.Height
+            ret.Font = fn
         End If
-
-        ret.ShowItemToolTips = False
-        ret.GripStyle = ToolStripGripStyle.Hidden
-        ret.BackColor = SystemColors.Window
-        ret.Dock = DockStyle.Fill
-        ret.BackColor = SystemColors.Window
-        ret.LayoutStyle = ToolStripLayoutStyle.VerticalStackWithOverflow
-        ret.ShowControlBorder = True
-
-        Dim pad = fh \ 9
-
-        ret.SuspendLayout()
-        For Each pair In GetMenu()
-            Dim bn As New ToolStripButton
-            bn.Margin = New Padding(2, 2, 0, 0)
-            bn.Text = pair.Key
-            bn.Padding = New Padding(pad)
-            Dim tmp = pair
-            AddHandler bn.Click, Sub() tmp.Value.Invoke()
-            bn.TextAlign = ContentAlignment.MiddleLeft
-            ret.Items.Add(bn)
-        Next
-        ret.ResumeLayout(False)
 
         Return ret
     End Function
@@ -227,7 +214,7 @@ Public MustInherit Class VideoEncoder
         If p.CompCheckAction = CompCheckAction.AdjustFileSize Then
             Dim oldSize = g.MainForm.tbTargetSize.Text
             g.MainForm.tbTargetSize.Text = g.GetAutoSize(AutoCompCheckValue).ToString
-            Log.WriteLine("Target size: " & oldSize & " MB -> " + g.MainForm.tbTargetSize.Text + " MB")
+            Log.WriteLine("Target size: " & oldSize & " MB -> " & g.MainForm.tbTargetSize.Text & " MB")
         ElseIf p.CompCheckAction = CompCheckAction.AdjustImageSize Then
             AutoSetImageSize()
         End If
@@ -259,10 +246,10 @@ Public MustInherit Class VideoEncoder
                 End If
             End While
 
-            g.MainForm.tbTargetWidth.Text = p.TargetWidth.ToInvariantString
-            g.MainForm.tbTargetHeight.Text = p.TargetHeight.ToInvariantString
+            g.MainForm.tbTargetWidth.Text = p.TargetWidth.ToInvStr
+            g.MainForm.tbTargetHeight.Text = p.TargetHeight.ToInvStr
 
-            Log.WriteLine("Target image size: " & oldWidth.ToInvariantString & "x" & oldHeight.ToInvariantString & " -> " & p.TargetWidth.ToInvariantString & "x" & p.TargetHeight.ToInvariantString)
+            Log.WriteLine("Target image size: " & oldWidth.ToInvStr & "x" & oldHeight.ToInvStr & " -> " & p.TargetWidth.ToInvStr & "x" & p.TargetHeight.ToInvStr)
 
             If p.AutoSmartCrop Then
                 g.MainForm.StartSmartCrop()
@@ -282,7 +269,7 @@ Public MustInherit Class VideoEncoder
         g.MainForm.UpdateEncoderStateRelatedControls()
         g.MainForm.SetEncoderControl(p.VideoEncoder.CreateEditControl)
         g.MainForm.lgbEncoder.Text = g.ConvertPath(p.VideoEncoder.Name).Shorten(38)
-        g.MainForm.llMuxer.Text = p.VideoEncoder.Muxer.OutputExt.ToUpperInvariant
+        g.MainForm.llMuxer.Text = p.VideoEncoder.Muxer.OutputExt.ToUpper(InvCult)
 
         If GetFixedBitrate() <> 0 Then
             p.BitrateIsFixed = True
@@ -303,7 +290,7 @@ Public MustInherit Class VideoEncoder
 
         If muxer.Edit = DialogResult.OK Then
             Me.Muxer = muxer
-            g.MainForm.llMuxer.Text = Me.Muxer.OutputExt.ToUpperInvariant
+            g.MainForm.llMuxer.Text = Me.Muxer.OutputExt.ToUpper(InvCult)
             g.MainForm.Refresh()
             g.MainForm.UpdateSizeOrBitrate()
             g.MainForm.Assistant()
@@ -321,11 +308,11 @@ Public MustInherit Class VideoEncoder
     Sub LoadMuxer(profile As Profile)
         Muxer = DirectCast(ObjectHelp.GetCopy(profile), Muxer)
         Muxer.Init()
-        g.MainForm.llMuxer.Text = Muxer.OutputExt.ToUpperInvariant
+        g.MainForm.llMuxer.Text = Muxer.OutputExt.ToUpper(InvCult)
         Dim newPath = p.TargetFile.ChangeExt(Muxer.OutputExt)
 
-        If p.SourceFile?.Length > 0 AndAlso newPath.ToLowerInvariant.Equals(p.SourceFile.ToLowerInvariant) Then
-            newPath = newPath.Dir + newPath.Base + "_new" + newPath.ExtFull
+        If p.SourceFile.NotNullOrEmptyS AndAlso newPath.ToLower(InvCult).Equals(p.SourceFile.ToLower(InvCult)) Then
+            newPath = newPath.Dir & newPath.Base & "_new" & newPath.ExtFull
         End If
 
         g.MainForm.tbTargetFile.Text = newPath
@@ -510,7 +497,7 @@ Public MustInherit Class BasicVideoEncoder
                             If a.Length - 1 > x Then
                                 If optionParam.IntegerValue Then
                                     For xOpt = 0 To optionParam.Options.Length - 1
-                                        If a(x + 1) = xOpt.ToInvariantString Then
+                                        If String.Equals(a(x + 1), xOpt.ToInvStr) Then
                                             optionParam.Value = xOpt
                                             params.RaiseValueChanged(param)
                                             exitFor = True
@@ -521,7 +508,7 @@ Public MustInherit Class BasicVideoEncoder
                                     For xOpt = 0 To optionParam.Options.Length - 1
                                         Dim values = If(optionParam.Values.NothingOrEmpty, optionParam.Options, optionParam.Values)
 
-                                        If a(x + 1).Trim(""""c).ToLowerInvariant = values(xOpt).ToLowerInvariant.Replace(" ", "") Then
+                                        If String.Equals(a(x + 1).Trim(""""c).ToLower(InvCult), values(xOpt).ToLower(InvCult).Replace(" ", "")) Then
                                             optionParam.Value = xOpt
                                             params.RaiseValueChanged(param)
                                             exitFor = True
@@ -536,7 +523,7 @@ Public MustInherit Class BasicVideoEncoder
                             ElseIf a.Length - 1 = x Then
                                 If optionParam.Values IsNot Nothing Then
                                     For xOpt = 0 To optionParam.Values.Length - 1
-                                        If a(x) = optionParam.Values(xOpt) AndAlso optionParam.Values(xOpt).StartsWith("--", StringComparison.Ordinal) Then
+                                        If String.Equals(a(x), optionParam.Values(xOpt)) AndAlso optionParam.Values(xOpt).StartsWith("--", StringComparison.Ordinal) Then
                                             optionParam.Value = xOpt
                                             params.RaiseValueChanged(param)
                                             exitFor = True
@@ -612,12 +599,12 @@ Public Class BatchEncoder
     Overrides Sub Encode()
         p.Script.Synchronize()
 
-        For Each line In Macro.Expand(CommandLines).SplitLinesNoEmpty
+        For Each line In Macro.Expand(CommandLines).Split({BR}, StringSplitOptions.RemoveEmptyEntries)
             Using proc As New Proc
-                proc.Header = "Video encoding command line encoder: " + Name
+                proc.Header = "Video encoding command line encoder: " & Name
                 proc.SkipStrings = Proc.GetSkipStrings(CommandLines)
                 proc.File = "cmd.exe"
-                proc.Arguments = "/S /C """ + line + """"
+                proc.Arguments = "/S /C """ & line & """"
 
                 Try
                     proc.Start()
@@ -645,7 +632,7 @@ Public Class BatchEncoder
         script.Engine = p.Script.Engine
         script.Filters = p.Script.GetFiltersCopy
         Dim code As String
-        Dim every = ((100 \ p.CompCheckRange) * 14).ToInvariantString
+        Dim every = ((100 \ p.CompCheckRange) * 14).ToInvStr
 
         If script.Engine = ScriptEngine.AviSynth Then
             code = "SelectRangeEvery(" + every + ",14)"
@@ -685,7 +672,7 @@ Public Class BatchEncoder
 
         g.MainForm.Assistant()
 
-        Log.WriteLine(CInt(Calc.GetPercent).ToInvariantString + " %")
+        Log.WriteLine(CInt(Calc.GetPercent).ToInvStr + " %")
         Log.Save()
     End Sub
 End Class

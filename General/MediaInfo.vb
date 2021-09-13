@@ -1,9 +1,6 @@
-Imports System.Collections.Concurrent
 Imports System.Runtime.InteropServices
 Imports System.Text.RegularExpressions
-Imports System.Threading
 Imports System.Threading.Tasks
-Imports KGySoft.Collections
 Imports KGySoft.CoreLibraries
 
 Public Class MediaInfo
@@ -28,26 +25,20 @@ Public Class MediaInfo
     ReadOnly Property VideoStreams() As List(Of VideoStream)
         Get
             If VideoStreamsValue Is Nothing Then
-                VideoStreamsValue = New List(Of VideoStream)
                 Dim count = MediaInfo_Count_Get(Handle, MediaInfoStreamKind.Video, -1)
 
                 If count > 0 Then
+                    VideoStreamsValue = New List(Of VideoStream)(count)
                     For index = 0 To count - 1
-                        Dim at As New VideoStream
-                        at.Index = index
-
-                        Dim streamOrder = GetVideo(index, "StreamOrder").ToIntM 'opt.
-                        at.StreamOrder = If(streamOrder = -2147483646I, index + 1, streamOrder)
-
+                        Dim so = GetVideo(index, "StreamOrder").ToIntM 'opt.
                         'Dim streamOrder = GetVideo(index, "StreamOrder")
-                        'If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvariantString
+                        'If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvStr
                         'at.StreamOrder = streamOrder.ToInt
-
-                        at.Format = GetVideo(index, "Format")
-                        at.ID = GetVideo(index, "ID").ToInt
-
-                        VideoStreamsValue.Add(at)
+                        VideoStreamsValue.Add(New VideoStream With {.Index = index, .StreamOrder = If(so = -2147483646I, index + 1, so),
+                                                                    .Format = GetVideo(index, "Format"), .ID = GetVideo(index, "ID").ToInt})
                     Next
+                Else
+                    VideoStreamsValue = New List(Of VideoStream)
                 End If
             End If
 
@@ -57,67 +48,62 @@ Public Class MediaInfo
 
     ReadOnly Property AudioStreams() As List(Of AudioStream)
         Get
-            Dim ret As New List(Of AudioStream)
             Dim count = MediaInfo_Count_Get(Handle, MediaInfoStreamKind.Audio, -1)
-            Dim offset As Integer
+            'Dim offset As Integer 'Dead code ???
 
             If count > 0 Then
+                Dim ret As New List(Of AudioStream)(count)
                 For index = 0 To count - 1
-                    Dim at As New AudioStream
-                    at.Index = index
-
-                    Dim streamOrder = GetAudio(index, "StreamOrder").ToIntM ' opt.
-                    at.StreamOrder = If(streamOrder = -2147483646I, index + 1 + offset, streamOrder + offset)
-
                     'Dim streamOrder = GetAudio(index, "StreamOrder")
-                    'If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvariantString
+                    'If Not streamOrder.IsInt Then streamOrder = (index + 1).ToInvStr
                     'at.StreamOrder = streamOrder.ToInt + offset
-
-                    Dim id = GetAudio(index, "ID").ToIntM ' opt.
-                    at.ID = If(id = -2147483646I, index + 2 + offset, id + offset)
-
                     'Dim id = GetAudio(index, "ID")
-                    'If Not id.IsInt Then id = (index + 2).ToInvariantString
+                    'If Not id.IsInt Then id = (index + 2).ToInvStr
                     'at.ID = id.ToInt + offset
-
-                    at.Lossy = GetAudio(index, "Compression_Mode") = "Lossy"
-                    at.SamplingRate = GetAudio(index, "SamplingRate").ToInt
-                    at.BitDepth = GetAudio(index, "BitDepth").ToInt
-                    at.Format = GetAudio(index, "Format")
-                    at.FormatString = GetAudio(index, "Format/String")
-                    at.FormatProfile = GetAudio(index, "Format_Profile")
-                    at.Title = GetAudio(index, "Title").Trim
-                    at.Forced = GetAudio(index, "Forced") = "Yes"
-                    at.Default = GetAudio(index, "Default") = "Yes"
+                    Dim so = GetAudio(index, "StreamOrder").ToIntM ' opt.
+                    Dim id = GetAudio(index, "ID").ToIntM ' opt.
+                    '.StreamOrder = If(so = -2147483646I, index + 1 + offset, so + offset),
+                    '.ID = If(id = -2147483646I, index + 2 + offset, id + offset),
+                    Dim at As New AudioStream With {
+                        .Index = index,
+                        .StreamOrder = If(so = -2147483646I, index + 1, so),
+                        .ID = If(id = -2147483646I, index + 2, id),
+                        .Lossy = String.Equals(GetAudio(index, "Compression_Mode"), "Lossy"),
+                        .SamplingRate = GetAudio(index, "SamplingRate").ToInt,
+                        .BitDepth = GetAudio(index, "BitDepth").ToInt,
+                        .Format = GetAudio(index, "Format"),
+                        .FormatString = GetAudio(index, "Format/String"),
+                        .FormatProfile = GetAudio(index, "Format_Profile"),
+                        .Title = GetAudio(index, "Title").Trim,
+                        .Forced = String.Equals(GetAudio(index, "Forced"), "Yes"),
+                        .Default = String.Equals(GetAudio(index, "Default"), "Yes"),
+                        .Delay = GetAudio(index, "Video_Delay").ToInt,
+                        .Language = New Language(GetAudio(index, "Language/String2"))}
 
                     Dim lm = GetAudio(index, "Language_More")
-
                     If lm.NotNullOrEmptyS Then
                         If at.Title.NullOrEmptyS Then
                             at.Title = lm
                         Else
-                            at.Title += " - " & lm
+                            at.Title &= " - " & lm
                         End If
                     End If
 
-                    Dim bitrate = GetAudio(index, "BitRate")
+                    If at.Delay = 0 Then
+                        at.Delay = GetAudio(index, "Source_Delay").ToInt
+                    End If
 
+                    Dim bitrate = GetAudio(index, "BitRate")
                     Dim bi = bitrate.ToIntM()
                     If bi <> -2147483646I Then
                         at.Bitrate = (bi \ 1000)
-                    ElseIf bitrate.Contains("/") Then
+                    ElseIf bitrate.IndexOf("/"c) >= 0 Then
                         Dim values = bitrate.Split("/"c)
                         at.Bitrate = (values(0).ToInt \ 1000)
                         at.Bitrate2 = (values(1).ToInt \ 1000)
                     End If
 
                     If at.Bitrate = 0 Then at.Bitrate = GetAudio(index, "FromStats_BitRate").ToInt
-
-                    at.Delay = GetAudio(index, "Video_Delay").ToInt
-
-                    If at.Delay = 0 Then
-                        at.Delay = GetAudio(index, "Source_Delay").ToInt
-                    End If
 
                     Dim channels = GetAudio(index, "Channel(s)")
                     at.Channels = channels.ToInt
@@ -127,14 +113,12 @@ Public Class MediaInfo
                     End If
 
                     If at.Channels = 0 Then
-                        If channels.Contains("/") Then
+                        If channels.IndexOf("/"c) >= 0 Then
                             Dim values = channels.Split("/"c)
                             at.Channels = values(0).ToInt
                             at.Channels2 = values(1).ToInt
                         End If
                     End If
-
-                    at.Language = New Language(GetAudio(index, "Language/String2"))
 
                     If Not AudioConverterForm.AudioConverterMode Then
                         Select Case p.DemuxAudio
@@ -143,56 +127,56 @@ Public Class MediaInfo
                             Case DemuxMode.None
                                 at.Enabled = False
                             Case DemuxMode.Preferred, DemuxMode.Dialog
-                                Dim autoCode = p.PreferredAudio.ToLower.Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries)
-                                at.Enabled = autoCode.ContainsAny({"all", at.Language.TwoLetterCode, at.Language.ThreeLetterCode})
+                                Dim autoCode = p.PreferredAudio.ToLower(InvCult).Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries)
+                                at.Enabled = autoCode.ContainsAny({"all", at.Language.CultureInfo.TwoLetterISOLanguageName, at.Language.ThreeLetterCode})
                         End Select
                     End If
 
                     ret.Add(at)
                 Next
+                Return ret
+            Else
+                Return New List(Of AudioStream)
             End If
 
-            Return ret
         End Get
     End Property
 
     ReadOnly Property Subtitles() As List(Of Subtitle)
         Get
-            Dim ret As New List(Of Subtitle)
             Dim count = MediaInfo_Count_Get(Handle, MediaInfoStreamKind.Text, -1)
-            Dim offset As Integer
+            'Dim offset As Integer 'Dead Code ???
 
             If count > 0 Then
+                Dim ret As New List(Of Subtitle)(count)
+
                 For index = 0 To count - 1
-                    Dim subtitle As New Subtitle(New Language(GetText(index, "Language")))
-                    subtitle.Index = index
                     Dim streamOrder = GetText(index, "StreamOrder")
+                    Dim subtitle As New Subtitle(New Language(GetText(index, "Language"))) With {
+                        .Index = index,
+                        .Forced = String.Equals(GetText(index, "Forced"), "Yes"),
+                        .[Default] = String.Equals(GetText(index, "Default"), "Yes"),
+                        .ID = GetText(index, "ID").ToInt,
+                        .Title = GetText(index, "Title").Trim,
+                        .CodecString = GetText(index, "Codec/String"),
+                        .Format = GetText(index, "Format"),
+                        .Size = GetText(index, "StreamSize").ToInt}
 
                     If streamOrder.NotNullOrEmptyS Then
-                        If streamOrder.Contains("-") Then
-                            subtitle.StreamOrder = streamOrder.Right("-").ToInt + offset
-                        Else
-                            subtitle.StreamOrder = streamOrder.ToInt
-                        End If
+                        subtitle.StreamOrder = If(streamOrder.LastIndexOf("-"c) >= 0, streamOrder.Right("-").ToInt, streamOrder.ToInt) ', streamOrder.Right("-").ToInt + offset,
                     End If
 
-                    subtitle.Forced = GetText(index, "Forced") = "Yes"
-                    subtitle.Default = GetText(index, "Default") = "Yes"
-                    subtitle.ID = GetText(index, "ID").ToInt
-                    subtitle.Title = GetText(index, "Title").Trim
-                    subtitle.CodecString = GetText(index, "Codec/String")
                     If subtitle.CodecString.NullOrEmptyS Then subtitle.CodecString = GetText(index, "Format")
-                    subtitle.Format = GetText(index, "Format")
-                    subtitle.Size = GetText(index, "StreamSize").ToInt
-
-                    Dim autoCode = p.PreferredSubtitles.ToLower.Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries)
-                    subtitle.Enabled = autoCode.ContainsAny({"all", subtitle.Language.TwoLetterCode, subtitle.Language.ThreeLetterCode}) OrElse p.DemuxSubtitles = DemuxMode.All
+                    subtitle.Enabled = p.PreferredSubtitles.ToLower(InvCult).Split({","c, ";"c, " "c}, StringSplitOptions.RemoveEmptyEntries).
+                        ContainsAny({"all", subtitle.Language.TwoLetterCode, subtitle.Language.ThreeLetterCode}) OrElse p.DemuxSubtitles = DemuxMode.All
 
                     ret.Add(subtitle)
                 Next
+                Return ret
+            Else
+                Return New List(Of Subtitle)
             End If
 
-            Return ret
         End Get
     End Property
 
@@ -217,7 +201,7 @@ Public Class MediaInfo
         If ret.Contains("Encoded_Library_Settings") Then ret = Regex.Replace(ret, "Encoded_Library_Settings +: .+\n", "")
         If ret.Contains("Encoding settings") Then ret = Regex.Replace(ret, "Encoding settings +: .+\n", "")
         ret = ret.Replace("Format settings, ", "Format, ")
-        Return ret.FormatColumn(":").Trim
+        Return ret.FormatColumn(":"c).Trim
     End Function
 
     Shared Function GetCompleteSummary(path As String, Optional Key As Long = KeyDefault) As String
@@ -329,7 +313,7 @@ Public Class MediaInfo
         If ret = 0 Then ret = GetInfo(MediaInfoStreamKind.Audio, "Channel(s)_Original").ToInt
 
         If ret = 0 Then
-            If channelsString.Contains("/") Then
+            If channelsString.IndexOf("/"c) >= 0 Then
                 Dim values = channelsString.Split("/"c)
                 Dim value0 = values(0).ToInt
                 Dim value1 = values(1).ToInt
@@ -379,31 +363,32 @@ Public Class MediaInfo
         Return GetMediaInfo(path, Key).GetSubtitleCount
     End Function
 
-    Public Shared Cache As New Dictionary(Of Long, MediaInfo)(199)
+    'Public Shared Cache As New Dictionary(Of Long, MediaInfo)(197)
+    Public Shared Cache As Dictionary(Of Long, MediaInfo)
     'Public Shared CacheTS As LockingDictionary(Of Long, MediaInfo) = Cache.AsThreadSafe()
-    'Public Shared CacheTS As KGySoft.Collections.LockingDictionary(Of Long, MediaInfo) = Cache.AsThreadSafe
+    'Public Shared CacheTS As KGySoft.Collections.LockingDictionary(Of Long, MediaInfo) = Cache.AsThreadSafe 'Or use ThreadSafeDictionary?
 
     Shared Function GetMediaInfo(path As String, Optional Key As Long = KeyDefault) As MediaInfo
-        If path.NullOrEmptyS Then Return Nothing
-        Dim ret As MediaInfo
-        'Dim key = path & File.GetLastWriteTime(path).Ticks
-        If Key <= 0 Then Key = ((path.GetHashCode + 2147483648L) << 16) + path.Length
-        If Cache.TryGetValue(Key, ret) Then Return ret
-        ret = New MediaInfo(path)
-        'Dim cTS = Cache.AsThreadSafe
-        'CacheTS.Item(Key) = ret
-        Cache.Item(Key) = ret
-        Return ret
+        If path?.Length > 0 Then
+            Dim ret As MediaInfo
+            'Dim key = path & File.GetLastWriteTime(path).Ticks
+            If Key <= 0 Then Key = ((path.GetHashCode + 2147483648L) << 16) + path.Length
+            If Cache.TryGetValue(Key, ret) Then Return ret
+            ret = New MediaInfo(path)
+            'Dim cTS = Cache.AsThreadSafe
+            'CacheTS.Item(Key) = ret
+            Cache.Item(Key) = ret
+            Return ret
+        End If
     End Function
 
-    Shared Sub ClearCache(Optional newCapacity As Integer = 199)
-        'For Each i In Cache.Values
-        '    i?.Dispose()
-        'Next
-        Dim cVal = Cache.Values
-        Parallel.ForEach(cVal, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
-        Cache.Clear()
-        Cache = New Dictionary(Of Long, MediaInfo)(newCapacity)
+    Shared Sub ClearCache(Optional createNew As Boolean = True, Optional newCapacity As Integer = 197)
+        If Cache IsNot Nothing Then
+            'For Each i In Cache.Values : i?.Dispose()
+            Parallel.ForEach(Cache.Values, New ParallelOptions With {.MaxDegreeOfParallelism = Math.Max(CPUsC \ 2, 1)}, Sub(m) m?.Dispose())
+            Cache.Clear()
+            Cache = If(createNew, New Dictionary(Of Long, MediaInfo)(newCapacity), Nothing)
+        End If
     End Sub
 
 #Region "IDisposable"
@@ -415,9 +400,9 @@ Public Class MediaInfo
             Try
                 MediaInfo_Close(Handle)
                 MediaInfo_Delete(Handle)
-            Catch 'ex As Exception 'debug
-                'If Not g.MainForm.ForceClose AndAlso Not g.MainForm.IsDisposed Then Microsoft.VisualBasic.MsgBox(Loaded & "-Loaded|MediaInfo Dispose Exception, (Ignore):" & BR & ex.ToString)
-                Console.Beep(400, 250) 'debug
+            Catch ex As Exception 'debug
+                Console.Beep(400, 200) 'debug
+                If Not g.MainForm.ForceClose AndAlso Not g.MainForm.IsDisposed Then Microsoft.VisualBasic.MsgBox(Loaded & "-Loaded|MediaInfo Dispose Exception, (Catched):" & BR & ex.ToString)
             End Try
         End If
     End Sub

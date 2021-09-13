@@ -60,7 +60,7 @@ Public Class Rav1e
     End Sub
 
     Overloads Function GetArgs(pass As Integer, script As VideoScript, Optional includePaths As Boolean = True) As String
-        Return Params.GetArgs(pass, script, OutputPath.DirAndBase + OutputExtFull, includePaths, True)
+        Return Params.GetArgs(pass, script, OutputPath.DirAndBase & OutputExtFull, includePaths, True)
     End Function
 
     Overrides Function GetMenu() As MenuList
@@ -70,8 +70,11 @@ Public Class Rav1e
         Return r
     End Function
 
-    Overrides Sub ShowConfigDialog()
+    Overrides Function GetFixedBitrate() As Integer
+        Return CInt(Params.Bitrate.Value)
+    End Function
 
+    Overrides Sub ShowConfigDialog()
         Dim newParams As New Rav1eParams
         Dim store = ParamsStore.GetDeepClone
         newParams.Init(store)
@@ -86,7 +89,6 @@ Public Class Rav1e
                                         enc.ParamsStore = store2
                                         SaveProfile(enc)
                                     End Sub
-
             form.cms.Items.Add(New ActionMenuItem("Save Profile...", saveProfileAction, ImageHelp.GetImageC(Symbol.Save)))
 
             If form.ShowDialog() = DialogResult.OK Then
@@ -99,7 +101,7 @@ Public Class Rav1e
 
     Overrides Property QualityMode() As Boolean
         Get
-            Return Params.Mode.OptionText.EqualsAny("Quality")
+            Return Params.Mode.Value = 0 'OptionText.Equals("Speed") Was:("Quality") Added!
         End Get
         Set(Value As Boolean)
         End Set
@@ -154,7 +156,7 @@ Public Class Rav1eParams
     Property Bitrate As New NumParam With {
         .Text = "Bitrate",
         .Path = "Basic",
-        .Config = {0, 9999},
+        .Config = {0, 999999, 100},
         .ArgsFunc = Function() "" & Bitrate.Value,
         .VisibleFunc = Function() Mode.Value = 1}
 
@@ -326,7 +328,7 @@ Public Class Rav1eParams
 
         sb.Append(" -o ").Append(targetPath.Escape).Append(" - ")
 
-        Return Macro.Expand(sb.ToString.Trim.FixBreak.Replace(BR, " "))
+        Return Macro.Expand(sb.ToString.Trim).FixBreak.Replace(BR, " ")
     End Function
 
     Public Overrides Function GetPackage() As Package

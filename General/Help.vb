@@ -112,17 +112,17 @@ Public Class FolderHelp
         End Try
     End Sub
 
-    Shared Sub Move(source As String, target As String)
-        Try
-            FileSystem.MoveDirectory(source, target, True)
-        Catch ex As Exception
-            g.ShowException(ex)
-        End Try
-    End Sub
+    'Shared Sub Move(source As String, target As String)
+    '    Try
+    '        FileSystem.MoveDirectory(source, target, True)
+    '    Catch ex As Exception
+    '        g.ShowException(ex)
+    '    End Try
+    'End Sub
 
-    Shared Function Compare(dir1 As String, dir2 As String) As Boolean
-        Return dir1.FixDir.ToUpper = dir2.FixDir.ToUpper
-    End Function
+    'Shared Function Compare(dir1 As String, dir2 As String) As Boolean
+    '    Return dir1.FixDir.ToUpper(InvCult) = dir2.FixDir.ToUpper(InvCult)
+    'End Function
 End Class
 
 'TODO:remove?
@@ -158,14 +158,11 @@ Public Class FileHelp
         End If
     End Sub
 
-    Shared Sub Delete(
-        path As String,
-        Optional recycleOption As RecycleOption = RecycleOption.DeletePermanently)
+    Shared Sub Delete(path As String, Optional recycleOption As RecycleOption = RecycleOption.DeletePermanently)
 
         Try
             If File.Exists(path) Then
-                FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs,
-                    recycleOption, UICancelOption.DoNothing)
+                FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, recycleOption, UICancelOption.DoNothing)
             End If
         Catch
         End Try

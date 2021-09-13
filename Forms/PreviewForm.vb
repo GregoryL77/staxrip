@@ -252,8 +252,8 @@ Public Class PreviewForm
     Private CommandManager As New CommandManager
     Private TrackBarBorder As Integer = 1
     Private TrackBarGap As Integer = 1
-    'Private TrackBarPosition As Integer = CInt(Control.DefaultFont.Height / 4) - 1 '=2.25
-    Private TrackBarPosition As Integer = CInt(FontHeight / 4) - 2
+    'Private TrackBarPosition As Integer = CInt(Control.DefaultFont.Height / 4) - 1 'df=13 =2.25
+    Private TrackBarPosition As Integer = 2
     Private VideoSize As Size
 
     Private Shared Instances As New List(Of PreviewForm)
@@ -262,17 +262,14 @@ Public Class PreviewForm
     Sub New(script As VideoScript)
         InitializeComponent()
 
-        GetType(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or
-            BindingFlags.Instance Or BindingFlags.NonPublic, Nothing,
-            pnTrack, New Object() {True})
+        GetType(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty Or BindingFlags.Instance Or BindingFlags.NonPublic, Nothing, pnTrack, New Object() {True})
 
         Icon = g.Icon
 
         CommandManager.AddCommandsFromObject(Me)
         CommandManager.AddCommandsFromObject(g.DefaultCommands)
 
-        GenericMenu = New CustomMenu(AddressOf GetDefaultMenu,
-            s.CustomMenuPreview, CommandManager, cmsMain)
+        GenericMenu = New CustomMenu(AddressOf GetDefaultMenu, s.CustomMenuPreview, CommandManager, cmsMain)
 
         GenericMenu.AddKeyDownHandler(Me)
         GenericMenu.BuildMenu()
@@ -303,8 +300,8 @@ Public Class PreviewForm
             VideoSize = New Size(CInt(info.Width), CInt(info.Height))
         End If
 
-        Dim workingArea = Screen.FromControl(Me).WorkingArea
-        Dim initHeight = CInt((workingArea.Height / 100) * s.PreviewSize)
+        Dim workingAreaH = ScreenResWAPrim.Height  'Screen.FromControl(Me).WorkingArea
+        Dim initHeight = CInt((workingAreaH / 100) * s.PreviewSize)
 
         SetSize(initHeight)
 
@@ -367,7 +364,7 @@ Public Class PreviewForm
         FormBorderStyle = FormBorderStyle.None
         s.PreviewFormBorderStyle = FormBorderStyle
         WindowState = FormWindowState.Maximized
-        Dim screenBounds = Screen.FromControl(Me).Bounds
+        Dim screenBounds = ScreenResPrim 'Screen.FromControl(Me).Bounds
         pnVideo.Dock = DockStyle.None
         Dim ratio = VideoSize.Width / VideoSize.Height
 
@@ -635,7 +632,7 @@ Public Class PreviewForm
         d = d.AddSeconds(Renderer.Position / FrameServer.FrameRate)
         Dim value = InputBox.Show("Time:", "Go To Time", d.ToString("HH:mm:ss.fff"))
 
-        If value.NotNullOrEmptyS Then
+        If value?.Length > 0 Then
             SetPos(CInt((TimeSpan.Parse(value).TotalMilliseconds / 1000) * FrameServer.FrameRate))
         End If
     End Sub
@@ -919,7 +916,7 @@ Public Class PreviewForm
                 End If
             Next
 
-            If td.Show().NotNullOrEmptyS Then
+            If td.Show()?.Length > 0 Then
                 SetPos(CInt((TimeSpan.Parse(td.SelectedValue).TotalMilliseconds / 1000) * FrameServer.FrameRate))
             End If
         End Using
@@ -984,7 +981,7 @@ Public Class PreviewForm
     Sub MergeRanges()
         For Each r1 In p.Ranges.ToArray
             For Each r2 In p.Ranges.ToArray
-                If Not r1 Is r2 Then
+                If r1 IsNot r2 Then
                     If (r2.Start >= r1.Start AndAlso r2.Start <= r1.End) OrElse
                         (r2.End >= r1.Start AndAlso r2.End <= r1.End) Then
 
@@ -1017,7 +1014,7 @@ Public Class PreviewForm
     Sub GenericMenu_Command(e As CustomMenuItemEventArgs) Handles GenericMenu.Command
         e.Handled = True
 
-        If e.Item.MethodName = "CloseDialog" Then
+        If String.Equals(e.Item.MethodName, "CloseDialog") Then
             ProcessMenu(e.Item)
         Else
             For Each i In Instances
@@ -1047,14 +1044,14 @@ Public Class PreviewForm
         Dim ret As String
 
         For Each i In p.Ranges
-            If ret.NotNullOrEmptyS Then
+            If ret?.Length > 0 Then
                 ret += " + "
             End If
 
             If PreviewScript.Engine = ScriptEngine.AviSynth Then
                 ret += "Trim(" & i.Start & ", " & i.End & ")"
 
-                If p.TrimCode.NotNullOrEmptyS Then
+                If p.TrimCode?.Length > 0 Then
                     ret += "." + p.TrimCode.TrimStart("."c)
                 End If
             Else
@@ -1113,7 +1110,7 @@ Public Class PreviewForm
     End Function
 
     Sub SetSize(newHeight As Integer)
-        Dim workingArea = Screen.FromControl(Me).WorkingArea
+        Dim workingArea = ScreenResWAPrim  'Screen.FromControl(Me).WorkingArea
         Dim bordersHeight = Height - ClientSize.Height
         Dim clientHeight = newHeight - bordersHeight
 
@@ -1177,11 +1174,11 @@ Public Class PreviewForm
     End Function
 
     Sub pnVideo_MouseDown(sender As Object, e As MouseEventArgs) Handles pnVideo.MouseDown
-        Dim sb = Screen.FromControl(Me).Bounds
-        Dim p1 = New Point(sb.Width, 0)
+        Dim sbW = ScreenResPrim.Width  'Screen.FromControl(Me).Bounds
+        Dim p1 = New Point(sbW, 0)
         Dim p2 = PointToScreen(e.Location)
 
-        If Math.Abs(p1.X - p2.X) <10 AndAlso Math.Abs(p1.Y - p2.Y) <10 Then
+        If Math.Abs(p1.X - p2.X) < 10 AndAlso Math.Abs(p1.Y - p2.Y) < 10 Then
             Close()
         End If
     End Sub

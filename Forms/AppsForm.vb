@@ -390,13 +390,14 @@ Public Class AppsForm
 
         SearchTextBox_Update()
 
+        Dim fff As FontFamily = Me.Font.FontFamily 'flp.Font.FontFamily
         g.SetRenderer(ToolStrip)
         If s.UIScaleFactor <> 1 Then
-            ToolStrip.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
+            ToolStrip.Font = New Font(fff, 9 * s.UIScaleFactor) '"Segoe UI"
             ToolStripRendererEx.FontHeight = ToolStrip.Font.Height
         End If
 
-        Dim isDevPC As Boolean = g.IsDevelopmentPC
+        Dim isDevPC As Boolean = g.IsDevelopmentPC 'forced true
         miEditChangelog.Visible = isDevPC
         miAutoUpdate.Visible = isDevPC
 
@@ -408,7 +409,7 @@ Public Class AppsForm
         SetupButton.ForeColor = Color.Red
         SetupButton.TextImageRelation = TextImageRelation.ImageBeforeText
         SetupButton.Image = StockIcon.GetSmallImage(StockIconIdentifier.Shield)
-        Dim fnS10 As New Font("Segoe UI", 10)
+        Dim fnS10 As New Font(fff, 10) '"Segoe UI"
         SetupButton.Font = fnS10
         SetupButton.Margin = New Padding(FontHeight \ 3)
         SetupButton.Padding = New Padding(FontHeight \ 5)
@@ -420,7 +421,6 @@ Public Class AppsForm
         DownloadButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
         DownloadButton.AutoSize = True
 
-        Dim fff As FontFamily = flp.Font.FontFamily
         Dim titleHeaderLabel = New Label With {.Font = New Font(fff, 14 * s.UIScaleFactor, FontStyle.Bold), .AutoSize = True}
         Headers("Title") = titleHeaderLabel
         flp.Controls.Add(titleHeaderLabel)
@@ -447,18 +447,20 @@ Public Class AppsForm
             Exit Sub
         End If
 
+        flp.SuspendLayout()
         Dim path = CurrentPackage.Path
 
         Headers("Title").Text = CurrentPackage.Name
 
         SetupButton.Text = "Install " & CurrentPackage.Name
-        SetupButton.Visible = CurrentPackage.SetupAction IsNot Nothing AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
+        Dim cpGStatNoNul As Boolean = CurrentPackage.GetStatus.NotNullOrEmptyS
+        SetupButton.Visible = CurrentPackage.SetupAction IsNot Nothing AndAlso cpGStatNoNul
 
         DownloadButton.Text = "Download and install " & CurrentPackage.Name
-        DownloadButton.Visible = CurrentPackage.DownloadURL.NotNullOrEmptyS AndAlso CurrentPackage.GetStatus.NotNullOrEmptyS
+        DownloadButton.Visible = CurrentPackage.DownloadURL.NotNullOrEmptyS AndAlso cpGStatNoNul
 
         tsbExplore.Enabled = path.NotNullOrEmptyS
-        tsbLaunch.Enabled = CurrentPackage.LaunchAction IsNot Nothing AndAlso CurrentPackage.GetStatus.NullOrEmptyS
+        tsbLaunch.Enabled = CurrentPackage.LaunchAction IsNot Nothing AndAlso Not cpGStatNoNul
         tsbWebsite.Enabled = CurrentPackage.URL.NotNullOrEmptyS
         tsbDownload.Enabled = CurrentPackage.DownloadURL.NotNullOrEmptyS
 
@@ -469,8 +471,6 @@ Public Class AppsForm
         miClearPaths.Enabled = miEditPath.Enabled
 
         s.StringDictionary("RecentExternalApplicationControl") = CurrentPackage.Name & CurrentPackage.Version
-
-        flp.SuspendLayout()
 
         Contents("Location").Text = If(path.NullOrEmptyS, "Not found", path)
         Contents("Description").Text = CurrentPackage.Description
@@ -485,13 +485,13 @@ Public Class AppsForm
 
         Contents("Status").Text = CurrentPackage.GetStatusDisplay()
 
-        If CurrentPackage.GetStatus?.Length > 0 AndAlso CurrentPackage.Required Then
+        If cpGStatNoNul AndAlso CurrentPackage.Required Then
             Contents("Status").ForeColor = Color.Red
         Else
             Contents("Status").ForeColor = Color.Black
         End If
 
-        Contents("Status").Font = New Font("Segoe UI", 10 * s.UIScaleFactor)
+        Contents("Status").Font = New Font(Me.Font.FontFamily, 10 * s.UIScaleFactor) 'New Font("Segoe UI", 10 * s.UIScaleFactor)-String FName-fires family Ctor
 
         Headers("AviSynth Filters").Visible = False
         Contents("AviSynth Filters").Visible = False
@@ -531,16 +531,8 @@ Public Class AppsForm
     Sub AddSection(title As String, fnt As Font)
         Dim controlMargin = CInt(FontHeight / 10)
 
-        Dim headerLabel = New Label With {
-            .Font = fnt,
-            .Margin = New Padding(controlMargin, controlMargin, 0, 0),
-            .AutoSize = True,
-            .Text = title}
-
-        Dim contentLabel = New Label With {
-            .Margin = New Padding(controlMargin, CInt(controlMargin / 3), 0, 0),
-            .AutoSize = True}
-
+        Dim headerLabel = New Label With {.AutoSize = True, .Font = fnt, .Margin = New Padding(controlMargin, controlMargin, 0, 0), .Text = title}
+        Dim contentLabel = New Label With {.AutoSize = True, .Margin = New Padding(controlMargin, CInt(controlMargin / 3), 0, 0)}
         Headers(title) = headerLabel
         Contents(title) = contentLabel
 
@@ -555,12 +547,14 @@ Public Class AppsForm
             End If
         Next
 
-        For Each i In tv.GetNodes
+        Dim getNL As List(Of TreeNode) = tv.GetNodes
+        For n = 0 To getNL.Count - 1
+            Dim i = getNL(n)
             If package Is i.Tag Then
                 tv.SelectedNode = i
-                Exit For 'Test This !!!!
+                Exit Sub 'Test This !!!!
             End If
-        Next
+        Next n
     End Sub
 
     Sub ShowPackage(tn As TreeNode)
@@ -596,11 +590,8 @@ Public Class AppsForm
 
         Dim files = TryCast(args.Data.GetData(DataFormats.FileDrop), String())
 
-        If Not files.NothingOrEmpty AndAlso files.Length = 1 AndAlso
-            files(0).Ext.EqualsAny("zip", "7z") Then
-
-            ToolUpdate = New ToolUpdate(CurrentPackage, Me)
-            ToolUpdate.DownloadFile = files(0)
+        If Not files.NothingOrEmpty AndAlso files.Length = 1 AndAlso files(0).Ext.EqualsAny("zip", "7z") Then
+            ToolUpdate = New ToolUpdate(CurrentPackage, Me) With {.DownloadFile = files(0)}
             ToolUpdate.Extract()
         End If
     End Sub
@@ -615,19 +606,65 @@ Public Class AppsForm
         End If
     End Sub
 
-    Sub SearchTextBox_Update() Handles SearchTextBox.TextChanged
-        Dim current = CurrentPackage
-        Dim sbt = SearchTextBox.Text?.ToLowerInvariant
 
+    Private SearchStringsA As Package() 'String() 'ToDO add SearchCache String
+    Sub CreateSearchStrings()
+
+        Dim piV = Package.Items.Values
+        Dim retA(piV.Count - 1) As Package
+
+        Dim sss = Stopwatch.StartNew
+        Dim iii = 1_000
+        WarmUpCpu()
+        sss.Restart()
+
+        For n = 1 To iii
+            Dim inc As Integer
+            For Each pack In piV
+                retA(inc) = pack
+                inc += 1
+
+                'Dim plugin = TryCast(pack, PluginPackage)
+                'Dim rrr = (pack.Name & pack.Description & pack.Version & pack.WebURL & If(plugin?.VSFilterNames IsNot Nothing, String.Join(" ", plugin.VSFilterNames), Nothing) & pack.Path & If(plugin?.AvsFilterNames IsNot Nothing, String.Join(" ", plugin.AvsFilterNames), Nothing)).ToLower(InvCult)
+            Next pack
+            SearchStringsA = retA
+        Next n
+
+        sss.Stop()
+        Dim ttt = sss.ElapsedTicks / SWFreq & "ms ForEach| "
+        WarmUpCpu()
+        sss.Restart()
+
+        For n = 1 To iii
+            Dim valAr(piV.Count - 1) As Package
+            piV.CopyTo(valAr, 0)
+            For pp = 0 To valAr.Length - 1
+                retA(pp) = piV(pp)
+            Next pp
+            SearchStringsA = retA
+        Next n
+
+        sss.Stop()
+        WarmUpCpu()
+        MsgInfo(ttt & sss.ElapsedTicks / SWFreq & "ms ArrCopy| ")
+
+    End Sub
+
+    Sub SearchTextBox_Update() Handles SearchTextBox.TextChanged
+        Dim sbt = SearchTextBox.Text
+        Dim sbtL0 As Boolean = sbt.Length = 0
+        'If sbt.Length = 1 Then Exit Sub 'Experiment Test this or remove !!!!
+        If Not sbtL0 Then sbt = sbt.ToLower(InvCult)
+
+        Dim current = CurrentPackage
         tv.BeginUpdate()
         tv.Nodes.Clear()
 
-        For Each pack In Package.Items.Values
+        For Each pack In Package.Items.Values 'ToDO add SearchCache String
             Dim plugin = TryCast(pack, PluginPackage)
 
-            Dim searchString = pack.Name & pack.Description & pack.Version & pack.WebURL & plugin?.VSFilterNames.Join(" ") & pack.Path & plugin?.AvsFilterNames.Join(" ")
-
-            If searchString?.ToLowerInvariant.Contains(sbt) Then
+            ' Dim sss As String = pack.Name & pack.Description & pack.Version & pack.WebURL & plugin?.VSFilterNames?.Join(" ") & pack.Path & plugin?.AvsFilterNames?.Join(" ")
+            If sbtL0 OrElse (pack.Name & pack.Description & pack.Version & pack.WebURL & plugin?.VSFilterNames?.Join(" ") & pack.Path & plugin?.AvsFilterNames?.Join(" ")).ToLower(InvCult).Contains(sbt) Then
                 If plugin Is Nothing Then
                     If pack.TreePath?.Length > 0 Then
                         Dim n = tv.AddNode(pack.TreePath & "|" & pack.Name)
@@ -663,12 +700,11 @@ Public Class AppsForm
         ToolStrip.Enabled = tvNC > 0
         flp.Enabled = tvNC > 0
 
-        If sbt?.Length > 0 Then
+        If Not sbtL0 Then
             tv.ExpandAll()
         Else
             ShowPackage(current)
         End If
-
         tv.EndUpdate()
     End Sub
 
@@ -718,18 +754,20 @@ Public Class AppsForm
         Dim input = InputBox.Show(msg, "StaxRip", CurrentPackage.Version)
 
         If input?.Length > 0 Then
-            CurrentPackage.SetVersion(input.Replace(";", "_"))
+            CurrentPackage.SetVersion(input.Replace(";"c, "_"c))
             ShowActivePackage()
             g.DefaultCommands.TestAndDynamicFileCreation()
         End If
     End Sub
 
     Sub miShowGridView_Click(sender As Object, e As EventArgs) Handles miShowGrid.Click
-        Dim rows As New List(Of Object)
+        Dim piv = Package.Items.Values
+        Dim pIAr(piv.Count - 1) As Package
+        piv.CopyTo(pIAr, 0)
+        Dim rows As New List(Of Object)(pIAr.Length)
 
-        For Each pack In Package.Items.Values.OrderBy(Function(i) i.GetTypeName)
-            Dim row = New With {.Name = "", .Type = "", .Filename = "",
-                .Version = "", .ModifiedDate = "", .Folder = ""}
+        For Each pack In pIAr.OrderByF(Function(i) i.GetTypeName)
+            Dim row = New With {.Name = "", .Type = "", .Filename = "", .Version = "", .ModifiedDate = "", .Folder = ""}
 
             row.Name = pack.Name
             row.Type = pack.GetTypeName
@@ -764,20 +802,22 @@ Public Class AppsForm
     End Sub
 
     Sub miStatus_Click(sender As Object, e As EventArgs) Handles miStatus.Click
-        Dim txt As String
+        Dim sb As New StringBuilder
 
-        For Each pair In Package.Items
-            Dim pack = pair.Value
+        For Each pack In Package.Items.Values
 
-            If pack.Required AndAlso pack.GetStatus?.Length > 0 Then
-                txt &= pack.Name & ": " & pack.GetStatus & BR2
+            If pack.Required Then
+                Dim pGS As String = pack.GetStatus
+                If pGS?.Length > 0 Then
+                    sb.Append(pack.Name).Append(": ").Append(pGS).Append(BR2)
+                End If
             End If
         Next
 
-        If txt.NullOrEmptyS Then
+        If sb.Length <= 0 Then
             MsgInfo("OK!", "All tools have OK status!")
         Else
-            MsgInfo(txt)
+            MsgInfo(sb.ToString)
         End If
     End Sub
 
@@ -788,8 +828,7 @@ Public Class AppsForm
 
             If dialog.ShowDialog = DialogResult.OK Then
                 If Not s.AllowCustomPathsInStartupFolder AndAlso
-                    dialog.FileName.ToLowerEx.StartsWithEx(Folder.Startup.ToLowerEx) AndAlso
-                    Not dialog.FileName.ToLowerEx.StartsWithEx(Folder.Settings.ToLowerEx) Then
+                    dialog.FileName.ToLowerEx.StartsWithEx(Folder.Startup.ToLowerEx) AndAlso Not dialog.FileName.ToLowerEx.StartsWithEx(Folder.Settings.ToLowerEx) Then
 
                     MsgError("Custom paths within the startup folder are not permitted.")
                     Exit Sub
@@ -845,7 +884,7 @@ Public Class AppsForm
                               Everything_GetResultFullPathName(CUInt(x), sb, CUInt(size))
                               Dim path = sb.ToString
 
-                              If path.FileName.ToLowerInvariant = CurrentPackage.Filename.ToLowerInvariant Then
+                              If path.FileName.ToLower(InvCult) = CurrentPackage.Filename.ToLower(InvCult) Then
                                   paths.Add(path)
                               End If
 

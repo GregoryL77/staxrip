@@ -213,7 +213,7 @@ Public Class TaskDialog(Of T)
         Dim handle = Native.GetForegroundWindow
         Native.GetWindowModuleFileName(handle, sb, CUInt(sb.Capacity))
 
-        If sb.ToString.Replace(".vshost", "").Base = Application.ExecutablePath.Base Then
+        If String.Equals(sb.ToString.Replace(".vshost", "").Base, Application.ExecutablePath.Base) Then
             Return handle
         End If
     End Function
@@ -225,7 +225,7 @@ Public Class TaskDialog(Of T)
     End Sub
 
     Function ExpandWikiMarkup(value As String) As String
-        If value.Contains("[") Then
+        If value.IndexOf("["c) >= 0 Then
             Dim regex As New Regex("\[(\w+?:.*?) (.+?)\]")
             Dim match = regex.Match(value)
 
@@ -257,7 +257,7 @@ Public Class TaskDialog(Of T)
         End If
 
         If description.NotNullOrEmptyS Then
-            text = text + BR + description
+            text = text & BR & description
         End If
 
         Buttons.Add(New TASKDIALOG_BUTTON(id, text))
@@ -289,8 +289,7 @@ Public Class TaskDialog(Of T)
 
     Private ExitTickCount As Integer
 
-    Function DialogProc(hwnd As IntPtr, msg As UInteger, wParam As IntPtr,
-                        lParam As IntPtr, lpRefData As IntPtr) As Integer
+    Function DialogProc(hwnd As IntPtr, msg As UInteger, wParam As IntPtr, lParam As IntPtr, lpRefData As IntPtr) As Integer
         Select Case msg
             Case TDN_BUTTON_CLICKED, TDN_RADIO_BUTTON_CLICKED
                 If TypeOf SelectedValue Is DialogResult Then
@@ -309,11 +308,11 @@ Public Class TaskDialog(Of T)
             Case TDN_HYPERLINK_CLICKED
                 Dim url = Marshal.PtrToStringUni(lParam)
 
-                If url.StartsWith("mailto:") OrElse url Like "http*://*" Then
+                If url.StartsWith("mailto:", StringComparison.Ordinal) OrElse url Like "http*://*" Then
                     g.ShellExecute(url)
-                ElseIf url = "copymsg:" Then
+                ElseIf String.Equals(url, "copymsg:") Then
                     g.MainForm.BeginInvoke(Sub()
-                                               Clipboard.SetText(MainInstruction + BR2 + Content + BR2 + ExpandedInformation)
+                                               Clipboard.SetText(MainInstruction & BR2 & Content & BR2 & ExpandedInformation)
                                                MsgInfo("Message was copied to clipboard.")
                                            End Sub)
                 End If
@@ -327,13 +326,13 @@ Public Class TaskDialog(Of T)
     End Function
 
     Sub MarshalDialogControlStructs()
-        If Not Buttons Is Nothing AndAlso Buttons.Count > 0 Then
+        If Buttons IsNot Nothing AndAlso Buttons.Count > 0 Then
             ButtonArray = AllocateAndMarshalButtons(Buttons)
             Config.pButtons = ButtonArray
             Config.cButtons = CUInt(Buttons.Count)
         End If
 
-        If Not RadioButtons Is Nothing AndAlso RadioButtons.Count > 0 Then
+        If RadioButtons IsNot Nothing AndAlso RadioButtons.Count > 0 Then
             RadioButtonArray = AllocateAndMarshalButtons(RadioButtons)
             Config.pRadioButtons = RadioButtonArray
             Config.cRadioButtons = CUInt(RadioButtons.Count)

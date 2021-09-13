@@ -594,8 +594,7 @@ Public Class eac3toForm
 
     Private Output As String
     Private Streams As New BindingList(Of M2TSStream)
-    Private AudioOutputFormats As String() =
-        {"m4a", "ac3", "dts", "flac", "wav", "dtsma", "dtshr", "eac3", "thd", "thd+ac3"}
+    Private ReadOnly AudioOutputFormats As String() = {"m4a", "ac3", "dts", "flac", "wav", "dtsma", "dtshr", "eac3", "thd", "thd+ac3"}
 
     Private Project As Project
 
@@ -629,16 +628,16 @@ Public Class eac3toForm
         lvSubtitles.AutoCheckMode = AutoCheckMode.SingleClick
 
         cmdlOptions.Presets = s.CmdlPresetsEac3to
-        cmdlOptions.RestoreFunc = Function() ApplicationSettings.GetDefaultEac3toMenu.FormatColumn("=")
+        cmdlOptions.RestoreFunc = Function() ApplicationSettings.GetDefaultEac3toMenu.FormatColumn("="c)
 
         bnAudioNative.Visible = False
         bnAudioEnglish.Visible = False
         bnSubtitleNative.Visible = False
         bnSubtitleEnglish.Visible = False
 
-        If CultureInfo.CurrentCulture.TwoLetterISOLanguageName <> "en" Then
+        If Not String.Equals(CurrCult.TwoLetterISOLanguageName, "en") Then
             Try
-                bnAudioNative.Text = New CultureInfo(CultureInfo.CurrentCulture.TwoLetterISOLanguageName).EnglishName
+                bnAudioNative.Text = CurrCultNeutral.EnglishName 'Or CurrentCulture??
                 bnSubtitleNative.Text = bnAudioNative.Text
             Catch ex As Exception
                 g.ShowException(ex)
@@ -751,10 +750,10 @@ Public Class eac3toForm
     End Sub
 
     Sub OutputDataReceived(sender As Object, e As DataReceivedEventArgs)
-        If Not e.Data Is Nothing Then
+        If e.Data IsNot Nothing Then
             BeginInvoke(Sub() Text = e.Data)
 
-            If Not e.Data.StartsWith("analyze: ") Then
+            If Not e.Data.StartsWith("analyze: ", StringComparison.Ordinal) Then
                 Output += e.Data + BR
             End If
         End If
@@ -790,7 +789,7 @@ Public Class eac3toForm
             Output = Output.Replace(" channels, ", "ch, ").Replace(" bits, ", "bits, ").Replace("dialnorm", "dn")
             Output = Output.Replace("(core: ", "(").Replace("(embedded: ", "(")
 
-            For Each line In Output.SplitLinesNoEmpty
+            For Each line In Output.Split({BR}, StringSplitOptions.RemoveEmptyEntries)
                 If line.Contains("Subtitle (DVB)") Then
                     Continue For
                 End If
@@ -798,80 +797,79 @@ Public Class eac3toForm
                 Dim match = Regex.Match(line, "^(\d+): (.+)$")
 
                 If match.Success Then
-                    Dim ms As New M2TSStream
-                    ms.Text = line.Trim
-                    ms.ID = match.Groups(1).Value.ToInt
-                    ms.Codec = match.Groups(2).Value
+                    Dim mg2 = match.Groups(2).Value
+                    'mg2 = mg2.Left(","c)
+                    Dim mg2Idx As Integer = mg2.IndexOf(","c)
+                    If mg2Idx > 0 Then mg2 = mg2.Substring(0, mg2Idx)
 
-                    If ms.Codec.Contains(",") Then
-                        ms.Codec = ms.Codec.Left(",")
-                    End If
-
-                    ms.IsVideo = ms.Codec.EqualsAny("h264/AVC", "h265/HEVC", "VC-1", "MPEG2")
-
-                    ms.IsAudio = ms.Codec.EqualsAny("DTS Master Audio", "DTS", "DTS-ES",
+                    Dim ms As New M2TSStream With {
+                        .Text = line.Trim,
+                        .ID = match.Groups(1).Value.ToInt,
+                        .Codec = mg2,
+                        .IsVideo = mg2.EqualsAny("h264/AVC", "h265/HEVC", "VC-1", "MPEG2"),
+                        .IsAudio = mg2.EqualsAny("DTS Master Audio", "DTS", "DTS-ES",
                         "DTS Hi-Res", "DTS Express", "AC3", "AC3 EX", "AC3 Headphone",
                         "AC3 Surround", "EAC3", "E-AC3", "E-AC3 EX", "E-AC3 Surround", "TrueHD/AC3",
-                        "TrueHD/AC3 (Atmos)", "TrueHD (Atmos)", "RAW/PCM", "MP2", "AAC")
+                        "TrueHD/AC3 (Atmos)", "TrueHD (Atmos)", "RAW/PCM", "MP2", "AAC"),
+                        .IsSubtitle = mg2.StartsWith("Subtitle", StringComparison.Ordinal),
+                        .IsChapters = mg2.StartsWith("Chapters", StringComparison.Ordinal)
+                    }
 
-                    ms.IsSubtitle = ms.Codec.StartsWith("Subtitle")
-                    ms.IsChapters = ms.Codec.StartsWith("Chapters")
+                        If ms.IsAudio OrElse ms.IsSubtitle Then
+                            For Each lng In Language.Languages
+                                If ms.Text.Contains(", " & lng.CultureInfo.EnglishName) Then
+                                    ms.Language = lng
+                                    Exit For
+                                End If
+                            Next
 
-                    If ms.IsAudio OrElse ms.IsSubtitle Then
-                        For Each lng In Language.Languages
-                            If ms.Text.Contains(", " + lng.CultureInfo.EnglishName) Then
-                                ms.Language = lng
-                                Exit For
-                            End If
-                        Next
+                            Select Case mg2
+                                Case "AC3", "AC3 EX", "AC3 Surround", "AC3 Headphone"
+                                    ms.OutputType = "ac3"
+                                Case "E-AC3", "E-AC3 EX"
+                                    ms.OutputType = "eac3"
+                                Case "TrueHD/AC3 (Atmos)", "TrueHD/AC3"
+                                    ms.OutputType = "thd+ac3"
+                                Case "TrueHD (Atmos)"
+                                    ms.OutputType = "thd"
+                                Case "DTS-ES", "DTS Express"
+                                    ms.OutputType = "dts"
+                                Case "DTS Master Audio"
+                                    ms.OutputType = "dtsma"
+                                Case "DTS Hi-Res"
+                                    ms.OutputType = "dtshr"
+                                Case "RAW/PCM"
+                                    ms.OutputType = "flac"
+                                Case "AAC"
+                                    ms.OutputType = "m4a"
+                                Case "Subtitle (ASS)"
+                                    ms.OutputType = "ass"
+                                Case Else
+                                    ms.OutputType = ms.Codec.ToLower.Replace("-", "")
+                            End Select
+                        End If
 
-                        Select Case ms.Codec
-                            Case "AC3", "AC3 EX", "AC3 Surround", "AC3 Headphone"
-                                ms.OutputType = "ac3"
-                            Case "E-AC3", "E-AC3 EX"
-                                ms.OutputType = "eac3"
-                            Case "TrueHD/AC3 (Atmos)", "TrueHD/AC3"
-                                ms.OutputType = "thd+ac3"
-                            Case "TrueHD (Atmos)"
-                                ms.OutputType = "thd"
-                            Case "DTS-ES", "DTS Express"
-                                ms.OutputType = "dts"
-                            Case "DTS Master Audio"
-                                ms.OutputType = "dtsma"
-                            Case "DTS Hi-Res"
-                                ms.OutputType = "dtshr"
-                            Case "RAW/PCM"
-                                ms.OutputType = "flac"
-                            Case "AAC"
-                                ms.OutputType = "m4a"
-                            Case "Subtitle (ASS)"
-                                ms.OutputType = "ass"
-                            Case Else
-                                ms.OutputType = ms.Codec.ToLower.Replace("-", "")
-                        End Select
-                    End If
-
-                    For Each pro In s.eac3toProfiles
+                        For Each pro In s.eac3toProfiles
                         Dim searchWords = pro.Match.Split({" "c}, StringSplitOptions.RemoveEmptyEntries)
 
                         If searchWords.NothingOrEmpty Then
-                            Continue For
-                        End If
+                                Continue For
+                            End If
 
-                        If ms.Text.ContainsAll(searchWords) Then
-                            ms.OutputType = pro.Output
-                            ms.Options = pro.Options
-                        End If
-                    Next
+                            If ms.Text.ContainsAll(searchWords) Then
+                                ms.OutputType = pro.Output
+                                ms.Options = pro.Options
+                            End If
+                        Next
 
-                    If Not ms.IsVideo AndAlso Not ms.IsAudio AndAlso
+                        If Not ms.IsVideo AndAlso Not ms.IsAudio AndAlso
                         Not ms.IsSubtitle AndAlso Not ms.IsChapters Then
 
-                        Throw New Exception("Failed to detect stream: " + line)
-                    End If
+                            Throw New Exception("Failed to detect stream: " & line)
+                        End If
 
-                    Streams.Add(ms)
-                End If
+                        Streams.Add(ms)
+                    End If
             Next
 
             For Each stream In Streams
@@ -923,7 +921,7 @@ Public Class eac3toForm
         cmdlOptions.Presets = presets
     End Sub
 
-    Function GetArgs(src As String, baseName As String, ByRef outFiles As List(Of String)) As String
+    Function GetArgs(src As String, baseName As String, outFiles As List(Of String)) As String
         Dim ret = src
 
         Dim videoStream = TryCast(cbVideoStream.SelectedItem, M2TSStream)
@@ -938,7 +936,7 @@ Public Class eac3toForm
             If stream.IsAudio AndAlso stream.Checked Then
                 Dim outFile = OutputFolder + baseName + " ID" & stream.ID
 
-                If stream.Language.CultureInfo.TwoLetterISOLanguageName <> "iv" Then
+                If stream.Language.LCID <> 127 Then
                     outFile += " " + stream.Language.CultureInfo.EnglishName
                 End If
 
@@ -956,7 +954,7 @@ Public Class eac3toForm
             If stream.IsSubtitle AndAlso stream.Checked Then
                 Dim outFile = OutputFolder + baseName + " ID" & stream.ID
 
-                If stream.Language.CultureInfo.TwoLetterISOLanguageName <> "iv" Then
+                If stream.Language.LCID <> 127 Then
                     outFile += " " + stream.Language.CultureInfo.EnglishName
                 End If
 
@@ -1051,7 +1049,7 @@ Public Class eac3toForm
                     ms.ListViewItem.Checked = True
                 End If
 
-                If ms.Options = "-core" AndAlso ms.Codec.StartsWith("DTS") Then
+                If ms.Options = "-core" AndAlso ms.Codec.StartsWith("DTS", StringComparison.Ordinal) Then
                     cbAudioOutput.SelectedItem = "dts"
                 End If
 
@@ -1099,7 +1097,7 @@ Public Class eac3toForm
         For Each item As ListViewItem In lvAudio.Items
             Dim stream = DirectCast(item.Tag, M2TSStream)
 
-            If stream.Language.TwoLetterCode = "en" Then
+            If String.Equals(stream.Language.TwoLetterCode, "en") Then
                 item.Checked = True
             End If
         Next
@@ -1109,7 +1107,7 @@ Public Class eac3toForm
         For Each item As ListViewItem In lvAudio.Items
             Dim stream = DirectCast(item.Tag, M2TSStream)
 
-            If stream.Language.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName Then
+            If String.Equals(stream.Language.TwoLetterCode, CurrCult.TwoLetterISOLanguageName) Then
                 item.Checked = True
             End If
         Next
@@ -1131,7 +1129,7 @@ Public Class eac3toForm
         For Each item As ListViewItem In lvSubtitles.Items
             Dim stream = DirectCast(item.Tag, M2TSStream)
 
-            If stream.Language.TwoLetterCode = "en" Then
+            If String.Equals(stream.Language.TwoLetterCode, "en") Then
                 item.Checked = True
             End If
         Next
@@ -1141,7 +1139,7 @@ Public Class eac3toForm
         For Each item As ListViewItem In lvSubtitles.Items
             Dim stream = DirectCast(item.Tag, M2TSStream)
 
-            If stream.Language.TwoLetterCode = CultureInfo.CurrentCulture.TwoLetterISOLanguageName Then
+            If String.Equals(stream.Language.TwoLetterCode, CurrCult.TwoLetterISOLanguageName) Then
                 item.Checked = True
             End If
         Next

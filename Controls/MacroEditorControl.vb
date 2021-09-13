@@ -1,6 +1,6 @@
 
 Imports System.ComponentModel
-
+Imports System.Threading.Tasks
 Imports StaxRip.UI
 
 Public Class MacroEditorControl
@@ -290,16 +290,17 @@ Public Class MacroEditorControl
     End Sub
 
     Sub UpdateWrapMode(rtb As RichTextBox)
-        If AutoWrap Then
-            rtb.WordWrap = Not rtb.Text.FixBreak.Contains(BR)
-            Dim s = TextRenderer.MeasureText(rtb.Text, rtb.Font)
 
-            If s.Width > (rtb.Width - SystemInformation.VerticalScrollBarWidth) Then
-                rtb.ScrollBars = RichTextBoxScrollBars.Both
-            Else
-                rtb.ScrollBars = RichTextBoxScrollBars.Vertical
-            End If
+        If AutoWrap Then
+            rtb.WordWrap = False 'Not rtb.Text.FixBreak.Contains(BR) 'TODO: Test This !!!! , WordWrap OFF always!!!
+            rtb.ScrollBars = RichTextBoxScrollBars.Both 'Scroll On always!!!
         End If
+        ''Org:
+        'If AutoWrap Then
+        '    rtb.WordWrap = Not rtb.Text.FixBreak.Contains(BR)
+        '    Dim s = TextRenderer.MeasureText(rtb.Text, rtb.Font)
+        '    If s.Width > (rtb.Width - SystemInformation.VerticalScrollBarWidth) Then rtb.ScrollBars = RichTextBoxScrollBars.Both Else rtb.ScrollBars = RichTextBoxScrollBars.Vertical
+        'End If
     End Sub
 
     Sub tpPreview_Enter() Handles tpPreview.Enter
@@ -307,7 +308,7 @@ Public Class MacroEditorControl
     End Sub
 
     Sub UpdatePreview()
-        If Not SpecialMacrosFunction Is Nothing Then
+        If SpecialMacrosFunction IsNot Nothing Then
             rtbPreview.Text = SpecialMacrosFunction.Invoke(rtbEdit.Text)
         Else
             rtbPreview.Text = Macro.Expand(rtbEdit.Text)
@@ -345,26 +346,42 @@ Public Class MacroEditorControl
     Sub llHelp_Click(sender As Object, e As EventArgs) Handles llHelp.Click
         For Each path In HelpPaths
             g.ShellExecute(path)
+            '  If HelpPaths.Count <= 0 Then Exit Sub 'Not ThreadSafe - AddSyncLock???
         Next
     End Sub
 
-    Sub EditTextChanged(sender As Object, e As EventArgs)
-        Dim editText = Value
-        HelpPaths.Clear()
-        Dim caption As String
-
-        For Each pack In Package.Items.Values
-            If editText.Contains(pack.Name) Then
-                llHelp.Visible = True
-                caption += ", " + pack.Name
-                HelpPaths.Add(pack.HelpFileOrURL)
-            End If
-        Next
-
-        If caption.NotNullOrEmptyS Then
-            llHelp.Text = "Help (" + caption.Trim(", ".ToCharArray) + ")"
+    Async Sub EditTextChanged(sender As Object, e As EventArgs)
+        Dim editText = rtbEdit.Text
+        Dim hTxtT = Await Task.Run(Function()
+                                       HelpPaths.Clear()
+                                       Dim ret As String
+                                       For Each pack In Package.Items.Values
+                                           Dim pn As String = pack.Name
+                                           If editText.Contains(pn) Then
+                                               ret &= ", " & pn
+                                               HelpPaths.Add(pack.HelpFileOrURL)
+                                           End If
+                                       Next pack
+                                       If ret IsNot Nothing Then Return "Help (" & ret.Trim(","c, " "c) & ")"
+                                   End Function)
+        If hTxtT IsNot Nothing Then
+            llHelp.Text = hTxtT
+            llHelp.Visible = True
+        Else
+            llHelp.Visible = False
         End If
-
-        llHelp.Visible = HelpPaths.Count > 0
+        ''Org:
+        'Dim editText = Value
+        'HelpPaths.Clear()
+        'Dim caption As String
+        'For Each pack In Package.Items.Values
+        '    If editText.Contains(pack.Name) Then
+        '        llHelp.Visible = True
+        '        caption += ", " + pack.Name
+        '        HelpPaths.Add(pack.HelpFileOrURL)
+        '    End If
+        'Next
+        'If caption.NotNullOrEmptyS Then llHelp.Text = "Help (" + caption.Trim(", ".ToCharArray) + ")"
+        'llHelp.Visible = HelpPaths.Count > 0
     End Sub
 End Class

@@ -24,7 +24,7 @@ Namespace UI
         Property SelectOnMouseDown() As Boolean
 
         Protected Overrides Sub OnAfterSelect(e As TreeViewEventArgs)
-            BeginUpdate() 'Test this, looks OK!
+            BeginUpdate()
             If AutoCollaps Then
                 For Each i As TreeNode In If(e.Node.Parent Is Nothing, Nodes, e.Node.Parent.Nodes)
                     If i IsNot e.Node Then
@@ -61,7 +61,7 @@ Namespace UI
         Sub MoveSelectionLeft()
             Dim n As TreeNode = SelectedNode
 
-            If Not n Is Nothing AndAlso Not n.Parent Is Nothing Then
+            If n IsNot Nothing AndAlso n.Parent IsNot Nothing Then
                 Dim parentParentNodes As TreeNodeCollection = GetParentParentNodes(n)
                 Dim parentIndex As Integer = n.Parent.Index
 
@@ -116,7 +116,7 @@ Namespace UI
                 If n.NextNode Is Nothing Then
                     Dim parentParentNodes As TreeNodeCollection = GetParentParentNodes(n)
 
-                    If Not parentParentNodes Is Nothing Then
+                    If parentParentNodes IsNot Nothing Then
                         Dim index As Integer = n.Parent.Index
                         n.Remove()
                         parentParentNodes.Insert(index + 1, n)
@@ -162,13 +162,13 @@ Namespace UI
         End Sub
 
         Function AddNode(path As String) As TreeNode
-            Dim pathElements = path.SplitNoEmptyAndWhiteSpace({"|"c})
+            Dim pathElements = path.SplitNoEmptyAndWhiteSpace("|"c)
             Dim currentNodeList = Nodes
             'Dim currentPath As String
             Dim ret As TreeNode
 
             For Each iNodeName In pathElements
-                'If currentPath.NotNullOrEmptyS Then currentPath &= "|" 'Seems to be Dead???
+                'If currentPath?.Length > 0 Then currentPath &= "|" 'Seems to be Dead???
                 'currentPath &= iNodeName
 
                 Dim found = False
@@ -194,7 +194,7 @@ Namespace UI
         End Function
 
         Function GetNodes() As List(Of TreeNode)
-            Dim ret As New List(Of TreeNode)(22) '21
+            Dim ret As New List(Of TreeNode)(32) '220 in Packages
             AddNodesRecursive(Nodes, ret)
             Return ret
         End Function
@@ -289,7 +289,7 @@ Namespace UI
             Dim textOffset As Integer
             Dim lineHeight = CInt(Height / 2)
 
-            If Text.NotNullOrEmptyS Then
+            If Text?.Length > 0 Then
                 Dim textSize = e.Graphics.MeasureString(Text, Font)
                 textOffset = CInt(textSize.Width)
 
@@ -342,8 +342,8 @@ Namespace UI
         Protected Overrides Sub OnCreateControl()
             MyBase.OnCreateControl()
 
-            If Note.NotNullOrEmptyS Then
-                Text += BR2 + Note
+            If Note?.Length > 0 Then
+                Text &= BR2 & Note
             End If
         End Sub
     End Class
@@ -677,7 +677,7 @@ Namespace UI
         End Sub
 
         Sub SetHelpHeight()
-            If Description.NotNullOrEmptyS Then
+            If Description?.Length > 0 Then
                 HelpVisible = True
 
                 Using g = CreateGraphics()
@@ -752,7 +752,7 @@ Namespace UI
             End Get
             Set(value As String)
                 If Not value.EndsWith(" ", StringComparison.Ordinal) Then
-                    value += " "
+                    value &= " "
                 End If
 
                 Label.Text = value
@@ -776,10 +776,10 @@ Namespace UI
 
         <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
         Property Items As New List(Of Object)
-        Property Menu As New ContextMenuStripEx
+        Property Menu As ContextMenuStripEx
 
         Sub New()
-            Menu.ShowImageMargin = False
+            Menu = New ContextMenuStripEx With {.ShowImageMargin = False}
             ShowMenuSymbol = True
             AddHandler Menu.Opening, AddressOf MenuOpening
         End Sub
@@ -791,9 +791,10 @@ Namespace UI
             For Each mi As ToolStripMenuItem In Menu.Items ' Test this !!!
                 mi.Font = New Font(Me.Font, If(mi.Tag IsNot Nothing AndAlso Value?.Equals(mi.Tag), FontStyle.Bold, FontStyle.Regular))
 
-                If (Menu.Width - mi.Width) > 2 Then
+                Dim mW As Integer = Menu.Width
+                If (mW - mi.Width) > 2 Then
                     mi.AutoSize = False
-                    mi.Width = Menu.Width - 1
+                    mi.Width = mW - 1
                 End If
             Next
         End Sub
@@ -883,13 +884,30 @@ Namespace UI
         Function Add(path As String, obj As Object, Optional tip As String = Nothing) As ActionMenuItem
             Items.Add(obj)
             Dim name = path
-            If path.Contains("|") Then name = path.RightLast("|").Trim
+            'If path.Contains("|") Then name = path.RightLast("|").Trim
             'Dim rp = path.RightLast("|")
             'If rp.Length > 0 Then name = rp.Trim
+            Dim idx As Integer = path.LastIndexOf("|"c)
+            If idx >= 0 Then name = path.Substring(idx + 1).Trim
+
             Dim ret = ActionMenuItem.Add(Menu.Items, path, Sub(o As Object) OnAction(name, o), obj, tip)
             ret.Tag = obj
             Return ret
         End Function
+
+        Sub AddRange(ParamArray items As Object())
+            Dim retA(items.Length - 1) As ActionMenuItem
+            For t = 0 To retA.Length - 1
+                Dim ob = items(t)
+                Me.Items.Add(ob) 'Needed?
+                Dim p = ob.ToString
+                retA(t) = New ActionMenuItem(p, Sub() OnAction(p, ob), ob)
+            Next t
+
+            Menu.SuspendLayout()
+            Menu.Items.AddRange(retA)
+            Menu.ResumeLayout(False)
+        End Sub
 
         Function Add2(path As String, obj As Object) As ActionMenuItem ', Optional tip As String = Nothing Test it Debug ???
             'Items.Add(obj)
@@ -911,7 +929,6 @@ Namespace UI
             Menu.SuspendLayout()
             Menu.Items.AddRange(retA)
             Menu.ResumeLayout(False)
-            ' Return ret
         End Sub
 
         Sub Clear()
@@ -937,14 +954,15 @@ Namespace UI
             Dim mL1 As New List(Of ToolStripMenuItemEx)(18) '18
             Dim mL2Alph As New List(Of ToolStripMenuItemEx)(26) '26
             Dim mL3LL As New List(Of List(Of ActionMenuItem))(26)
+            Dim invCultTI As Globalization.TextInfo = InvCultTxtInf
             Dim sb As New Text.StringBuilder(52) 'Maxis 50
-            Dim languages = Language.Languages '302
+            Dim languagesA = Language.Languages  '302
 
-            For i = 0 To languages.Count - 1
-                Dim lng As Language = languages(i)
+            For i = 0 To languagesA.Length - 1
+                Dim lng As Language = languagesA(i)
                 sb.Length = 0
-                Dim lngS As String = lng.ToString
-                sb.Append(lngS).Append(" (").Append(lng.TwoLetterCode).Append(", ").Append(lng.ThreeLetterCode).Append(")")
+                Dim lngS As String = lng.CultureInfo.EnglishName '.ToString
+                sb.Append(lngS).Append(" (").Append(lng.CultureInfo.TwoLetterISOLanguageName).Append(", ").Append(lng.ThreeLetterCode).Append(")")
                 Dim sbS As String = sb.ToString
 
                 If lng.IsCommon Then
@@ -952,8 +970,8 @@ Namespace UI
                 Else
                     Dim nML3 As List(Of ActionMenuItem)
                     Dim lastCh As Char
-                    Dim c1 As Char = CChar(lngS.Substring(0, 1).ToUpperInvariant)
-                    If c1 <> lastCh Then
+                    Dim c1 As Char = invCultTI.ToUpper(lngS.Chars(0))
+                    If c1 <> lastCh Then 'Arr must be sorted IgnCase!
                         lastCh = c1
                         mL2Alph.Add(New ToolStripMenuItemEx(c1))
                         nML3 = New List(Of ActionMenuItem)(8)
@@ -999,30 +1017,6 @@ Namespace UI
             FontBold = New Font(tFont, FontStyle.Bold)
         End Sub
 
-        Function GetSelections(cmdTxt As String, lastTxt As String) As Integer() 'Returns: {SelStart,SelEnd} 
-            'If cmdTxt.NullOrEmptyS Then Return Nothing
-            '''If String.Equals(cmdTxt, lastTxt) Then Return Nothing' Moved to callers
-            If lastTxt.Length > 0 Then
-                Dim selStart = GetCompareIndex(cmdTxt, lastTxt)
-                Dim selEnd = cmdTxt.Length - GetCompareIndex(ReverseString(cmdTxt), ReverseString(lastTxt))
-
-                If selEnd > selStart AndAlso selEnd - selStart < cmdTxt.Length - 1 Then
-                    While selStart > 0 AndAlso selStart + 1 < cmdTxt.Length AndAlso Not String.Equals(cmdTxt.Substring(selStart - 1, 2), " -")
-                        selStart -= 1
-                    End While
-
-                    If selEnd - selStart < 35 Then 'maybe more than 25[org]???
-                        Dim ret(1) As Integer
-                        ret(0) = selStart
-                        ret(1) = If(selEnd - selStart = cmdTxt.Length, 0, selEnd - selStart)
-                        Return ret
-                    End If
-                End If
-            End If
-
-            Return {}
-        End Function
-
         Sub SetText(cmdTxt As String, selectionsT As Task(Of Integer()))
             'If cmdTxt.NullOrEmptyS Then
             '    Clear()
@@ -1047,24 +1041,55 @@ Namespace UI
             Invalidate()
         End Sub
 
-        Function GetCompareIndex(a As String, b As String) As Integer
-            For x = 0 To a.Length - 1
-                If x > b.Length - 1 OrElse x > a.Length - 1 OrElse a(x) <> b(x) Then
-                    Return x
-                End If
-            Next x
+        Function GetSelections(cmdTxt As Char(), lastTxt As Char()) As Integer() 'Returns: {SelStart,SelEnd}
+            'If cmdTxt.NullOrEmptyS Then Return Nothing
+            '''If String.Equals(cmdTxt, lastTxt) Then Return Nothing' Moved to callers
+            Dim lTxtL As Integer = lastTxt.Length
+            If lTxtL > 0 Then
+                Dim cTxtL As Integer = cmdTxt.Length
+                Dim selStart = GetCompareIndex(cmdTxt, lastTxt, cTxtL - 1, lTxtL - 1)
+                Dim selEnd = cTxtL - GetCompareIndex(ReverseString(cmdTxt), ReverseString(lastTxt), cTxtL - 1, lTxtL - 1)
 
+                If selEnd > selStart AndAlso selEnd - selStart < cTxtL - 1 Then
+                    While selStart > 0 AndAlso selStart + 1 < cTxtL AndAlso (cmdTxt(selStart) <> "-"c OrElse cmdTxt(selStart - 1) <> " "c)
+                        'AndAlso InvCompInf.IndexOf(cmdTxt, " -", selStart - 1, 2, CompareOptions.Ordinal) < 0 'AndAlso  Not String.Equals(cmdTxt.Substring(selStart - 1, 2), " -")
+                        selStart -= 1
+                    End While
+
+                    If selEnd - selStart < 35 Then 'maybe more than 25[org]???
+                        'Dim ret(1) As Integer
+                        'ret(0) = selStart
+                        'ret(1) = If(selEnd - selStart = cTxtL, 0, selEnd - selStart)
+                        Return {selStart, If(selEnd - selStart = cTxtL, 0, selEnd - selStart)} 'ret
+                    End If
+                End If
+            End If
+
+            Return {}
+        End Function
+
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)>
+        Function GetCompareIndex(a As Char(), b As Char(), aLen As Integer, bLen As Integer) As Integer 'String.Len -1
+            'Dim aLen As Integer = a.Length - 1
+            'Dim bLen As Integer = b.Length - 1
+            For x = 0 To aLen
+                If x > bLen OrElse x > aLen OrElse a(x) <> b(x) Then Return x
+            Next x
             Return 0
         End Function
 
-        Function ReverseString(value As String) As String
-            Dim chars = value.ToCharArray
-            Array.Reverse(chars)
-            Return New String(chars)
+        <Runtime.CompilerServices.MethodImpl(AggrInlin)>
+        Function ReverseString(value As Char()) As Char()
+            'Dim chars = value.ToCharArray
+            Array.Reverse(value)
+            Return value 'New String(chars)
         End Function
 
         Protected Overrides Sub Dispose(disposing As Boolean) 'Needed???
-            FontBold = Nothing
+            If FontBold IsNot Nothing Then
+                FontBold?.Dispose() 'Test This Dispose !!!! or remove it ALL
+                FontBold = Nothing
+            End If
             MyBase.Dispose(disposing)
         End Sub
     End Class
@@ -1098,7 +1123,6 @@ Namespace UI
                             nextPos += ctrl.Margin.Left + ctrl.Width + ctrl.Margin.Right
 
                             Dim expandetControl = TryCast(ctrl, SimpleUI.SimpleUIControl)
-
                             If expandetControl IsNot Nothing AndAlso expandetControl.Expand Then
                                 'Dim diff = Aggregate i2 In Controls.OfType(Of Control)() Into Sum(If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
                                 'Dim diff = ctrlAr.SumF(Function(i2) If(i2.Visible, i2.Width + i2.Margin.Left + i2.Margin.Right, 0))
@@ -1283,20 +1307,14 @@ Namespace UI
             If Symbol <> ButtonSymbol.None Then
                 e.Graphics.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
 
-                Dim p = New Pen(Color.Black)
-                p.Alignment = Drawing2D.PenAlignment.Center
-                p.EndCap = Drawing2D.LineCap.Round
-                p.StartCap = Drawing2D.LineCap.Round
-                p.Width = CInt(Height / 14)
-
-                Dim d As New SymbolDrawer()
-                d.Graphics = e.Graphics
-                d.Pen = p
-
-                d.Point1.Width = ClientSize.Width
-                d.Point2.Width = ClientSize.Width
-                d.Point1.Height = ClientSize.Height
-                d.Point2.Height = ClientSize.Height
+                Dim p = New Pen(Color.Black) With {.Alignment = Drawing2D.PenAlignment.Center, .EndCap = Drawing2D.LineCap.Round, .StartCap = Drawing2D.LineCap.Round, .Width = CInt(Height / 14)}
+                Dim d As New SymbolDrawer With {.Graphics = e.Graphics, .Pen = p}
+                Dim cw As Integer = ClientSize.Width
+                d.Point1.Width = cw
+                d.Point2.Width = cw
+                Dim ch As Integer = ClientSize.Height
+                d.Point1.Height = ch
+                d.Point2.Height = ch
 
                 Select Case Symbol
                     Case ButtonSymbol.Open
@@ -1445,14 +1463,12 @@ Namespace UI
         End Sub
 
         Sub ShowBold()
-            SetFontStyle(FontStyle.Bold)
-
+            Font = New Font(Font, FontStyle.Bold)
             For i = 0 To 10
                 Application.DoEvents()
                 Thread.Sleep(30)
             Next
-
-            SetFontStyle(FontStyle.Regular)
+            Font = New Font(Font, FontStyle.Regular)
         End Sub
 
         Enum ButtonSymbol
@@ -1520,8 +1536,8 @@ Namespace UI
         <DefaultValue(GetType(Button), Nothing)> Property Button1 As Button
         <DefaultValue(GetType(Button), Nothing)> Property Button2 As Button
 
-        Private LastTick As Long
-        Private KeyText As String = ""
+        'Private LastTick As Long
+        'Private KeyText As String = String.Empty
         Private BlockOnSelectedIndexChanged As Boolean
 
         Sub New()
@@ -1529,7 +1545,7 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub OnFontChanged(e As EventArgs)
-            ItemHeight = CInt(Font.Height * 1.4) 
+            ItemHeight = CInt(Font.Height * 1.4)
             MyBase.OnFontChanged(e)
         End Sub
 
@@ -1556,19 +1572,18 @@ Namespace UI
                 End Using
             End If
 
-            Dim sf As New StringFormat
-            sf.FormatFlags = StringFormatFlags.NoWrap
-            sf.LineAlignment = StringAlignment.Center
+            Dim sf As New StringFormat With {.FormatFlags = StringFormatFlags.NoWrap, .LineAlignment = StringAlignment.Center}
 
             Dim r2 = e.Bounds
             r2.X = 2
             r2.Width = e.Bounds.Width
 
-            Dim caption As String = Nothing
+            Dim caption As String '= Nothing
 
-            If DisplayMember.NotNullOrEmptyS Then
+            If DisplayMember?.Length > 0 Then
                 Try
-                    caption = Items(e.Index).GetType.GetProperty(DisplayMember).GetValue(Items(e.Index), Nothing).ToString
+                    Dim itm As Object = Items(e.Index)
+                    caption = itm.GetType.GetProperty(DisplayMember).GetValue(itm, Nothing).ToString
                 Catch ex As Exception
                     caption = Items(e.Index).ToString()
                 End Try
@@ -1582,7 +1597,7 @@ Namespace UI
         Sub UpdateSelection()
             If SelectedIndex > -1 Then
                 BlockOnSelectedIndexChanged = True
-                Items(SelectedIndex) = SelectedItem
+                Items.Item(SelectedIndex) = SelectedItem
                 BlockOnSelectedIndexChanged = False
 
                 If Sorted Then
@@ -1592,32 +1607,30 @@ Namespace UI
             End If
         End Sub
 
-        Private SavedSelection As New List(Of Integer)
+        Private ReadOnly SavedSelection As New List(Of Integer)
 
         Sub SaveSelection()
-            SavedSelection.Clear()
-
             For Each i As Integer In SelectedIndices
                 SavedSelection.Add(i)
-            Next
+            Next i
         End Sub
 
         Sub RestoreSelection()
-            For Each i In SavedSelection
-                SetSelected(i, True)
-            Next
+            For i = 0 To SavedSelection.Count - 1
+                SetSelected(SavedSelection(i), True)
+            Next i
+            SavedSelection.Clear()
         End Sub
-
-        Sub DeleteItem(text As String)
-            If FindStringExact(text) > -1 Then Items.RemoveAt(FindStringExact(text))
-        End Sub
-
+        'Sub DeleteItem(text As String)
+        '    If FindStringExact(text) > -1 Then Items.RemoveAt(FindStringExact(text))
+        'End Sub
         Sub RemoveSelection()
             If SelectedIndex > -1 Then
+                BeginUpdate()
                 If SelectionMode = Windows.Forms.SelectionMode.One Then
                     Dim index = SelectedIndex
 
-                    If Items.Count - 1 > SelectedIndex Then
+                    If Items.Count - 1 > index Then
                         SelectedIndex += 1
                     Else
                         SelectedIndex -= 1
@@ -1627,62 +1640,54 @@ Namespace UI
                     UpdateControls()
                 Else
                     Dim iFirst = SelectedIndex
-
-                    Dim indices(SelectedIndices.Count - 1) As Integer
-                    SelectedIndices.CopyTo(indices, 0)
+                    'Dim indices(SelectedIndices.Count - 1) As Integer
+                    'SelectedIndices.CopyTo(indices, 0)
                     'SelectedIndex = -1
-                    For i = indices.Length - 1 To 0 Step -1
-                        Items.RemoveAt(indices(i))
+                    For i = SelectedItems.Count - 1 To 0 Step -1
+                        Items.RemoveAt(SelectedIndices.Item(i))
                     Next
 
                     Dim iC As Integer = Items.Count
-                    If iFirst > iC - 1 Then
-                        SelectedIndex = iC - 1
-                    Else
-                        SelectedIndex = iFirst
-                    End If
-                    If iFirst <> 0 AndAlso iC > 1 Then SetSelected(0, False)
+                    SelectedIndex = If(iFirst > iC - 1, iC - 1, iFirst)
+                    'If iFirst <> 0 AndAlso iC > 1 Then SetSelected(0, False) 'Removed in UpdCtrls RemoveButton, for profiles Form!
                 End If
+                EndUpdate()
             End If
         End Sub
-
-        Function CanMoveUp() As Boolean
-            Return SelectedIndices.Count > 0 AndAlso SelectedIndices(0) > 0
-        End Function
-
-        Function CanMoveDown() As Boolean
-            Return SelectedIndices.Count > 0 AndAlso SelectedIndices(SelectedIndices.Count - 1) < Items.Count - 1
-        End Function
-
+        'Function CanMoveUp() As Boolean
+        '    Return SelectedIndices.Count > 0 AndAlso SelectedIndices(0) > 0
+        'End Function
+        'Function CanMoveDown() As Boolean
+        '    Return SelectedIndices.Count > 0 AndAlso SelectedIndices(SelectedIndices.Count - 1) < Items.Count - 1
+        'End Function
         Sub MoveSelectionUp()
-            If CanMoveUp() Then
+            If SelectedItems.Count > 0 Then
                 Dim iAbove = SelectedIndices(0) - 1
-
-                If iAbove = -1 Then
-                    Exit Sub
+                If iAbove > -1 Then
+                    BeginUpdate()
+                    Dim itemAbove = Items.Item(iAbove)
+                    Items.RemoveAt(iAbove)
+                    Dim iLastItem = SelectedIndices(SelectedItems.Count - 1)
+                    Items.Insert(iLastItem + 1, itemAbove)
+                    SetSelected(SelectedIndex, True)
+                    EndUpdate()
                 End If
-
-                Dim itemAbove = Items(iAbove)
-                Items.RemoveAt(iAbove)
-                Dim iLastItem = SelectedIndices(SelectedIndices.Count - 1)
-                Items.Insert(iLastItem + 1, itemAbove)
-                SetSelected(SelectedIndex, True)
             End If
         End Sub
 
         Sub MoveSelectionDown()
-            If CanMoveDown() Then
-                Dim iBelow = SelectedIndices(SelectedIndices.Count - 1) + 1
-
-                If iBelow >= Items.Count Then
-                    Exit Sub
+            Dim siC As Integer = SelectedItems.Count
+            If siC > 0 Then
+                Dim iBelow = SelectedIndices(siC - 1) + 1
+                If iBelow < Items.Count Then
+                    BeginUpdate()
+                    Dim itemBelow = Items.Item(iBelow)
+                    Items.RemoveAt(iBelow)
+                    Dim iAbove = SelectedIndices(0) - 1
+                    Items.Insert(iAbove + 1, itemBelow)
+                    SetSelected(SelectedIndex, True)
+                    EndUpdate()
                 End If
-
-                Dim itemBelow = Items(iBelow)
-                Items.RemoveAt(iBelow)
-                Dim iAbove = SelectedIndices(0) - 1
-                Items.Insert(iAbove + 1, itemBelow)
-                SetSelected(SelectedIndex, True)
             End If
         End Sub
 
@@ -1690,9 +1695,9 @@ Namespace UI
             MyBase.OnCreateControl()
 
             If Not DesignMode Then
-                If Not UpButton Is Nothing Then UpButton.AddClickAction(AddressOf MoveSelectionUp)
-                If Not DownButton Is Nothing Then DownButton.AddClickAction(AddressOf MoveSelectionDown)
-                If Not RemoveButton Is Nothing Then RemoveButton.AddClickAction(AddressOf RemoveSelection)
+                If UpButton IsNot Nothing Then UpButton.AddClickAction(AddressOf MoveSelectionUp)
+                If DownButton IsNot Nothing Then DownButton.AddClickAction(AddressOf MoveSelectionDown)
+                If RemoveButton IsNot Nothing Then RemoveButton.AddClickAction(AddressOf RemoveSelection)
                 UpdateControls()
             End If
         End Sub
@@ -1705,39 +1710,40 @@ Namespace UI
         End Sub
 
         Sub UpdateControls()
-            Dim itmC As Integer = Items.Count
-            Dim selIdx As Integer = SelectedIndex
+            Dim itmC As Integer = -2 '= Items.Count
+            Dim selIdx As Integer = -2 '= SelectedIndex
 
-            If Not RemoveButton Is Nothing Then
+            If RemoveButton IsNot Nothing Then
+                itmC = Items.Count 'Added ToDO: Test this, Could be errors !!!
+                selIdx = SelectedIndex
                 RemoveButton.Enabled = selIdx >= 0
             End If
 
-            If Not UpButton Is Nothing Then
+            If UpButton IsNot Nothing Then
                 UpButton.Enabled = selIdx > 0
             End If
 
-            If Not DownButton Is Nothing Then
+            If DownButton IsNot Nothing Then
                 DownButton.Enabled = selIdx > -1 AndAlso selIdx < itmC - 1
             End If
 
-            If Not Button1 Is Nothing Then
+            If Button1 IsNot Nothing Then
                 Button1.Enabled = selIdx >= 0
             End If
 
-            If Not Button2 Is Nothing Then
+            If Button2 IsNot Nothing Then
                 Button2.Enabled = selIdx >= 0
             End If
 
-            If selIdx = -1 AndAlso itmC > 0 Then
-                SelectedIndex = 0
-            End If
+            If selIdx = -1 AndAlso itmC > 0 Then SelectedIndex = 0 'Really Needed ??? ToDO: Test this, Could be errors !!!
         End Sub
     End Class
 
     Public Class NumEdit
         Inherits UserControl
 
-        WithEvents TextBox As New Edit
+        'Private FMHeight As Short = 16 ' = Segoe9= Measur15, TxtBox16
+        WithEvents TextBox As Edit
 
         Private UpControl As New UpDownButton(True)
         Private DownControl As New UpDownButton(False)
@@ -1747,11 +1753,10 @@ Namespace UI
         Event ValueChanged(numEdit As NumEdit)
 
         Sub New()
+            SuspendLayout()
             SetStyle(ControlStyles.Opaque Or ControlStyles.ResizeRedraw, True)
 
-            TextBox.BorderStyle = BorderStyle.None
-            TextBox.TextAlign = HorizontalAlignment.Center
-            TextBox.Text = "0"
+            TextBox = New Edit ' 'Props Moved to Edit Ctor
 
             Controls.Add(TextBox)
             Controls.Add(UpControl)
@@ -1773,6 +1778,7 @@ Namespace UI
             AddHandler TextBox.GotFocus, Sub() SetColor(Color.CornflowerBlue)
             AddHandler TextBox.LostFocus, Sub() SetColor(Color.CadetBlue)
             AddHandler TextBox.MouseWheel, AddressOf Wheel
+            ResumeLayout(False)
         End Sub
 
         WriteOnly Property Help As String
@@ -1786,7 +1792,7 @@ Namespace UI
         End Property
 
         <Category("Data")>
-        <DefaultValue(GetType(Double), "-9000000000")>
+        <DefaultValue(GetType(Double), "-9000000000")> 'was all: -9000000000 Remove one digit 0 to fit MaxInteger ???
         Property Minimum As Double = -9000000000.0R
 
         <Category("Data")>
@@ -1848,31 +1854,38 @@ Namespace UI
         End Sub
 
         Protected Overrides Sub OnLayout(levent As LayoutEventArgs)
-            Dim h = (ClientSize.Height \ 2) - 1
+            Dim cs As Size = ClientSize
+            Dim h = (cs.Height \ 2) - 1
             h -= h Mod 2
-
             If h > 20 Then
                 h -= 1
             End If
 
-            UpControl.Width = CInt(Height * 0.8)
-            UpControl.Height = h
-            UpControl.Top = 2
-            UpControl.Left = ClientSize.Width - UpControl.Width - 2
-
-            DownControl.Width = UpControl.Width
-            DownControl.Left = UpControl.Left
-            DownControl.Top = ClientSize.Height - h - 2
-            DownControl.Height = h
-
-            TextBox.Top = (ClientSize.Height - TextBox.Height) \ 2 + 1
-            TextBox.Left = 2
-            TextBox.Width = DownControl.Left - 3
-            TextBox.Height = TextRenderer.MeasureText("gG", TextBox.Font).Height
-
+            Dim cW As Integer = CInt(Height * 0.8)
+            Dim udLeft As Integer = cs.Width - cW - 2
+            UpControl.SetBounds(udLeft, 2, cW, h)
+            DownControl.SetBounds(udLeft, cs.Height - h - 2, cW, h)
+            TextBox.SetBounds(2, (cs.Height - 16) \ 2 + 1, udLeft - 3, 16) ' -TextBox.Height,,FMHeight) 'NoScaling!!! Segoe9= Measur15, TxtBox16
+            'UpControl.Width = cW
+            'UpControl.Height = h
+            'UpControl.Top = 2
+            'UpControl.Left = cs.Width - UpControl.Width - 2
+            'DownControl.Width = cW 'UpControl.Width
+            'DownControl.Left = UpControl.Left
+            'DownControl.Top = cs.Height - h - 2
+            'DownControl.Height = h
+            'TextBox.Top = (cs.Height - TextBox.Height) \ 2 + 1
+            'TextBox.Left = 2
+            'TextBox.Width = DownControl.Left - 3
+            'TextBox.Height = FMHeight 'TextRenderer.MeasureText("gG", TextBox.Font).Height
             MyBase.OnLayout(levent)
         End Sub
-
+        'Protected Overrides Async Sub OnFontChanged(e As EventArgs) 'NoScaling!!! Segoe9= Measur15, TxtBox16
+        '    If s.UIScaleFactor <> 1 Then
+        '        FMHeight = Await Task.Run(Function() CShort(TextRenderer.MeasureText("gG", TextBox.Font).Height))
+        '    End If
+        '    MyBase.OnFontChanged(e)
+        'End Sub
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
             Dim r = ClientRectangle
             r.Inflate(-1, -1)
@@ -1883,7 +1896,8 @@ Namespace UI
 
         Protected Overrides ReadOnly Property DefaultSize() As Size
             Get
-                Return New Size(250, 70)
+                'Return New Size(250, 70)
+                Return New Size(72, 21) 'Segoe9 ,w:41 AudioConv
             End Get
         End Property
 
@@ -1929,6 +1943,11 @@ Namespace UI
 
             Private BlockTextChanged As Boolean
 
+            Sub New() 'Moved from NumeEdit Ctor
+                BorderStyle = BorderStyle.None
+                TextAlign = HorizontalAlignment.Center
+                Text = "0"
+            End Sub
             Sub SetTextWithoutTextChanged(val As String)
                 BlockTextChanged = True
                 Text = val
@@ -1940,6 +1959,12 @@ Namespace UI
                     MyBase.OnTextChanged(e)
                 End If
             End Sub
+
+            Protected Overrides ReadOnly Property DefaultSize As Size
+                Get
+                    Return New Size(50, 16) 'MyBase.DefaultSize
+                End Get
+            End Property
         End Class
 
         Class UpDownButton
@@ -1956,11 +1981,7 @@ Namespace UI
                 Me.IsUp = isUp
                 TabStop = False
 
-                SetStyle(
-                    ControlStyles.Opaque Or
-                    ControlStyles.ResizeRedraw Or
-                    ControlStyles.OptimizedDoubleBuffer,
-                    True)
+                SetStyle(ControlStyles.Opaque Or ControlStyles.ResizeRedraw Or ControlStyles.OptimizedDoubleBuffer, True)
             End Sub
 
             Protected Overrides Sub OnMouseEnter(e As EventArgs)
@@ -2029,12 +2050,18 @@ Namespace UI
                 End Using
             End Sub
 
+            Private SlowDownItr As UInteger  'Experiment Test This !!!!!!!!!!!
             Async Sub MouseDownClicks(sleep As Integer, tick As Integer)
-                Await Task.Run(Sub() Thread.Sleep(sleep))
+Again:          Await Task.Run(Sub() Thread.Sleep(sleep))
 
                 If IsPressed AndAlso LastMouseDownTick = tick Then
                     ClickAction.Invoke()
-                    MouseDownClicks(20, tick)
+                    SlowDownItr += 1UI
+                    'MouseDownClicks(20, tick) 'Org: 20ms
+                    sleep = If(SlowDownItr < 12, 90, 30)
+                    GoTo Again
+                Else
+                    SlowDownItr = 1UI
                 End If
             End Sub
         End Class
@@ -2046,6 +2073,7 @@ Namespace UI
         Public WithEvents TextBox As New TextBoxEx
         Public Shadows Event TextChanged()
         Private BorderColor As Color = Color.CadetBlue
+        'Private FMHeight As Short = 16
 
         Sub New()
             SetStyle(ControlStyles.Opaque Or ControlStyles.ResizeRedraw, True)
@@ -2082,16 +2110,20 @@ Namespace UI
         Protected Overrides Sub OnLayout(args As LayoutEventArgs)
             MyBase.OnLayout(args)
 
+            Dim cs As Size = ClientSize
             If TextBox.Multiline Then
-                TextBox.Top = 2
-                TextBox.Left = 2
-                TextBox.Width = ClientSize.Width - 4
-                TextBox.Height = ClientSize.Height - 4
+                'TextBox.Top = 2
+                'TextBox.Left = 2
+                'TextBox.Width = cs.Width - 4
+                'TextBox.Height = cs.Height - 4
+                TextBox.SetBounds(2, 2, cs.Width - 4, cs.Height - 4)
             Else
-                TextBox.Top = ((ClientSize.Height - TextBox.Height) \ 2) - 1
-                TextBox.Left = 2
-                TextBox.Width = ClientSize.Width - 4
-                Dim h = TextRenderer.MeasureText("gG", TextBox.Font).Height
+                'TextBox.Top = ((cs.Height - TextBox.Height) \ 2) - 1
+                'TextBox.Left = 2
+                'TextBox.Width = cs.Width - 4
+                TextBox.SetBounds(2, ((cs.Height - TextBox.Height) \ 2) - 1, cs.Width - 4, 0, BoundsSpecified.Location Or BoundsSpecified.Width)
+
+                Dim h = 16 'FMHeight 'TextRenderer.MeasureText("gG", TextBox.Font).Height 'ToDo: NoScaling
 
                 If TextBox.Height < h Then
                     TextBox.Multiline = True
@@ -2100,6 +2132,12 @@ Namespace UI
                 End If
             End If
         End Sub
+        'Protected Overrides Async Sub OnFontChanged(e As EventArgs) 'NoScaling!!! Segoe9= Measur15, TxtBox16
+        '    If s.UIScaleFactor <> 1 Then
+        '        FMHeight = Await Task.Run(Function() CShort(TextRenderer.MeasureText("gG", TextBox.Font).Height))
+        '    End If
+        '    MyBase.OnFontChanged(e)
+        'End Sub
 
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
             MyBase.OnPaint(e)
@@ -2127,10 +2165,10 @@ Namespace UI
         Inherits DataGridView
 
         Protected Overrides Property DoubleBuffered As Boolean 'DoubleBuffered DGV -  keyboard responsivness
-            Get
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Get
                 Return True
             End Get
-            Set(value As Boolean)
+            <Runtime.CompilerServices.MethodImpl(AggrInlin)> Set(value As Boolean)
                 MyBase.DoubleBuffered = value
             End Set
         End Property
@@ -2164,7 +2202,8 @@ Namespace UI
             If e.Button <> MouseButtons.Left Then Return
 
             Dim rect = New Rectangle(DragStartPosition, Size.Empty)
-            rect.Inflate(SystemInformation.DragSize)
+            Static dragSize As Size = SystemInformation.DragSize
+            rect.Inflate(dragSize)
 
             Dim page = HoverTab()
 

@@ -1,10 +1,11 @@
 
+Imports JM.LinqFaster
 Imports StaxRip.UI
 
 Public Class SelectionBox(Of T)
     Property Text As String
     Property Title As String
-    Property Items As New List(Of ListBag(Of T))
+    Property Items As New List(Of ListBag(Of T))(4)
     Property SelectedBag As ListBag(Of T)
 
     Property SelectedValue As T
@@ -26,7 +27,7 @@ Public Class SelectionBox(Of T)
         End Get
         Set(value As String)
             For Each i In Items
-                If i.Text = value Then
+                If EqualsExS(i.Text, value) Then
                     SelectedBag = i
                 End If
             Next
@@ -47,25 +48,40 @@ Public Class SelectionBox(Of T)
 
     Function Show() As DialogResult
         Using form As New SelectionBoxForm
+            form.SuspendLayout()
             If Items.Count > 0 Then
                 form.mb.Add(Items)
                 form.mb.Value = SelectedBag
             End If
 
-            For Each i In Items
-                Dim textWidth = TextRenderer.MeasureText(i.ToString, form.mb.Font).Width + form.FontHeight * 3
+            Dim fW = form.Width
+            Dim fMBW As Integer = form.mb.Width
+            Dim fFn As Font = form.Font
+            Dim maxL As Integer
+            Dim maxTxt As String
 
-                If form.mb.Width < textWidth Then
-                    form.Width += textWidth - form.mb.Width
+            For i = 0 To Items.Count - 1
+                Dim lbTxt = Items(i).Text
+                If lbTxt.Length > maxL Then
+                    maxL = lbTxt.Length
+                    maxTxt = lbTxt
                 End If
-            Next
-
+            Next i
+            Dim textWidth = TextRenderer.MeasureText(maxTxt, fFn).Width + form.FontHeight * 4
+            If fMBW < textWidth Then fW += textWidth - fMBW
+            'For Each i In Items
+            '    Dim textWidth = TextRenderer.MeasureText(i.Text, fFn).Width + form.FontHeight * 3 'was: form.mb.Font
+            '    If fMBW < textWidth Then            '        fW += textWidth - fMBW
+            'Next
             'audio conv muxer select profile width
-            Dim LtextWidth As Integer = CInt(TextRenderer.MeasureText(Text, form.laText.Font).Width / 1.75)
-            If form.laText.Width < LtextWidth Then
-                form.Width += LtextWidth - form.laText.Width
+
+            Dim LtextWidth As Integer = CInt(TextRenderer.MeasureText(Text, fFn).Width / 1.5) ' / 1.75) 'was: form.laText.Font
+            'Dim fLaTW As Integer = form.laText.Width
+            If fW < LtextWidth Then 'fLaTW
+                fW += LtextWidth - fW 'fLaTW
             End If
 
+            form.Width = fW
             form.Text = Title
 
             If form.Text.NullOrEmptyS Then
@@ -73,6 +89,7 @@ Public Class SelectionBox(Of T)
             End If
 
             form.laText.Text = Text
+            form.ResumeLayout()
             Dim ret = form.ShowDialog
             SelectedBag = DirectCast(form.mb.Value, ListBag(Of T))
 

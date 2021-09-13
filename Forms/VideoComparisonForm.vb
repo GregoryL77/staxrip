@@ -93,7 +93,7 @@ Public Class VideoComparisonForm
 
     Sub Save()
         For Each tab As VideoTab In TabControl.TabPages
-            Dim outputPath = tab.SourceFile.Dir & Pos & " " + tab.SourceFile.Base + ".png"
+            Dim outputPath = tab.SourceFile.Dir & Pos & " " & tab.SourceFile.Base & ".png"
 
             Using bmp = tab.GetBitmap
                 bmp.Save(outputPath, ImageFormat.Png)
@@ -270,7 +270,7 @@ Public Class VideoComparisonForm
             Text = sourePath.Base
             SourceFile = sourePath
 
-            Dim script As New VideoScript With {.Engine = ScriptEngine.AviSynth, .Path = Folder.Temp + Guid.NewGuid.ToString + ".avs"}
+            Dim script As New VideoScript With {.Engine = ScriptEngine.AviSynth, .Path = Folder.Temp & Guid.NewGuid.ToString & ".avs"}
             Dim deh1 As EventHandler = Sub()
                                            RemoveHandler Me.Disposed, deh1
                                            FileHelp.Delete(script.Path)
@@ -280,10 +280,10 @@ Public Class VideoComparisonForm
             script.Filters.Add(New VideoFilter("SetMemoryMax(512)"))
 
             If sourePath.Ext = "png" Then
-                script.Filters.Add(New VideoFilter("ImageSource(""" + sourePath + """, end = 0)"))
+                script.Filters.Add(New VideoFilter("ImageSource(""" & sourePath & """, end = 0)"))
             Else
                 Try
-                    Dim cachePath = Folder.Temp + Guid.NewGuid.ToString + ".ffindex"
+                    Dim cachePath = Folder.Temp & Guid.NewGuid.ToString & ".ffindex"
                     Dim deh2 As EventHandler = Sub()
                                                    RemoveHandler Me.Disposed, deh2
                                                    FileHelp.Delete(cachePath)
@@ -293,9 +293,9 @@ Public Class VideoComparisonForm
                 End Try
 
                 If sourePath.EndsWith("mp4") Then
-                    script.Filters.Add(New VideoFilter("LSMASHVideoSource(""" + sourePath + "" + """, format = ""YV12"")"))
+                    script.Filters.Add(New VideoFilter("LSMASHVideoSource(""" & sourePath & "" & """, format = ""YV12"")"))
                 Else
-                    script.Filters.Add(New VideoFilter("FFVideoSource(""" + sourePath + "" + """, colorspace = ""YV12"")"))
+                    script.Filters.Add(New VideoFilter("FFVideoSource(""" & sourePath & "" & """, colorspace = ""YV12"")"))
                 End If
             End If
 
@@ -307,13 +307,13 @@ Public Class VideoComparisonForm
             Server = FrameServerFactory.Create(script.Path)
             Renderer = New VideoRenderer(VideoPanel, Server)
 
-            FileHelp.Delete(sourePath + ".ffindex")
+            FileHelp.Delete(sourePath & ".ffindex")
 
             If Form.TrackBar.Maximum < Server.Info.FrameCount - 1 Then
                 Form.TrackBar.Maximum = Server.Info.FrameCount - 1
             End If
 
-            Dim csvFile = sourePath.DirAndBase + ".csv"
+            Dim csvFile = sourePath.DirAndBase & ".csv"
 
             If File.Exists(csvFile) Then
                 Dim len = Form.TrackBar.Maximum
@@ -330,7 +330,7 @@ Public Class VideoComparisonForm
                             Dim value = values(x2).Trim
 
                             If value.NotNullOrEmptyS AndAlso Not value.Equals("-") Then
-                                FrameInfo(x - 1) += headers(x2).Trim + ": " + value + ", "
+                                FrameInfo(x - 1) &= headers(x2).Trim & ": " & value & ", "
                             End If
                         Next
 
@@ -361,7 +361,7 @@ Public Class VideoComparisonForm
                 Else
                     Dim frameRate = If(Calc.IsValidFrameRate(Server.FrameRate), Server.FrameRate, 25)
                     Dim dt = DateTime.Today.AddSeconds(Pos / frameRate)
-                    Form.laInfo.Text = "Position: " & Pos & ", Time: " + dt.ToString("HH:mm:ss.fff") + ", Size: " & Server.Info.Width & " x " & Server.Info.Height
+                    Form.laInfo.Text = "Position: " & Pos & ", Time: " & dt.ToString("HH:mm:ss.fff") & ", Size: " & Server.Info.Width & " x " & Server.Info.Height
                 End If
 
                 Form.laInfo.Refresh()
@@ -370,49 +370,44 @@ Public Class VideoComparisonForm
             End Try
         End Sub
 
-        Sub DoLayout()
-            If Server Is Nothing Then
-                Exit Sub
-            End If
+        Sub DoLayout() 'Remove padding & Rectangle Dims
+            If Server Is Nothing Then Exit Sub
+            'Dim sizeToFit = New Size(Server.Info.Width, Server.Info.Height)
+            'If sizeToFit.IsEmpty Then Exit Sub
+            Dim sfW = Server.Info.Width
+            Dim sfH = Server.Info.Height
+            If sfW = 0 AndAlso sfW = 0 Then Exit Sub
 
-            Dim sizeToFit = New Size(Server.Info.Width, Server.Info.Height)
+            ' Dim padding As Padding    'This is NonSense??? RemoveIt?
+            'Dim rect As New Rectangle(Padding.Left, Padding.Top, Width - Padding.Horizontal, Height - Padding.Vertical) 'Remove padding & rect Dims
+            Dim rW As Integer = Width
+            Dim rH As Integer = Height
 
-            If sizeToFit.IsEmpty Then
-                Exit Sub
-            End If
-
-            Dim padding As Padding
-
-            Dim rect As New Rectangle(
-                padding.Left, padding.Top,
-                Width - padding.Horizontal,
-                Height - padding.Vertical)
-
-            Dim targetPoint As Point
-            Dim targetSize As Size
-            Dim ar1 = rect.Width / rect.Height
-            Dim ar2 = sizeToFit.Width / sizeToFit.Height
-
-            If ar2 < ar1 Then
-                targetSize.Height = rect.Height
-                targetSize.Width = CInt(sizeToFit.Width / (sizeToFit.Height / rect.Height))
-                targetPoint.X = CInt((rect.Width - targetSize.Width) / 2) + padding.Left
-                targetPoint.Y = padding.Top
+            'Dim targetPoint As Point
+            'Dim targetSize As Size
+            Dim tX, Ty, tW, tH As Integer
+            'Dim ar1 = rW / rH 'rect.Width / rect.Height
+            'Dim ar2 = sizeToFit.Width / sizeToFit.Height
+            If sfW / sfH < rW / rH Then 'ar2 < ar1
+                tH = rH 'targetSize.Height = rect.Height
+                tW = CInt(sfW / (sfH / rH)) 'targetSize.Width = CInt(sizeToFit.Width / (sizeToFit.Height / rect.Height))
+                tX = CInt((rW - tW) / 2)  'targetPoint.X = CInt((rect.Width - targetSize.Width) / 2) + padding.Left
+                'targetPoint.Y = padding.Top
             Else
-                targetSize.Width = rect.Width
-                targetSize.Height = CInt(sizeToFit.Height / (sizeToFit.Width / rect.Width))
-                targetPoint.Y = CInt((rect.Height - targetSize.Height) / 2) + padding.Top
-                targetPoint.X = padding.Left
+                tW = rW 'targetSize.Width = rect.Width
+                tH = CInt(sfH / (sfW / rW)) 'targetSize.Height = CInt(sizeToFit.Height / (sizeToFit.Width / rect.Width))
+                Ty = CInt((rH - tH) / 2)  'targetPoint.Y=CInt((rect.Height - targetSize.Height) / 2) + padding.Top
+                'targetPoint.X = padding.Left
             End If
 
-            Dim targetRect = New Rectangle(targetPoint, targetSize)
-            Dim reg As New Region(ClientRectangle)
-            reg.Exclude(targetRect)
+            'Dim targetRect = New Rectangle(targetPoint, targetSize)
+            'Dim reg As New Region(ClientRectangle) 'Seems Dead???
+            'reg.Exclude(targetRect)
 
-            VideoPanel.Left = targetRect.Left
-            VideoPanel.Top = targetRect.Top
-            VideoPanel.Width = targetRect.Width
-            VideoPanel.Height = targetRect.Height
+            VideoPanel.Left = tX 'targetRect.Left
+            VideoPanel.Top = Ty 'targetRect.Top
+            VideoPanel.Width = tW 'targetRect.Width
+            VideoPanel.Height = tH  'targetRect.Height
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)

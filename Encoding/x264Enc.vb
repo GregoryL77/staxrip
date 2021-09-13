@@ -38,7 +38,7 @@ Public Class x264Enc
             If pmVal = 0 OrElse pmVal = 1 Then
                 Return "h264"
             Else
-                Return Params.Muxer.ValueText.ToLowerInvariant
+                Return Params.Muxer.ValueText.ToLower(InvCult)
             End If
         End Get
     End Property
@@ -237,7 +237,7 @@ Public Class x264Params
         .HelpSwitch = "--bitrate",
         .Text = "Bitrate",
         .VisibleFunc = Function() Mode.Value <> 1 AndAlso Mode.Value <> 2,
-        .Config = {0, 1000000, 100}}
+        .Config = {0, 999999, 100}}
 
     Property Preset As New OptionParam With {
         .Switch = "--preset",
@@ -469,7 +469,7 @@ Public Class x264Params
                             Dim psRDVal As Double = PsyRD.Value
                             Dim psTrVal As Double = PsyTrellis.Value
                             If psRDVal <> PsyRD.DefaultValue OrElse psTrVal <> PsyTrellis.DefaultValue OrElse Not Psy.DefaultValue Then
-                                Return "--psy-rd " & psRDVal.ToInvariantString & ":" & psTrVal.ToInvariantString
+                                Return "--psy-rd " & psRDVal.ToInvStr & ":" & psTrVal.ToInvStr
                             End If
                         Else
                             If Psy.DefaultValue Then
@@ -1260,7 +1260,6 @@ Public Class x264Params
                 End If
             End If
 
-
             Select Case pipeTool
                 Case "vspipe y4m"
                     sb.Append(Package.vspipe.Path.Escape).Append(" ").Append(script.Path.Escape).Append(" - --y4m | ")
@@ -1325,11 +1324,11 @@ Public Class x264Params
 
         If modeVal = x264RateMode.Quantizer Then
             If Not IsCustom(pass, "--qp") Then
-                sb.Append(" --qp ").Append(CInt(Quant.Value).ToInvariantString)
+                sb.Append(" --qp ").Append(CInt(Quant.Value).ToInvStr)
             End If
         ElseIf modeVal = x264RateMode.Quality Then
             If Not IsCustom(pass, "--crf") Then
-                sb.Append(" --crf ").Append(Quant.Value.ToInvariantString)
+                sb.Append(" --crf ").Append(Quant.Value.ToInvStr)
             End If
         Else
             If Not IsCustom(pass, "--bitrate") Then
@@ -1342,12 +1341,12 @@ Public Class x264Params
             End If
         End If
 
-        'Dim q = From i In Items Where i.GetArgs?.Length > 0 AndAlso Not IsCustom(pass, i.Switch)
+        'Dim q = From i In Items Where i.GetArgs.NotNullOrEmptyS AndAlso Not IsCustom(pass, i.Switch)
         'If q.Any Then args &= " " & q.Select(Function(item) item.GetArgs).Join(" ")
         For i = 0 To Items.Count - 1
             Dim prm = Items(i)
             Dim arg As String = prm.GetArgs
-            If arg?.Length > 0 AndAlso Not IsCustom(pass, prm.Switch) Then
+            If arg.NotNullOrEmptyS AndAlso Not IsCustom(pass, prm.Switch) Then
                 sb.Append(" ").Append(arg)
             End If
         Next i
@@ -1369,7 +1368,7 @@ Public Class x264Params
             If dmx?.Length > 0 Then
                 Dim info = script.GetInfo
 
-                sb.Append(" --demuxer ").Append(dmx).Append(" --frames ").Append(info.FrameCount.ToInvariantString)
+                sb.Append(" --demuxer ").Append(dmx).Append(" --frames ").Append(info.FrameCount.ToInvStr)
 
                 If dmx = "raw" Then
                     sb.Append(" --input-res ").Append(info.Width).Append("x").Append(info.Height)

@@ -1,4 +1,3 @@
-
 Imports System.ComponentModel
 Imports System.Drawing.Design
 Imports System.Drawing.Imaging
@@ -9,6 +8,7 @@ Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports JM.LinqFaster
+Imports KGySoft.CoreLibraries
 Imports StaxRip.UI
 
 Public Module ShortcutModule
@@ -40,10 +40,10 @@ End Class
 
 Public Class Calc
     Shared Function IsValidFrameRate(value As Double) As Boolean
-        Return Not (Double.IsNaN(value) OrElse Double.IsInfinity(value) OrElse
-            value < 1 OrElse value > 500)
+        Return Not (value < 1 OrElse value > 500 OrElse Double.IsNaN(value) OrElse Double.IsInfinity(value))
     End Function
 
+    <CompilerServices.MethodImpl(AggrInlin)>
     Shared Function GetYFromTwoPointForm(x1 As Single, y1 As Single, x2 As Single, y2 As Single, x As Single) As Integer
         Return CInt(Microsoft.VisualBasic.Fix((((y2 - y1) / (x2 - x1)) * (x - x1)) + y1))
     End Function
@@ -67,8 +67,7 @@ Public Class Calc
     End Function
 
     Shared Function GetSize() As Double
-        Dim ret = (Calc.GetVideoKBytes() + Calc.GetAudioKBytes() +
-            GetSubtitleKBytes() + Calc.GetOverheadKBytes()) / 1024
+        Dim ret = (Calc.GetVideoKBytes() + Calc.GetAudioKBytes() + GetSubtitleKBytes() + Calc.GetOverheadKBytes()) / 1024
 
         If ret < 1 Then ret = 1
 
@@ -83,9 +82,7 @@ Public Class Calc
         Dim kbytes = p.TargetSize * 1024 - GetAudioKBytes() - GetSubtitleKBytes() - GetOverheadKBytes()
         Dim ret = kbytes * 8 * 1.024 / p.TargetSeconds
 
-        If ret < 1 Then
-            ret = 1
-        End If
+        If ret < 1 Then ret = 1
 
         Return ret
     End Function
@@ -139,7 +136,7 @@ Public Class Calc
     End Function
 
     Shared Function IsARSignalingRequired() As Boolean
-        If Not p.Script Is Nothing Then
+        If p.Script IsNot Nothing Then
             Dim par = GetTargetPAR()
 
             If par.X <> par.Y Then
@@ -181,8 +178,8 @@ Public Class Calc
     End Function
 
     Shared Function ParseCustomAR(value As String, defaultX As Integer, defaultY As Integer) As Point
-        If value.NotNullOrEmptyS AndAlso (value.Contains(":") OrElse value.Contains("/")) Then
-            Dim a = value.Split(":/".ToCharArray)
+        If value.NotNullOrEmptyS AndAlso (value.LastIndexOf(":"c) >= 0 OrElse value.LastIndexOf("/"c) >= 0) Then
+            Dim a = value.Split(":"c, "/"c)
 
             If a.Length = 2 Then
                 Dim a0i = a(0).ToIntM
@@ -401,7 +398,7 @@ Public Class Calc
             ElseIf x > 0 Then
                 xval = "+" & x
             Else
-                xval = x.ToInvariantString
+                xval = x.ToInvStr
             End If
 
             Dim y = h - FixMod16(h)
@@ -412,7 +409,7 @@ Public Class Calc
             ElseIf y > 0 Then
                 yval = "+" & y
             Else
-                yval = y.ToInvariantString
+                yval = y.ToInvStr
             End If
 
             Return wmod & "/" & hmod & " (" & xval & "/" & yval & ")"
@@ -490,8 +487,8 @@ Public Class Language
     <NonSerialized> Public IsCommon As Boolean
 
     Sub New()
-        Me.IsCommon = IsCommon
-        CultureInfoValue = InvariantCult
+        IsCommon = True
+        CultureInfoValue = InvCult
         LCIDValue = 127  '(127) Invariant
     End Sub
 
@@ -501,9 +498,9 @@ Public Class Language
         LCIDValue = ci.LCID
     End Sub
 
-    Sub New(lcid As Integer, Optional isCommon As Boolean = False)
+    Sub New(lcid As Integer, twoLetterCode As String, Optional isCommon As Boolean = False)
         Me.IsCommon = isCommon
-        CultureInfoValue = New CultureInfo(lcid)
+        CultureInfoValue = CultureInfo.GetCultureInfo(twoLetterCode) 'New CultureInfo(twoLetterCode)
         LCIDValue = lcid
     End Sub
 
@@ -511,17 +508,16 @@ Public Class Language
         Try
             Me.IsCommon = isCommon
 
-            Select Case twoLetterCode
-                Case "iw"
-                    twoLetterCode = "he"
-                Case "jp"
-                    twoLetterCode = "ja"
-            End Select
+            If String.Equals(twoLetterCode, "iw") Then 'Unkn
+                twoLetterCode = "he"
+            ElseIf String.Equals(twoLetterCode, "jp") Then 'Unkn
+                twoLetterCode = "ja"
+            End If
 
-            CultureInfoValue = New CultureInfo(twoLetterCode)
+            CultureInfoValue = CultureInfo.GetCultureInfo(twoLetterCode) 'New CultureInfo(twoLetterCode)
             LCIDValue = CultureInfoValue.LCID
         Catch ex As Exception
-            CultureInfoValue = InvariantCult
+            CultureInfoValue = InvCult
             LCIDValue = 127
         End Try
     End Sub
@@ -534,18 +530,25 @@ Public Class Language
         End Get
     End Property
 
-    <NonSerialized()> Private LCIDValue As Integer = -1 ' <NonSerialized()> Or NOt ???  Seems like DeepCloner doesn't care about NS attribute
+    <NonSerialized()> Private LCIDValue As Integer ' <NonSerialized()> Or NOt ???  Seems like DeepCloner doesn't care about NS attribute
     Public ReadOnly Property LCID() As Integer 'ToDO Remove Field, use RO prop only ???
         Get
-            Return LCIDValue
-            'Return If(LCIDValue > 0, LCIDValue, CultureInfo.LCID)
-            'Return CultureInfo.LCID
+            Return LCIDValue 'Return If(LCIDValue > 0, LCIDValue, CultureInfoValue.LCID)
         End Get
     End Property
 
     ReadOnly Property TwoLetterCode() As String
         Get
-            Return CultureInfo.TwoLetterISOLanguageName
+            Select Case LCIDValue
+                Case 127
+                    Return "iv" 'Needed???
+                Case 9
+                    Return "en"
+                Case 21
+                    Return "pl"
+                Case Else
+                    Return CultureInfoValue.TwoLetterISOLanguageName
+            End Select
         End Get
     End Property
 
@@ -554,70 +557,38 @@ Public Class Language
     ReadOnly Property ThreeLetterCode() As String
         Get
             If ThreeLetterCodeValue Is Nothing Then
-                'If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
-                '    ThreeLetterCodeValue = "und"
-                'Else
-                '    Select Case CultureInfo.ThreeLetterISOLanguageName
-                '        Case "deu" '7
-                '            ThreeLetterCodeValue = "ger"
-                '        Case "ces" '5
-                '            ThreeLetterCodeValue = "cze"
-                '        Case "zho" '30724, 4, 31748
-                '            ThreeLetterCodeValue = "chi"
-                '        Case "nld" '19
-                '            ThreeLetterCodeValue = "dut"
-                '        Case "ell" '8
-                '            ThreeLetterCodeValue = "gre"
-                '        Case "fra" '12
-                '            ThreeLetterCodeValue = "fre"
-                '        Case "sqi" '28
-                '            ThreeLetterCodeValue = "alb"
-                '        Case "hye" ' 43
-                '            ThreeLetterCodeValue = "arm"
-                '        Case "eus" '45
-                '            ThreeLetterCodeValue = "baq"
-                '        Case "mya" '85
-                '            ThreeLetterCodeValue = "bur"
-                '        Case "kat" '55
-                '            ThreeLetterCodeValue = "geo"
-                '        Case "isl" '15
-                '            ThreeLetterCodeValue = "ice"
-                '        Case "bng" '69
-                '            ThreeLetterCodeValue = "ben"
-                '        Case Else
-                '            ThreeLetterCodeValue = CultureInfo.ThreeLetterISOLanguageName
-                '    End Select
-                Select Case LCIDValue
-                    Case 127 'CultureInfo.LCID
-                        ThreeLetterCodeValue = "und"
-                    Case 7
+                Select Case LCIDValue 'Select Case CultureInfoValue.ThreeLetterISOLanguageName
+                    'Case 127
+                        'ThreeLetterCodeValue = "ivl" ' CuInf:"ivl",was:"und"
+                    'Case 9  ThreeLetterCodeValue = "eng"'Case 21 ThreeLetterCodeValue = "pol"
+                    Case 7 '"deu"
                         ThreeLetterCodeValue = "ger"
-                    Case 5
+                    Case 5 '"ces"
                         ThreeLetterCodeValue = "cze"
-                    Case 30724, 4, 31748
+                    Case 30724, 4, 31748 '"zho"
                         ThreeLetterCodeValue = "chi"
-                    Case 19
+                    Case 19 '"nld"
                         ThreeLetterCodeValue = "dut"
-                    Case 8
+                    Case 8 '"ell"
                         ThreeLetterCodeValue = "gre"
-                    Case 12
+                    Case 12 '"fra"
                         ThreeLetterCodeValue = "fre"
-                    Case 28
+                    Case 28 '"sqi"
                         ThreeLetterCodeValue = "alb"
-                    Case 43
+                    Case 43 '"hye"
                         ThreeLetterCodeValue = "arm"
-                    Case 45
+                    Case 45 '"eus"
                         ThreeLetterCodeValue = "baq"
-                    Case 85
+                    Case 85 '"mya"
                         ThreeLetterCodeValue = "bur"
-                    Case 55
+                    Case 55 '"kat"
                         ThreeLetterCodeValue = "geo"
-                    Case 15
+                    Case 15 '"isl"
                         ThreeLetterCodeValue = "ice"
-                    Case 69
+                    Case 69 '"bng"
                         ThreeLetterCodeValue = "ben"
                     Case Else
-                        ThreeLetterCodeValue = CultureInfo.ThreeLetterISOLanguageName
+                        ThreeLetterCodeValue = CultureInfoValue.ThreeLetterISOLanguageName
                 End Select
             End If
 
@@ -627,95 +598,176 @@ Public Class Language
 
     ReadOnly Property Name() As String
         Get
-            'If String.Equals(CultureInfo.TwoLetterISOLanguageName, "iv") Then
-            If LCIDValue = 127 Then 'CultureInfo.LCID  127 = InvarintCulture LCID 
-                Return "Undetermined"
-            Else
-                Return CultureInfo.EnglishName
-            End If
+            Select Case LCIDValue '' If String.Equals(CultureInfoValue.TwoLetterISOLanguageName, "iv") Then
+                Case 127
+                    Return "Invariant Language (Invariant Country)"'"Undetermined" 'Needed???
+                Case 9
+                    Return "English"
+                Case 21
+                    Return "Polish"
+                Case Else
+                    Return CultureInfoValue.EnglishName
+            End Select
         End Get
     End Property
 
-    <NonSerialized()> Private Shared LanguagesValue As List(Of Language) 'Added NonSer??? Experiment! Test this!!!
-
-    Shared ReadOnly Property Languages() As List(Of Language)
+    <NonSerialized()> Private Shared LanguagesValue As Language() ' List(Of Language) 'Added NonSer???
+    Shared ReadOnly Property Languages() As Language() 'List(Of Language) 
         Get
             If LanguagesValue Is Nothing Then
+                Dim cultInfsA = CultureInfo.GetCultures(CultureTypes.NeutralCultures).OrderByF(Function(cu) cu.EnglishName, StringComparer.OrdinalIgnoreCase) '(285)
+                'Array.Sort(cultInfsA, New Comparison(Of CultureInfo)(Function(x, y) String.CompareOrdinal(x.EnglishName, y.EnglishName)))
+                Dim iCurr As Integer = CurrCultNeutral.LCID
 
-                Dim l As New List(Of Language)(308) From {
-                    New Language(1, True),  '1 "ar"
-                    New Language(30724, True), '30724 "zh"
-                    New Language(9, True),  '9 "en"
-                    New Language(12, True), '12 "fr"
-                    New Language(7, True),  '7 "de"
-                    New Language(57, True), '57 "hi"
-                    New Language(16, True), '16 "it"
-                    New Language(17, True), '17 "ja"
-                    New Language(18, True), '18 "ko"
-                    New Language(21, True), '21 "pl"
-                    New Language(22, True), '22 "pt"
-                    New Language(25, True), '25 "ru"
-                    New Language(10, True), '10 "es"
-                    New Language(InvariantCult, True)} '127
-                'Is now(2021) 296 (Full 303)
-                'l.Add(New Language(69, True)) '69 "bn"
-                'l.Add(New Language(62, True)) '62 "ms"
-                'l.Add(New Language(70, True)) '70 "pa"
-                'Dim current = l.Find(Function(a) String.Equals(a.TwoLetterCode, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))
-                Dim curNLCID As Integer = CultureInfo.CurrentCulture.NeutralCulture.LCID
-                Dim current = l.Find(Function(a) a.LCIDValue = curNLCID)
+                'Dim l1 As New List(Of Language)(304) 'Is now(2021) 302 Full, L1=17
+                Dim l1A As Language() = {
+                        New Language(1, "ar", True),
+                        New Language(69, "bn", True),
+                        New Language(30724, "zh", True),
+                        New Language(9, "en", True),
+                        New Language(12, "fr", True),
+                        New Language(7, "de", True),
+                        New Language(57, "hi", True),'127-Sort: CuInvEngName"Invariant Language (Invariant Country)"
+                        New Language(16, "it", True),
+                        New Language(17, "ja", True),
+                        New Language(18, "ko", True),
+                        New Language(62, "ms", True),
+                        New Language(21, "pl", True),
+                        New Language(22, "pt", True),
+                        New Language(70, "pa", True),
+                        New Language(25, "ru", True),
+                        New Language(10, "es", True),
+                        New Language} '127-Invariant -EngName:"Undetermined",name""
 
-                If current Is Nothing Then
-                    l.Add(CurrentCulture)
+                '''Dim noCurr = l1.FindLastIndex(Function(a) String.Equals(a.TwoLetterCode, CurrCultNeutral.TwoLetterISOLanguageName)) < 0
+                'Dim isCurr = l1.FindLastIndex(Function(a) a.LCIDValue = cCultLcid) >= 0
+                'If Not isCurr Then l1.Add(New Language(CurrCultNeutral, True))
+                ''l1.Sort()
+
+                iCurr = Array.FindLastIndex(l1A, Function(a) a.LCIDValue = iCurr)
+                'Array.Sort(l1A)
+
+                Dim startIdx As Integer = If(iCurr >= 0, l1A.Length, l1A.Length + 1)
+                Dim l2A(cultInfsA.Length + startIdx - 1) As Language
+                ''Dim l2SKeysA(l2A.Length - 1) As String
+
+                For i = startIdx To l2A.Length - 1
+                    'Dim cuI As CultureInfo = cultInfsA(i)
+                    l2A(i) = New Language(cultInfsA(i - startIdx))
+                    'l2SKeysA(i) = cuI.EnglishName
+                Next i
+
+                'Array.Sort(l2SKeysA, l2A, startIdx, cultInfsA.Length, StringComparer.Ordinal) 'StringComparer.OrdinalIgnoreCase)
+                'Array.Sort(l2A, startIdx, cultInfsA.Length)
+                'l1.AddRange(l2A)
+                If iCurr >= 0 Then
+                    Array.Copy(l1A, 0, l2A, 0, l1A.Length)
+                Else
+                    l2A(0) = New Language(CurrCultNeutral, True)
+                    Array.Copy(l1A, 0, l2A, 1, l1A.Length)
                 End If
-
-                l.Sort()
-                Dim l2 As New List(Of Language)(296)
-
-                For Each i In CultureInfo.GetCultures(CultureTypes.NeutralCultures)
-                    l2.Add(New Language(i))
-                Next
-
-                l2.Sort()
-                l.AddRange(l2)
-                LanguagesValue = l
+                LanguagesValue = l2A
             End If
-
             Return LanguagesValue
         End Get
     End Property
-    'Shared Sub WriteLang() 'debug
-    '    Dim lll = Languages
-    '    Dim nn As String
-    '    For Each l In lll
-    '        nn = If(l.CultureInfo.Name.Equals(l.TwoLetterCode), l.CultureInfo.Name, $"{l.CultureInfo.Name} | {l.TwoLetterCode}")
-    '        Log.WriteLine($"{l.LCID} ; {l.Name} ; {l.ThreeLetterCode } ; {nn}")
-    '    Next
-    'End Sub
-    Shared ReadOnly Property CurrentCulture As Language
-        Get
-            Return New Language(CultureInfo.CurrentCulture.NeutralCulture, True)
-        End Get
-    End Property
+
+    Public Shared Function GetLanguagesVal() As Language()
+        Try
+            'If LanguagesValue Is Nothing Then
+            Dim cultInfsA As CultureInfo() = CultureInfo.GetCultures(CultureTypes.NeutralCultures) '(285)
+            Dim ArLen As Integer = cultInfsA.Length
+            'Dim Ar1(cultInfsA.Length - 1) As CultureInfo
+            'Dim Ar1(ArLen - 1) As CultureInfo
+            'Dim Ar2(ArLen - 1) As CultureInfo
+            Dim rr As New FastRandom()
+            Dim ArK1 = cultInfsA.Select(Function(cc) cc.LCID).ToArray
+            Dim ArK2(ArLen - 1) As Integer
+
+            Dim sss = Stopwatch.StartNew
+Restart:    WarmUpCpu()
+            sss.Restart()
+            For n = 1 To 100_000
+                'LanguagesValue = Nothing 'Debug
+
+                'Dim l2A(cultInfsA.Length - 1) As Language
+                ''Dim l2SKeysA(l2A.Length - 1) As String
+                'Array.Copy(cultInfsA, 0, Ar1, 0, ArLen) '8xFaster then ForLoop Assign
+                Array.Copy(ArK1, 0, ArK2, 0, ArLen)
+
+                'For i = 0 To ArLen - 1
+                '    '    '    ''Dim cuI As CultureInfo = cultInfsA(i)
+                '    '    '    'l2A(i) = New Language(cultInfsA(i))
+                '    ArK2(i) = ArK1(i) 'cultInfsA(i).LCID
+                '    '    '    ''l2SKeysA(i) = cuI.EnglishName
+                'Next i
+                'ArK2 = cultInfsA.SelectF(Function(cc) cc.LCID)
+                'Array.Sort(Ar1, New Comparison(Of CultureInfo)(Function(x, y) String.CompareOrdinal(x.EnglishName, y.EnglishName)))'compOrd:340,ord:370,ordign:530,invCu:1600,invIgn1600,InvGetStrComp:1530,cc:3000,ccIng3000
+                'Array.Sort(Ar1, New Comparison(Of CultureInfo)(Function(x, y) x.LCID.CompareTo(y.LCID))) 
+                'Array.Sort(ArK2, Ar1, 0, ArLen)
+                Array.Sort(ArK2, 0, ArLen)
+                'Ar1 = LinqFaster.OrderByF(Of CultureInfo, Integer)(Ar1, Function(cc) cc.LCID) '20% faster than arr.sort new Comparison, OrderByF:283ms,5% Slower OrderBy :388ms
+                'dim eeee = Ar1.SequenceEqualF(Ar2)
+                'LCID IntegrSort:705-702msLF,Tuples with keys 785ms; ArrSort(NewCmprison)2280ms,ArrSort wKeys PreDef-ArrCopy 501 ,K from SelectF:593, K from ForLoop 594 ,SameKeys-NoSort 473, IntArrOnly:280,IntArrNoSort:193
+                'All 0 Array; Slower! KeysOnly 280ms
+
+                'Array.Sort(l2SKeysA, l2A, startIdx, cultInfsA.Length, StringComparer.Ordinal) 'StringComparer.OrdinalIgnoreCase)
+                'Array.Sort(l2A, startIdx, cultInfsA.Length)
+                'Array.Sort(l2A)
+
+                'LanguagesValue = l2A
+
+            Next n
+            sss.Stop()
+
+            Dim eee = sss.ElapsedTicks / SWFreq & "ms-10.000itLng | Ok Again" & BR '& "Is LCID/EngName Equal:" & LanguagesValue.All(Function(lv) lv.LCIDValue = lv.CultureInfoValue.LCID AndAlso lv.Name = lv.CultureInfoValue.EnglishName)
+            WarmUpCpu()
+            If MsgQuestion(eee) <> DialogResult.OK Then
+                g.KillMeAll()
+            Else
+                GoTo Restart
+            End If
+            ' End If
+            Return LanguagesValue
+        Catch ex As Exception
+            g.ShowException(ex, "**** Test Lang Exception Catcher !!! **** ")
+        End Try
+    End Function
 
     Overrides Function ToString() As String
-        Return Name
+        Return CultureInfoValue.EnglishName 'Name
     End Function
 
     Function CompareTo(other As Language) As Integer Implements System.IComparable(Of Language).CompareTo
-        'Return String.CompareOrdinal(Name, other.Name)
-        Return String.Compare(Name, other.Name, StringComparison.OrdinalIgnoreCase)
+        'Return String.Compare(CultureInfoValue.EnglishName, other.CultureInfoValue.EnglishName, StringComparison.OrdinalIgnoreCase) 'was Name
+        Throw New Exception(BR & "*** Language Class Sort InUse, Implicit!! compareTo!!! *** ")
+        '  Return String.CompareOrdinal(CultureInfoValue.EnglishName, other.CultureInfoValue.EnglishName) 'was Name
     End Function
 
     Overrides Function Equals(obj As Object) As Boolean
-        'If TypeOf obj Is Language Then
-        'Return CultureInfo.Equals(DirectCast(obj, Language).CultureInfo)
         Dim l As Language = TryCast(obj, Language)
-        If l IsNot Nothing Then Return CultureInfo.Equals(l.CultureInfo)
-        'Return False
+        If l IsNot Nothing Then Return CultureInfoValue.Equals(l.CultureInfoValue)
     End Function
+    Public Overrides Function GetHashCode() As Integer 'Is this needed
+        Return CultureInfo.GetHashCode
+    End Function
+    'Shared Sub WriteLang() 'debug
+    '    Dim sb As New StringBuilder(" LCID  ; 3ISO > 2ISO / Name ,    EngName", 4096)
+    '    For Each ln In CultureInfo.GetCultures(CultureTypes.NeutralCultures) 'Languages
+    '        'Log.WriteLine($"{l.LCID} ; {l.Name} ; {l.ThreeLetterCode } ; {If(l.CultureInfo.Name.Equals(l.TwoLetterCode), l.CultureInfo.Name, $"{l.CultureInfo.Name} | {l.TwoLetterCode}")}")
+    '        sb.Append($"{BR}#{ln.LCID,5} ; {ln.ThreeLetterISOLanguageName,-4} > {If(ln.Name.Equals(ln.TwoLetterISOLanguageName), $"{ln.Name,-3}", $"{ln.TwoLetterISOLanguageName,-3} / {ln.Name,-8}")} , {ln.EnglishName}")
+    '    Next
+    '    File.Delete("c:\temp\StaxLang.txt")
+    '    File.WriteAllText("c:\temp\StaxLang.txt", sb.ToString)
+    'End Sub
 End Class
-
+'Public Structure HPFor
+'    Implements IAction
+'    Public Sub Invoke(i As Integer) Implements IAction.Invoke
+'        Throw New NotImplementedException()
+'        Microsoft.Toolkit.HighPerformance.Helpers.ParallelHelper.For(,,)
+'    End Sub
+'End Structure
 Public Class CommandLineTypeEditor
     Inherits UITypeEditor
 
@@ -842,10 +894,10 @@ Public MustInherit Class Profile
     Overridable Sub Clean()
     End Sub
 
-    Overridable Function GetCopy() As Profile
-        Return ObjectHelp.GetCopy(Me)
-        'Return DirectCast(ObjectHelp.GetCopy(Me), Profile)
-    End Function
+    'Overridable Function GetCopy() As Profile
+    '    Return ObjectHelp.GetCopy(Me)
+    '    'Return DirectCast(ObjectHelp.GetCopy(Me), Profile)
+    'End Function
 
     Overrides Function ToString() As String
         Return Name
@@ -935,7 +987,7 @@ Public Class ObjectStorage
 
     Sub SetString(key As String, value As String)
         If value Is Nothing Then
-            StringDictionary.Remove(key) 'Test This - TODO Should not Throw Excp
+            StringDictionary.Remove(key)
         Else
             StringDictionary(key) = value
         End If
@@ -977,6 +1029,13 @@ End Enum
 Public Class Startup
     <STAThread()>
     Shared Sub Main()
+
+        'Dim qqaaqaz = Language.GetLanguagesVal
+        Dim ttee = TestBenchModule()
+        'If ttee < 0 Then
+        GoTo EndMe
+        'End If
+
         'AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
         'Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException)
@@ -994,13 +1053,14 @@ Public Class Startup
         '    Exit Sub
         'End If
         Application.Run(New MainForm())
-        ' RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
-        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
+EndMe:  GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce 'Debug
         GC.Collect(2, GCCollectionMode.Forced, True, True)
         GC.WaitForPendingFinalizers()
+        ' RemoveHandler Application.ThreadException, AddressOf g.OnUnhandledException
+        RemoveHandler AppDomain.CurrentDomain.UnhandledException, AddressOf g.OnUnhandledException
         Console.Beep(370, 20)
     End Sub
+
 End Class
 
 'obsolete since 2017 
@@ -1084,9 +1144,9 @@ Public Class AudioStream
 
     ReadOnly Property Name(Optional NoLeadIndex As Boolean = False) As String
         Get
-            Dim sb As New StringBuilder(64)
             Dim isAtmos As Boolean
-            If Not NoLeadIndex Then sb.Append("#").Append((Index + 1).ToInvariantString).Append(" ") ' Subs 3 Comunicate to AudioStream, Not add if stream nothing
+            Dim sb As New StringBuilder(64)
+            If Not NoLeadIndex Then sb.Append("#").Append((Index + 1).ToInvStr).Append(" ") ' Subs 3 Comunicate to AudioStream, Not add if stream nothing
 
             If String.Equals(FormatString, "MPEG Audio") Then
                 If String.Equals(FormatProfile, "Layer 3") Then
@@ -1121,40 +1181,40 @@ Public Class AudioStream
 
             If Not isAtmos Then
                 If Channels <> Channels2 AndAlso Channels > 0 AndAlso Channels2 > 0 Then
-                    sb.Append(" ").Append(Channels.ToInvariantString).Append("/").Append(Channels2.ToInvariantString).Append("ch")
+                    sb.Append(" ").Append(Channels.ToInvStr).Append("/").Append(Channels2.ToInvStr).Append("ch")
                 ElseIf Channels > 0 Then
-                    sb.Append(" ").Append(Channels.ToInvariantString).Append("ch")
+                    sb.Append(" ").Append(Channels.ToInvStr).Append("ch")
                 ElseIf Channels2 > 0 Then
-                    sb.Append(" ").Append(Channels2.ToInvariantString).Append("ch")
+                    sb.Append(" ").Append(Channels2.ToInvStr).Append("ch")
                 End If
             End If
 
-            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth.ToInvariantString).Append("Bit")
+            If BitDepth > 0 AndAlso Not Lossy Then sb.Append(" ").Append(BitDepth.ToInvStr).Append("Bit")
 
             If SamplingRate > 0 Then
                 If SamplingRate Mod 1000 = 0 Then
-                    sb.Append(" ").Append((SamplingRate \ 1000).ToInvariantString).Append("kHz")
+                    sb.Append(" ").Append((SamplingRate \ 1000).ToInvStr).Append("kHz")
                 Else
-                    sb.Append(" ").Append(SamplingRate.ToInvariantString).Append("Hz")
+                    sb.Append(" ").Append(SamplingRate.ToInvStr).Append("Hz")
                 End If
             End If
 
             If Bitrate2 > 0 Then
-                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvariantString)).Append("/").Append(Bitrate2.ToInvariantString).Append("Kbps")
+                sb.Append(" ").Append(If(Bitrate = 0, "?", Bitrate.ToInvStr)).Append("/").Append(Bitrate2.ToInvStr).Append("Kbps")
             ElseIf Bitrate > 0 Then
-                sb.Append(" ").Append(Bitrate.ToInvariantString).Append("Kbps")
+                sb.Append(" ").Append(Bitrate.ToInvStr).Append("Kbps")
             End If
 
             If Delay <> 0 Then
-                sb.Append(" ").Append(Delay.ToInvariantString).Append("ms")
+                sb.Append(" ").Append(Delay.ToInvStr).Append("ms")
             End If
 
             'If Not String.Equals(Language.TwoLetterCode, "iv") Then
             If Language.LCID <> 127 Then
-                sb.Append(" ").Append(Language.Name)
+                sb.Append(" ").Append(Language.CultureInfo.EnglishName) '(Language.Name)
             End If
 
-            If Title?.Length > 0 AndAlso Not String.Equals(Title, " ") Then
+            If Title.NotNullOrEmptyS AndAlso Not String.Equals(Title, " ") Then
                 sb.Append(" ").Append(Title)
             End If
 
@@ -1165,10 +1225,11 @@ Public Class AudioStream
 
     ReadOnly Property ExtFull() As String
         Get
-            Return "." + Ext
+            Return "." & Ext
         End Get
     End Property
 
+    'Public Shared AudioExtHS As New HashSet(Of String)({"AAC LC", "AAC LC-SBR", "AAC LC-SBR-PS", "AAC LC SBR", "MPEG-1 Audio layer 2", "MPEG-1 Audio layer 3", "MPEG Audio", "Opus", "FLAC", "WavPack", "Vorbis", "PCM", "ADPCM", "AC3", "AC-3", "DTS", "DTS-HD", "DTS XLL", "DTS XLL X", "DTS XBR", "DTS ES XLL", "TrueHD / AC3", "TrueHD", "Atmos / TrueHD", "MLP FBA 16-ch", "AC3+", "E-AC-3"}, StringComparer.Ordinal)
     ReadOnly Property Ext() As String
         Get
             Select Case FormatString
@@ -1279,8 +1340,7 @@ Public Class Subtitle
 
     ReadOnly Property Filename As String
         Get
-            Dim ret = "ID" & (StreamOrder & 1)
-            ret &= " " & Language.Name
+            Dim ret = "ID" & (StreamOrder + 1).ToInvStr & " " & Language.Name
 
             If Title.NotNullOrEmptyS AndAlso Not Title.Equals(" ") AndAlso p.SourceFile.NotNullOrEmptyS Then
                 ret &= " {" & Title.Shorten(50).EscapeIllegalFileSysChars & "}"
@@ -1337,19 +1397,19 @@ Public Class Subtitle
             Dim indexData As Integer
             Dim st As Subtitle = Nothing
 
-            For Each line In path.ReadAllText.SplitLinesNoEmpty
+            For Each line In path.ReadAllText.Split({BR}, StringSplitOptions.RemoveEmptyEntries)
                 If line.StartsWith("id: ", StringComparison.Ordinal) AndAlso line Like "id: ??, index: *" Then
                     st = New Subtitle
 
                     If path.Contains("forced") Then st.Forced = True
 
                     Try
-                        st.Language = New Language(New CultureInfo(line.Substring(4, 2)))
+                        st.Language = New Language(CultureInfo.GetCultureInfo(line.Substring(4, 2)), True)
                     Catch
-                        st.Language = New Language(InvariantCult)
+                        st.Language = New Language
                     End Try
 
-                    Dim autoCode = p.PreferredSubtitles.ToLower.Split(separators, StringSplitOptions.RemoveEmptyEntries)
+                    Dim autoCode = p.PreferredSubtitles.ToLower(InvCult).Split(separators, StringSplitOptions.RemoveEmptyEntries)
                     st.Enabled = autoCode.ContainsAny({"all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode})
 
                     If st IsNot Nothing Then
@@ -1357,7 +1417,7 @@ Public Class Subtitle
                     End If
                 End If
 
-                If st IsNot Nothing AndAlso line.StartsWith("timestamp: ") Then
+                If st IsNot Nothing AndAlso line.StartsWith("timestamp: ", StringComparison.Ordinal) Then
                     st.StreamOrder = indexData
                     st.Path = path
                     indexData += 1
@@ -1399,12 +1459,12 @@ Public Class Subtitle
                 End If
             Next
 
-            If path.Contains("{") Then
+            If path.IndexOf("{"c) >= 0 Then
                 Dim title = path.Right("{")
                 st.Title = title.Left("}").UnescapeIllegalFileSysChars
             End If
 
-            Dim autoCode = p.PreferredSubtitles.ToLower.Split(separators, StringSplitOptions.RemoveEmptyEntries)
+            Dim autoCode = p.PreferredSubtitles.ToLower(InvCult).Split(separators, StringSplitOptions.RemoveEmptyEntries)
             st.Enabled = autoCode.ContainsAny({"all", st.Language.TwoLetterCode, st.Language.ThreeLetterCode})
 
             st.Path = path
@@ -1436,7 +1496,7 @@ Public Class Subtitle
                     Exit For
                 End If
             ElseIf p.DefaultSubtitle = DefaultSubtitleMode.Native Then
-                If String.Equals(st.Language.TwoLetterCode, Language.CurrentCulture.TwoLetterCode) Then
+                If String.Equals(st.Language.TwoLetterCode, CurrCultNeutral.TwoLetterISOLanguageName) Then
                     st.Default = True
                     Exit For
                 End If
@@ -1462,8 +1522,8 @@ Public Class Subtitle
 
             If Not inSub.Enabled OrElse Not File.Exists(inSub.Path) OrElse inSub.Path.Contains("_cut_") Then Continue For
             Dim aviPath = p.TempDir & inSub.Path.Base & "_cut_mm.avi"
-            Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", InvariantCult)
-            Dim r = p.CutFrameRate.ToString("f9", InvariantCult)
+            Dim d = (p.CutFrameCount / p.CutFrameRate).ToString("f9", InvCult)
+            Dim r = p.CutFrameRate.ToString("f9", InvCult)
             Dim args = $"-f lavfi -i color=c=black:s=16x16:d={d}:r={r} -y -hide_banner -c:v copy " & aviPath.Escape
 
             Using proc As New Proc
@@ -1596,27 +1656,27 @@ Public Class FileTypes
     End Function
 End Class
 
-Public Class OSVersion
-    Shared Property Windows7 As Single = 6.1
-    Shared Property Windows8 As Single = 6.2
-    Shared Property Windows10 As Single = 10.0
+'Public Class OSVersion
+'    Shared Property Windows7 As Single = 6.1
+'    Shared Property Windows8 As Single = 6.2
+'    Shared Property Windows10 As Single = 10.0
 
-    Shared ReadOnly Property Current As Single
-        Get
-            Return CSng(Environment.OSVersion.Version.Major + Environment.OSVersion.Version.Minor / 10)
-        End Get
-    End Property
-End Class
+'    Shared ReadOnly Property Current As Single
+'        Get
+'            Return CSng(Environment.OSVersion.Version.Major + Environment.OSVersion.Version.Minor / 10)
+'        End Get
+'    End Property
+'End Class
 
 Public Class OS
-    Public Shared EnvVars As String() = {"ALLUSERSPROFILE", "APPDATA", "CD", "CMDCMDLINE",
-        "CMDEXTVERSION", "CommonProgramFiles", "CommonProgramFiles(x86)", "CommonProgramW6432",
-        "COMPUTERNAME", "COMSPEC", "DATE", "ERRORLEVEL", "HOMEDRIVE", "HOMEPATH", "LOCALAPPDATA",
-        "LOGONSERVER", "NUMBER_OF_PROCESSORS", "OS", "PATH", "PATHEXT", "PROCESSOR_ARCHITECTURE",
-        "PROCESSOR_IDENTIFIER", "PROCESSOR_LEVEL", "PROCESSOR_REVISION", "ProgramData",
-        "ProgramFiles", "ProgramFiles(x86)", "ProgramW6432", "PROMPT", "PSModulePath", "PUBLIC",
-        "RANDOM", "SessionName", "SystemDrive", "SystemRoot", "TEMP", "TIME", "TMP", "USERDOMAIN",
-        "USERDOMAIN_ROAMINGPROFILE", "USERNAME", "USERPROFILE", "WINDIR"}
+    Public Shared EnvVars As String() = {"%ALLUSERSPROFILE%", "%APPDATA%", "%CD%", "%CMDCMDLINE%",
+        "%CMDEXTVERSION%", "%CommonProgramFiles%", "%CommonProgramFiles(x86)%", "%CommonProgramW6432%",
+        "%COMPUTERNAME%", "%COMSPEC%", "%DATE%", "%ERRORLEVEL%", "%HOMEDRIVE%", "%HOMEPATH%", "%LOCALAPPDATA%",
+        "%LOGONSERVER%", "%NUMBER_OF_PROCESSORS%", "%OS%", "%PATH%", "%PATHEXT%", "%PROCESSOR_ARCHITECTURE%",
+        "%PROCESSOR_IDENTIFIER%", "%PROCESSOR_LEVEL%", "%PROCESSOR_REVISION%", "%ProgramData%",
+        "%ProgramFiles%", "%ProgramFiles(x86)%", "%ProgramW6432%", "%PROMPT%", "%PSModulePath%", "%PUBLIC%",
+        "%RANDOM%", "%SessionName%", "%SystemDrive%", "%SystemRoot%", "%TEMP%", "%TIME%", "%TMP%", "%USERDOMAIN%",
+        "%USERDOMAIN_ROAMINGPROFILE%", "%USERNAME%", "%USERPROFILE%", "%WINDIR%"}
 
     Private Shared VideoControllersValue As String()
     'Private Shared GPUType As UInteger  '2-Intel,4-Nvidia,6-Nvidia+Intel, 128 Error
@@ -1633,7 +1693,7 @@ Public Class OS
                     '                                                    If val.Contains("NVIDIA") Then GPUType = GPUType Or 4UI
                     '                                                End Sub)
                 Catch ex As Exception
-                    Return {"WMI Error"} '(128, {"WMI Error"})
+                    Return {"WMI Error 128"} '(128, {"WMI Error"})
                 End Try
             End If
 
@@ -1693,8 +1753,7 @@ Public Class BitmapUtil
         Dim data As IntPtr
 
         If server.GetFrame(position, data, pitch) = 0 Then
-            Return New Bitmap(server.Info.Width, server.Info.Height,
-                pitch, PixelFormat.Format32bppArgb, data)
+            Return New Bitmap(server.Info.Width, server.Info.Height, pitch, PixelFormat.Format32bppArgb, data)
         End If
     End Function
 End Class

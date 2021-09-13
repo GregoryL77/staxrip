@@ -159,7 +159,7 @@ Public Class MacroEditorDialog
         bnContext.AutoSize = True
         'Dim editorControl = MacroEditorControl
         'Dim textSize = TextRenderer.MeasureText(editorControl.rtbEdit.Text, editorControl.rtbEdit.Font)
-        Dim workingArea = Screen.FromControl(Me).WorkingArea
+        Dim workingArea = ScreenResWAPrim 'Screen.FromControl(Me).WorkingArea
 
         If Width > workingArea.Width * 0.8 Then
             Width = CInt(workingArea.Width * 0.8)

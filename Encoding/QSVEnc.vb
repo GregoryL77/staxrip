@@ -294,7 +294,7 @@ Public Class QSVEnc
                         New BoolParam With {.Switch = "--min-memory", .Text = "Minimize memory usage"},
                         New BoolParam With {.Switch = "--max-procfps", .Text = "Limit performance to lower resource usage"})
                     Add("VPP",
-                        New StringParam With {.Switch = "--vpp-colorspace", .Text = "Colorspace"},
+                        New StringParam With {.Switch = NVEnc.EncoderParams.VColorSpaceS, .Text = "Colorspace"},
                         New OptionParam With {.Switch = "--vpp-rotate", .Text = "Rotate", .Options = {"0", "90", "180", "270"}},
                         New OptionParam With {.Switch = "--vpp-image-stab", .Text = "Image Stabilizer", .Options = {"Disabled", "Upscale", "Box"}},
                         New OptionParam With {.Switch = "--vpp-mirror", .Text = "Mirror Image", .Options = {"Disabled", "H", "V"}},
@@ -360,7 +360,7 @@ Public Class QSVEnc
         End Sub
 
         Protected Overrides Sub OnValueChanged(item As CommandLineParam)
-            If Not Mode.MenuButton Is Nothing AndAlso (item Is Codec OrElse item Is Nothing) Then
+            If Mode.MenuButton IsNot Nothing AndAlso (item Is Codec OrElse item Is Nothing) Then
                 For x = 0 To Mode.Values.Length - 1
                     Select Case Codec.ValueText
                         Case "h264"
@@ -373,7 +373,7 @@ Public Class QSVEnc
                 Next
             End If
 
-            If Not QPI.NumEdit Is Nothing Then
+            If QPI.NumEdit IsNot Nothing Then
                 mctfval.NumEdit.Enabled = mctf.Value
             End If
 

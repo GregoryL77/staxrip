@@ -211,7 +211,8 @@ Public Class ProcessingForm
         AddHandler Application.ThreadException, AddressOf g.OnUnhandledException
         InitializeComponent()
 
-        mbShutdown.Add(System.Enum.GetValues(GetType(ShutdownMode)).Cast(Of Object))
+        'mbShutdown.Add(System.Enum.GetValues(GetType(ShutdownMode)).Cast(Of Object)) 'Org
+        mbShutdown.AddRange(KGySoft.CoreLibraries.[Enum](Of ShutdownMode).GetValues)
         Icon = g.Icon
         NotifyIcon.Icon = g.Icon
         NotifyIcon.Text = "StaxRip"
@@ -307,16 +308,17 @@ Public Class ProcessingForm
     End Sub
 
     Sub UpdateControls()
-        laWhenfinisheddo.Enabled = g.IsJobProcessing
-        mbShutdown.Enabled = g.IsJobProcessing
-        bnJobs.Enabled = g.IsJobProcessing
-        StopAfterCurrentJobMenuItem.Enabled = g.IsJobProcessing
+        Dim isJobProcess As Boolean = g.IsJobProcessing
+        laWhenfinisheddo.Enabled = isJobProcess
+        mbShutdown.Enabled = isJobProcess
+        bnJobs.Enabled = isJobProcess
+        StopAfterCurrentJobMenuItem.Enabled = isJobProcess
         StopAfterCurrentJobMenuItem.Checked = g.StopAfterCurrentJob
-        mbShutdown.Value = CType(Registry.CurrentUser.GetInt("Software\" + Application.ProductName, "ShutdownMode"), ShutdownMode)
+        mbShutdown.Value = CType(Registry.CurrentUser.GetInt("Software\" & Application.ProductName, "ShutdownMode"), ShutdownMode)
     End Sub
 
     Sub cbShutdown_SelectedIndexChanged() Handles mbShutdown.ValueChangedUser
-        Registry.CurrentUser.Write("Software\" + Application.ProductName, "ShutdownMode", CInt(mbShutdown.Value))
+        Registry.CurrentUser.Write("Software\" & Application.ProductName, "ShutdownMode", CInt(mbShutdown.Value))
     End Sub
 
     Sub NotifyIcon_MouseClick() Handles NotifyIcon.MouseClick

@@ -306,14 +306,10 @@ Public Class ProfilesForm
     Private Profiles As IList
     Private AddProfileMethod As Func(Of Profile)
     Private LoadProfileMethod As Action(Of Profile)
-    Private TextValues As New Dictionary(Of Button, String)
+    'Private TextValues As New Dictionary(Of Button, String)
     Private DefaultsFunc As Func(Of IList)
 
-    Sub New(title As String,
-            profiles As IList,
-            loadAction As Action(Of Profile),
-            addFunc As Func(Of Profile),
-            defaultsFunc As Func(Of IList))
+    Sub New(title As String, profiles As IList, loadAction As Action(Of Profile), addFunc As Func(Of Profile), defaultsFunc As Func(Of IList))
 
         MyBase.New()
         InitializeComponent()
@@ -325,8 +321,8 @@ Public Class ProfilesForm
         AddProfileMethod = addFunc
 
         For Each i As Profile In profiles
-            lbMain.Items.Add(i.GetCopy)
-        Next
+            lbMain.Items.Add(i.GetDeepClone) '(i.GetCopy)
+        Next i
 
         UpdateControls()
 
@@ -359,17 +355,19 @@ Public Class ProfilesForm
 
     Sub UpdateControls()
         Dim pro = DirectCast(lbMain.SelectedItem, Profile)
-        Dim count = lbMain.SelectedItems.Count
-        bnClone.Enabled = count = 1
-        bnEdit.Enabled = count = 1 AndAlso (pro.CanEdit) 'OrElse (TypeOf pro Is MkvMuxer AndAlso pro.Name.ToLowerInvariant.Contains("mkvmerge")))
-        bnLoad.Enabled = count = 1 AndAlso Not LoadProfileMethod Is Nothing
-        bnRemove.Enabled = count > 0
-        bnRename.Enabled = count = 1
-        bnUp.Enabled = lbMain.CanMoveUp()
-        bnDown.Enabled = lbMain.CanMoveDown()
-        bnLeft.Enabled = count > 0 AndAlso lbMain.Text.Contains(" | ")
-        bnRight.Enabled = count > 0
-        bnRestore.Enabled = Not DefaultsFunc Is Nothing
+        Dim lbSC = lbMain.SelectedItems.Count
+        bnClone.Enabled = lbSC = 1
+        bnEdit.Enabled = lbSC = 1 AndAlso (pro.CanEdit) 'OrElse (TypeOf pro Is MkvMuxer AndAlso pro.Name.ToLower(InvCult).Contains("mkvmerge")))
+        bnLoad.Enabled = lbSC = 1 AndAlso LoadProfileMethod IsNot Nothing
+        bnRemove.Enabled = lbSC > 0
+        bnRename.Enabled = lbSC = 1
+        'bnUp.Enabled = lbMain.CanMoveUp()
+        bnUp.Enabled = lbSC > 0 AndAlso lbMain.SelectedIndices(0) > 0
+        'bnDown.Enabled = lbMain.CanMoveDown()
+        bnDown.Enabled = lbSC > 0 AndAlso lbMain.SelectedIndices(lbSC - 1) < lbMain.Items.Count - 1
+        bnLeft.Enabled = lbSC > 0 AndAlso lbMain.Text.Contains(" | ")
+        bnRight.Enabled = lbSC > 0
+        bnRestore.Enabled = DefaultsFunc IsNot Nothing
     End Sub
 
     Sub lbMain_KeyDown(sender As Object, e As KeyEventArgs) Handles lbMain.KeyDown
@@ -401,8 +399,8 @@ Public Class ProfilesForm
 
     Sub bnLoad_Click() Handles bnLoad.Click
         LoadProfileMethod(DirectCast(lbMain.SelectedItem, Profile))
-        '   TextValues(bnLoad) = bnLoad.Text 'Added ,Dead, Not used???
-        Dim _unused = bnLoad.Text
+        'TextValues(bnLoad) = bnLoad.Text 'Added ,Dead, Not used???
+        'Dim _unused = bnLoad.Text
         bnLoad.ShowBold()
     End Sub
 
@@ -415,15 +413,15 @@ Public Class ProfilesForm
     Sub bnAdd_Click() Handles bnAdd.Click
         Dim pm = AddProfileMethod()
 
-        If Not pm Is Nothing Then
+        If pm IsNot Nothing Then
             pm = DirectCast(ObjectHelp.GetCopy(pm), Profile)
             pm.Name = InputBox.Show("Enter the name of the new profile.", "Name", pm.Name)
 
-            If Not pm.Name Is Nothing Then
+            If pm.Name IsNot Nothing Then
                 Dim remove As Profile = Nothing
 
                 For Each i As Profile In lbMain.Items
-                    If i.Name.EqualsEx(pm.Name) Then
+                    If i.Name.EqualsExS(pm.Name) Then
                         If MsgOK("There is already a profile with this name, overwrite?") Then
                             remove = i
                         Else
@@ -432,7 +430,8 @@ Public Class ProfilesForm
                     End If
                 Next
 
-                If Not remove Is Nothing Then
+                lbMain.BeginUpdate()
+                If remove IsNot Nothing Then
                     lbMain.Items.Remove(remove)
                 End If
 
@@ -441,6 +440,7 @@ Public Class ProfilesForm
                 lbMain.ClearSelected()
                 lbMain.SelectedItem = pm
                 UpdateControls()
+                lbMain.EndUpdate()
             End If
         End If
     End Sub
@@ -454,7 +454,7 @@ Public Class ProfilesForm
         Dim p = DirectCast(lbMain.SelectedItem, Profile)
         Dim ret = InputBox.Show("Please enter a name.", "Rename Profile", p.Name)
 
-        If Not ret Is Nothing Then
+        If ret IsNot Nothing Then
             p.Name = ret
             lbMain.UpdateSelection()
             UpdateControls()
@@ -504,13 +504,13 @@ Public Class ProfilesForm
     Sub bnRightRight_Click(sender As Object, e As EventArgs) Handles bnRight.Click
         Dim inputName = InputBox.Show("Enter a name for a sub menu.")
 
-        If inputName.NotNullOrEmptyS Then
+        If inputName?.Length > 0 Then
             lbMain.SaveSelection()
 
             For x = 0 To lbMain.Items.Count - 1
                 If lbMain.GetSelected(x) Then
                     Dim p = DirectCast(lbMain.Items(x), Profile)
-                    p.Name = inputName + " | " + p.Name
+                    p.Name = inputName & " | " & p.Name
                     lbMain.Items(x) = lbMain.Items(x)
                 End If
             Next

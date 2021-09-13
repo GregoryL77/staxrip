@@ -101,28 +101,26 @@ Public Class x264Control
 
 #End Region
 
-    Private Encoder As x264Enc
-    Private Params As x264Params
+    Private ReadOnly Encoder As x264Enc
+    Private ReadOnly Params As x264Params
 
-    Private cms As ContextMenuStripEx
-    Private QualityDefinitions As List(Of QualityItem)
+    Private ReadOnly cms As ContextMenuStripEx
+    Private ReadOnly QualityDefinitions As (Value As Single, Text As String, Tooltip As String)()
 
     Sub New(enc As x264Enc)
-        MyBase.New()
         InitializeComponent()
+        components = New ComponentModel.Container()
 
-        components = New System.ComponentModel.Container()
-
-        QualityDefinitions = New List(Of QualityItem) From {
-            New QualityItem(14, "Super High", "Super high quality and file size)"),
-            New QualityItem(16, "Very High", "Very high quality and file size)"),
-            New QualityItem(18, "Higher", "Higher quality and file size)"),
-            New QualityItem(20, "High", "High quality and file size)"),
-            New QualityItem(22, "Medium", "Medium quality and file size)"),
-            New QualityItem(24, "Low", "Low quality and file size)"),
-            New QualityItem(26, "Lower", "Lower quality and file size)"),
-            New QualityItem(28, "Very Low", "Very low quality and file size)"),
-            New QualityItem(30, "Super Low", "Super low quality and file size)")}
+        QualityDefinitions = {
+          (14, "Super High", "Super high quality and file size)"),
+          (16, "Very High", "Very high quality and file size)"),
+          (18, "Higher", "Higher quality and file size)"),
+          (20, "High", "High quality and file size)"),
+          (22, "Medium", "Medium quality and file size)"),
+          (24, "Low", "Low quality and file size)"),
+          (26, "Lower", "Lower quality and file size)"),
+          (28, "Very Low", "Very low quality and file size)"),
+          (30, "Super Low", "Super low quality and file size)")}
 
         Encoder = enc
         Params = Encoder.Params
@@ -130,6 +128,7 @@ Public Class x264Control
         cms = New ContextMenuStripEx(components)
         If s.UIScaleFactor <> 1 Then cms.Font = New Font("Segoe UI", 9 * s.UIScaleFactor)
 
+        lv.BeginUpdate()
         lv.View = View.Details
         lv.HeaderStyle = ColumnHeaderStyle.None
         lv.FullRowSelect = True
@@ -139,27 +138,27 @@ Public Class x264Control
 
         UpdateControls()
         AddHandler lv.UpdateContextMenu, AddressOf UpdateMenu
+        lv.EndUpdate()
     End Sub
 
     Protected Overrides Sub OnLayout(e As LayoutEventArgs)
         MyBase.OnLayout(e)
-
+        lv.BeginUpdate()
         If lv.Columns.Count = 0 Then
             lv.Columns.AddRange({New ColumnHeader, New ColumnHeader})
         End If
 
-        lv.Columns(0).Width = CInt(Width * (32 / 100))
-        lv.Columns(1).Width = CInt(Width * (66 / 100))
+        Dim w As Integer = Width
+        lv.Columns(0).Width = CInt(w * (32 / 100))
+        lv.Columns(1).Width = CInt(w * (66 / 100))
+        lv.EndUpdate()
 
         'couldn't get scaling to work trying everything
-        blConfigCodec.Left = 5
-        blConfigCodec.Top = Height - blConfigCodec.Height - 5
-
-        llCompCheck.Left = 5
-        llCompCheck.Top = Height - blConfigCodec.Height - llCompCheck.Height - 10
-
-        llConfigContainer.Left = Width - llConfigContainer.Width - 5
-        llConfigContainer.Top = Height - llConfigContainer.Height - 5
+        Dim h As Integer = Height
+        Dim blcch As Integer = blConfigCodec.Height
+        blConfigCodec.SetBounds(5, h - blcch - 5, 0, 0, BoundsSpecified.Location)
+        llCompCheck.SetBounds(5, h - blcch - llCompCheck.Height - 10, 0, 0, BoundsSpecified.Location)
+        llConfigContainer.SetBounds(w - llConfigContainer.Width - 5, h - llConfigContainer.Height - 5, 0, 0, BoundsSpecified.Location)
     End Sub
 
     Sub UpdateMenu()
@@ -168,20 +167,30 @@ Public Class x264Control
         Dim offset = If(Params.Mode.Value = x264RateMode.Quality, 0, 1)
 
         If lv.SelectedItems.Count > 0 Then
+            Dim ff As FontFamily = Font.FontFamily
+            Dim fN As New Font(ff, 9 * s.UIScaleFactor)
+            Dim fB As New Font(ff, 9 * s.UIScaleFactor, FontStyle.Bold)
             Select Case lv.SelectedIndices(0)
                 Case 0 - offset
-                    For Each i In QualityDefinitions
-                        cms.Items.Add(New ActionMenuItem(i.Value & " - " + i.Text + "      ", Sub() SetQuality(i.Value), i.Tooltip) With {.Font = If(Params.Quant.Value = i.Value, New Font(Font.FontFamily, 9 * s.UIScaleFactor, FontStyle.Bold), New Font(Font.FontFamily, 9 * s.UIScaleFactor))})
-                    Next
+                    Dim pqV As Double = Params.Quant.Value
+                    For n = 0 To QualityDefinitions.Length - 1
+                        Dim qd = QualityDefinitions(n)
+                        Dim qdV As Single = qd.Value
+                        cms.Items.Add(New ActionMenuItem(qdV & " - " & qd.Text & "      ", Sub() SetQuality(qdV), qd.Tooltip) With {.Font = If(pqV = qdV, fB, fN)})
+                    Next n
                 Case 1 - offset
-                    For x = 0 To Params.Preset.Options.Length - 1
-                        Dim temp = x
-                        cms.Items.Add(New ActionMenuItem(Params.Preset.Options(x) + "      ", Sub() SetPreset(temp), "x264 slower compares to x265 medium") With {.Font = If(Params.Preset.Value = x, New Font(Font.FontFamily, 9 * s.UIScaleFactor, FontStyle.Bold), New Font(Font.FontFamily, 9 * s.UIScaleFactor))})
+                    Dim pP As CommandLine.OptionParam = Params.Preset
+                    Dim ppV As Integer = pP.Value
+                    For x = 0 To pP.Options.Length - 1
+                        Dim i = x
+                        cms.Items.Add(New ActionMenuItem(pP.Options(i) & "      ", Sub() SetPreset(i), "x264 slower compares to x265 medium") With {.Font = If(ppV = i, fB, fN)})
                     Next
                 Case 2 - offset
-                    For x = 0 To Params.Tune.Options.Length - 1
-                        Dim temp = x
-                        cms.Items.Add(New ActionMenuItem(Params.Tune.Options(x) + "      ", Sub() SetTune(temp)) With {.Font = If(Params.Tune.Value = x, New Font(Font.FontFamily, 9 * s.UIScaleFactor, FontStyle.Bold), New Font(Font.FontFamily, 9 * s.UIScaleFactor))})
+                    Dim pT As CommandLine.OptionParam = Params.Tune
+                    Dim ptV As Integer = pT.Value
+                    For x = 0 To pT.Options.Length - 1
+                        Dim i As Integer = x
+                        cms.Items.Add(New ActionMenuItem(pT.Options(i) & "      ", Sub() SetTune(i)) With {.Font = If(ptV = i, fB, fN)})
                     Next
             End Select
         End If
@@ -189,13 +198,16 @@ Public Class x264Control
     End Sub
 
     Sub SetQuality(v As Single)
+        lv.BeginUpdate()
         Params.Quant.Value = v
         lv.Items(0).SubItems(1).Text = GetQualityCaption(v)
         lv.Items(0).Selected = False
         UpdateControls()
+        lv.EndUpdate()
     End Sub
 
     Sub SetPreset(value As Integer)
+        lv.BeginUpdate()
         Dim offset = If(Params.Mode.Value = x264RateMode.Quality, 0, 1)
 
         Params.Preset.Value = value
@@ -206,42 +218,49 @@ Public Class x264Control
         lv.Items(1 - offset).Selected = False
 
         UpdateControls()
+        lv.EndUpdate()
     End Sub
 
     Sub SetTune(value As Integer)
+        lv.BeginUpdate()
         Dim offset = If(Params.Mode.Value = x264RateMode.Quality, 0, 1)
+
         Params.Tune.Value = value
         Params.ApplyValues(True)
         Params.ApplyValues(False)
+
         lv.Items(2 - offset).SubItems(1).Text = value.ToString
         lv.Items(2 - offset).Selected = False
         UpdateControls()
+        lv.EndUpdate()
     End Sub
 
     Function GetQualityCaption(value As Double) As String
-        For Each i In QualityDefinitions
-            If i.Value = value Then
-                Return value & " - " + i.Text
+        For n = 0 To QualityDefinitions.Length - 1
+            Dim qd = QualityDefinitions(n)
+            If qd.Value = value Then
+                Return value & " - " & qd.Text
             End If
-        Next
+        Next n
 
         Return value.ToString
     End Function
 
     Sub UpdateControls()
-        If Params.Mode.Value = x264RateMode.Quality AndAlso lv.Items.Count < 4 Then
+        Dim pMv As Integer = Params.Mode.Value
+        If pMv = x264RateMode.Quality AndAlso lv.Items.Count < 4 Then
             lv.Items.Clear()
-            lv.Items.Add(New ListViewItem({"Quality", GetQualityCaption(Params.Quant.Value)}))
-            lv.Items.Add(New ListViewItem({"Preset", Params.Preset.OptionText}))
-            lv.Items.Add(New ListViewItem({"Tune", Params.Tune.OptionText}))
-        ElseIf Params.Mode.Value <> 2 AndAlso lv.Items.Count <> 3 Then
+            lv.Items.AddRange({New ListViewItem({"Quality", GetQualityCaption(Params.Quant.Value)}),
+            New ListViewItem({"Preset", Params.Preset.OptionText}),
+            New ListViewItem({"Tune", Params.Tune.OptionText})})
+        ElseIf pMv <> 2 AndAlso lv.Items.Count <> 3 Then
             lv.Items.Clear()
-            lv.Items.Add(New ListViewItem({"Preset", Params.Preset.OptionText}))
-            lv.Items.Add(New ListViewItem({"Tune", Params.Tune.OptionText}))
+            lv.Items.AddRange({New ListViewItem({"Preset", Params.Preset.OptionText}),
+            New ListViewItem({"Tune", Params.Tune.OptionText})})
         End If
 
-        Dim offset = If(Params.Mode.Value = x264RateMode.Quality, 0, 1)
-        llCompCheck.Visible = Params.Mode.Value = x264RateMode.TwoPass Or Params.Mode.Value = x264RateMode.ThreePass
+        'Dim offset = If(pMv = x264RateMode.Quality, 0, 1) 'Dead code ?
+        llCompCheck.Visible = pMv >= 3 '= x264RateMode.TwoPass Or pMv = x264RateMode.ThreePass
     End Sub
 
     Sub llConfigCodec_Click(sender As Object, e As EventArgs) Handles blConfigCodec.Click
@@ -256,15 +275,4 @@ Public Class x264Control
         Encoder.RunCompCheck()
     End Sub
 
-    Public Class QualityItem
-        Property Value As Single
-        Property Text As String
-        Property Tooltip As String
-
-        Sub New(value As Single, text As String, tooltip As String)
-            Me.Value = value
-            Me.Text = text
-            Me.Tooltip = tooltip
-        End Sub
-    End Class
 End Class

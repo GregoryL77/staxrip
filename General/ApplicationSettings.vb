@@ -126,7 +126,7 @@ Public Class ApplicationSettings
                 Try
                     For Each i In VideoEncoderProfiles
                         If Not i.Name.Contains("Backup") Then
-                            i.Name = "Backup | " + i.Name
+                            i.Name = "Backup | " & i.Name
                             profiles.Add(i)
                         End If
                     Next
@@ -146,7 +146,7 @@ Public Class ApplicationSettings
 
                 For Each i In AudioProfiles
                     If Not i.Name.Contains("Backup") Then
-                        i.Name = "Backup | " + i.Name
+                        i.Name = "Backup | " & i.Name
                         l.Add(i)
                     End If
                 Next
@@ -231,8 +231,8 @@ Public Class ApplicationSettings
         End If
 
         If Check(CmdlPresetsMKV, "MKV custom command line menu presets", 7) Then
-            CmdlPresetsMKV = "File Attachment = --attach-file ""$browse_file$""" + BR +
-                             "Attachment Description = --attachment-description ""$enter_text$""" + BR +
+            CmdlPresetsMKV = "File Attachment = --attach-file ""$browse_file$""" & BR &
+                             "Attachment Description = --attachment-description ""$enter_text$""" & BR &
                              "Process Priority = --priority $select:lowest;lower;normal;higher;highest$"
         End If
 
@@ -245,11 +245,11 @@ Public Class ApplicationSettings
         End If
 
         If Check(CmdlPresetsX264, "x264 custom command line menu presets", 6) OrElse CmdlPresetsX264.NullOrEmptyS Then
-            CmdlPresetsX264 = "SAR | PAL | 4:3 = --sar 12:11" + BR +
-                              "SAR | PAL | 16:9 = --sar 16:11" + BR +
-                              "SAR | NTSC | 4:3 = --sar 10:11" + BR +
-                              "SAR | NTSC | 16:9 = --sar 40:33" + BR +
-                              "Enter SAR = --sar $enter_text:Please enter the SAR.$" + BR +
+            CmdlPresetsX264 = "SAR | PAL | 4:3 = --sar 12:11" & BR &
+                              "SAR | PAL | 16:9 = --sar 16:11" & BR &
+                              "SAR | NTSC | 4:3 = --sar 10:11" & BR &
+                              "SAR | NTSC | 16:9 = --sar 40:33" & BR &
+                              "Enter SAR = --sar $enter_text:Please enter the SAR.$" & BR &
                               "Stats = --stats ""%target_temp_file%.stats"""
         End If
 
@@ -305,7 +305,7 @@ Public Class ApplicationSettings
 
                 For Each i In unknown
                     If Not i.Path?.StartsWith("Backup | ", StringComparison.Ordinal) Then
-                        i.Path = "Backup | " + i.Path
+                        i.Path = "Backup | " & i.Path
                     End If
 
                     FilterCategory.AddFilter(i, AviSynthProfiles)
@@ -325,7 +325,7 @@ Public Class ApplicationSettings
 
                 For Each i In unknown
                     If Not i.Path?.StartsWith("Backup | ", StringComparison.Ordinal) Then
-                        i.Path = "Backup | " + i.Path
+                        i.Path = "Backup | " & i.Path
                     End If
 
                     FilterCategory.AddFilter(i, VapourSynthProfiles)
@@ -410,53 +410,49 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
 
     Shared Function GetDefaultEac3toMenu() As String
         Return _
-            "AAC 96 Kbps - 2ch - Normalize - 16bit = -down16 -downStereo -normalize -quality=0.3" + BR +
-            "AAC 132 Kbps - 2ch - Normalize - 16bit = -down16 -downStereo -normalize -quality=0.4" + BR +
-            "AAC 240 Kbps 5.1ch - Normalize - 16bit = -down16 -down6 -normalize -quality=0.3" + BR +
-            "Normalize = -normalize" + BR +
-            "Convert to 16 bit = -down16" + BR +
-            "Extract DTS Core = -core" + BR +
-            "Downmix | Multichannel to stereo = -downStereo" + BR +
-            "Downmix | Multichannel to stereo (DPL II) = -downDpl" + BR +
-            "Downmix | 7 or 8 channels to 6 channels = -down6" + BR +
-            "Downmix | Mix LFE in (stereo downmixing) = -mixlfe" + BR +
-            "AAC Quality | 0.10 = -quality=0.10" + BR +
-            "AAC Quality | 0.15 = -quality=0.15" + BR +
-            "AAC Quality | 0.20 = -quality=0.20" + BR +
-            "AAC Quality | 0.25 = -quality=0.25" + BR +
-            "AAC Quality | 0.30 = -quality=0.30" + BR +
-            "AAC Quality | 0.35 = -quality=0.35" + BR +
-            "AAC Quality | 0.40 = -quality=0.40" + BR +
-            "AAC Quality | 0.45 = -quality=0.45" + BR +
-            "AAC Quality | 0.50 = -quality=0.50" + BR +
-            "AAC Quality | 0.55 = -quality=0.55" + BR +
-            "AAC Quality | 0.60 = -quality=0.60" + BR +
-            "AAC Quality | 0.65 = -quality=0.65" + BR +
-            "AAC Quality | 0.70 = -quality=0.70" + BR +
-            "AAC Quality | 0.75 = -quality=0.75" + BR +
-            "AAC Quality | 0.80 = -quality=0.80" + BR +
-            "AAC Quality | 0.85 = -quality=0.85" + BR +
-            "AAC Quality | 0.90 = -quality=0.90" + BR +
-            "AAC Quality | 0.95 = -quality=0.95" + BR +
-            "AC3 Encoding | 192 = -192" + BR +
-            "AC3 Encoding | 224 = -224" + BR +
-            "AC3 Encoding | 384 = -384" + BR +
-            "AC3 Encoding | 448 = -448" + BR +
-            "AC3 Encoding | 640 = -640" + BR +
-            "DTS Encoding | 768 = -768" + BR +
-            "DTS Encoding | 1536 = -1536" + BR +
-            "Resample | 44100 = -resampleTo44100" + BR +
-            "Resample | 48000 = -resampleTo48000" + BR +
-            "Resample | 88200 = -resampleTo88200" + BR +
+            "AAC 96 Kbps - 2ch - Normalize - 16bit = -down16 -downStereo -normalize -quality=0.3" & BR &
+            "AAC 132 Kbps - 2ch - Normalize - 16bit = -down16 -downStereo -normalize -quality=0.4" & BR &
+            "AAC 240 Kbps 5.1ch - Normalize - 16bit = -down16 -down6 -normalize -quality=0.3" & BR &
+            "Normalize = -normalize" & BR &
+            "Convert to 16 bit = -down16" & BR &
+            "Extract DTS Core = -core" & BR &
+            "Downmix | Multichannel to stereo = -downStereo" & BR &
+            "Downmix | Multichannel to stereo (DPL II) = -downDpl" & BR &
+            "Downmix | 7 or 8 channels to 6 channels = -down6" & BR &
+            "Downmix | Mix LFE in (stereo downmixing) = -mixlfe" & BR &
+            "AAC Quality | 0.10 = -quality=0.10" & BR &
+            "AAC Quality | 0.15 = -quality=0.15" & BR &
+            "AAC Quality | 0.20 = -quality=0.20" & BR &
+            "AAC Quality | 0.25 = -quality=0.25" & BR &
+            "AAC Quality | 0.30 = -quality=0.30" & BR &
+            "AAC Quality | 0.35 = -quality=0.35" & BR &
+            "AAC Quality | 0.40 = -quality=0.40" & BR &
+            "AAC Quality | 0.45 = -quality=0.45" & BR &
+            "AAC Quality | 0.50 = -quality=0.50" & BR &
+            "AAC Quality | 0.55 = -quality=0.55" & BR &
+            "AAC Quality | 0.60 = -quality=0.60" & BR &
+            "AAC Quality | 0.65 = -quality=0.65" & BR &
+            "AAC Quality | 0.70 = -quality=0.70" & BR &
+            "AAC Quality | 0.75 = -quality=0.75" & BR &
+            "AAC Quality | 0.80 = -quality=0.80" & BR &
+            "AAC Quality | 0.85 = -quality=0.85" & BR &
+            "AAC Quality | 0.90 = -quality=0.90" & BR &
+            "AAC Quality | 0.95 = -quality=0.95" & BR &
+            "AC3 Encoding | 192 = -192" & BR &
+            "AC3 Encoding | 224 = -224" & BR &
+            "AC3 Encoding | 384 = -384" & BR &
+            "AC3 Encoding | 448 = -448" & BR &
+            "AC3 Encoding | 640 = -640" & BR &
+            "DTS Encoding | 768 = -768" & BR &
+            "DTS Encoding | 1536 = -1536" & BR &
+            "Resample | 44100 = -resampleTo44100" & BR &
+            "Resample | 48000 = -resampleTo48000" & BR &
+            "Resample | 88200 = -resampleTo88200" & BR &
             "Resample | 96000 = -resampleTo96000"
     End Function
 
     Sub UpdateRecentProjects(path As String)
-        Dim skip = Not File.Exists(path) OrElse
-            path.StartsWith(Folder.Template, StringComparison.Ordinal) OrElse
-            path.EndsWith("recovery.srip", StringComparison.Ordinal) OrElse
-            path.Ext = "bin"
-
+        Dim skip = Not File.Exists(path) OrElse path.StartsWith(Folder.Template, StringComparison.Ordinal) OrElse path.EndsWith("recovery.srip", StringComparison.Ordinal) OrElse String.Equals(path.Ext, "bin")
         Dim list As New List(Of String)
 
         If Not skip Then
@@ -464,7 +460,7 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
         End If
 
         For Each i In s.RecentProjects
-            If Not i.EqualsEx(path) AndAlso File.Exists(i) Then
+            If Not i.EqualsExS(path) AndAlso File.Exists(i) Then
                 list.Add(i)
             End If
         Next
@@ -477,13 +473,9 @@ Custom... = $enter_text:Enter a custom Pixel Aspect Ratio.$"
     End Sub
 
     Public Function GetFFLogLevel(DefaultVal As FfLogLevel) As String
-
-        If FfmpegLogLevel = FfLogLevel.panic Then 'panic as placeholder for default
-            Return If(DefaultVal = FfLogLevel.info, "", " -loglevel " & KGySoft.CoreLibraries.[Enum](Of FfLogLevel).ToString(DefaultVal))
-        Else
-            Return If(FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & KGySoft.CoreLibraries.[Enum](Of FfLogLevel).ToString(FfmpegLogLevel))
-        End If
-
+        Return If(FfmpegLogLevel = FfLogLevel.panic, 'panic as placeholder for default
+            If(DefaultVal = FfLogLevel.info, "", " -loglevel " & KGySoft.CoreLibraries.[Enum](Of FfLogLevel).ToString(DefaultVal)),
+            If(FfmpegLogLevel = FfLogLevel.info, "", " -loglevel " & KGySoft.CoreLibraries.[Enum](Of FfLogLevel).ToString(FfmpegLogLevel)))
     End Function
 
 End Class

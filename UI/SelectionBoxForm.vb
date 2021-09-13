@@ -86,7 +86,7 @@ Public Class SelectionBoxForm
         Me.Controls.Add(Me.bnOK)
         Me.Controls.Add(Me.bnCancel)
         Me.Controls.Add(Me.laText)
-        Me.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        ' Me.Font = New System.Drawing.Font("Segoe UI", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
         Me.KeyPreview = True
         Me.Margin = New System.Windows.Forms.Padding(6, 6, 6, 6)
@@ -105,10 +105,10 @@ Public Class SelectionBoxForm
 
     Sub lText_TextChanged() Handles laText.TextChanged
         Using gx = laText.CreateGraphics
-            Dim textSize = gx.MeasureString(laText.Text, laText.Font, laText.Width)
-
-            If textSize.Height > laText.Height Then
-                Height += CInt(textSize.Height - laText.Height)
+            Dim textMH = gx.MeasureString(laText.Text, Me.Font, laText.Width).Height 'Added: .me, was: laText.Font
+            Dim laTH As Integer = laText.Height
+            If textMH > laTH Then
+                Height += CInt(textMH - laTH)
             End If
         End Using
     End Sub

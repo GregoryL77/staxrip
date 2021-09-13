@@ -119,10 +119,10 @@ Public Class CommandLineControl
     Sub EditPresets()
         Using dialog As New MacroEditorDialog
             dialog.SetMacroDefaults()
-            dialog.MacroEditorControl.Value = Presets.FormatColumn("=")
+            dialog.MacroEditorControl.Value = Presets.FormatColumn("="c)
             dialog.Text = "Menu Editor"
 
-            If Not RestoreFunc Is Nothing Then
+            If RestoreFunc IsNot Nothing Then
                 dialog.bnContext.Text = " Restore Defaults... "
                 dialog.bnContext.Visible = True
 
